@@ -1,0 +1,17 @@
+id = "ownership/01_move"
+title = "Move semantics: when assignment transfers ownership"
+difficulty = "beginner"
+estimated_minutes = 8
+concept = "move-semantics"
+expected_error_code = "E0382"
+solution_outline = "Use `s1.clone()` to keep both variables valid, or restructure to read s1 *before* the assignment."
+
+[[book_refs]]
+chapter = "ch04-01-what-is-ownership"
+anchor = "ownership-rules"
+why = "The three ownership rules — read these before you try to fix the failing line."
+
+[[book_refs]]
+chapter = "ch04-01-what-is-ownership"
+anchor = "ways-variables-and-data-interact-move"
+why = "The diagrams here show what's happening to s1 and s2 in the failing line."

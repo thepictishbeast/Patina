@@ -1,0 +1,17 @@
+[package]
+name = "rpro-book"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Rustlings Pro book content loader — Rust Book chapters indexed by chapter id, parsed via pulldown-cmark for the TUI/GUI renderers."
+
+[dependencies]
+serde.workspace = true
+thiserror.workspace = true
+pulldown-cmark.workspace = true
+walkdir.workspace = true
+
+[lints]
+workspace = true

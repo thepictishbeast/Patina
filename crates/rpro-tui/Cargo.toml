@@ -1,0 +1,19 @@
+[package]
+name = "rpro-tui"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Rustlings Pro TUI shell — ratatui screens for dashboard, exercise view, book reader. v0 stub: layout primitives only."
+
+[dependencies]
+rpro-state = { path = "../rpro-state" }
+rpro-book = { path = "../rpro-book" }
+rpro-runner = { path = "../rpro-runner" }
+ratatui.workspace = true
+crossterm.workspace = true
+anyhow.workspace = true
+
+[lints]
+workspace = true
