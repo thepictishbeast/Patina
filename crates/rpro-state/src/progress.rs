@@ -122,7 +122,10 @@ mod tests {
         p.set_done("a/b");
         let e = &p.entries["a/b"];
         assert_eq!(e.status, ExerciseStatus::Done);
-        assert_eq!(e.started_at, started, "started_at preserved across set_done");
+        assert_eq!(
+            e.started_at, started,
+            "started_at preserved across set_done"
+        );
         assert!(e.completed_at.is_some());
     }
 

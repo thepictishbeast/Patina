@@ -62,7 +62,10 @@ impl Book {
         if !root.exists() {
             return Ok(Self::default());
         }
-        for entry in walkdir::WalkDir::new(root).into_iter().filter_map(Result::ok) {
+        for entry in walkdir::WalkDir::new(root)
+            .into_iter()
+            .filter_map(Result::ok)
+        {
             let p = entry.path();
             if p.extension().and_then(|s| s.to_str()) != Some("md") {
                 continue;
@@ -113,8 +116,16 @@ mod tests {
     #[test]
     fn loads_markdown_files() {
         let dir = tempfile::tempdir().unwrap();
-        std::fs::write(dir.path().join("ch01-00-getting-started.md"), "# Getting Started\n\nbody").unwrap();
-        std::fs::write(dir.path().join("ch04-01-what-is-ownership.md"), "# What Is Ownership?\n").unwrap();
+        std::fs::write(
+            dir.path().join("ch01-00-getting-started.md"),
+            "# Getting Started\n\nbody",
+        )
+        .unwrap();
+        std::fs::write(
+            dir.path().join("ch04-01-what-is-ownership.md"),
+            "# What Is Ownership?\n",
+        )
+        .unwrap();
         std::fs::write(dir.path().join("ignore.txt"), "not markdown").unwrap();
         let book = Book::load(dir.path()).unwrap();
         assert_eq!(book.len(), 2);

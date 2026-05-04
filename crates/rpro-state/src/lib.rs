@@ -22,6 +22,6 @@ pub mod store;
 pub use annotations::{Annotation, Annotations};
 pub use bookmarks::{Bookmark, Bookmarks};
 pub use config::Config;
-pub use exercise::{BookRef, ExerciseMetadata, Difficulty};
+pub use exercise::{BookRef, Difficulty, ExerciseMetadata};
 pub use progress::{ExerciseStatus, Progress};
 pub use store::{Store, StoreError};

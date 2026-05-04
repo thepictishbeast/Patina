@@ -761,6 +761,7 @@ version = "0.1.0"
 dependencies = [
  "pulldown-cmark",
  "serde",
+ "tempfile",
  "thiserror 2.0.18",
  "walkdir",
 ]
@@ -785,6 +786,7 @@ dependencies = [
  "anyhow",
  "rpro-state",
  "serde",
+ "tempfile",
  "thiserror 2.0.18",
  "toml",
  "walkdir",

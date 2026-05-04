@@ -2,14 +2,16 @@
 //!
 //! Top-level command dispatch. Subcommands:
 //!
-//!   rpro init                   — one-time setup
-//!   rpro                        — open the TUI dashboard (default)
-//!   rpro exercise list          — every exercise with status
-//!   rpro exercise next          — jump to next unfinished
-//!   rpro exercise hint          — book references for current
-//!   rpro book                   — open the TUI book reader
-//!   rpro book search <term>     — text search across chapters
-//!   rpro progress               — completion summary
+//! ```text
+//! rpro init                   — one-time setup
+//! rpro                        — open the TUI dashboard (default)
+//! rpro exercise list          — every exercise with status
+//! rpro exercise next          — jump to next unfinished
+//! rpro exercise hint          — book references for current
+//! rpro book                   — open the TUI book reader
+//! rpro book search <term>     — text search across chapters
+//! rpro progress               — completion summary
+//! ```
 //!
 //! v0 wires `init` end-to-end and stubs the rest.
 
@@ -94,15 +96,17 @@ fn main() -> Result<()> {
 // ---------------------------------------------------------------------------
 
 fn cmd_init() -> Result<()> {
-    println!("{}", style("Rustlings Pro — first-time setup").bold().cyan());
+    println!(
+        "{}",
+        style("Rustlings Pro — first-time setup").bold().cyan()
+    );
     let store = Store::user().context("locating ~/.rustlings-pro/")?;
     println!("  state directory: {}", style(store.root().display()).dim());
 
     // Create the standard subdirs.
     for sub in ["exercises", "book"] {
         let p = store.root().join(sub);
-        std::fs::create_dir_all(&p)
-            .with_context(|| format!("mkdir {}", p.display()))?;
+        std::fs::create_dir_all(&p).with_context(|| format!("mkdir {}", p.display()))?;
         println!("  + {}", style(p.display()).dim());
     }
 
@@ -146,9 +150,18 @@ fn cmd_init() -> Result<()> {
     println!("{}", style("✓ setup complete").green().bold());
     println!();
     println!("Next:");
-    println!("  - {} (when v0.1 ships) — fetch exercises + book content", style("rpro init --refresh-all").yellow());
-    println!("  - {} — list what's been imported so far", style("rpro exercise list").yellow());
-    println!("  - {} — open the book reader (in-app)", style("rpro book").yellow());
+    println!(
+        "  - {} (when v0.1 ships) — fetch exercises + book content",
+        style("rpro init --refresh-all").yellow()
+    );
+    println!(
+        "  - {} — list what's been imported so far",
+        style("rpro exercise list").yellow()
+    );
+    println!(
+        "  - {} — open the book reader (in-app)",
+        style("rpro book").yellow()
+    );
     println!();
     Ok(())
 }
@@ -167,11 +180,15 @@ fn cmd_exercise_list() -> Result<()> {
     if exercises.is_empty() {
         println!(
             "{}",
-            style("No exercises yet. Run `rpro init --refresh-exercises` (v0.1) to fetch the set.").yellow()
+            style("No exercises yet. Run `rpro init --refresh-exercises` (v0.1) to fetch the set.")
+                .yellow()
         );
         return Ok(());
     }
-    println!("{:<30} {:<14} {:<14} {:<6} {}", "id", "status", "difficulty", "min", "title");
+    println!(
+        "{:<30} {:<14} {:<14} {:<6} {}",
+        "id", "status", "difficulty", "min", "title"
+    );
     println!("{}", "-".repeat(80));
     for ex in &exercises {
         let status = progress
@@ -204,7 +221,12 @@ fn cmd_exercise_next() -> Result<()> {
         !matches!(s, ExerciseStatus::Done | ExerciseStatus::Skipped)
     });
     let Some(ex) = current else {
-        println!("{}", style("All exercises done. Time to ship something.").green().bold());
+        println!(
+            "{}",
+            style("All exercises done. Time to ship something.")
+                .green()
+                .bold()
+        );
         return Ok(());
     };
     progress.set_current(&ex.meta.id);
@@ -236,7 +258,12 @@ fn cmd_exercise_hint(show_solution: bool) -> Result<()> {
         .find(|e| e.meta.id == current_id)
         .ok_or_else(|| anyhow!("current exercise '{current_id}' not found on disk"))?;
 
-    println!("{}", style(format!("📖 Book references for {}", ex.meta.id)).bold().cyan());
+    println!(
+        "{}",
+        style(format!("📖 Book references for {}", ex.meta.id))
+            .bold()
+            .cyan()
+    );
     println!("   {}", style(&ex.meta.title).dim());
     println!();
     for (i, r) in ex.meta.book_refs.iter().enumerate() {
@@ -249,7 +276,12 @@ fn cmd_exercise_hint(show_solution: bool) -> Result<()> {
                 .map_or(String::new(), |a| format!("# {a}"))
         );
         println!("     {}", r.why);
-        println!("     {}", style(rpro_state::ExerciseMetadata::book_ref_url(r)).dim().underlined());
+        println!(
+            "     {}",
+            style(rpro_state::ExerciseMetadata::book_ref_url(r))
+                .dim()
+                .underlined()
+        );
         println!();
     }
     if show_solution {
@@ -257,7 +289,10 @@ fn cmd_exercise_hint(show_solution: bool) -> Result<()> {
             println!("{}", style("Solution outline (one line):").yellow().bold());
             println!("  {s}");
         } else {
-            println!("{}", style("(no solution outline shipped with this exercise)").dim());
+            println!(
+                "{}",
+                style("(no solution outline shipped with this exercise)").dim()
+            );
         }
     } else {
         println!(
@@ -280,7 +315,10 @@ fn cmd_book_search(term: &str) -> Result<()> {
     let store = Store::user()?;
     let book = rpro_book::Book::load(&store.root().join("book"))?;
     if book.is_empty() {
-        println!("{}", style("No book content yet. Run `rpro init --refresh-book` (v0.1).").yellow());
+        println!(
+            "{}",
+            style("No book content yet. Run `rpro init --refresh-book` (v0.1).").yellow()
+        );
         return Ok(());
     }
     let needle = term.to_lowercase();
@@ -289,7 +327,11 @@ fn cmd_book_search(term: &str) -> Result<()> {
         let lower = chap.markdown.to_lowercase();
         if lower.contains(&needle) {
             hits += 1;
-            println!("{}: {} matches", style(&chap.id).cyan().bold(), lower.matches(&needle).count());
+            println!(
+                "{}: {} matches",
+                style(&chap.id).cyan().bold(),
+                lower.matches(&needle).count()
+            );
         }
     }
     if hits == 0 {

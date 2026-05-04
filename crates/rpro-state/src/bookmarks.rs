@@ -28,7 +28,12 @@ pub struct Bookmarks {
 
 impl Bookmarks {
     /// Add a new bookmark with `Utc::now()`.
-    pub fn add(&mut self, chapter: impl Into<String>, anchor: Option<String>, label: Option<String>) {
+    pub fn add(
+        &mut self,
+        chapter: impl Into<String>,
+        anchor: Option<String>,
+        label: Option<String>,
+    ) {
         self.items.push(Bookmark {
             chapter: chapter.into(),
             anchor,

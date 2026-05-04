@@ -28,7 +28,7 @@ pub struct BookRef {
 
     /// One-sentence justification: why this specific section helps
     /// with this specific exercise. Surfaces in the hint UI as
-    /// "Read this for: <why>".
+    /// `Read this for: <why>`.
     pub why: String,
 }
 

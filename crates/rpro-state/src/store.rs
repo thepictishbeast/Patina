@@ -184,7 +184,9 @@ impl Store {
     }
 }
 
-fn load_json_or_default<T: Default + serde::de::DeserializeOwned>(path: &Path) -> Result<T, StoreError> {
+fn load_json_or_default<T: Default + serde::de::DeserializeOwned>(
+    path: &Path,
+) -> Result<T, StoreError> {
     if !path.exists() {
         return Ok(T::default());
     }
@@ -265,7 +267,11 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let s = Store::at(dir.path());
         let mut b = Bookmarks::default();
-        b.add("ch04-01", Some("rules".into()), Some("ownership rules".into()));
+        b.add(
+            "ch04-01",
+            Some("rules".into()),
+            Some("ownership rules".into()),
+        );
         s.save_bookmarks(&b).unwrap();
         assert_eq!(s.load_bookmarks().unwrap().items.len(), 1);
     }

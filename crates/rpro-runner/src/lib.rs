@@ -113,7 +113,9 @@ mod tests {
         let rs = dir.path().join("ownership/01_move.rs");
         let toml = dir.path().join("ownership/01_move.toml");
         write(&rs, "// rustlings exercise body\nfn main() {}\n");
-        write(&toml, r#"
+        write(
+            &toml,
+            r#"
 id = "ownership/01_move"
 title = "Move semantics"
 difficulty = "beginner"
@@ -123,7 +125,8 @@ concept = "move-semantics"
 [[book_refs]]
 chapter = "ch04-01-what-is-ownership"
 why = "Ownership rules."
-"#);
+"#,
+        );
         let exs = discover(dir.path()).unwrap();
         assert_eq!(exs.len(), 1);
         assert_eq!(exs[0].meta.id, "ownership/01_move");
@@ -151,14 +154,17 @@ why = "Ownership rules."
     fn missing_book_refs_rejected() {
         let dir = tempfile::tempdir().unwrap();
         write(&dir.path().join("noref.rs"), "fn main() {}");
-        write(&dir.path().join("noref.toml"), r#"
+        write(
+            &dir.path().join("noref.toml"),
+            r#"
 id = "x/no_refs"
 title = "No refs"
 difficulty = "beginner"
 estimated_minutes = 1
 concept = "x"
 book_refs = []
-"#);
+"#,
+        );
         let err = discover(dir.path()).unwrap_err();
         match err {
             DiscoveryError::Invalid { reason, .. } => assert!(reason.contains("book_refs")),
