@@ -1,0 +1,32 @@
+id = "ownership/02_borrow"
+title = "Borrow checker: mutable and immutable references can't coexist"
+difficulty = "beginner"
+estimated_minutes = 10
+concept = "borrow-checker-mut-vs-immut"
+expected_error_code = "E0502"
+solution_outline = """
+The simplest fix is to use the immutable reference *before* taking
+the mutable one — Rust's borrow checker tracks reference lifetimes
+to the last point of use, so once `immut_ref` is no longer needed,
+the mutable borrow is allowed. Reorder the println!s + .push_str()
+so the immutable read finishes before the mutation starts.
+
+Alternative: drop the immutable reference entirely (just use
+`greeting` directly when reading, after the mutation). Or scope
+each borrow inside its own block.
+"""
+
+[[book_refs]]
+chapter = "ch04-02-references-and-borrowing"
+anchor = "mutable-references"
+why = "The exact rule the failing line violates: at most one mutable reference, OR any number of immutable references. Not both."
+
+[[book_refs]]
+chapter = "ch04-02-references-and-borrowing"
+anchor = "the-rules-of-references"
+why = "The three rules of references summarized — print this and stick it on the wall until they feel automatic."
+
+[[book_refs]]
+chapter = "ch10-03-lifetime-syntax"
+anchor = "non-lexical-lifetimes"
+why = "Modern Rust ends a borrow at the last point of USE, not the closing brace. This is why reordering the println!s fixes it without explicit scoping."
