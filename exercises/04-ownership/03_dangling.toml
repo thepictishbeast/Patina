@@ -1,0 +1,46 @@
+id = "ownership/03_dangling"
+title = "Dangling references: a function can't return a borrow into its own locals"
+difficulty = "beginner"
+estimated_minutes = 8
+concept = "no-dangling-refs"
+expected_error_code = "E0515"
+solution_outline = """
+The function owns `g`. When it returns, `g` is dropped — any
+reference INTO `g` would be left dangling. Rust catches this at
+compile time and refuses to let the reference escape.
+
+Two clean fixes, ranked by what matches the spirit of "make_greeting":
+
+1. Return ownership of the String instead of a borrow:
+       fn make_greeting() -> String {
+           String::from("hello, world")
+       }
+   `main` already binds the result to `let s = ...`; ownership
+   transfers cleanly.
+
+2. Return a `&'static str` literal — works because string literals
+   live in the binary's read-only data section, which never gets
+   dropped:
+       fn make_greeting() -> &'static str {
+           "hello, world"
+       }
+
+The wrong instinct is to add a lifetime parameter — there's no
+inbound reference for it to borrow from, so any lifetime annotation
+just moves the error around.
+"""
+
+[[book_refs]]
+chapter = "ch04-02-references-and-borrowing"
+anchor = "dangling-references"
+why = "The exact pattern the failing version is — Rust's compile-time guarantee against the C/C++ classic 'return ptr to stack local' bug."
+
+[[book_refs]]
+chapter = "ch04-01-what-is-ownership"
+anchor = "ownership-and-functions"
+why = "Functions and ownership: when a function returns, its locals are dropped. The reason this exercise's signature can't work."
+
+[[book_refs]]
+chapter = "ch10-03-lifetime-syntax"
+anchor = "lifetime-elision"
+why = "Why the wrong fix (adding a lifetime parameter) doesn't help: there's no inbound reference for the elision rules to draw from."
