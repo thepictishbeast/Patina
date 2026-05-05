@@ -30,8 +30,8 @@ indicatif = "0.17"
 console = "0.15"
 
 # TUI
-ratatui = { version = "0.29", default-features = false, features = ["crossterm"] }
-crossterm = "0.28"
+ratatui = { version = "0.30", default-features = false, features = ["crossterm"] }
+crossterm = "0.29"
 pulldown-cmark = "0.12"
 
 # Misc
