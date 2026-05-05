@@ -355,7 +355,7 @@ fn cmd_progress() -> Result<()> {
             progress
                 .entries
                 .get(&ex.meta.id)
-                .map_or(true, |e| e.status != ExerciseStatus::Done)
+                .is_none_or(|e| e.status != ExerciseStatus::Done)
         })
         .map(|ex| ex.meta.estimated_minutes)
         .sum();

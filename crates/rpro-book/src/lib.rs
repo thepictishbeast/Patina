@@ -140,8 +140,7 @@ mod tests {
             path: PathBuf::from("test.md"),
             markdown: "# Hi\n\nbody".into(),
         };
-        let events: Vec<_> = c.parse().collect();
-        assert!(!events.is_empty());
+        assert!(c.parse().next().is_some());
     }
 
     #[test]
