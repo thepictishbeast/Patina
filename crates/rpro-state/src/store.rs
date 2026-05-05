@@ -288,9 +288,11 @@ mod tests {
     fn config_round_trip() {
         let dir = tempfile::tempdir().unwrap();
         let s = Store::at(dir.path());
-        let mut c = Config::default();
-        c.theme = "light".into();
-        c.editor = "helix".into();
+        let c = Config {
+            theme: "light".into(),
+            editor: "helix".into(),
+            ..Config::default()
+        };
         s.save_config(&c).unwrap();
         let loaded = s.load_config().unwrap();
         assert_eq!(loaded.theme, "light");

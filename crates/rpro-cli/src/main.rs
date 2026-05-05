@@ -186,8 +186,8 @@ fn cmd_exercise_list() -> Result<()> {
         return Ok(());
     }
     println!(
-        "{:<30} {:<14} {:<14} {:<6} {}",
-        "id", "status", "difficulty", "min", "title"
+        "{:<30} {:<14} {:<14} {:<6} title",
+        "id", "status", "difficulty", "min"
     );
     println!("{}", "-".repeat(80));
     for ex in &exercises {
@@ -346,9 +346,9 @@ fn cmd_progress() -> Result<()> {
     let exercises = rpro_runner::discover(&store.root().join("exercises"))?;
     let total = exercises.len();
     let done = progress.done_count();
-    let pct = if total == 0 { 0 } else { (done * 100) / total };
+    let pct = (done * 100).checked_div(total).unwrap_or(0);
     println!("{}", style("Rustlings Pro — progress").bold().cyan());
-    println!("  {} / {} done ({}%)", done, total, pct);
+    println!("  {done} / {total} done ({pct}%)");
     let remaining: u32 = exercises
         .iter()
         .filter(|ex| {
@@ -360,7 +360,7 @@ fn cmd_progress() -> Result<()> {
         .map(|ex| ex.meta.estimated_minutes)
         .sum();
     if remaining > 0 {
-        println!("  estimated remaining: {} min", remaining);
+        println!("  estimated remaining: {remaining} min");
     }
     Ok(())
 }

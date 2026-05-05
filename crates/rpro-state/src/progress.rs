@@ -82,12 +82,15 @@ impl Progress {
 
     /// Increment the attempt counter for `id`.
     pub fn record_attempt(&mut self, id: &str) {
-        let entry = self.entries.entry(id.to_string()).or_insert(ProgressEntry {
-            status: ExerciseStatus::Current,
-            started_at: Some(Utc::now()),
-            completed_at: None,
-            attempts: 0,
-        });
+        let entry = self
+            .entries
+            .entry(id.to_string())
+            .or_insert_with(|| ProgressEntry {
+                status: ExerciseStatus::Current,
+                started_at: Some(Utc::now()),
+                completed_at: None,
+                attempts: 0,
+            });
         entry.attempts = entry.attempts.saturating_add(1);
     }
 

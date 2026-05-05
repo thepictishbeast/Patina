@@ -134,10 +134,10 @@ impl ExerciseMetadata {
     /// in-app reader.
     #[must_use]
     pub fn book_ref_url(r: &BookRef) -> String {
-        match &r.anchor {
-            Some(a) => format!("https://doc.rust-lang.org/book/{}.html#{}", r.chapter, a),
-            None => format!("https://doc.rust-lang.org/book/{}.html", r.chapter),
-        }
+        r.anchor.as_ref().map_or_else(
+            || format!("https://doc.rust-lang.org/book/{}.html", r.chapter),
+            |a| format!("https://doc.rust-lang.org/book/{}.html#{}", r.chapter, a),
+        )
     }
 }
 

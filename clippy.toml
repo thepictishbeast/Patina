@@ -1,0 +1,2 @@
+# Stdlib types we use enough that backticking each mention is noise.
+doc-valid-idents = ["BTreeMap", ".."]
