@@ -33,14 +33,20 @@ just moves the error around.
 [[book_refs]]
 chapter = "ch04-02-references-and-borrowing"
 anchor = "dangling-references"
+section_number = "Section 4.2"
+page_number = "Page 96"
 why = "The exact pattern the failing version is — Rust's compile-time guarantee against the C/C++ classic 'return ptr to stack local' bug."
 
 [[book_refs]]
 chapter = "ch04-01-what-is-ownership"
 anchor = "ownership-and-functions"
+section_number = "Section 4.1"
+page_number = "Page 81"
 why = "Functions and ownership: when a function returns, its locals are dropped. The reason this exercise's signature can't work."
 
 [[book_refs]]
 chapter = "ch10-03-lifetime-syntax"
 anchor = "lifetime-elision"
+section_number = "Section 10.3"
+page_number = "Page 257"
 why = "Why the wrong fix (adding a lifetime parameter) doesn't help: there's no inbound reference for the elision rules to draw from."

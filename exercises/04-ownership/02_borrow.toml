@@ -19,14 +19,20 @@ each borrow inside its own block.
 [[book_refs]]
 chapter = "ch04-02-references-and-borrowing"
 anchor = "mutable-references"
+section_number = "Section 4.2"
+page_number = "Page 96"
 why = "The exact rule the failing line violates: at most one mutable reference, OR any number of immutable references. Not both."
 
 [[book_refs]]
 chapter = "ch04-02-references-and-borrowing"
 anchor = "the-rules-of-references"
+section_number = "Section 4.2"
+page_number = "Page 96"
 why = "The three rules of references summarized — print this and stick it on the wall until they feel automatic."
 
 [[book_refs]]
 chapter = "ch10-03-lifetime-syntax"
 anchor = "non-lexical-lifetimes"
+section_number = "Section 10.3"
+page_number = "Page 257"
 why = "Modern Rust ends a borrow at the last point of USE, not the closing brace. This is why reordering the println!s fixes it without explicit scoping."

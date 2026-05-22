@@ -9,9 +9,13 @@ solution_outline = "Use `s1.clone()` to keep both variables valid, or restructur
 [[book_refs]]
 chapter = "ch04-01-what-is-ownership"
 anchor = "ownership-rules"
+section_number = "Section 4.1"
+page_number = "Page 81"
 why = "The three ownership rules — read these before you try to fix the failing line."
 
 [[book_refs]]
 chapter = "ch04-01-what-is-ownership"
 anchor = "ways-variables-and-data-interact-move"
+section_number = "Section 4.1"
+page_number = "Page 81"
 why = "The diagrams here show what's happening to s1 and s2 in the failing line."

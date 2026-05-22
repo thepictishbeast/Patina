@@ -98,6 +98,10 @@ crates/
 
 A future `rpro-gui` crate will host the Iced desktop GUI; the same `rpro-state` files back both surfaces, so progress made in the CLI shows up in the GUI and vice versa.
 
+## Book Updates
+
+> **Note:** The Rust Book is embedded directly into this repository. Be sure to periodically `git pull` the cloned `rust-book` subdirectory or re-clone it from GitHub to stay up-to-date with the latest Rust language features and documentation updates!
+
 ## License
 
 Dual MIT / Apache-2.0 — same as the Rust ecosystem default and the rustlings + Rust Book repos.

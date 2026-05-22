@@ -129,22 +129,44 @@ fn cmd_init() -> Result<()> {
         println!("  + {}", style("annotations.json").dim());
     }
 
-    // The exercise + book downloads land in v0.1 — for now, drop a
-    // README in each empty dir explaining what goes there. Keeps
-    // the layout discoverable without faking content.
-    write_if_missing(
-        &store.root().join("exercises/README.md"),
-        "Exercises live here. Each exercise is a `name.rs` plus a sibling \
-         `name.toml` with metadata (id, title, difficulty, concept, book_refs). \
-         Run `rpro init --refresh-exercises` (v0.1) to download the rustlings \
-         set + Rustlings-Pro originals. For now, drop your own here.\n",
-    )?;
-    write_if_missing(
-        &store.root().join("book/README.md"),
-        "The Rust Book chapters live here as one markdown file per chapter, \
-         filename = chapter id (e.g. `ch04-01-what-is-ownership.md`). Run \
-         `rpro init --refresh-book` (v0.1) to fetch the official content.\n",
-    )?;
+    // Copy local exercises if available.
+    let local_exercises = std::env::current_dir().unwrap_or_default().join("exercises");
+    if local_exercises.exists() {
+        println!("  + found local exercises, copying...");
+        let target_dir = store.root().join("exercises");
+        let _ = std::process::Command::new("cp")
+            .arg("-r")
+            .arg(local_exercises.join("."))
+            .arg(&target_dir)
+            .status();
+    } else {
+        write_if_missing(
+            &store.root().join("exercises/README.md"),
+            "Exercises live here. Each exercise is a `name.rs` plus a sibling \
+             `name.toml` with metadata (id, title, difficulty, concept, book_refs). \
+             Run `rpro init --refresh-exercises` (v0.1) to download the rustlings \
+             set + Rustlings-Pro originals. For now, drop your own here.\n",
+        )?;
+    }
+
+    // Copy local rust-book markdown files if available.
+    let local_book = std::env::current_dir().unwrap_or_default().join("rust-book").join("src");
+    if local_book.exists() {
+        println!("  + found local rust-book, copying...");
+        let target_dir = store.root().join("book");
+        let _ = std::process::Command::new("cp")
+            .arg("-r")
+            .arg(local_book.join("."))
+            .arg(&target_dir)
+            .status();
+    } else {
+        write_if_missing(
+            &store.root().join("book/README.md"),
+            "The Rust Book chapters live here as one markdown file per chapter, \
+             filename = chapter id (e.g. `ch04-01-what-is-ownership.md`). Run \
+             `rpro init --refresh-book` (v0.1) to fetch the official content.\n",
+        )?;
+    }
 
     println!();
     println!("{}", style("✓ setup complete").green().bold());

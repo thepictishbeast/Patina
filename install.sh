@@ -45,16 +45,23 @@ say "Rust toolchain present: rustc $RUSTC_VERSION"
 
 # ----- 2. Fetch source ---------------------------------------------------
 
-if [ -d "$SRC_DIR/.git" ]; then
-    say "Updating existing source at $SRC_DIR"
-    git -C "$SRC_DIR" fetch --quiet origin "$INSTALL_TAG"
-    git -C "$SRC_DIR" checkout --quiet "$INSTALL_TAG"
-    git -C "$SRC_DIR" reset --quiet --hard "origin/$INSTALL_TAG" || true
+# If we are running this from within a local clone, use it directly.
+if [ -f "$PWD/crates/rpro-cli/Cargo.toml" ]; then
+    say "Detected local workspace in $PWD"
+    note "Skipping git clone and using local source."
+    SRC_DIR="$PWD"
 else
-    say "Cloning source to $SRC_DIR"
-    git clone --quiet --branch "$INSTALL_TAG" \
-        https://github.com/thepictishbeast/Rustlings-Pro.git \
-        "$SRC_DIR"
+    if [ -d "$SRC_DIR/.git" ]; then
+        say "Updating existing source at $SRC_DIR"
+        git -C "$SRC_DIR" fetch --quiet origin "$INSTALL_TAG"
+        git -C "$SRC_DIR" checkout --quiet "$INSTALL_TAG"
+        git -C "$SRC_DIR" reset --quiet --hard "origin/$INSTALL_TAG" || true
+    else
+        say "Cloning source to $SRC_DIR"
+        git clone --quiet --branch "$INSTALL_TAG" \
+            https://github.com/thepictishbeast/Rustlings-Pro.git \
+            "$SRC_DIR"
+    fi
 fi
 
 # ----- 3. Build + install ------------------------------------------------
