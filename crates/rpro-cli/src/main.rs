@@ -62,6 +62,8 @@ enum ExerciseCmd {
         #[arg(long)]
         solution: bool,
     },
+    /// Interactively edit and compile the current exercise.
+    Run,
 }
 
 #[derive(Subcommand, Debug)]
@@ -82,6 +84,7 @@ fn main() -> Result<()> {
             ExerciseCmd::List => cmd_exercise_list(),
             ExerciseCmd::Next => cmd_exercise_next(),
             ExerciseCmd::Hint { solution } => cmd_exercise_hint(solution),
+            ExerciseCmd::Run => cmd_exercise_run(),
         },
         Some(Cmd::Book { sub }) => match sub {
             None => cmd_book_open(),
@@ -289,23 +292,24 @@ fn cmd_exercise_hint(show_solution: bool) -> Result<()> {
     println!("   {}", style(&ex.meta.title).dim());
     println!();
     for (i, r) in ex.meta.book_refs.iter().enumerate() {
-        println!(
-            "  {}. {} {}",
-            i + 1,
-            style(&r.chapter).bold(),
-            r.anchor
-                .as_deref()
-                .map_or(String::new(), |a| format!("# {a}"))
-        );
+        let mut loc_str = format!("{}", style(&r.chapter).bold());
+        if let Some(ref a) = r.anchor {
+            loc_str.push_str(&format!(" # {}", a));
+        }
+        if let Some(ref sec) = r.section_number {
+            loc_str.push_str(&format!(" [{}]", style(sec).cyan()));
+        }
+        if let Some(ref page) = r.page_number {
+            loc_str.push_str(&format!(" ({})", style(page).green()));
+        }
+        println!("  {}. {}", i + 1, loc_str);
         println!("     {}", r.why);
-        println!(
-            "     {}",
-            style(rpro_state::ExerciseMetadata::book_ref_url(r))
-                .dim()
-                .underlined()
-        );
+        
+        // Let's print the actual URL as well if the method exists, else just a blank line
+        println!("     {}", style(rpro_state::ExerciseMetadata::book_ref_url(r)).dim().underlined());
         println!();
     }
+
     if show_solution {
         if let Some(s) = &ex.meta.solution_outline {
             println!("{}", style("Solution outline (one line):").yellow().bold());
@@ -323,6 +327,109 @@ fn cmd_exercise_hint(show_solution: bool) -> Result<()> {
             style("rpro exercise hint --solution").bold()
         );
     }
+    Ok(())
+}
+
+fn cmd_exercise_run() -> Result<()> {
+    use std::process::Command;
+
+    let store = Store::user()?;
+    let mut progress = store.load_progress()?;
+    let exercises = rpro_runner::discover(&store.root().join("exercises"))?;
+    
+    // Find the first exercise that is Current, or the first that is not Done/Skipped
+    let current_ex = exercises.iter().find(|ex| {
+        let s = progress.entries.get(&ex.meta.id).map_or(ExerciseStatus::Locked, |e| e.status);
+        s == ExerciseStatus::Current
+    }).or_else(|| {
+        exercises.iter().find(|ex| {
+            let s = progress.entries.get(&ex.meta.id).map_or(ExerciseStatus::Locked, |e| e.status);
+            !matches!(s, ExerciseStatus::Done | ExerciseStatus::Skipped)
+        })
+    });
+
+    let Some(ex) = current_ex else {
+        println!("{}", style("All exercises done. Time to ship something.").green().bold());
+        return Ok(());
+    };
+
+    // Ensure it's set as current
+    progress.set_current(&ex.meta.id);
+    store.save_progress(&progress)?;
+
+    let file_path = &ex.source;
+    let editor = std::env::var("EDITOR").unwrap_or_else(|_| "nano".to_string());
+
+    loop {
+        // Clear screen
+        print!("{esc}c", esc = 27 as char);
+        println!("{}", style(format!("▶ Running: {}", ex.meta.id)).bold().cyan());
+        println!("   {}", style(&ex.meta.title).dim());
+        println!();
+
+        // Compile and run the exercise using rustc directly for now
+        let output = Command::new("rustc")
+            .arg("--color=always")
+            .arg(file_path)
+            .arg("-o").arg(std::env::temp_dir().join("rpro_out"))
+            .output()?;
+
+        if output.status.success() {
+            // Run the compiled binary
+            let run_out = Command::new(std::env::temp_dir().join("rpro_out")).output()?;
+            if run_out.status.success() {
+                println!("{}", style("✅ Compilation successful!").green().bold());
+                println!("Output:\n{}", String::from_utf8_lossy(&run_out.stdout));
+                
+                println!("\nThis exercise is complete. Press Enter to move to the next exercise, or Ctrl-C to quit.");
+                let mut input = String::new();
+                std::io::stdin().read_line(&mut input)?;
+
+                // Reload progress before saving (in case another process touched it)
+                let mut progress = store.load_progress()?;
+                progress.set_done(&ex.meta.id);
+                store.save_progress(&progress)?;
+                
+                // Automatically move to next
+                return cmd_exercise_next();
+            } else {
+                println!("{}", style("❌ Compiled, but panicked at runtime:").red().bold());
+                println!("{}", String::from_utf8_lossy(&run_out.stderr));
+            }
+        } else {
+            println!("{}", style("❌ Compilation failed:").red().bold());
+            println!("{}", String::from_utf8_lossy(&output.stderr));
+            
+            // Check for expected error code
+            if let Some(ref code) = ex.meta.expected_error_code {
+                if !String::from_utf8_lossy(&output.stderr).contains(code) {
+                    println!("\n{}", style(format!("⚠️ Note: We expected error {}, but got something else. You may have changed too much.", code)).yellow());
+                }
+            }
+        }
+
+        println!("\n{}", style("---------------------------------------------------------").dim());
+        println!("Press {} to open in editor ({}), or {} to quit.", style("Enter").green(), editor, style("Ctrl-C").red());
+        
+        let mut input = String::new();
+        std::io::stdin().read_line(&mut input)?;
+        
+        // Record an attempt
+        let mut progress = store.load_progress()?;
+        progress.record_attempt(&ex.meta.id);
+        store.save_progress(&progress)?;
+
+        // Open editor
+        let status = Command::new(&editor)
+            .arg(file_path)
+            .status()?;
+            
+        if !status.success() {
+            println!("{}", style("Editor exited with an error.").red());
+            break;
+        }
+    }
+
     Ok(())
 }
 

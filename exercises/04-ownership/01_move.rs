@@ -3,6 +3,10 @@
 // CONCEPT: move semantics — when assigning one variable to another
 // transfers ownership instead of copying.
 //
+// 📖 READINGS:
+// - Section 4.1 "What is Ownership? - Ownership Rules" (Page 81)
+// - Section 4.1 "What is Ownership? - Variables and Data Interacting with Move" (Page 81)
+//
 // Make this compile WITHOUT removing the println! call. The runner
 // expects E0382 ("borrow of moved value") to appear in the failing
 // version; if you see a different error, you may have changed too

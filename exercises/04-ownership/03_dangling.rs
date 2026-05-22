@@ -6,6 +6,11 @@
 // Other languages (C, C++) let you do this and explode at runtime;
 // Rust's borrow checker rejects it at compile time.
 //
+// 📖 READINGS:
+// - Section 4.2 "References and Borrowing - Dangling References" (Page 96)
+// - Section 4.1 "What is Ownership? - Ownership and Functions" (Page 81)
+// - Section 10.3 "Lifetime Syntax - Lifetime Elision" (Page 257)
+//
 // Make this compile WITHOUT changing main(). The fix is in
 // `make_greeting`. The failing version produces E0515 ("cannot
 // return reference to local variable"). Run `rpro exercise hint`
