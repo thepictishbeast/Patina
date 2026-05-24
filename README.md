@@ -19,6 +19,9 @@
 > annotation may be considered. **No commit in this repository has
 > reached `SHIP-DECISION:` status.**
 
+NEW NAME:
+Tempered Studio
+
 # Rustlings Pro
 
 > **Status: v0 scaffold.** Workspace + data model + install script + first exercise. CLI runs; TUI book reader + exercise runner land next.
