@@ -7,6 +7,11 @@
 // the immutable ref might be reading exactly when the mutator
 // changes the value out from under them.
 //
+// 📖 READINGS:
+// - Section 4.2 "References and Borrowing - Mutable References" (Page 96)
+// - Section 4.2 "References and Borrowing - The Rules of References" (Page 96)
+// - Section 10.3 "Lifetime Syntax - Non-Lexical Lifetimes" (Page 257)
+//
 // Make this compile WITHOUT removing any of the println! calls.
 // You can REORDER the references / println!s, or you can change
 // the second borrow's mutability. The failing version produces

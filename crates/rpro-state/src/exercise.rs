@@ -26,6 +26,17 @@ pub struct BookRef {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub anchor: Option<String>,
 
+    /// The digital HTML section number (e.g. "Section 4.1").
+    /// Helps users map the reference to the online/digital book structure.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub section_number: Option<String>,
+
+    /// The physical PDF page number.
+    /// Helps users find the content if they are following along in the 
+    /// offline PDF edition of The Rust Programming Language.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub page_number: Option<String>,
+
     /// One-sentence justification: why this specific section helps
     /// with this specific exercise. Surfaces in the hint UI as
     /// `Read this for: <why>`.
