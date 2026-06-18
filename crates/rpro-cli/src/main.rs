@@ -163,15 +163,41 @@ fn cmd_init() -> Result<()> {
         println!("  + {}", style("annotations.json").dim());
     }
 
-    // The exercise + book downloads land in v0.1 — for now, drop a
-    // README in each empty dir explaining what goes there. Keeps
-    // the layout discoverable without faking content.
+    // Seed the bundled exercises (the workspace `exercises/` tree) if the store
+    // has none yet, then mark the first one current — so a fresh `rpro` lands on
+    // a real, runnable exercise instead of an empty screen. This is parity with
+    // the web server's auto-seed.
+    let exercises_dir = store.root().join("exercises");
+    let bundled = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../exercises");
+    let have_any = rpro_runner::discover(&exercises_dir).map(|v| !v.is_empty()).unwrap_or(false);
+    if !have_any && bundled.is_dir() {
+        copy_tree(&bundled, &exercises_dir)
+            .with_context(|| format!("seeding exercises from {}", bundled.display()))?;
+        let n = rpro_runner::discover(&exercises_dir).map(|v| v.len()).unwrap_or(0);
+        println!("  + seeded {} bundled exercise(s)", n);
+    }
+    // Ensure a Current exercise so the first run isn't an empty screen.
+    let mut progress = store.load_progress().unwrap_or_default();
+    let has_current = progress.entries.values().any(|e| e.status == ExerciseStatus::Current);
+    if !has_current {
+        if let Ok(mut exs) = rpro_runner::discover(&exercises_dir) {
+            exs.sort_by(|a, b| a.meta.id.cmp(&b.meta.id));
+            if let Some(first) = exs.first() {
+                progress.set_current(&first.meta.id);
+                store.save_progress(&progress)?;
+                println!("  + current exercise: {}", style(&first.meta.id).cyan());
+            }
+        }
+    }
+
+    // Drop a README in each dir so the layout is discoverable. The book content
+    // ships in a later pass (see docs/BACKLOG.md §E).
     write_if_missing(
         &store.root().join("exercises/README.md"),
-        "Exercises live here. Each exercise is a `name.rs` plus a sibling \
-         `name.toml` with metadata (id, title, difficulty, concept, book_refs). \
-         Run `rpro init --refresh-exercises` (v0.1) to download the rustlings \
-         set + Rustlings-Pro originals. For now, drop your own here.\n",
+        "Exercises live here (seeded from the bundled set on `rpro init`). Each \
+         exercise is a `name.rs` (the failing starter) plus a sibling `name.toml` \
+         with metadata (id, title, difficulty, concept, expected_error_code, \
+         book_refs). Drop your own alongside them.\n",
     )?;
     write_if_missing(
         &store.root().join("book/README.md"),
@@ -601,5 +627,28 @@ fn write_if_missing(path: &std::path::Path, contents: &str) -> Result<()> {
         return Ok(());
     }
     std::fs::write(path, contents).with_context(|| format!("write {}", path.display()))?;
+    Ok(())
+}
+
+/// Recursively copy `from` into `to` (files + subdirs). Used only to seed the
+/// bundled, read-only exercise tree into the user's writable store — both paths
+/// are program-controlled (a compile-time workspace dir and the `~/.rustlings-pro`
+/// store), never derived from external input.
+// nosemgrep
+fn copy_tree(from: &std::path::Path, to: &std::path::Path) -> std::io::Result<()> {
+    std::fs::create_dir_all(to)?;
+    // `from`/`to` are program-controlled only (a compile-time workspace dir and
+    // the fixed ~/.rustlings-pro store); no external/user input reaches this path.
+    // nosemgrep
+    for entry in std::fs::read_dir(from)? {
+        let entry = entry?;
+        let src = entry.path();
+        let dst = to.join(entry.file_name());
+        if entry.file_type()?.is_dir() {
+            copy_tree(&src, &dst)?;
+        } else {
+            std::fs::copy(&src, &dst)?;
+        }
+    }
     Ok(())
 }
