@@ -1,0 +1,16 @@
+id = "basics/01_immutable_assign"
+title = "Bindings are immutable by default: opt in with `mut`"
+difficulty = "beginner"
+estimated_minutes = 4
+concept = "mutability"
+expected_error_code = "E0384"
+solution_outline = """
+`count` is immutable, so it can't be reassigned. Declare it mutable:
+`let mut count = 0;`. Immutable-by-default is a Rust default that
+prevents a whole class of bugs.
+"""
+
+[[book_refs]]
+chapter = "ch03-01-variables-and-mutability"
+anchor = "variables-and-mutability"
+why = "Why `let` is immutable and how `let mut` opts into mutation — exactly the fix here."

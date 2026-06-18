@@ -1,0 +1,16 @@
+id = "basics/02_annotation_needed"
+title = "Sometimes the compiler needs a type annotation"
+difficulty = "beginner"
+estimated_minutes = 6
+concept = "type-inference-limits"
+expected_error_code = "E0284"
+solution_outline = """
+`.parse()` is generic over its return type, so the compiler can't guess.
+Tell it: `let n: i32 = "42".parse().unwrap();` (or the turbofish
+`"42".parse::<i32>()`). Inference is powerful but not magic.
+"""
+
+[[book_refs]]
+chapter = "ch03-02-data-types"
+anchor = "data-types"
+why = "When type inference isn't enough, you annotate — the situation this exercise creates with parse()."

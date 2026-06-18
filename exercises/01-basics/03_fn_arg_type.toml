@@ -1,0 +1,16 @@
+id = "basics/03_fn_arg_type"
+title = "Function arguments must match the parameter type"
+difficulty = "beginner"
+estimated_minutes = 5
+concept = "function-arg-types"
+expected_error_code = "E0308"
+solution_outline = """
+`greet` takes a `&str`, so pass it text, e.g. `greet("friend");` (or a
+`&str` binding). Rust won't auto-convert an integer to a string — types
+at the call site must match the signature.
+"""
+
+[[book_refs]]
+chapter = "ch03-03-how-functions-work"
+anchor = "parameters"
+why = "Function parameters are typed; the argument you pass must be that type. The rule the call breaks."

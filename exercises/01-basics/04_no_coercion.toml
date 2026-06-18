@@ -1,0 +1,17 @@
+id = "basics/04_no_coercion"
+title = "No implicit number conversions: convert explicitly"
+difficulty = "beginner"
+estimated_minutes = 6
+concept = "explicit-numeric-conversion"
+expected_error_code = "E0308"
+solution_outline = """
+`big` is an `i64` and `small` is an `i32` — Rust never narrows silently.
+Convert explicitly: `let small: i32 = big as i32;` (or `i32::try_from(big)`
+if you want to handle values that don't fit). The conversion must be in
+the code, not implied.
+"""
+
+[[book_refs]]
+chapter = "ch03-02-data-types"
+anchor = "integer-types"
+why = "The fixed integer types and why moving between them is explicit (`as` / try_from), never automatic."
