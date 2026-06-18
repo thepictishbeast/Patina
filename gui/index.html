@@ -95,6 +95,10 @@
     font-size:12px; color:var(--fg-dim); font-family:var(--mono); }
   .editor .dot{width:10px;height:10px;border-radius:50%}
   .editor pre { margin:0; padding:14px 16px; font-family:var(--mono); font-size:13px; line-height:1.6; overflow:auto; }
+  .editor textarea { display:block; width:100%; margin:0; padding:14px 16px; border:none; outline:none;
+    background:var(--bg-2); color:var(--fg); font-family:var(--mono); font-size:13px; line-height:1.6;
+    resize:vertical; min-height:180px; max-height:46vh; tab-size:4; -moz-tab-size:4; }
+  .editor textarea:focus { box-shadow:inset 0 0 0 2px rgba(247,76,0,.25); }
   .kw{color:var(--accent-soft)} .fn{color:var(--note)} .str{color:var(--done)} .cm{color:var(--fg-dim);font-style:italic}
   .runrow{display:flex;gap:10px;align-items:center;margin:0 20px 12px}
   .run{background:linear-gradient(135deg,var(--accent),var(--accent-soft));color:#fff;border:none;
@@ -164,8 +168,11 @@
         <div class="bar"><span class="dot" style="background:var(--error)"></span>
           <span class="dot" style="background:var(--warn)"></span>
           <span class="dot" style="background:var(--done)"></span>
-          &nbsp; <span id="editorBar">main.rs</span></div>
-        <pre id="editorCode" class="scroll">// loading the current exercise…</pre>
+          &nbsp; <span id="editorBar">main.rs</span>
+          <span style="flex:1"></span>
+          <span id="editstate" style="color:var(--fg-dim)">read &amp; edit, then Run</span>
+          <span id="resetbtn" title="Restore the original starter code" style="cursor:pointer;color:var(--accent-soft);margin-left:12px">↺ reset</span></div>
+        <textarea id="editorCode" class="scroll" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off">// loading the current exercise…</textarea>
       </div>
       <div class="runrow">
         <button class="run" id="runbtn">▷ Run</button>
@@ -239,9 +246,12 @@
       term.clear();
       term.writeln(d('$ ' + op + ' — running on the local server…'));
       try {
+        const payload = Object.assign({ op }, extra || {});
+        // Compile the learner's edited buffer (not the on-disk starter) for run/check/test.
+        if (op !== 'explain') payload.source = editorEl().value;
         const res = await fetch('api/run', {
           method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify(Object.assign({ op }, extra || {}))
+          body: JSON.stringify(payload)
         });
         if (!res.ok) {
           const msg = await res.text();
@@ -293,18 +303,35 @@
       }
     }
 
+    let curExercise = null, curOriginal = '';
+    const editorEl = () => document.getElementById('editorCode');
+    const lsKey = id => 'ts-edit:' + id;
+
+    // Persist the learner's edit per-exercise + reflect dirty state in the bar.
+    function markEdited() {
+      const ed = editorEl(), st = document.getElementById('editstate');
+      if (st) st.textContent = (ed.value !== curOriginal) ? 'edited ✏️ (Run to test your fix)' : 'read & edit, then Run';
+      if (curExercise) { try { localStorage.setItem(lsKey(curExercise), ed.value); } catch (_) {} }
+    }
+
     function renderCurrent(j) {
+      const ed = editorEl();
       if (!j || !j.exercise) {
         document.getElementById('lessonSub').textContent = 'no current exercise — set one with `rpro exercise next`.';
-        document.getElementById('editorCode').textContent = '';
+        ed.value = ''; curExercise = null; curOriginal = '';
         return;
       }
+      curExercise = j.exercise; curOriginal = j.code || '';
       document.getElementById('lessonTitle').textContent = j.title || j.exercise;
       const mins = j.estimated_minutes ? ` · ~${j.estimated_minutes} min` : '';
       document.getElementById('lessonSub').textContent =
         `${j.exercise}${j.concept ? ' · ' + j.concept : ''}${mins} · reads → writes`;
       document.getElementById('editorBar').textContent = `${j.exercise} · main.rs`;
-      document.getElementById('editorCode').textContent = j.code || '';
+      // Restore a saved edit for this exercise if present, else the starter.
+      let saved = null;
+      try { saved = localStorage.getItem(lsKey(j.exercise)); } catch (_) {}
+      ed.value = (saved != null) ? saved : curOriginal;
+      markEdited();
       const refs = j.book_refs || [];
       document.getElementById('brefs').innerHTML = refs.length ? refs.map((r, i) =>
         `<div class="bref"><span class="c">[${i + 1}] ${esc(r.chapter)}</span>`
@@ -378,6 +405,9 @@
     // run/check/explain → live POST to the local server, raw output into xterm.
     document.getElementById('runbtn').onclick = () => runOp('run');
     document.getElementById('checkbtn').onclick = () => runOp('check');
+    // editable code: persist on input, reset restores the original starter.
+    editorEl().addEventListener('input', markEdited);
+    document.getElementById('resetbtn').onclick = () => { editorEl().value = curOriginal; markEdited(); editorEl().focus(); };
     document.getElementById('explainbtn').onclick = () => {
       const code = (prompt('Diagnostic code to explain (letters/digits only):', lastCode) || '').trim();
       if (code) runOp('explain', { code });

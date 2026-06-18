@@ -57,18 +57,33 @@ struct AppState {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "lowercase", tag = "op")]
 enum WireOp {
-    /// Build and run the current exercise.
-    Run,
+    /// Build and run the current exercise. `source`, if present, is the
+    /// learner's edited buffer — compiled instead of the on-disk starter.
+    Run {
+        #[serde(default)]
+        source: Option<String>,
+    },
     /// Type-check the current exercise (fast feedback, no binary).
-    Check,
+    Check {
+        #[serde(default)]
+        source: Option<String>,
+    },
     /// Run the current exercise's tests.
-    Test,
+    Test {
+        #[serde(default)]
+        source: Option<String>,
+    },
     /// Explain a diagnostic code. The `code` is clamped + validated below.
     Explain {
         /// The diagnostic code to explain (e.g. an `E0382`-style code).
         code: String,
     },
 }
+
+/// Max accepted edited-buffer size (256 KiB) — a learner exercise is tiny; this
+/// just bounds a pathological client. Loopback-only, single-user, so this is a
+/// sanity clamp, not a security boundary.
+const MAX_SOURCE_BYTES: usize = 256 * 1024;
 
 /// The JSON payload returned for every run (success *and* tool-error fold into
 /// the same shape, mirroring the TUI's `apply_run_result`, so the front end has
@@ -109,9 +124,9 @@ fn sanitize_code(raw: &str) -> Option<String> {
 /// Map the wire op to the core verb. The `explain` arm validates its payload.
 fn to_run_op(wire: WireOp) -> Result<RunOp, &'static str> {
     Ok(match wire {
-        WireOp::Run => RunOp::Run,
-        WireOp::Check => RunOp::Check,
-        WireOp::Test => RunOp::Test,
+        WireOp::Run { .. } => RunOp::Run,
+        WireOp::Check { .. } => RunOp::Check,
+        WireOp::Test { .. } => RunOp::Test,
         WireOp::Explain { code } => {
             let code = sanitize_code(&code).ok_or("invalid explain code")?;
             RunOp::Explain(code)
@@ -169,26 +184,39 @@ async fn run_handler(
             return (StatusCode::BAD_REQUEST, "unknown or malformed op").into_response();
         }
     };
+    // Pull the optional edited buffer out before `wire` is consumed, and clamp
+    // its size. `source` carries the learner's in-browser edits.
+    let edited = match &wire {
+        WireOp::Run { source } | WireOp::Check { source } | WireOp::Test { source } => {
+            source.clone()
+        }
+        WireOp::Explain { .. } => None,
+    };
+    if edited.as_ref().is_some_and(|s| s.len() > MAX_SOURCE_BYTES) {
+        return (StatusCode::PAYLOAD_TOO_LARGE, "edited source too large").into_response();
+    }
     let op = match to_run_op(wire) {
         Ok(op) => op,
         Err(msg) => return (StatusCode::BAD_REQUEST, msg).into_response(),
     };
 
     // Resolve the target on the async side; gather only owned, Send data.
-    let Some((id, code, run_dir)) = resolve_current(&state.store_root) else {
+    let Some((id, disk_code, run_dir)) = resolve_current(&state.store_root) else {
         return (
             StatusCode::CONFLICT,
             "no current exercise — seed the store first (see server startup notes)",
         )
             .into_response();
     };
+    // Compile the learner's edited buffer if they sent one; else the starter.
+    let source = edited.unwrap_or(disk_code);
     let root = state.store_root.clone();
     let label = id.clone();
 
     // Core is !Send: build it INSIDE the blocking task and never let it cross an
     // .await. Only the plain Result<Outcome, ToolError> comes back.
     let joined = tokio::task::spawn_blocking(move || {
-        write_scaffold(&run_dir, &code).map_err(|e| e.to_string())?;
+        write_scaffold(&run_dir, &source).map_err(|e| e.to_string())?;
         let core = Core::new(
             Box::new(RustLanguage),
             Box::new(LocalProcess),
