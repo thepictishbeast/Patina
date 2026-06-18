@@ -1,0 +1,101 @@
+# Security review — `rpro-serve` (the local web surface)
+
+A focused review of the only network-facing component, `crates/rpro-serve`. Every
+control below is cited by file + symbol so the claim can be re-verified against the
+code; findings carry an honest severity tied to the threat model.
+
+> Last reviewed at commit on branch `textbook-integration`. Re-run when the run
+> path, the wire protocol, or the served frontend changes.
+
+## 1. Scope & threat model
+
+`rpro-serve` is a **single-user, loopback-only** tool: it binds `127.0.0.1`
+exclusively (`main.rs`, `run` — `addr = (Ipv4Addr::LOCALHOST, port)`), never
+`0.0.0.0`, and serves one local learner their own exercises.
+
+The critical consequence: **there is no privilege boundary to cross.** The person
+driving the browser is the same person who owns the machine and could run any
+command directly. So the relevant goals are *not* "stop a remote attacker" (none
+can reach the port) but:
+
+- **Integrity of the learning contract** — the page must never leak the answer
+  (predict-first), and the server must never run anything but the four learning
+  ops on the learner's own current exercise.
+- **Defence-in-depth / robustness** — the server should degrade safely on
+  malformed or oversized input, and shouldn't be coaxed into running an arbitrary
+  command, reading an arbitrary file, or executing injected script.
+
+Out of scope: multi-tenant isolation, authn/authz (single user, no accounts),
+transport encryption (loopback only), secret management (none are handled).
+
+## 2. Controls (verified)
+
+| Surface | Control | Where |
+|---|---|---|
+| Network | Binds loopback only; `PORT` clamped to ≥1024 | `main` / `run` |
+| Op surface | `WireOp` is a **closed** enum `{run,check,test,explain}` (`#[serde(tag="op")]`) — anything off-list fails to deserialize, so no format/lint/arbitrary-tool run can be requested from the wire | `WireOp`, test `wireop_whitelist_rejects_unknown_and_parses_known` |
+| Explain input | `sanitize_code`: trims, rejects empty / >16 chars / non-`[A-Za-z0-9]` — no path separators, dots, or whitespace reach the toolchain | `sanitize_code`, test `sanitize_code_accepts_alnum_rejects_junk` |
+| Edited source | Clamped to `MAX_SOURCE_BYTES` (256 KiB) → `413` before it ever reaches the runner | `run_handler` |
+| Request body | **Explicit `DefaultBodyLimit` of 1 MiB** at the transport layer (defence-in-depth below the 256 KiB source clamp; tightens axum's 2 MiB default) | router in `main`, `MAX_BODY_BYTES` |
+| Run target | Resolved from on-disk **current** exercise, never from client input — there is no wire path to a different file (`resolve_current`); the scratch run dir name is `slug(id)`, which maps anything non-`[A-Za-z0-9_-]` to `_` | `resolve_current`, `rpro_runner::slug` |
+| Command exec | `Command::new(program).args(&args)` — args passed as a **vector, no shell**, so no shell-injection; `program`/`args` come from the `Language` layer, never the wire | `rpro-toolchain-local` `LocalProcess::exec` |
+| Answer leak | `current_json` omits `solution_outline` + `expected_error_code`; the hint ladder gates the outline to the top rung only; `/api/review` surfaces only codes the learner already saw in their own output | `current_json`, `ExerciseMetadata::hint`, tests `current_json_omits_the_answer`, smoke `/api/review` |
+| Static files | `ServeDir` (tower-http) serves `gui/` with built-in path-traversal protection; the roadmap reads a **fixed, compile-time** path (`CARGO_MANIFEST_DIR/../../docs/ROADMAP.md`), no client input | router, `roadmap_handler` |
+| HTTP headers | CSP, `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, `X-Frame-Options: DENY` on every response | `security_headers` |
+| Memory safety | `unsafe_code = "forbid"` workspace-wide; **0** `unsafe` in `rpro-serve` | `Cargo.toml` |
+
+## 3. Findings
+
+### F1 — No execution timeout on a run *(Low; availability, not a vulnerability)*
+`LocalProcess::exec` calls `cmd.output()`, which blocks until the child exits. A
+runaway exercise (`fn main(){ loop{} }`) submitted via `/api/run` hangs the
+`spawn_blocking` worker until the server is killed. **This is not a security
+issue** under the threat model — there is no privilege boundary, and a user can
+only self-DoS their own tool (which they can `Ctrl-C`). It is a robustness gap.
+- **Recommendation (carved as a follow-up):** a deadline+kill executor. Note the
+  implementation must read stdout/stderr on separate threads while polling
+  `try_wait`, or a child that fills the pipe buffer deadlocks against a
+  non-reading parent. Make the timeout env-configurable (`0` = disabled) so the
+  CLI/TUI keep today's behaviour by default.
+
+### F2 — CSP allows `'unsafe-inline'` for script + style *(Low; informational)*
+The whole GUI is a single self-contained `index.html` with an inline `<script>`
+and inline styles (FOSS-first, no CDN, no build step), so the CSP must permit
+`'unsafe-inline'`. Residual XSS risk is **low and mitigated**: all dynamic
+content is escaped before it enters the DOM (`esc()` on every interpolation;
+`mdToHtml` escapes first, then re-introduces only a fixed tag whitelist). There is
+no user-generated content from another origin.
+- **Recommendation:** if a build step is ever added, switch to nonce- or
+  hash-based CSP and drop `'unsafe-inline'`. Until then, the escaping is the
+  control — keep it; never `innerHTML` un-escaped server data.
+
+### F3 — Unbounded request body *(Resolved this review)*
+Previously the request body was bounded only by axum's 2 MiB default, with the
+256 KiB source clamp applied post-parse. Added an explicit 1 MiB
+`DefaultBodyLimit` so oversized bodies are rejected at the transport layer before
+parsing. ✅
+
+## 4. Dependency audit
+
+- **Offline + pinned.** crates.io is unreachable in the build/run environment; only
+  crates already vendored in the local registry are usable, and the exact versions
+  are pinned in `Cargo.lock`. The runtime makes **no outbound network calls** other
+  than binding the loopback listener.
+- **Surface.** Network/runtime deps are `axum` / `hyper` / `tower-http` / `tokio`
+  (widely used and audited) plus `serde`/`serde_json` for the wire. No crypto,
+  no auth, no secret material is handled, so there is no key-management surface.
+- **Memory safety.** `unsafe_code = "forbid"` across the workspace removes the
+  `unsafe`-based class of dependency-triggered UB from first-party code.
+- **Recommendation:** run `cargo audit` (RUSTSEC advisories) and `cargo deny`
+  (licenses + bans + advisories) in CI. Neither is installable in this sandbox, so
+  this is a CI task — track alongside the existing `seam-gates.yml`.
+
+## 5. Conclusion
+
+For the stated threat model — loopback, single-user, no privilege boundary —
+`rpro-serve`'s posture is **sound**: a closed op-whitelist, no shell execution,
+server-resolved targets, validated + clamped input (now bounded at the transport
+layer too), a held predict-first no-leak contract, secure-by-default headers, and
+zero `unsafe`. The two residual items (F1 run timeout, F2 nonce-CSP) are
+low-severity hardening/robustness improvements, are documented here, and are
+tracked in `docs/BACKLOG.md` rather than left implicit.

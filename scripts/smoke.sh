@@ -99,6 +99,17 @@ assert len(due) + mastered == tracked, "queue inconsistent: " + str(len(due)) + 
 print("  ok   — /api/review consistent (due=" + str(len(due)) + ", mastered=" + str(mastered) + ", tracked=" + str(tracked) + ")")
 ' || fail "/api/review consistency"
 
+# 7. request-body limit (defence-in-depth): a body over the 1 MiB cap is rejected
+# at the transport layer (413) before parsing. ~1.1 MiB of payload.
+python3 -c 'open("'"$STATE"'/big.json", "w").write("{\"op\":\"run\",\"source\":\"" + "x" * 1_100_000 + "\"}")'
+body_code="$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE/api/run" \
+  -H 'Content-Type: application/json' --data-binary @"$STATE/big.json")"
+if [ "$body_code" = "413" ]; then
+  ok "request body > 1 MiB rejected (413)"
+else
+  fail "body-limit: expected 413, got $body_code"
+fi
+
 echo
 if [ "$fails" -eq 0 ]; then
   echo "SMOKE PASS ✓"

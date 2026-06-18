@@ -29,7 +29,7 @@ use std::net::Ipv4Addr;
 use std::path::{Path, PathBuf};
 
 use axum::Router;
-use axum::extract::{Query, State};
+use axum::extract::{DefaultBodyLimit, Query, State};
 use axum::http::{HeaderValue, StatusCode, header};
 use axum::middleware::map_response;
 use axum::response::{IntoResponse, Json, Response};
@@ -85,6 +85,12 @@ enum WireOp {
 /// just bounds a pathological client. Loopback-only, single-user, so this is a
 /// sanity clamp, not a security boundary.
 const MAX_SOURCE_BYTES: usize = 256 * 1024;
+
+/// Hard cap on a request body, enforced at the transport layer (defence-in-depth
+/// below [`MAX_SOURCE_BYTES`]). 1 MiB leaves comfortable room for a 256 KiB source
+/// plus JSON escaping/overhead while tightening axum's 2 MiB default. Loopback,
+/// single-user — a sanity clamp, not a security boundary.
+const MAX_BODY_BYTES: usize = 1024 * 1024;
 
 /// The JSON payload returned for every run (success *and* tool-error fold into
 /// the same shape, mirroring the TUI's `apply_run_result`, so the front end has
@@ -178,9 +184,13 @@ async fn run_handler(
     State(state): State<AppState>,
     body: Result<Json<serde_json::Value>, axum::extract::rejection::JsonRejection>,
 ) -> impl IntoResponse {
-    // Parse + whitelist the op. Anything off-list fails to deserialize.
-    let Ok(Json(value)) = body else {
-        return (StatusCode::BAD_REQUEST, "expected a JSON body").into_response();
+    // Parse + whitelist the op. Anything off-list fails to deserialize. Propagate
+    // the extractor's OWN status rather than a blanket 400: 413 for a body over
+    // the `DefaultBodyLimit`, 415 for the wrong content-type, 400 for malformed
+    // JSON — so the body-size control surfaces as Payload Too Large.
+    let Json(value) = match body {
+        Ok(j) => j,
+        Err(rej) => return rej.into_response(),
     };
     let wire: WireOp = match serde_json::from_value(value) {
         Ok(w) => w,
@@ -544,6 +554,8 @@ async fn main() {
         // Everything else is the static gui/ shell (index.html + vendored xterm).
         .fallback_service(ServeDir::new(&gui_dir))
         .layer(map_response(security_headers))
+        // Defence-in-depth: cap the request body before it is parsed.
+        .layer(DefaultBodyLimit::max(MAX_BODY_BYTES))
         .with_state(state);
 
     // Loopback ONLY — never 0.0.0.0. Port is fixed (8787) or PORT, clamped.

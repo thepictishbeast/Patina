@@ -61,7 +61,8 @@ Surfaces: **Web** (`rpro-serve`, shipped + live), **CLI** (`rpro`), **TUI** (`rp
 - [x] **P1 — seam-grep gate + wasm32 gate** pass — verified every tick via `$TC` toolchain (`RUSTC=$TC/rustc $TC/cargo`, `RUSTDOC=$TC/rustdoc` for doctests); seam CLEAN, wasm32 pure-core builds. CI: `.github/workflows/seam-gates.yml`.
 - [x] **P1 — clippy** named fix — the rpro-cli pedantic `similar_names` cleared in the workspace clippy pass (`4bba688`/`8f091bb`). NOTE: `cargo clippy` isn't installed in this sandbox toolchain; remaining pedantic/nursery lints are WARNINGS (non-gate).
 - [ ] **P2 — E2E browser test** (Playwright): seed → render real exercise → Run → assert E0382 in terminal + Diagnostics; assert no solution/expected_error in page source.
-- [ ] **P2 — Security review** of rpro-serve (input validation, path traversal, DoS via long runs) + dependency audit.
+- [x] **P2 — Security review** of rpro-serve + dependency audit → `docs/SECURITY.md` (this tick). Threat model (loopback/single-user/no privilege boundary), all controls cited by symbol, honest findings. Fixed F3 (added 1 MiB `DefaultBodyLimit` + propagate the extractor's real status → over-limit body now 413, was a blanket 400; smoke asserts it). Residual: F1 below, F2 nonce-CSP (informational).
+- [ ] **P3 — Run execution timeout** (SECURITY.md F1) — `LocalProcess::exec` has no deadline, so `loop{}` hangs the worker until kill. *Availability, not a vuln* (loopback/self-DoS). Add a deadline+kill executor with threaded stdout/stderr capture (avoid pipe-buffer deadlock); env-configurable, `0` = off so CLI/TUI keep current behaviour.
 - [ ] **P2 — Lighthouse / a11y audit** of the web GUI.
 
 ## H. Lessons (#7) — 🔒 gated on Paul
