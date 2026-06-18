@@ -68,6 +68,14 @@
   .iconbtn:hover { color:var(--fg); border-color:var(--accent); }
 
   main { display:grid; grid-template-columns:248px 1fr 320px; grid-template-rows:1fr; height:calc(100vh - 45px); }
+  main.focus { grid-template-columns:1fr; }
+  main.focus > .pane:first-child, main.focus > .pane:last-child { display:none; }
+  .docview { height:calc(100vh - 45px); overflow:auto; padding:22px 26px 60px; max-width:920px; margin:0 auto; }
+  .docview h1 { font-size:22px; margin:2px 0 12px; } .docview h2 { font-size:16px; margin:20px 0 8px; }
+  .docview h3 { font-size:13.5px; color:var(--fg-dim); letter-spacing:.04em; margin:14px 0 6px; }
+  .docview p { line-height:1.65; } .docview li { line-height:1.7; }
+  .docview code { background:var(--bg-3); padding:1px 5px; border-radius:5px; font-family:var(--mono); font-size:12.5px; }
+  .docview a { color:var(--note); }
   .pane { border-right:1px solid var(--line); display:flex; flex-direction:column; min-height:0; }
   .pane:last-child { border-right:none; }
   .pane h2 { font-size:11px; text-transform:uppercase; letter-spacing:.12em; color:var(--fg-dim);
@@ -162,10 +170,10 @@
   <header>
     <div class="brand"><span class="mark">◆</span> Tempered&nbsp;Studio</div>
     <nav class="tabs">
-      <div class="tab active">📊 Dashboard</div>
-      <div class="tab">📝 Exercise</div>
-      <div class="tab">📖 Book</div>
-      <div class="tab">🗒️ Roadmap</div>
+      <div class="tab active" data-view="dashboard">📊 Dashboard</div>
+      <div class="tab" data-view="exercise">📝 Exercise</div>
+      <div class="tab" data-view="book">📖 Book</div>
+      <div class="tab" data-view="roadmap">🗒️ Roadmap</div>
     </nav>
     <div class="spacer"></div>
     <span class="badge free">⠿ FREE</span>
@@ -238,6 +246,8 @@
       <div id="hintbox"></div>
     </section>
   </main>
+
+  <section class="docview scroll" id="docview" hidden></section>
 
   <div class="footer"><span><b>r</b> run</span><span><b>c</b> check</span><span><b>h</b> hint</span><span><b>b</b> book</span><span><b>t</b> tasks</span><span><b>?</b> keys</span><span><b>q</b> quit</span></div>
 
@@ -352,6 +362,7 @@
 
     let curExercise = null, curOriginal = '', hintLevel = 0;
     let predict = { compiles: null, code: '' };
+    let curBookRefs = [];
     const editorEl = () => document.getElementById('editorCode');
 
     // Compare the learner's locked prediction against the real result.
@@ -426,6 +437,7 @@
       ed.value = (saved != null) ? saved : curOriginal;
       markEdited();
       const refs = j.book_refs || [];
+      curBookRefs = refs;
       document.getElementById('brefs').innerHTML = refs.length ? refs.map((r, i) =>
         `<div class="bref"><span class="c">[${i + 1}] ${esc(r.chapter)}</span>`
         + (r.anchor ? ` · ${esc(r.anchor)}` : '')
@@ -489,9 +501,45 @@
     setInterval(() => { document.getElementById('throb').textContent = frames[i++ % frames.length]; }, 90);
 
     // tab + exercise selection (visual)
-    document.querySelectorAll('.tab').forEach(t => t.onclick = () => {
-      document.querySelector('.tab.active')?.classList.remove('active'); t.classList.add('active');
-    });
+    // ── nav tabs: real view switching ──
+    function mdToHtml(md) {
+      const lines = esc(md).split('\n'); let html = '', inList = false;
+      const inline = s => s
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+        .replace(/\[([^\]]+)\]\((https?:[^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+      for (const ln of lines) {
+        const li = ln.match(/^\s*[-*]\s+(.*)$/);
+        if (li) { if (!inList) { html += '<ul>'; inList = true; } html += '<li>' + inline(li[1]) + '</li>'; continue; }
+        if (inList) { html += '</ul>'; inList = false; }
+        if (/^###\s+/.test(ln)) html += '<h3>' + inline(ln.replace(/^###\s+/, '')) + '</h3>';
+        else if (/^##\s+/.test(ln)) html += '<h2>' + inline(ln.replace(/^##\s+/, '')) + '</h2>';
+        else if (/^#\s+/.test(ln)) html += '<h1>' + inline(ln.replace(/^#\s+/, '')) + '</h1>';
+        else if (ln.trim()) html += '<p>' + inline(ln) + '</p>';
+      }
+      if (inList) html += '</ul>';
+      return html;
+    }
+    async function showView(view) {
+      document.querySelector('.tab.active')?.classList.remove('active');
+      [...document.querySelectorAll('.tab')].find(t => t.dataset.view === view)?.classList.add('active');
+      const m = document.querySelector('main'), d = document.getElementById('docview');
+      m.classList.toggle('focus', view === 'exercise');
+      if (view === 'dashboard' || view === 'exercise') { m.hidden = false; d.hidden = true; refit(); return; }
+      m.hidden = true; d.hidden = false;
+      if (view === 'roadmap') {
+        d.innerHTML = '<p style="color:var(--fg-dim)">loading roadmap…</p>';
+        try { const j = await fetch('api/roadmap').then(r => r.json()); d.innerHTML = mdToHtml(j.markdown || ''); }
+        catch (_) { d.innerHTML = '<p>Roadmap unavailable (open via the local server).</p>'; }
+      } else if (view === 'book') {
+        const refs = curBookRefs || [];
+        d.innerHTML = '<h1>📖 Book</h1><p style="color:var(--fg-dim)">Full embedded chapters arrive with the content pass; for now, the references for the current exercise:</p>'
+          + (refs.length
+            ? '<ul>' + refs.map(r => '<li><code>' + esc(r.chapter) + '</code>' + (r.anchor ? ' · ' + esc(r.anchor) : '') + ' — ' + esc(r.why) + '</li>').join('') + '</ul>'
+            : '<p>no current exercise.</p>');
+      }
+    }
+    document.querySelectorAll('.tab').forEach(t => t.onclick = () => showView(t.dataset.view));
     document.querySelectorAll('.ex').forEach(e => e.onclick = () => {
       document.querySelector('.ex.sel')?.classList.remove('sel'); e.classList.add('sel');
     });

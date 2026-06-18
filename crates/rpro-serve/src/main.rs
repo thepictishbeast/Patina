@@ -442,6 +442,17 @@ async fn hint_handler(
         .into_response()
 }
 
+/// `GET /api/roadmap` — the project roadmap (docs/ROADMAP.md) as markdown, so the
+/// in-app Roadmap tab can render it. A single fixed, program-controlled file; no
+/// path comes from the client.
+async fn roadmap_handler() -> impl IntoResponse {
+    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/ROADMAP.md");
+    // nosemgrep
+    let md = std::fs::read_to_string(&path)
+        .unwrap_or_else(|_| "# Roadmap\n\n(ROADMAP.md not found)".to_string());
+    Json(serde_json::json!({ "markdown": md })).into_response()
+}
+
 /// Ensure the chosen `store_root` is runnable: it must have an `exercises/` tree
 /// and a progress file with a `Current` entry. If the root is empty we seed it
 /// by copying the workspace's `exercises/` and marking the first one current.
@@ -531,6 +542,7 @@ async fn main() {
         .route("/api/current", axum::routing::get(current_handler))
         .route("/api/exercises", axum::routing::get(exercises_handler))
         .route("/api/hint", axum::routing::get(hint_handler))
+        .route("/api/roadmap", axum::routing::get(roadmap_handler))
         // Everything else is the static gui/ shell (index.html + vendored xterm).
         .fallback_service(ServeDir::new(&gui_dir))
         .with_state(state);
