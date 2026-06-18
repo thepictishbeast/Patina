@@ -66,6 +66,16 @@ enum Cmd {
         /// Exercise id (defaults to the current one).
         exercise: Option<String>,
     },
+    /// Run the current exercise's tests.
+    Test {
+        /// Exercise id (defaults to the current one).
+        exercise: Option<String>,
+    },
+    /// Explain a diagnostic code in full (e.g. `rpro explain E0382`).
+    Explain {
+        /// The diagnostic code to explain.
+        code: String,
+    },
 }
 
 #[derive(Subcommand, Debug)]
@@ -110,6 +120,8 @@ fn main() -> Result<()> {
         Some(Cmd::Detect) => cmd_detect(),
         Some(Cmd::Run { exercise }) => cmd_exec(exercise.as_deref(), &RunOp::Run),
         Some(Cmd::Check { exercise }) => cmd_exec(exercise.as_deref(), &RunOp::Check),
+        Some(Cmd::Test { exercise }) => cmd_exec(exercise.as_deref(), &RunOp::Test),
+        Some(Cmd::Explain { code }) => cmd_explain(&code),
     }
 }
 
@@ -515,6 +527,25 @@ fn cmd_exec(id: Option<&str>, op: &RunOp) -> Result<()> {
             let code = d.code.clone().unwrap_or_default();
             println!("  {} {}  {}", style("•").red(), style(code).bold(), d.message);
         }
+    }
+    Ok(())
+}
+
+/// Explain a diagnostic code in full, via the language's explain plan
+/// (e.g. `rustc --explain E0382`), routed through the Core.
+fn cmd_explain(code: &str) -> Result<()> {
+    let core = Core::new(Box::new(RustLanguage), Box::new(LocalProcess), Box::new(Store::user()?));
+    // `Explain` ignores the exercise source; a placeholder satisfies the API.
+    let ex = ExerciseSource { id: ExerciseId(String::new()), dir: ".".into(), entry: String::new() };
+    let op = RunOp::Explain(code.to_string());
+    println!("{} {}", style("$").dim(), style(&core.plan(&ex, &op).display).dim());
+    println!();
+    let outcome = pollster::block_on(core.run(&ex, &op)).context("running the explainer")?;
+    if !outcome.raw_stdout.is_empty() {
+        print!("{}", outcome.raw_stdout);
+    }
+    if !outcome.raw_stderr.is_empty() {
+        eprint!("{}", outcome.raw_stderr);
     }
     Ok(())
 }
