@@ -181,7 +181,7 @@ fn cmd_init() -> Result<()> {
     let has_current = progress.entries.values().any(|e| e.status == ExerciseStatus::Current);
     if !has_current {
         if let Ok(mut exs) = rpro_runner::discover(&exercises_dir) {
-            exs.sort_by(|a, b| a.meta.id.cmp(&b.meta.id));
+            exs.sort_by(|a, b| a.source.cmp(&b.source)); // path order = learning order
             if let Some(first) = exs.first() {
                 progress.set_current(&first.meta.id);
                 store.save_progress(&progress)?;

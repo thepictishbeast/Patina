@@ -289,7 +289,7 @@ fn update_progress(store_root: &Path, id: &str, is_exec: bool, advance: bool) ->
     if advance {
         progress.set_done(id);
         if let Ok(mut exs) = rpro_runner::discover(&store.root().join("exercises")) {
-            exs.sort_by(|a, b| a.meta.id.cmp(&b.meta.id));
+            exs.sort_by(|a, b| a.source.cmp(&b.source)); // path order = learning order
             if let Some(pos) = exs.iter().position(|e| e.meta.id == id) {
                 if let Some(next) = exs.get(pos + 1) {
                     progress.set_current(&next.meta.id);
@@ -476,7 +476,7 @@ fn ensure_seeded(store_root: &Path, workspace_exercises: &Path) -> std::io::Resu
         .any(|e| e.status == ExerciseStatus::Current);
     if !has_current {
         if let Ok(mut exercises) = rpro_runner::discover(&ex_dir) {
-            exercises.sort_by(|a, b| a.meta.id.cmp(&b.meta.id));
+            exercises.sort_by(|a, b| a.source.cmp(&b.source)); // path order = learning order
             if let Some(first) = exercises.first() {
                 let mut p = Progress::default();
                 p.set_current(&first.meta.id);

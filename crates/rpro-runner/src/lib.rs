@@ -102,7 +102,10 @@ pub fn discover(root: &Path) -> Result<Vec<Exercise>, DiscoveryError> {
             meta,
         });
     }
-    exercises.sort_by(|a, b| a.meta.id.cmp(&b.meta.id));
+    // Sort by file path, not id: the `NN-phase/` directory prefix encodes the
+    // intended learning order (01-basics → 02-control-flow → …), which the id
+    // (e.g. "collections/…") does not.
+    exercises.sort_by(|a, b| a.source.cmp(&b.source));
     Ok(exercises)
 }
 
