@@ -27,7 +27,7 @@ Surfaces: **Web** (`rpro-serve`, shipped + live), **CLI** (`rpro`), **TUI** (`rp
 ## B. CLI (rpro)
 - [x] **P0 — `init` seeds bundled exercises** + sets first current (`43b2947`) — `copy_tree` mirrors the server's seeding; fresh HOME → exercises seeded, first set Current.
 - [x] **P1 — `hint` command** backed by the shared hint ladder (this tick) — `rpro exercise hint [--level N] [--solution]` prints book refs + the laddered `ExerciseMetadata::hint` text (identical to web/TUI); `--solution` jumps to the top rung. Verified L1/L2/L3 output by hand.
-- [ ] **P1 — `exercise skip` / `reset`** flows; `progress` summary view. *(only the `Skipped` status exists; no skip/reset subcommands yet)*
+- [x] **P1 — `exercise skip` / `reset`** flows + `progress` summary view (this tick + pre-existing) — `rpro exercise skip` marks current Skipped and advances; `rpro exercise reset` clears done/attempts for a fresh attempt; `rpro progress` summary already existed. Backed by new pure `Progress::set_skipped`/`reset` (2 tests). Verified by hand on a seeded store.
 - [ ] **P2 — `explain` offline fallback** when `rustc --explain` is unavailable.
 
 ## C. TUI

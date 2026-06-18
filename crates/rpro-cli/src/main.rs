@@ -95,6 +95,11 @@ enum ExerciseCmd {
         #[arg(long)]
         solution: bool,
     },
+    /// Skip the current exercise (mark it skipped) and move to the next.
+    Skip,
+    /// Reset the current exercise to a fresh attempt (clears done/skipped +
+    /// attempt count so you can try it again from scratch).
+    Reset,
 }
 
 #[derive(Subcommand, Debug)]
@@ -115,6 +120,8 @@ fn main() -> Result<()> {
             ExerciseCmd::List => cmd_exercise_list(),
             ExerciseCmd::Next => cmd_exercise_next(),
             ExerciseCmd::Hint { level, solution } => cmd_exercise_hint(level, solution),
+            ExerciseCmd::Skip => cmd_exercise_skip(),
+            ExerciseCmd::Reset => cmd_exercise_reset(),
         },
         Some(Cmd::Book { sub }) => match sub {
             None => cmd_book_open(),
@@ -303,6 +310,66 @@ fn cmd_exercise_next() -> Result<()> {
         "  {} `{}` to see the book sections that explain this exercise.",
         style("Tip:").yellow(),
         style("rpro exercise hint").bold()
+    );
+    Ok(())
+}
+
+/// Resolve the current exercise id from on-disk progress, if any.
+fn current_exercise_id(progress: &rpro_state::Progress) -> Option<String> {
+    progress
+        .entries
+        .iter()
+        .find(|(_, e)| e.status == ExerciseStatus::Current)
+        .map(|(id, _)| id.clone())
+}
+
+fn cmd_exercise_skip() -> Result<()> {
+    let store = Store::user()?;
+    let mut progress = store.load_progress()?;
+    let exercises = rpro_runner::discover(&store.root().join("exercises"))?;
+    let Some(current_id) = current_exercise_id(&progress) else {
+        println!(
+            "{}",
+            style("No current exercise to skip — run `rpro exercise next` first.").dim()
+        );
+        return Ok(());
+    };
+    progress.set_skipped(&current_id);
+    // Advance to the next unfinished exercise (discovery is in learning order).
+    let next = exercises.iter().find(|ex| {
+        let s = progress.entries.get(&ex.meta.id).map_or(ExerciseStatus::Locked, |e| e.status);
+        !matches!(s, ExerciseStatus::Done | ExerciseStatus::Skipped)
+    });
+    if let Some(ex) = next {
+        progress.set_current(&ex.meta.id);
+    }
+    store.save_progress(&progress)?;
+    println!("{} skipped {}", style("»").red().bold(), style(&current_id).bold());
+    if let Some(ex) = next {
+        println!("{} {}", style("→").cyan().bold(), style(&ex.meta.id).bold());
+        println!("  {}", ex.meta.title);
+    } else {
+        println!("  {}", style("nothing left unfinished — you've reached the end.").green());
+    }
+    Ok(())
+}
+
+fn cmd_exercise_reset() -> Result<()> {
+    let store = Store::user()?;
+    let mut progress = store.load_progress()?;
+    let Some(current_id) = current_exercise_id(&progress) else {
+        println!(
+            "{}",
+            style("No current exercise to reset — run `rpro exercise next` first.").dim()
+        );
+        return Ok(());
+    };
+    progress.reset(&current_id);
+    store.save_progress(&progress)?;
+    println!(
+        "{} reset {} — fresh attempt (done/attempt count cleared).",
+        style("↺").yellow().bold(),
+        style(&current_id).bold()
     );
     Ok(())
 }

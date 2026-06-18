@@ -99,6 +99,36 @@ impl Progress {
         entry.attempts = entry.attempts.saturating_add(1);
     }
 
+    /// Mark `id` as Skipped — the learner chose to move on. Counts as not-done
+    /// for progress; clears any completion time.
+    pub fn set_skipped(&mut self, id: &str) {
+        let now = Utc::now();
+        let entry = self.entries.entry(id.to_string()).or_insert(ProgressEntry {
+            status: ExerciseStatus::Skipped,
+            started_at: Some(now),
+            completed_at: None,
+            attempts: 0,
+        });
+        entry.status = ExerciseStatus::Skipped;
+        entry.completed_at = None;
+    }
+
+    /// Reset `id` back to a fresh Current: clears Done/Skipped, the completion
+    /// time, and the attempt count so the learner can re-attempt from scratch.
+    /// Keeps `started_at` (their first touch) when it was already recorded.
+    pub fn reset(&mut self, id: &str) {
+        let now = Utc::now();
+        let entry = self.entries.entry(id.to_string()).or_insert(ProgressEntry {
+            status: ExerciseStatus::Current,
+            started_at: Some(now),
+            completed_at: None,
+            attempts: 0,
+        });
+        entry.status = ExerciseStatus::Current;
+        entry.completed_at = None;
+        entry.attempts = 0;
+    }
+
     /// Count of Done exercises.
     #[must_use]
     pub fn done_count(&self) -> usize {
@@ -153,5 +183,30 @@ mod tests {
         p.set_done("a/2");
         p.set_current("a/3");
         assert_eq!(p.done_count(), 2);
+    }
+
+    #[test]
+    fn set_skipped_marks_and_excludes_from_done() {
+        let mut p = Progress::default();
+        p.set_current("a/1");
+        p.set_skipped("a/1");
+        assert_eq!(p.entries["a/1"].status, ExerciseStatus::Skipped);
+        assert!(p.entries["a/1"].completed_at.is_none());
+        assert_eq!(p.done_count(), 0, "skipped never counts as done");
+    }
+
+    #[test]
+    fn reset_clears_done_completion_and_attempts() {
+        let mut p = Progress::default();
+        p.record_attempt("a/1");
+        p.record_attempt("a/1");
+        p.set_done("a/1");
+        let started = p.entries["a/1"].started_at;
+        p.reset("a/1");
+        let e = &p.entries["a/1"];
+        assert_eq!(e.status, ExerciseStatus::Current);
+        assert_eq!(e.attempts, 0);
+        assert!(e.completed_at.is_none());
+        assert_eq!(e.started_at, started, "first-touch time is preserved across reset");
     }
 }
