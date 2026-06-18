@@ -36,6 +36,9 @@ use ratatui::backend::CrosstermBackend;
 /// What a background run sends back to the UI thread.
 type RunResult = Result<Outcome, ToolError>;
 
+/// The project roadmap, baked into the binary so the Roadmap tab always has it.
+const ROADMAP_MD: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../docs/ROADMAP.md"));
+
 /// Open the dashboard — progress, the current exercise, and what's up next.
 ///
 /// # Errors
@@ -96,7 +99,7 @@ fn run_tui(store: &Store, book: &Book, start_tab: Tab, start_selected: usize) ->
                 Tab::Dashboard => render::render_dashboard(f, &app, &dash),
                 Tab::Exercise => render::render_exercise(f, &app, &ex),
                 Tab::Book => render::render_book(f, &app, book),
-                Tab::Roadmap => render::render_placeholder(f, &app, "Roadmap"),
+                Tab::Roadmap => render::render_roadmap(f, &app, ROADMAP_MD),
             })?;
             if event::poll(Duration::from_millis(80))? {
                 if let Event::Key(key) = event::read()? {

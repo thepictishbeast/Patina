@@ -314,6 +314,58 @@ pub fn render_book(f: &mut Frame, app: &App, book: &Book) {
     );
 }
 
+/// Render the roadmap: the tab bar over a styled list parsed from a
+/// checkbox-markdown string (`## Section`, `- [x]/[>]/[ ] task`, prose). Status
+/// boxes get the legend's glyphs + colors; ASCII mode keeps the raw `[x]`.
+pub fn render_roadmap(f: &mut Frame, app: &App, content: &str) {
+    let area = f.area();
+    let rows = Layout::vertical([Constraint::Length(3), Constraint::Min(0)]).split(area);
+    f.render_widget(tab_bar(app), rows[0]);
+
+    let t = &app.theme;
+    let items: Vec<ListItem> = content
+        .lines()
+        .map(|line| {
+            let s = line.trim_start();
+            let task = |glyph: &str, rest: &str, style: Style| {
+                let g = if app.ascii { None } else { Some(glyph) };
+                let mut spans = vec![Span::raw("  ")];
+                if let Some(g) = g {
+                    spans.push(Span::styled(format!("{g} "), style));
+                }
+                spans.push(Span::styled(rest.to_string(), style));
+                ListItem::new(Line::from(spans))
+            };
+            if let Some(h) = s.strip_prefix("## ") {
+                ListItem::new(Line::from(Span::styled(
+                    h.to_string(),
+                    Style::new().fg(t.accent).add_modifier(Modifier::BOLD),
+                )))
+            } else if let Some(h) = s.strip_prefix("# ") {
+                ListItem::new(Line::from(Span::styled(
+                    h.to_string(),
+                    Style::new().add_modifier(Modifier::BOLD),
+                )))
+            } else if let Some(r) = s.strip_prefix("- [x]") {
+                task("✓", r.trim_start(), Style::new().fg(t.done))
+            } else if let Some(r) = s.strip_prefix("- [>]") {
+                task("▸", r.trim_start(), Style::new().fg(t.current).add_modifier(Modifier::BOLD))
+            } else if let Some(r) = s.strip_prefix("- [ ]") {
+                task("▢", r.trim_start(), Style::new().fg(t.locked))
+            } else {
+                ListItem::new(Line::from(Span::styled(
+                    line.to_string(),
+                    Style::new().fg(t.muted),
+                )))
+            }
+        })
+        .collect();
+    f.render_widget(
+        List::new(items).block(Block::bordered().title(" Roadmap ")),
+        rows[1],
+    );
+}
+
 /// A simple "coming soon" screen for tabs whose full screen isn't built yet,
 /// keeping the tab bar so navigation stays consistent.
 pub fn render_placeholder(f: &mut Frame, app: &App, title: &str) {
@@ -472,5 +524,23 @@ mod tests {
         assert!(s.contains("ch04-01-ownership"), "second chapter missing");
         assert!(s.contains("Variables"), "selected heading missing");
         assert!(s.contains("immutable"), "selected content missing");
+    }
+
+    #[test]
+    fn roadmap_renders_sections_and_tasks() {
+        let content = "## Phase 0\n- [x] seam done\n- [>] live run\n- [ ] lessons\nprose line\n";
+        let app = App::new(Theme::dark(), true);
+        let mut term = Terminal::new(TestBackend::new(60, 16)).unwrap();
+        term.draw(|f| render_roadmap(f, &app, content)).unwrap();
+        let buf = term.backend().buffer();
+        let mut s = String::new();
+        for y in 0..buf.area.height {
+            for x in 0..buf.area.width {
+                s.push_str(buf[(x, y)].symbol());
+            }
+        }
+        assert!(s.contains("Phase 0"), "section missing:\n{s}");
+        assert!(s.contains("seam done") && s.contains("live run") && s.contains("lessons"));
+        assert!(s.contains("Roadmap"), "tab/title missing");
     }
 }

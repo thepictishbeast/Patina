@@ -1026,12 +1026,16 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "crossterm",
+ "pollster",
  "ratatui",
  "rpro-book",
+ "rpro-core",
  "rpro-lang",
+ "rpro-lang-rust",
  "rpro-runner",
  "rpro-state",
  "rpro-storage-fs",
+ "rpro-toolchain-local",
 ]
 
 [[package]]
