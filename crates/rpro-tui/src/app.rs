@@ -80,6 +80,9 @@ pub struct App {
     pub list_len: usize,
     /// Vertical scroll offset (lines) for the active scrollable pane.
     pub scroll: u16,
+    /// Hint-ladder rung currently revealed on the exercise view (0 = none).
+    /// Sticky to the current exercise; reset to 0 only when the exercise changes.
+    pub hint_level: u8,
 }
 
 impl App {
@@ -99,6 +102,7 @@ impl App {
             selected: 0,
             list_len: 0,
             scroll: 0,
+            hint_level: 0,
         }
     }
 

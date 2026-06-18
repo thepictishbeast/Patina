@@ -108,6 +108,49 @@ impl ExerciseMetadata {
         }
         Ok(())
     }
+
+    /// The hint ladder for this exercise — pure, so every surface (web, TUI, CLI)
+    /// shows the *same* escalating guidance. Returns `(clamped_level, max_level,
+    /// text)`.
+    ///
+    /// * **1** — the concept + a nudge to read the compiler's location (`-->`) and
+    ///   `help:` lines (the by-hand-error habit).
+    /// * **2** — the expected error code, when known, so the learner can look it
+    ///   up — never the fix itself.
+    /// * **3** — the solution OUTLINE, last resort, returned ONLY at the top rung.
+    ///   `max_level` is 3 when an outline exists, else 2, so levels 1–2 can never
+    ///   contain it.
+    ///
+    /// The tutor guides; it never auto-types the fix (see `docs/EDUCATION.md`).
+    #[must_use]
+    pub fn hint(&self, requested: u8) -> (u8, u8, String) {
+        let max_level: u8 = if self.solution_outline.is_some() { 3 } else { 2 };
+        let level = requested.clamp(1, max_level);
+        let text = match level {
+            1 => format!(
+                "Concept: {}. Start with the book refs, then run it and read the \
+                 compiler's `-->` line (the location) and the `help:` line — that \
+                 usually names the fix.",
+                self.concept
+            ),
+            2 => self.expected_error_code.as_ref().map_or_else(
+                || "Read the first error top-to-bottom: the `-->` line is the \
+                    location, the `help:` line is usually the fix."
+                    .to_string(),
+                |c| {
+                    format!(
+                        "Expect error {c}. Ask for its full explanation, then look at \
+                         exactly which value or line it flags."
+                    )
+                },
+            ),
+            _ => self.solution_outline.as_ref().map_or_else(
+                || "No solution outline recorded — work from the error's `help:` line.".to_string(),
+                |s| format!("Solution outline (last resort): {s}"),
+            ),
+        };
+        (level, max_level, text)
+    }
 }
 
 #[cfg(test)]
@@ -156,5 +199,28 @@ mod tests {
         let s = toml::to_string_pretty(&m).unwrap();
         let back: ExerciseMetadata = toml::from_str(&s).unwrap();
         assert_eq!(m, back);
+    }
+
+    #[test]
+    fn hint_ladder_escalates_and_gates_solution() {
+        let m = fx(); // has a solution outline + expected code "EXXXX"
+        let (l1, max, t1) = m.hint(1);
+        assert_eq!((l1, max), (1, 3));
+        assert!(!t1.contains("clone"), "L1 must not leak the solution");
+        let (_, _, t2) = m.hint(2);
+        assert!(t2.contains("EXXXX"), "L2 names the expected error");
+        assert!(!t2.contains("clone"), "L2 must not leak the solution");
+        let (l3, _, t3) = m.hint(3);
+        assert_eq!(l3, 3);
+        assert!(t3.contains("clone"), "L3 reveals the outline (last resort)");
+        assert_eq!(m.hint(9).0, 3, "over-request clamps to max");
+    }
+
+    #[test]
+    fn hint_without_solution_caps_at_level_2() {
+        let mut m = fx();
+        m.solution_outline = None;
+        assert_eq!(m.hint(1).1, 2, "max_level is 2 with no outline");
+        assert_eq!(m.hint(9).0, 2, "over-request clamps to 2 (never a solution rung)");
     }
 }

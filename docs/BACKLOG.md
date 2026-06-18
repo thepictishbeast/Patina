@@ -14,7 +14,7 @@ Surfaces: **Web** (`rpro-serve`, shipped + live), **CLI** (`rpro`), **TUI** (`rp
 ## A. Web GUI (rpro-serve)
 - [ ] **P1 — In-browser code editing + run-the-edit.** The learner must *write*, not just read. Replace the read-only `<pre>` with an editable editor (vendored CodeMirror 6 or a styled `<textarea>` fallback); Run/Check POST the edited buffer via the existing `code` field on `/api/run`. Persist edits per-exercise (localStorage + optional server scratch).
 - [ ] **P1 — Functional nav tabs.** Dashboard / Exercise / Book / Roadmap are decorative. Wire view-switching; Book renders embedded chapters, Roadmap renders ROADMAP.md.
-- [ ] **P1 — Hint ladder UI.** Keybar shows `h hint` but nothing is wired. Surface progressive hints (book-refs → conceptual nudge → narrowed location → near-solution), gated by attempt count. Never auto-reveal the fix.
+- [x] **P1 — Hint ladder UI** (web, `85a3b17`) — 💡Hint button climbs concept → expected-error → solution-outline (last), server-clamped, no early leak.
 - [ ] **P1 — Predict-first capture.** A small "lock your prediction" input (will it compile? which Exxxx?) before Run; compare to the real result in Compare step.
 - [ ] **P1 — Pass → advance.** On a passing Run: mark done, unlock + set next current, refresh the list/gauge. Needs `POST /api/advance` (server-resolved).
 - [ ] **P2 — Exercise click-to-select.** Clicking a list item sets it current (`POST /api/select`, validated against discovered ids only).
@@ -33,11 +33,11 @@ Surfaces: **Web** (`rpro-serve`, shipped + live), **CLI** (`rpro`), **TUI** (`rp
 ## C. TUI
 - [ ] **P1 — Editable exercise pane** + run-the-edit (parity with web).
 - [ ] **P1 — Book reader content** (render real chapters, not placeholder).
-- [ ] **P1 — Hint ladder** parity.
-- [ ] **P2 — Roadmap tab** live from ROADMAP.md (already partially done).
+- [x] **P1 — Hint ladder** parity (`2318acc`→this) — `h` climbs the same shared `ExerciseMetadata::hint` ladder; revealed rung shown in a conditional panel (last resort flagged); resets on advance. 2 TestBackend tests.
+- [x] **P2 — Roadmap tab** live from ROADMAP.md — `render_roadmap` renders the baked-in `docs/ROADMAP.md` with status-glyph styling.
 
 ## D. Educational engine (#2) — the shared core
-- [ ] **P1 — Hint ladder model** (pure, wasm-safe, seam-clean crate `rpro-edu` or in `rpro-state`): levels keyed on (exercise, attempt count, observed error code). Unit-tested.
+- [x] **P1 — Hint ladder model** (this tick) — `ExerciseMetadata::hint(requested) -> (level, max, text)` in rpro-state: pure, wasm-safe, seam-clean, surface-agnostic wording; max_level 3 only with an outline (L1/L2 can never leak it). 2 tests. Web + TUI both call it.
 - [x] **P1 — Spaced repetition** keyed on error code — *model done* (`6bbdc39`): `rpro-state::review::ReviewState`, clock-free Leitner-box, pure+wasm-safe, in `Progress.reviews`, 3 tests.
   - [x] **P1 — wire it into the web surface** — rpro-serve `update_progress` folds each run via `fold_review` (guard: the exercise's *own* expected error is the lesson, not a miss — only learner-introduced errors record/reset); `GET /api/review` exposes the weakest-first queue + mastery counts; dashboard shows a "↻ Recall" widget. 5 unit tests + smoke assertion + live round-trip verified.
   - [x] **P1 — mirror Recall in rpro-tui** — dashboard "↻ Recall" panel reads shared `Progress.reviews` (due weakest-first + N/M mastered), hidden until a concept is tracked, ASCII-safe. 3 TestBackend tests.

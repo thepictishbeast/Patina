@@ -186,6 +186,13 @@ pub struct ExerciseViewData {
     pub verdict: Option<(bool, u64)>,
     /// Book references: `(chapter, why)`.
     pub book_refs: Vec<(String, String)>,
+    /// The current exercise's metadata, used to compute the hint ladder locally.
+    /// (This is the local surface, so it may hold the answer fields; they only
+    /// reach the screen when the learner explicitly climbs to that rung.)
+    pub meta: Option<rpro_state::ExerciseMetadata>,
+    /// The currently-revealed hint rung `(level, max_level, text)`. `None` until
+    /// the learner presses `h`.
+    pub hint: Option<(u8, u8, String)>,
 }
 
 /// Render the exercise view: tab bar, a title/verdict header, the **raw output**
@@ -193,13 +200,20 @@ pub struct ExerciseViewData {
 /// additive **diagnostics** sidebar, and a book-refs footer. Stacks on narrow.
 pub fn render_exercise(f: &mut Frame, app: &App, data: &ExerciseViewData) {
     let area = f.area();
-    let rows = Layout::vertical([
+    // A hint row only appears once the learner has climbed the ladder (pressed h).
+    let show_hint = data.hint.is_some();
+    let mut constraints = vec![
         Constraint::Length(3), // tabs
         Constraint::Length(4), // header (id/title + status)
         Constraint::Min(0),    // raw + diagnostics
-        Constraint::Length(3), // book refs
-    ])
-    .split(area);
+    ];
+    if show_hint {
+        constraints.push(Constraint::Length(5)); // hint
+    }
+    constraints.push(Constraint::Length(3)); // book refs
+    let rows = Layout::vertical(constraints).split(area);
+    let hint_idx = 3;
+    let book_idx = if show_hint { 4 } else { 3 };
 
     f.render_widget(tab_bar(app), rows[0]);
 
@@ -224,7 +238,7 @@ pub fn render_exercise(f: &mut Frame, app: &App, data: &ExerciseViewData) {
         Line::from(Span::styled(format!("{label} in {ms}ms"), Style::new().fg(col)))
     } else {
         Line::from(Span::styled(
-            "press r to run — read the real output by hand",
+            "press r to run · h for a hint — read the real output by hand",
             Style::new().fg(app.theme.muted),
         ))
     };
@@ -288,6 +302,25 @@ pub fn render_exercise(f: &mut Frame, app: &App, data: &ExerciseViewData) {
         body[1],
     );
 
+    // hint ladder (only when the learner has climbed it). The last rung — the
+    // solution outline — is flagged "last resort" and coloured as a warning so it
+    // reads as the deliberate end of the ladder, not the default.
+    if let Some((level, max, text)) = &data.hint {
+        let last = *level >= *max;
+        let title = if last {
+            format!(" Hint {level}/{max} · last resort  (h to re-show) ")
+        } else {
+            format!(" Hint {level}/{max}  (h for more) ")
+        };
+        let col = if last { app.theme.error } else { app.theme.note };
+        f.render_widget(
+            Paragraph::new(Line::from(Span::styled(text.clone(), Style::new().fg(col))))
+                .wrap(Wrap { trim: true })
+                .block(Block::bordered().title(title)),
+            rows[hint_idx],
+        );
+    }
+
     // footer: book refs
     let refs: Vec<Span> = if data.book_refs.is_empty() {
         vec![Span::styled("no book refs for this exercise", Style::new().fg(app.theme.muted))]
@@ -305,7 +338,7 @@ pub fn render_exercise(f: &mut Frame, app: &App, data: &ExerciseViewData) {
     };
     f.render_widget(
         Paragraph::new(Line::from(refs)).block(Block::bordered().title(" Book refs ")),
-        rows[3],
+        rows[book_idx],
     );
 }
 
@@ -584,6 +617,29 @@ mod tests {
         );
         assert!(text.contains("no output yet"));
         assert!(text.contains("[FREE]"));
+    }
+
+    #[test]
+    fn exercise_shows_hint_when_climbed() {
+        // "EXXXX" is a fake non-E0 token (seam-clean); the hint text is opaque here.
+        let data = ExerciseViewData {
+            id: "x/1".into(),
+            title: "T".into(),
+            assists: EditorAssists::default(),
+            hint: Some((2, 3, "Expect error EXXXX. Read the help line.".into())),
+            ..Default::default()
+        };
+        let text = screen_text_ex(90, 24, &data);
+        assert!(text.contains("Hint 2/3"), "hint title missing:\n{text}");
+        assert!(text.contains("Expect error EXXXX"), "hint text missing:\n{text}");
+    }
+
+    #[test]
+    fn exercise_hint_hidden_until_climbed() {
+        let data =
+            ExerciseViewData { id: "x/1".into(), assists: EditorAssists::default(), ..Default::default() };
+        let text = screen_text_ex(90, 24, &data);
+        assert!(!text.contains("Hint "), "no hint row until the learner climbs:\n{text}");
     }
 
     #[test]

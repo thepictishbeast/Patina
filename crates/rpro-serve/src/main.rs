@@ -399,36 +399,6 @@ struct HintQuery {
     level: Option<u8>,
 }
 
-/// The hint ladder, as a pure function (no I/O) so it's unit-testable. Returns
-/// `(clamped_level, max_level, text)`. `max_level` is 3 when the exercise has a
-/// solution outline, else 2. The solution outline is returned ONLY at the top
-/// level — levels 1 and 2 never contain it.
-fn hint_for(m: &rpro_state::ExerciseMetadata, requested: u8) -> (u8, u8, String) {
-    let max_level: u8 = if m.solution_outline.is_some() { 3 } else { 2 };
-    let level = requested.clamp(1, max_level);
-    let text = match level {
-        1 => format!(
-            "Concept: {}. Start with the book refs, then Run it and read the compiler's \
-             `-->` line (the location) and the `help:` line — that usually names the fix.",
-            m.concept
-        ),
-        2 => m.expected_error_code.as_ref().map_or_else(
-            || "Read the first error top-to-bottom: the `-->` line is the location, the \
-                `help:` line is usually the fix."
-                .to_string(),
-            |c| format!(
-                "Expect error {c}. Press Explain (or run `rpro explain {c}`) for the full \
-                 description, then look at exactly which value/line it flags."
-            ),
-        ),
-        _ => m.solution_outline.as_ref().map_or_else(
-            || "No solution outline recorded — work from the error's `help:` line.".to_string(),
-            |s| format!("Solution outline (last resort): {s}"),
-        ),
-    };
-    (level, max_level, text)
-}
-
 /// `GET /api/hint?level=N` — the hint ladder. Escalates: 1 = concept + a "read the
 /// `-->` / `help:` line" nudge; 2 = the expected error code (use Explain); 3 = the
 /// solution OUTLINE, last resort. Levels above what the exercise carries are
@@ -442,7 +412,7 @@ async fn hint_handler(
         return Json(serde_json::json!({ "level": 0, "max_level": 0, "text": null }))
             .into_response();
     };
-    let (level, max_level, text) = hint_for(&ex.meta, q.level.unwrap_or(1));
+    let (level, max_level, text) = ex.meta.hint(q.level.unwrap_or(1));
     Json(serde_json::json!({ "level": level, "max_level": max_level, "text": text }))
         .into_response()
 }
@@ -658,27 +628,8 @@ mod tests {
         assert!(serde_json::from_value::<WireOp>(json!({"op": "explain"})).is_err());
     }
 
-    #[test]
-    fn hint_ladder_escalates_and_gates_solution() {
-        let m = meta(Some("Use s1.clone()"), Some(ERRC));
-        let (l1, max, t1) = hint_for(&m, 1);
-        assert_eq!((l1, max), (1, 3));
-        assert!(!t1.contains("clone"), "L1 must not leak the solution");
-        let (_, _, t2) = hint_for(&m, 2);
-        assert!(t2.contains(ERRC), "L2 names the expected error");
-        assert!(!t2.contains("clone"), "L2 must not leak the solution");
-        let (l3, _, t3) = hint_for(&m, 3);
-        assert_eq!(l3, 3);
-        assert!(t3.contains("clone"), "L3 reveals the outline (last resort)");
-        assert_eq!(hint_for(&m, 9).0, 3, "over-request clamps to max");
-    }
-
-    #[test]
-    fn hint_max_level_2_without_solution_never_reaches_a_solution_rung() {
-        let m = meta(None, Some(ERRC));
-        assert_eq!(hint_for(&m, 1).1, 2);
-        assert_eq!(hint_for(&m, 9).0, 2);
-    }
+    // The hint ladder itself (escalation + no-leak gating) is now tested at its
+    // shared home, ExerciseMetadata::hint in rpro-state; the handler just calls it.
 
     #[test]
     fn current_json_omits_the_answer() {

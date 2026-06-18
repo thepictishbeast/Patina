@@ -103,9 +103,11 @@ fn run_tui(store: &Store, book: &Book, start_tab: Tab, start_selected: usize) ->
                         rpro_runner::record_run(store, &ex.id, &ex.diagnostics, passed, run_advances && passed);
                     dash = dashboard_data(store);
                     if advanced.is_some() {
-                        // Promote the next exercise into the view so r/c target it.
+                        // Promote the next exercise into the view so r/c target it,
+                        // and reset the hint ladder (it belongs to the old exercise).
                         ex = exercise_view_data(store);
                         app.scroll = 0;
+                        app.hint_level = 0;
                     }
                 }
             }
@@ -141,6 +143,16 @@ fn run_tui(store: &Store, book: &Book, start_tab: Tab, start_selected: usize) ->
                                     ex.verdict = None;
                                     run_rx = Some(rx);
                                     run_advances = advances;
+                                }
+                            }
+                            // Climb the hint ladder one rung (concept → expected
+                            // error → solution outline, last resort). Pure +
+                            // shared with the web via ExerciseMetadata::hint.
+                            KeyCode::Char('h') if app.tab == Tab::Exercise => {
+                                if let Some(m) = &ex.meta {
+                                    let (level, max, text) = m.hint(app.hint_level + 1);
+                                    app.hint_level = level;
+                                    ex.hint = Some((level, max, text));
                                 }
                             }
                             _ => {}
@@ -226,6 +238,7 @@ fn exercise_view_data(store: &Store) -> render::ExerciseViewData {
             title: e.meta.title.clone(),
             book_refs: e.meta.book_refs.iter().map(|r| (r.chapter.clone(), r.why.clone())).collect(),
             assists: EditorAssists::default(),
+            meta: Some(e.meta.clone()),
             ..Default::default()
         },
     )
