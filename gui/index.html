@@ -136,6 +136,26 @@
     padding:6px;background:var(--bg-2);border-top:1px solid var(--line);font-family:var(--mono);font-size:11px;color:var(--fg-dim)}
   .footer b{color:var(--fg)}
   .scroll::-webkit-scrollbar{width:9px}.scroll::-webkit-scrollbar-thumb{background:var(--line);border-radius:9px}
+
+  /* Phone-first reflow: the locked learner profile is mobile-first. Below ~760px
+     the three columns stack into one scrollable page. */
+  @media (max-width: 760px) {
+    body { height:auto; overflow-y:auto; overflow-x:hidden; }
+    header { flex-wrap:wrap; gap:8px 12px; padding:8px 10px; }
+    nav.tabs { order:5; width:100%; overflow-x:auto; }
+    .gauge { min-width:120px; }
+    main { grid-template-columns:1fr; grid-template-rows:none; height:auto; width:100%; overflow-x:hidden; }
+    /* let the single column shrink to the viewport (grid 1fr floors at child
+       min-content without this) and keep child content from forcing width */
+    .pane { min-width:0; border-right:none; border-bottom:1px solid var(--line); }
+    .center, .lesson, .editor, .terminal, .runrow, .predict { min-width:0; max-width:100%; }
+    .editor pre, .editor textarea, .xterm-host { max-width:100%; }
+    .pane:last-child { border-bottom:none; }
+    .exlist { max-height:34vh; }
+    .editor textarea { max-height:38vh; }
+    .terminal { height:200px; }
+    .footer { position:static; flex-wrap:wrap; gap:10px 16px; }
+  }
 </style>
 </head>
 <body>
