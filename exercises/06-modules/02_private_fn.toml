@@ -1,0 +1,16 @@
+id = "modules/02_private_fn"
+title = "A public module doesn't make its functions public"
+difficulty = "beginner"
+estimated_minutes = 6
+concept = "item-privacy"
+expected_error_code = "E0603"
+solution_outline = """
+`double` has no `pub`, so it's callable only from inside `math`. Add
+`pub fn double` to expose it. Reaching a module is not the same as
+reaching its contents — each function opts in with its own `pub`.
+"""
+
+[[book_refs]]
+chapter = "ch07-03-paths-for-referring-to-an-item-in-the-module-tree"
+anchor = "exposing-paths-with-the-pub-keyword"
+why = "`pub` on a module exposes the module, not the items inside it — each needs its own `pub`."

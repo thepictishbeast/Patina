@@ -1,0 +1,16 @@
+id = "modules/03_use_scope"
+title = "Call by path: bring names into scope or spell the full path"
+difficulty = "beginner"
+estimated_minutes = 6
+concept = "use-and-paths"
+expected_error_code = "E0433"
+solution_outline = """
+`vegetables` isn't in scope at the crate root — it lives under `garden`.
+Either call the full path `garden::vegetables::plant();`, or add
+`use garden::vegetables;` above `main` and then call `vegetables::plant();`.
+"""
+
+[[book_refs]]
+chapter = "ch07-04-bringing-paths-into-scope-with-the-use-keyword"
+anchor = "bringing-paths-into-scope-with-the-use-keyword"
+why = "`use` creates a shortcut name in the current scope; otherwise you must spell the whole path. The fix this exercise points to."

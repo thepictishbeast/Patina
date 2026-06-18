@@ -1,0 +1,16 @@
+id = "modules/04_super_path"
+title = "Reach the parent module with super::"
+difficulty = "beginner"
+estimated_minutes = 7
+concept = "super-paths"
+expected_error_code = "E0425"
+solution_outline = """
+Inside `checkout`, `tax_rate` isn't in scope — it's in the PARENT
+module. Reach it with `super::tax_rate()` (super is like `..` in a file
+path). A child can use its ancestors' items this way.
+"""
+
+[[book_refs]]
+chapter = "ch07-03-paths-for-referring-to-an-item-in-the-module-tree"
+anchor = "starting-relative-paths-with-super"
+why = "`super::` walks up to the parent module — exactly what the child needs to reach `tax_rate`."

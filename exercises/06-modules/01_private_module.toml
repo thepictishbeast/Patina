@@ -1,0 +1,16 @@
+id = "modules/01_private_module"
+title = "Modules are private by default: the whole path must be public"
+difficulty = "beginner"
+estimated_minutes = 6
+concept = "module-privacy"
+expected_error_code = "E0603"
+solution_outline = """
+The inner module `oven` isn't `pub`, so the path `kitchen::oven` is
+blocked even though `preheat` is public. Make the module public:
+`pub mod oven`. Every step of the path has to be reachable.
+"""
+
+[[book_refs]]
+chapter = "ch07-03-paths-for-referring-to-an-item-in-the-module-tree"
+anchor = "exposing-paths-with-the-pub-keyword"
+why = "Privacy is per-item, top-down: a private module hides everything inside it, no matter how public the contents are."
