@@ -104,6 +104,9 @@ struct RunResponse {
     diagnostics: Vec<rpro_lang::Diagnostic>,
     /// Human label of the exercise that was run.
     exercise: String,
+    /// If a passing Run/Test advanced the learner, the id now made current
+    /// (the old exercise is marked Done). `null` otherwise.
+    advanced_to: Option<String>,
 }
 
 /// A clamped, validated explain code: at most 16 chars, ASCII alphanumerics
@@ -199,6 +202,10 @@ async fn run_handler(
         Ok(op) => op,
         Err(msg) => return (StatusCode::BAD_REQUEST, msg).into_response(),
     };
+    // Classify the op before it moves into the blocking task: exec ops count as
+    // an attempt; Run/Test passing advances the learner to the next exercise.
+    let is_exec = matches!(op, RunOp::Run | RunOp::Check | RunOp::Test);
+    let advance_on_pass = matches!(op, RunOp::Run | RunOp::Test);
 
     // Resolve the target on the async side; gather only owned, Send data.
     let Some((id, disk_code, run_dir)) = resolve_current(&state.store_root) else {
@@ -235,16 +242,24 @@ async fn run_handler(
     .await;
 
     match joined {
-        Ok(Ok(outcome)) => Json(RunResponse {
-            passed: outcome.status == Some(0),
-            status: outcome.status,
-            raw_stdout: outcome.raw_stdout,
-            raw_stderr: outcome.raw_stderr,
-            duration_ms: outcome.duration_ms,
-            diagnostics: outcome.diagnostics,
-            exercise: label,
-        })
-        .into_response(),
+        Ok(Ok(outcome)) => {
+            let passed = outcome.status == Some(0);
+            // Record the attempt; advance (mark done + set next current) on a
+            // passing Run/Test. Plain on-disk state update — no Core involved.
+            let advanced_to =
+                update_progress(&state.store_root, &label, is_exec, advance_on_pass && passed);
+            Json(RunResponse {
+                passed,
+                status: outcome.status,
+                raw_stdout: outcome.raw_stdout,
+                raw_stderr: outcome.raw_stderr,
+                duration_ms: outcome.duration_ms,
+                diagnostics: outcome.diagnostics,
+                exercise: label,
+                advanced_to,
+            })
+            .into_response()
+        }
         // Toolchain error: fold into the same shape (mirrors apply_run_result).
         Ok(Err(msg)) => Json(RunResponse {
             status: None,
@@ -254,11 +269,39 @@ async fn run_handler(
             duration_ms: 0,
             diagnostics: Vec::new(),
             exercise: label,
+            advanced_to: None,
         })
         .into_response(),
         // The blocking task itself panicked / was cancelled.
         Err(_) => (StatusCode::INTERNAL_SERVER_ERROR, "run task failed").into_response(),
     }
+}
+
+/// Update on-disk progress after a run: record the attempt (for exec ops) and,
+/// when `advance` is set (a passing Run/Test), mark the current exercise Done and
+/// promote the next one (by sorted id) to Current. Returns the id advanced to, if
+/// any. Best-effort: a failed load/save never breaks the run response.
+fn update_progress(store_root: &Path, id: &str, is_exec: bool, advance: bool) -> Option<String> {
+    let store = Store::at(store_root.to_path_buf());
+    let mut progress = store.load_progress().unwrap_or_default();
+    if is_exec {
+        progress.record_attempt(id);
+    }
+    let mut advanced_to = None;
+    if advance {
+        progress.set_done(id);
+        if let Ok(mut exs) = rpro_runner::discover(&store.root().join("exercises")) {
+            exs.sort_by(|a, b| a.meta.id.cmp(&b.meta.id));
+            if let Some(pos) = exs.iter().position(|e| e.meta.id == id) {
+                if let Some(next) = exs.get(pos + 1) {
+                    progress.set_current(&next.meta.id);
+                    advanced_to = Some(next.meta.id.clone());
+                }
+            }
+        }
+    }
+    let _ = store.save_progress(&progress);
+    advanced_to
 }
 
 /// Resolve the current exercise with its full metadata + starter code, so the

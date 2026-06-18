@@ -271,6 +271,14 @@
         term.writeln(''); term.writeln(verdict);
         renderDiag(out);
         statusEl().textContent = out.passed ? 'passed' : 'failed';
+        // Refresh the list/gauge/attempts after every run; if a pass advanced
+        // the learner, load the next exercise into the editor.
+        try { const exs = await fetch('api/exercises').then(r => r.json()); if (exs) renderList(exs); } catch (_) {}
+        if (out.advanced_to) {
+          term.writeln(''); term.writeln(g('✓ exercise complete — advancing to ' + out.advanced_to));
+          try { const cur = await fetch('api/current').then(r => r.json()); renderCurrent(cur); } catch (_) {}
+          statusEl().textContent = 'advanced ✓';
+        }
       } catch (e) {
         // No server reachable → fall back to the static preview.
         showDemo();
@@ -367,9 +375,10 @@
       box.innerHTML = rows.join('');
     }
 
-    // On load, fetch the real list + current exercise and render them; if the
-    // server is unreachable (opened via file://), keep the static preview.
-    (async () => {
+    // Fetch the real list + current exercise and render them; if the server is
+    // unreachable (opened via file://), keep the static preview. `intro` writes
+    // the welcome lines (initial load only — not on post-run refreshes).
+    async function loadState(intro) {
       try {
         const [exs, cur] = await Promise.all([
           fetch('api/exercises').then(r => r.json()).catch(() => null),
@@ -377,15 +386,18 @@
         ]);
         if (exs) renderList(exs);
         renderCurrent(cur);
-        if (cur && cur.exercise) {
-          term.writeln(d('current exercise: ') + b(cur.exercise));
-          term.writeln(d('press Run / Check / Explain.'));
-          statusEl().textContent = 'ready';
-        } else {
-          term.writeln(d('no current exercise on the server.'));
+        if (intro) {
+          if (cur && cur.exercise) {
+            term.writeln(d('current exercise: ') + b(cur.exercise));
+            term.writeln(d('press Run / Check / Explain.'));
+            statusEl().textContent = 'ready';
+          } else {
+            term.writeln(d('no current exercise on the server.'));
+          }
         }
-      } catch (_) { showDemo(); }
-    })();
+      } catch (_) { if (intro) showDemo(); }
+    }
+    loadState(true);
 
     // throbber in the header (mirrors the TUI Throbber)
     const frames = ["⠋","⠙","⠹","⠸","⠼","⠴","⠦","⠧","⠇","⠏"]; let i = 0;
