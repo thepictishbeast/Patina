@@ -7,6 +7,9 @@
 
 #![doc(html_no_source)]
 
+pub mod status;
+pub mod theme;
+
 use anyhow::Result;
 use rpro_book::Book;
 use rpro_storage_fs::Store;

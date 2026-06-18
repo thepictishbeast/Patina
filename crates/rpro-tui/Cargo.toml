@@ -10,6 +10,7 @@ description = "Rustlings Pro TUI shell — ratatui screens for dashboard, exerci
 [dependencies]
 rpro-state = { path = "../rpro-state" }
 rpro-storage-fs = { path = "../rpro-storage-fs" }
+rpro-lang = { path = "../rpro-lang" }
 rpro-book = { path = "../rpro-book" }
 rpro-runner = { path = "../rpro-runner" }
 ratatui.workspace = true
