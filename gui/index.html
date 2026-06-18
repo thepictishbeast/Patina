@@ -521,8 +521,11 @@
       return html;
     }
     async function showView(view) {
-      document.querySelector('.tab.active')?.classList.remove('active');
-      [...document.querySelectorAll('.tab')].find(t => t.dataset.view === view)?.classList.add('active');
+      document.querySelectorAll('.tab').forEach(t => {
+        const on = t.dataset.view === view;
+        t.classList.toggle('active', on);
+        t.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
       const m = document.querySelector('main'), d = document.getElementById('docview');
       m.classList.toggle('focus', view === 'exercise');
       if (view === 'dashboard' || view === 'exercise') { m.hidden = false; d.hidden = true; refit(); return; }
@@ -540,6 +543,36 @@
       }
     }
     document.querySelectorAll('.tab').forEach(t => t.onclick = () => showView(t.dataset.view));
+
+    // ── keyboard shortcuts (the footer keybar) — skip while typing in a field ──
+    const KEYMAP = {
+      r: () => runOp('run'), c: () => runOp('check'), h: runHint,
+      b: () => showView('book'), t: () => showView('roadmap'), d: () => showView('dashboard'),
+    };
+    document.addEventListener('keydown', e => {
+      const tag = (e.target.tagName || '').toLowerCase();
+      if (tag === 'textarea' || tag === 'input' || e.metaKey || e.ctrlKey || e.altKey) return;
+      const fn = KEYMAP[e.key.toLowerCase()];
+      if (fn) { e.preventDefault(); fn(); }
+    });
+
+    // ── a11y: roles + live regions so screen readers track state ──
+    (() => {
+      const nav = document.querySelector('nav.tabs');
+      if (nav) nav.setAttribute('role', 'tablist');
+      document.querySelectorAll('.tab').forEach(t => {
+        t.setAttribute('role', 'tab');
+        t.setAttribute('tabindex', '0');
+        t.setAttribute('aria-selected', t.classList.contains('active') ? 'true' : 'false');
+        t.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showView(t.dataset.view); } });
+      });
+      statusEl()?.setAttribute('aria-live', 'polite');
+      document.getElementById('diag')?.setAttribute('aria-live', 'polite');
+      document.getElementById('predverdict')?.setAttribute('aria-live', 'polite');
+      document.getElementById('theme')?.setAttribute('aria-label', 'Toggle dark / light theme');
+      document.getElementById('resetbtn')?.setAttribute('aria-label', 'Reset code to the original starter');
+      document.getElementById('xterm')?.setAttribute('aria-label', 'Compiler output terminal');
+    })();
     document.querySelectorAll('.ex').forEach(e => e.onclick = () => {
       document.querySelector('.ex.sel')?.classList.remove('sel'); e.classList.add('sel');
     });
