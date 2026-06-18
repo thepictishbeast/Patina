@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
     "crates/rpro-lang",
+    "crates/languages/rust",
     "crates/rpro-state",
     "crates/rpro-runner",
     "crates/rpro-book",

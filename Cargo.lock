@@ -943,6 +943,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "rpro-lang-rust"
+version = "0.1.0"
+dependencies = [
+ "rpro-lang",
+]
+
+[[package]]
 name = "rpro-runner"
 version = "0.1.0"
 dependencies = [

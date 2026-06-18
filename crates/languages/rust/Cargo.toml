@@ -1,0 +1,15 @@
+[package]
+name = "rpro-lang-rust"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "The Rust implementation of the rpro-lang seam — the ONLY language-specific crate."
+
+[lints]
+workspace = true
+
+[dependencies]
+rpro-lang = { path = "../../rpro-lang" }
