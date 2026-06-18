@@ -1,0 +1,20 @@
+[package]
+name = "rpro-core"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "Async orchestrator: wires a chosen Language + Toolchain + Storage into the session/exercise flow every surface drives. Language-agnostic, wasm-safe."
+
+[lints]
+workspace = true
+
+[dependencies]
+rpro-lang = { path = "../rpro-lang" }
+
+[dev-dependencies]
+rpro-toolchain-local = { path = "../rpro-toolchain-local" }
+async-trait = { workspace = true }
+pollster = { workspace = true }

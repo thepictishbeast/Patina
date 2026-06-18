@@ -27,12 +27,12 @@ jobs:
           targets: wasm32-unknown-unknown
       - name: build the language-agnostic pure core for wasm32
         # A stray std::fs / dirs / std::process / walkdir in any of these fails
-        # here. rpro-sync / rpro-narrate / rpro-ai / rpro-core join the list as
-        # they land; rpro-toolchain-local + rpro-storage-fs are effect impls and
-        # are intentionally NOT wasm-safe.
+        # here. rpro-sync / rpro-narrate / rpro-ai join the list as they land;
+        # rpro-toolchain-local + rpro-storage-fs are effect impls and are
+        # intentionally NOT wasm-safe.
         run: >
           cargo build --locked --target wasm32-unknown-unknown
-          -p rpro-lang -p rpro-lang-rust -p rpro-state -p rpro-book
+          -p rpro-lang -p rpro-lang-rust -p rpro-state -p rpro-book -p rpro-core
 
   seam-grep:
     name: language-seam guard

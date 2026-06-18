@@ -762,6 +762,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a89322df9ebe1c1578d689c92318e070967d1042b512afbe49518723f4e6d5cd"
 
 [[package]]
+name = "pollster"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "22686f4785f02a4fcc856d3b3bb19bf6c8160d103f7a99cc258bddd0251dc7f2"
+
+[[package]]
 name = "portable-atomic"
 version = "1.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -934,6 +940,16 @@ dependencies = [
  "rpro-state",
  "rpro-storage-fs",
  "rpro-tui",
+]
+
+[[package]]
+name = "rpro-core"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "pollster",
+ "rpro-lang",
+ "rpro-toolchain-local",
 ]
 
 [[package]]

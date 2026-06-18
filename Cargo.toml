@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "crates/rpro-lang",
     "crates/languages/rust",
+    "crates/rpro-core",
     "crates/rpro-toolchain-local",
     "crates/rpro-storage-fs",
     "crates/rpro-state",
@@ -44,6 +45,7 @@ walkdir = "2"
 dirs = "5"
 chrono = { version = "0.4", features = ["serde"] }
 tempfile = "3"
+pollster = "0.3"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
