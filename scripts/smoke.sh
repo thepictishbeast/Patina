@@ -86,6 +86,19 @@ assert "passed" in d and "raw_stderr" in d and "exercise" in d, "run response sh
 print("  ok   — /api/run executed (exercise=" + str(d["exercise"]) + ", passed=" + str(d["passed"]) + ")")
 ' || fail "/api/run end-to-end"
 
+# 6. spaced-repetition (RECALL) queue is wired + internally consistent. Every
+# tracked code is either due (box < mastered) or mastered, so the counts must
+# satisfy len(due) + mastered == tracked regardless of seeded content.
+curl -s "$BASE/api/review" | python3 -c '
+import sys, json
+d = json.load(sys.stdin)
+due, mastered, tracked = d["due"], d["mastered"], d["tracked"]
+assert isinstance(due, list), "due must be a list"
+assert isinstance(mastered, int) and isinstance(tracked, int), "counts must be ints"
+assert len(due) + mastered == tracked, "queue inconsistent: " + str(len(due)) + "+" + str(mastered) + " != " + str(tracked)
+print("  ok   — /api/review consistent (due=" + str(len(due)) + ", mastered=" + str(mastered) + ", tracked=" + str(tracked) + ")")
+' || fail "/api/review consistency"
+
 echo
 if [ "$fails" -eq 0 ]; then
   echo "SMOKE PASS ✓"

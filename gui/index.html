@@ -92,6 +92,15 @@
   .done .chip{color:var(--done)} .current .chip{color:var(--current)}
   .locked{opacity:.6} .locked .chip{color:var(--locked)} .skipped .chip{color:var(--skipped)}
 
+  /* Recall: the spaced-repetition queue (codes the learner met, to refresh). */
+  .recall { margin:6px 8px 12px; border-top:1px solid var(--line); padding-top:9px; }
+  .recall-h { margin:0 0 6px; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--fg-dim); }
+  .recall-codes { display:flex; flex-wrap:wrap; gap:5px; align-items:center; }
+  .rc { font:600 11px var(--mono); color:var(--error); background:var(--bg-3); border:1px solid var(--line);
+        border-radius:5px; padding:2px 7px; }
+  .rc-done { font-size:12px; color:var(--done); }
+  .rc-meta { font-size:11px; color:var(--fg-dim); margin-left:auto; }
+
   .center { display:flex; flex-direction:column; min-height:0; }
   .lesson { padding:16px 20px; overflow:auto; }
   .lesson h1 { font-size:20px; margin:0 0 6px; }
@@ -189,6 +198,10 @@
       <h2 id="exTitle">Exercises</h2>
       <div class="exlist scroll" id="exlist">
         <div class="ex"><span class="t" style="color:var(--fg-dim)">loading…</span></div>
+      </div>
+      <div class="recall" id="recall" hidden>
+        <h3 class="recall-h">↻ Recall</h3>
+        <div class="recall-codes" id="recallCodes" aria-live="polite"></div>
       </div>
     </section>
 
@@ -323,6 +336,7 @@
         // Refresh the list/gauge/attempts after every run; if a pass advanced
         // the learner, load the next exercise into the editor.
         try { const exs = await fetch('api/exercises').then(r => r.json()); if (exs) renderList(exs); } catch (_) {}
+        try { const rev = await fetch('api/review').then(r => r.json()); renderReview(rev); } catch (_) {}
         if (out.advanced_to) {
           term.writeln(''); term.writeln(g('✓ exercise complete — advancing to ' + out.advanced_to));
           try { const cur = await fetch('api/current').then(r => r.json()); renderCurrent(cur); } catch (_) {}
@@ -358,6 +372,22 @@
         document.getElementById('pct').textContent = `${data.done || 0} / ${data.total} · ${pct}%`;
         document.getElementById('fill').style.width = pct + '%';
       }
+    }
+
+    // The Recall queue: codes the learner has met, weakest-first, with mastery
+    // count. Hidden until they've tracked at least one concept (a clean first run).
+    function renderReview(data) {
+      const wrap = document.getElementById('recall');
+      const box = document.getElementById('recallCodes');
+      if (!data || (data.tracked || 0) === 0) { wrap.hidden = true; return; }
+      wrap.hidden = false;
+      const due = data.due || [], mastered = data.mastered || 0, tracked = data.tracked || 0;
+      if (!due.length) {
+        box.innerHTML = `<span class="rc-done">all ${tracked} concept${tracked === 1 ? '' : 's'} mastered ✓</span>`;
+        return;
+      }
+      box.innerHTML = due.map(c => `<span class="rc" title="a compiler error to refresh">${esc(c)}</span>`).join('')
+                    + `<span class="rc-meta">${mastered}/${tracked} mastered</span>`;
     }
 
     let curExercise = null, curOriginal = '', hintLevel = 0;
@@ -477,11 +507,13 @@
     // the welcome lines (initial load only — not on post-run refreshes).
     async function loadState(intro) {
       try {
-        const [exs, cur] = await Promise.all([
+        const [exs, cur, rev] = await Promise.all([
           fetch('api/exercises').then(r => r.json()).catch(() => null),
           fetch('api/current').then(r => r.json()).catch(() => null),
+          fetch('api/review').then(r => r.json()).catch(() => null),
         ]);
         if (exs) renderList(exs);
+        renderReview(rev);
         renderCurrent(cur);
         if (intro) {
           if (cur && cur.exercise) {

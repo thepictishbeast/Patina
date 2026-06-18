@@ -39,7 +39,8 @@ Surfaces: **Web** (`rpro-serve`, shipped + live), **CLI** (`rpro`), **TUI** (`rp
 ## D. Educational engine (#2) — the shared core
 - [ ] **P1 — Hint ladder model** (pure, wasm-safe, seam-clean crate `rpro-edu` or in `rpro-state`): levels keyed on (exercise, attempt count, observed error code). Unit-tested.
 - [x] **P1 — Spaced repetition** keyed on error code — *model done* (`6bbdc39`): `rpro-state::review::ReviewState`, clock-free Leitner-box, pure+wasm-safe, in `Progress.reviews`, 3 tests.
-  - [ ] **P1 — wire it to a surface:** call `record(code, passed)` on each run in rpro-serve `update_progress`; expose `due()` (`/api/review` or dashboard); mirror in rpro-tui. *(resurfacing not live until this lands)*
+  - [x] **P1 — wire it into the web surface** — rpro-serve `update_progress` folds each run via `fold_review` (guard: the exercise's *own* expected error is the lesson, not a miss — only learner-introduced errors record/reset); `GET /api/review` exposes the weakest-first queue + mastery counts; dashboard shows a "↻ Recall" widget. 5 unit tests + smoke assertion + live round-trip verified.
+  - [ ] **P1 — mirror Recall in rpro-tui** (show the due queue + mastery on a key). *(web resurfacing is now live; TUI parity remains)*
 - [ ] **P1 — Tutor (guide-not-solve)** prompt templates per step of PREDICT→RUN→COMPARE→READ-RAW→DIAGNOSE→GUIDE→EXPLAIN→RETRY→RECALL (spec: docs/EDUCATION.md).
 - [ ] **P2 — Pluggable AI tutor seam** (Claude/Gemini) behind a trait; must refuse to type the fix.
 
