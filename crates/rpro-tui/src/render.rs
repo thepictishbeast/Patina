@@ -203,7 +203,8 @@ pub fn render_exercise(f: &mut Frame, app: &App, data: &ExerciseViewData) {
     f.render_widget(
         Paragraph::new(raw)
             .wrap(Wrap { trim: false })
-            .block(Block::bordered().title(" Raw output ")),
+            .scroll((app.scroll, 0))
+            .block(Block::bordered().title(" Raw output  (PgUp/PgDn) ")),
         body[0],
     );
 
@@ -309,7 +310,8 @@ pub fn render_book(f: &mut Frame, app: &App, book: &Book) {
     f.render_widget(
         Paragraph::new(lines)
             .wrap(Wrap { trim: false })
-            .block(Block::bordered().title(format!(" {} ", ids[sel]))),
+            .scroll((app.scroll, 0))
+            .block(Block::bordered().title(format!(" {}  (PgUp/PgDn) ", ids[sel]))),
         body[1],
     );
 }
@@ -542,5 +544,37 @@ mod tests {
         assert!(s.contains("Phase 0"), "section missing:\n{s}");
         assert!(s.contains("seam done") && s.contains("live run") && s.contains("lessons"));
         assert!(s.contains("Roadmap"), "tab/title missing");
+    }
+
+    #[test]
+    fn book_content_scrolls() {
+        use rpro_book::{Book, Chapter};
+        use std::collections::BTreeMap;
+        use std::path::PathBuf;
+        let md = (0..20).map(|i| format!("line-{i:02}")).collect::<Vec<_>>().join("\n");
+        let mut chapters = BTreeMap::new();
+        chapters.insert(
+            "ch".to_string(),
+            Chapter { id: "ch".into(), path: PathBuf::from("a"), markdown: md },
+        );
+        let book = Book { chapters };
+        let render = |scroll: u16| {
+            let mut app = App::new(Theme::dark(), true);
+            app.scroll = scroll;
+            let mut term = Terminal::new(TestBackend::new(60, 16)).unwrap();
+            term.draw(|f| render_book(f, &app, &book)).unwrap();
+            let buf = term.backend().buffer();
+            let mut s = String::new();
+            for y in 0..buf.area.height {
+                for x in 0..buf.area.width {
+                    s.push_str(buf[(x, y)].symbol());
+                }
+            }
+            s
+        };
+        assert!(render(0).contains("line-00"), "top line shows at scroll 0");
+        let scrolled = render(8);
+        assert!(!scrolled.contains("line-00"), "line-00 should scroll off");
+        assert!(scrolled.contains("line-08"), "later lines show when scrolled");
     }
 }

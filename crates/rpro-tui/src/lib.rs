@@ -110,6 +110,8 @@ fn run_tui(store: &Store, book: &Book, start_tab: Tab, start_selected: usize) ->
                             KeyCode::BackTab => app.prev_tab(),
                             KeyCode::Down | KeyCode::Char('j') => app.select_next(),
                             KeyCode::Up | KeyCode::Char('k') => app.select_prev(),
+                            KeyCode::PageDown | KeyCode::Char(' ') => app.scroll_down(),
+                            KeyCode::PageUp => app.scroll_up(),
                             KeyCode::Char('r' | 'c')
                                 if app.tab == Tab::Exercise && run_rx.is_none() =>
                             {

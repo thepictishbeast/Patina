@@ -78,9 +78,14 @@ pub struct App {
     pub selected: usize,
     /// Length of the active list (for clamping selection).
     pub list_len: usize,
+    /// Vertical scroll offset (lines) for the active scrollable pane.
+    pub scroll: u16,
 }
 
 impl App {
+    /// Lines moved per scroll keypress.
+    const SCROLL_STEP: u16 = 3;
+
     /// A fresh app on the dashboard.
     #[must_use]
     pub const fn new(theme: Theme, ascii: bool) -> Self {
@@ -93,6 +98,7 @@ impl App {
             should_quit: false,
             selected: 0,
             list_len: 0,
+            scroll: 0,
         }
     }
 
@@ -100,12 +106,24 @@ impl App {
     pub const fn next_tab(&mut self) {
         self.tab = self.tab.next();
         self.selected = 0;
+        self.scroll = 0;
     }
 
     /// Move to the previous tab.
     pub const fn prev_tab(&mut self) {
         self.tab = self.tab.prev();
         self.selected = 0;
+        self.scroll = 0;
+    }
+
+    /// Scroll the active pane down by `STEP` lines.
+    pub const fn scroll_down(&mut self) {
+        self.scroll = self.scroll.saturating_add(Self::SCROLL_STEP);
+    }
+
+    /// Scroll the active pane up by `STEP` lines (clamped at the top).
+    pub const fn scroll_up(&mut self) {
+        self.scroll = self.scroll.saturating_sub(Self::SCROLL_STEP);
     }
 
     /// Set the active list length, clamping the selection into range.
@@ -118,16 +136,21 @@ impl App {
         }
     }
 
-    /// Move selection down one row (clamped at the bottom).
+    /// Move selection down one row (clamped at the bottom); resets scroll so a
+    /// newly selected item (e.g. a book chapter) starts at the top.
     pub const fn select_next(&mut self) {
         if self.list_len > 0 && self.selected + 1 < self.list_len {
             self.selected += 1;
+            self.scroll = 0;
         }
     }
 
-    /// Move selection up one row (clamped at the top).
+    /// Move selection up one row (clamped at the top); resets scroll.
     pub const fn select_prev(&mut self) {
-        self.selected = self.selected.saturating_sub(1);
+        if self.selected > 0 {
+            self.selected -= 1;
+            self.scroll = 0;
+        }
     }
 
     /// Advance the spinner one animation step (call on each idle tick).
@@ -216,5 +239,25 @@ mod tests {
         assert!(!a.should_quit);
         a.quit();
         assert!(a.should_quit);
+    }
+
+    #[test]
+    fn scroll_moves_clamps_and_resets() {
+        let mut a = app();
+        assert_eq!(a.scroll, 0);
+        a.scroll_up(); // clamp at top
+        assert_eq!(a.scroll, 0);
+        a.scroll_down();
+        a.scroll_down();
+        assert_eq!(a.scroll, App::SCROLL_STEP * 2);
+        a.scroll_up();
+        assert_eq!(a.scroll, App::SCROLL_STEP);
+        a.next_tab(); // tab change resets scroll
+        assert_eq!(a.scroll, 0);
+        a.set_list_len(5);
+        a.scroll_down();
+        assert!(a.scroll > 0);
+        a.select_next(); // new selection resets scroll
+        assert_eq!(a.scroll, 0);
     }
 }
