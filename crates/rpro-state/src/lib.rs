@@ -18,6 +18,7 @@ pub mod config;
 pub mod exercise;
 pub mod progress;
 pub mod review;
+pub mod tutor;
 
 pub use annotations::{Annotation, Annotations};
 pub use bookmarks::{Bookmark, Bookmarks};
@@ -25,3 +26,4 @@ pub use config::Config;
 pub use exercise::{BookRef, Difficulty, ExerciseMetadata};
 pub use progress::{ExerciseStatus, Progress};
 pub use review::ReviewState;
+pub use tutor::{GUARDRAILS, HintRung, LoopStep, TutorContext};
