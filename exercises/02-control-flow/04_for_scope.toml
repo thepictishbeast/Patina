@@ -1,0 +1,22 @@
+id = "control-flow/04_for_scope"
+title = "Loop variables are scoped to the loop body"
+difficulty = "beginner"
+estimated_minutes = 6
+concept = "loop-variable-scope"
+expected_error_code = "E0425"
+solution_outline = """
+`i` only exists inside the `for` body. To use a value after the loop,
+declare it *before* the loop and update it inside: `let mut count = 0;`
+then `count += 1;` each iteration, and print `count` afterward. (Or,
+since the range is fixed, just print the known count.)
+"""
+
+[[book_refs]]
+chapter = "ch03-05-control-flow"
+anchor = "looping-through-a-collection-with-for"
+why = "How `for` introduces its loop variable — and that the binding lives only inside the loop body."
+
+[[book_refs]]
+chapter = "ch03-01-variables-and-mutability"
+anchor = "variables-and-mutability"
+why = "A value that must outlive the loop needs a `mut` binding declared before it — the fix this exercise points to."

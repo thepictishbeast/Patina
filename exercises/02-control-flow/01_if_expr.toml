@@ -1,0 +1,21 @@
+id = "control-flow/01_if_expr"
+title = "`if` is an expression: every branch yields a value"
+difficulty = "beginner"
+estimated_minutes = 6
+concept = "if-as-expression"
+expected_error_code = "E0317"
+solution_outline = """
+An `if` used as a value (bound with `let`) must be total: add an `else`
+arm that yields the same type as the `if` arm. Here both arms are
+`&str`, so give the cold case a value too, e.g. `else { "cold" }`.
+"""
+
+[[book_refs]]
+chapter = "ch03-05-control-flow"
+anchor = "using-if-in-a-let-statement"
+why = "Shows exactly this: binding the value of an `if` with `let`, and why both arms must agree (and why you need an `else`)."
+
+[[book_refs]]
+chapter = "ch03-05-control-flow"
+anchor = "if-expressions"
+why = "`if` is an expression, not a statement — the mental shift this exercise is training."

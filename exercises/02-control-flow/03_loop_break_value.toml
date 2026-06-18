@@ -1,0 +1,16 @@
+id = "control-flow/03_loop_break_value"
+title = "A `loop` can return a value via `break`"
+difficulty = "beginner"
+estimated_minutes = 7
+concept = "loop-break-value"
+expected_error_code = "E0308"
+solution_outline = """
+`total` is `u32`, so the loop must break with a `u32`. Break with the
+counter instead of the string literal: `break n;`. The whole
+`loop { ... }` then evaluates to that value.
+"""
+
+[[book_refs]]
+chapter = "ch03-05-control-flow"
+anchor = "returning-values-from-loops"
+why = "Exactly this pattern: pass a value to `break` and the `loop` expression evaluates to it. The types must line up."

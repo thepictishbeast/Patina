@@ -1,0 +1,22 @@
+id = "control-flow/02_match_exhaustive"
+title = "`match` must be exhaustive: cover every case"
+difficulty = "beginner"
+estimated_minutes = 7
+concept = "match-exhaustiveness"
+expected_error_code = "E0004"
+solution_outline = """
+The compiler names the missing variant (`Light::Yellow`). Add an arm
+for it — e.g. `Light::Yellow => "slow down",` — or a `_ => ...`
+catch-all if you want one branch for everything else. Exhaustiveness
+is the point: you can't forget a case.
+"""
+
+[[book_refs]]
+chapter = "ch06-02-the-match-control-flow-construct"
+anchor = "matches-are-exhaustive"
+why = "The exact rule the failing code breaks: a `match` must cover every possibility, and the compiler proves it."
+
+[[book_refs]]
+chapter = "ch06-02-the-match-control-flow-construct"
+anchor = "catch-all-patterns-and-the-_-placeholder"
+why = "The `_` placeholder — the other way to satisfy exhaustiveness when you don't need every case by name."
