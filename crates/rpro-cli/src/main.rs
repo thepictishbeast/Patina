@@ -22,6 +22,7 @@ use anyhow::{Context, Result, anyhow};
 use clap::{Parser, Subcommand};
 use console::style;
 use rpro_core::Core;
+use rpro_lang::{ExerciseId, ExerciseSource, RunOp};
 use rpro_lang_rust::RustLanguage;
 use rpro_state::ExerciseStatus;
 use rpro_storage_fs::Store;
@@ -54,6 +55,17 @@ enum Cmd {
     /// Probe the local toolchain (version + components) and list the
     /// learning tools available. Safe to run before `init`.
     Detect,
+    /// Compile-and-run the current exercise (or the one named): shows the
+    /// exact toolchain line, then the raw output verbatim, then diagnostics.
+    Run {
+        /// Exercise id (defaults to the current one).
+        exercise: Option<String>,
+    },
+    /// Type-check the current exercise — fast feedback, no binary produced.
+    Check {
+        /// Exercise id (defaults to the current one).
+        exercise: Option<String>,
+    },
 }
 
 #[derive(Subcommand, Debug)]
@@ -96,6 +108,8 @@ fn main() -> Result<()> {
         },
         Some(Cmd::Progress) => cmd_progress(),
         Some(Cmd::Detect) => cmd_detect(),
+        Some(Cmd::Run { exercise }) => cmd_exec(exercise.as_deref(), &RunOp::Run),
+        Some(Cmd::Check { exercise }) => cmd_exec(exercise.as_deref(), &RunOp::Check),
     }
 }
 
@@ -431,6 +445,124 @@ fn cmd_detect() -> Result<()> {
         );
     }
     Ok(())
+}
+
+fn cmd_exec(id: Option<&str>, op: &RunOp) -> Result<()> {
+    let store = Store::user()?;
+    let exercises =
+        rpro_runner::discover(&store.root().join("exercises")).context("discovering exercises")?;
+    if exercises.is_empty() {
+        println!(
+            "{}",
+            style("No exercises yet. Run `rpro init` (v0.1) to fetch the set, or pass an id.")
+                .yellow()
+        );
+        return Ok(());
+    }
+    let ex = resolve_exercise(&store, &exercises, id)?;
+    // `ex.source` is a path discovered by walking the *local* exercises dir and
+    // validated during discovery — not external/untrusted input. The
+    // web-oriented (Actix) path-traversal rule is a false positive for this
+    // local-CLI read of a file the tool itself found on disk.
+    let code = std::fs::read_to_string(&ex.source) // nosemgrep
+        .with_context(|| format!("reading {}", ex.source.display()))?;
+
+    // Prepare a scratch project under ~/.rustlings-pro/run/<id>/ (HOME is
+    // exec-capable, unlike /tmp) and drop the learner's code in as the entry.
+    // `slug` strips every path separator and `.`, so the result is a single
+    // safe component that cannot escape `run_base` (no traversal). We still
+    // reject an empty slug and assert containment as defense-in-depth.
+    let run_base = store.root().join("run");
+    let name = slug(&ex.meta.id);
+    if name.is_empty() {
+        return Err(anyhow!("exercise id '{}' has no usable characters", ex.meta.id));
+    }
+    let run_dir = run_base.join(&name);
+    debug_assert_eq!(run_dir.parent(), Some(run_base.as_path()));
+    prepare_scratch_project(&run_dir, &code)?;
+
+    let core = Core::new(Box::new(RustLanguage), Box::new(LocalProcess), Box::new(Store::user()?));
+    let src = ExerciseSource {
+        id: ExerciseId(ex.meta.id.clone()),
+        dir: run_dir.display().to_string(),
+        entry: "src/main.rs".into(),
+    };
+
+    // CLI-first contract: show the exact line, then the raw output verbatim.
+    println!("{} {}", style(&ex.meta.id).bold().cyan(), style(&ex.meta.title).dim());
+    println!("{} {}", style("$").dim(), style(&core.plan(&src, op).display).dim());
+    println!();
+    let outcome = pollster::block_on(core.run(&src, op)).context("running the toolchain")?;
+    if !outcome.raw_stdout.is_empty() {
+        print!("{}", outcome.raw_stdout);
+    }
+    if !outcome.raw_stderr.is_empty() {
+        eprint!("{}", outcome.raw_stderr);
+    }
+
+    // Additive verdict + a by-hand diagnostic summary (raw is always above).
+    println!();
+    if outcome.status == Some(0) {
+        println!("{} in {}ms", style("✓ passed").green().bold(), outcome.duration_ms);
+    } else {
+        println!(
+            "{} · {} diagnostic(s) · {}ms",
+            style("✗ failed").red().bold(),
+            outcome.diagnostics.len(),
+            outcome.duration_ms
+        );
+        for d in &outcome.diagnostics {
+            let code = d.code.clone().unwrap_or_default();
+            println!("  {} {}  {}", style("•").red(), style(code).bold(), d.message);
+        }
+    }
+    Ok(())
+}
+
+/// Resolve which exercise to act on: an explicit id, else the `Current` one,
+/// else the first discovered.
+fn resolve_exercise<'a>(
+    store: &Store,
+    exercises: &'a [rpro_runner::Exercise],
+    id: Option<&str>,
+) -> Result<&'a rpro_runner::Exercise> {
+    if let Some(id) = id {
+        return exercises
+            .iter()
+            .find(|e| e.meta.id == id)
+            .ok_or_else(|| anyhow!("no exercise with id '{id}'"));
+    }
+    let progress = store.load_progress().unwrap_or_default();
+    let current = progress
+        .entries
+        .iter()
+        .find(|(_, e)| e.status == ExerciseStatus::Current)
+        .map(|(id, _)| id.clone());
+    if let Some(cur) = current {
+        if let Some(e) = exercises.iter().find(|e| e.meta.id == cur) {
+            return Ok(e);
+        }
+    }
+    exercises.first().ok_or_else(|| anyhow!("no exercises found"))
+}
+
+/// Create a minimal scratch project at `dir` with `main_rs` as `src/main.rs`,
+/// so the toolchain can build and run the learner's code.
+fn prepare_scratch_project(dir: &std::path::Path, main_rs: &str) -> Result<()> {
+    std::fs::create_dir_all(dir.join("src"))
+        .with_context(|| format!("mkdir {}", dir.display()))?;
+    let manifest = "[package]\nname = \"exercise\"\nversion = \"0.1.0\"\nedition = \"2024\"\n\n\
+                    [[bin]]\nname = \"exercise\"\npath = \"src/main.rs\"\n";
+    std::fs::write(dir.join("Cargo.toml"), manifest)?;
+    std::fs::write(dir.join("src/main.rs"), main_rs)?;
+    Ok(())
+}
+
+/// Filesystem-safe slug for an exercise id (e.g. `ownership/01_move`).
+fn slug(id: &str) -> String {
+    id.chars()
+        .map(|c| if c.is_ascii_alphanumeric() || c == '-' || c == '_' { c } else { '_' })
+        .collect()
 }
 
 // ---------------------------------------------------------------------------
