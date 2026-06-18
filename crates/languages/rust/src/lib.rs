@@ -144,11 +144,20 @@ impl Language for RustLanguage {
     }
 
     fn parse_detect(&self, raw: &str) -> ToolchainStatus {
-        let present = raw.contains("rustc") || raw.contains("toolchain") || raw.contains("stable");
+        let present = raw.contains("rustc")
+            || raw.contains("toolchain")
+            || raw.contains("stable")
+            || raw.contains("nightly");
+        // Version string, most-specific first — robust across rustup releases:
+        //   1. a real `rustc 1.xx.x` line (`rustc --version` or old `rustup show`),
+        //   2. the modern `rustup show` `name: <toolchain>` active-toolchain line,
+        //   3. the `(active`/`(default)` toolchain row under `installed toolchains`.
         let version = raw
             .lines()
-            .find(|l| l.contains("rustc"))
-            .map(|l| l.trim().to_string());
+            .find(|l| l.trim_start().starts_with("rustc "))
+            .or_else(|| raw.lines().find(|l| l.trim_start().starts_with("name:")))
+            .or_else(|| raw.lines().find(|l| l.contains("(active") || l.contains("(default)")))
+            .map(|l| l.trim().trim_start_matches("name:").trim().to_string());
         let components = ["clippy", "rustfmt", "rust-src", "rust-analyzer"]
             .iter()
             .filter(|c| raw.contains(**c))
@@ -200,5 +209,37 @@ mod tests {
         assert_eq!(diags.len(), 1);
         assert_eq!(diags[0].code.as_deref(), Some("E0382"));
         assert_eq!(diags[0].level, DiagLevel::Error);
+    }
+
+    #[test]
+    fn parse_detect_modern_rustup_show() {
+        // Real output from a current rustup (no `rustc 1.x` line; uses `name:`).
+        let raw = "Default host: x86_64-unknown-linux-gnu\n\
+                   installed toolchains\n--------------------\n\
+                   stable-x86_64-unknown-linux-gnu (active, default)\n\n\
+                   active toolchain\n----------------\n\
+                   name: stable-x86_64-unknown-linux-gnu\n\
+                   active because: it's the default toolchain\n";
+        let st = RustLanguage.parse_detect(raw);
+        assert!(st.present);
+        assert_eq!(st.version.as_deref(), Some("stable-x86_64-unknown-linux-gnu"));
+    }
+
+    #[test]
+    fn parse_detect_prefers_a_real_rustc_version_line() {
+        // Old `rustup show` / `rustc --version` style — the rustc line wins.
+        let raw = "active toolchain\n----------------\n\
+                   stable-x86_64-unknown-linux-gnu (default)\n\
+                   rustc 1.94.1 (abc123 2026-01-01)\n";
+        let st = RustLanguage.parse_detect(raw);
+        assert!(st.present);
+        assert_eq!(st.version.as_deref(), Some("rustc 1.94.1 (abc123 2026-01-01)"));
+    }
+
+    #[test]
+    fn parse_detect_absent_toolchain() {
+        let st = RustLanguage.parse_detect("");
+        assert!(!st.present);
+        assert!(st.version.is_none());
     }
 }

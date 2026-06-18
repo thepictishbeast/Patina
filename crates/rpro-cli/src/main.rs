@@ -21,8 +21,11 @@
 use anyhow::{Context, Result, anyhow};
 use clap::{Parser, Subcommand};
 use console::style;
+use rpro_core::Core;
+use rpro_lang_rust::RustLanguage;
 use rpro_state::ExerciseStatus;
 use rpro_storage_fs::Store;
+use rpro_toolchain_local::LocalProcess;
 
 #[derive(Parser, Debug)]
 #[command(name = "rpro", version, about = "Rustlings Pro — Rust learning + the Rust Book", long_about = None)]
@@ -48,6 +51,9 @@ enum Cmd {
     },
     /// Print a one-screen progress summary.
     Progress,
+    /// Probe the local toolchain (version + components) and list the
+    /// learning tools available. Safe to run before `init`.
+    Detect,
 }
 
 #[derive(Subcommand, Debug)]
@@ -89,6 +95,7 @@ fn main() -> Result<()> {
             Some(BookCmd::Search { term }) => cmd_book_search(&term),
         },
         Some(Cmd::Progress) => cmd_progress(),
+        Some(Cmd::Detect) => cmd_detect(),
     }
 }
 
@@ -362,6 +369,66 @@ fn cmd_progress() -> Result<()> {
         .sum();
     if remaining > 0 {
         println!("  estimated remaining: {remaining} min");
+    }
+    Ok(())
+}
+
+fn cmd_detect() -> Result<()> {
+    use rpro_lang::Language as _;
+
+    let store = Store::user().context("locating ~/.rustlings-pro/")?;
+    let lang = RustLanguage;
+    let probe = lang.detect_plan();
+    let tools = lang.tools();
+
+    // Route the probe through the Core so this command exercises the exact
+    // plan → execute → interpret path every surface will use.
+    let core = Core::new(Box::new(lang), Box::new(LocalProcess), Box::new(store));
+
+    println!("{}", style("Toolchain check").bold().cyan());
+    println!("  {} {}", style("$").dim(), style(&probe.display).dim());
+    println!();
+
+    match pollster::block_on(core.detect()) {
+        Ok(status) => {
+            if status.present {
+                println!("  {} toolchain detected", style("✓").green().bold());
+            } else {
+                println!(
+                    "  {} no toolchain detected on PATH",
+                    style("✗").yellow().bold()
+                );
+            }
+            if let Some(v) = &status.version {
+                println!("  {:<12} {}", "version:", style(v).bold());
+            }
+            let comps = if status.components.is_empty() {
+                style("(none reported)").dim().to_string()
+            } else {
+                status.components.join(", ")
+            };
+            println!("  {:<12} {comps}", "components:");
+        }
+        Err(e) => {
+            println!("  {} could not run the probe", style("✗").red().bold());
+            println!("  {e}");
+            println!();
+            println!(
+                "  Install the toolchain from {} and re-run.",
+                style("https://rustup.rs").underlined()
+            );
+        }
+    }
+
+    println!();
+    println!("{}", style("Learning tools").bold().cyan());
+    for t in &tools {
+        println!(
+            "  {:<14} {:<10} {}",
+            style(&t.name).bold(),
+            format!("{:?}", t.kind).to_lowercase(),
+            style(&t.plan.display).dim()
+        );
     }
     Ok(())
 }

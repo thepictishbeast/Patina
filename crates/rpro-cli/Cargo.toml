@@ -16,12 +16,15 @@ rpro-state = { path = "../rpro-state" }
 rpro-storage-fs = { path = "../rpro-storage-fs" }
 rpro-lang = { path = "../rpro-lang" }
 rpro-lang-rust = { path = "../languages/rust" }
+rpro-core = { path = "../rpro-core" }
+rpro-toolchain-local = { path = "../rpro-toolchain-local" }
 rpro-runner = { path = "../rpro-runner" }
 rpro-book = { path = "../rpro-book" }
 rpro-tui = { path = "../rpro-tui" }
 clap.workspace = true
 anyhow.workspace = true
 console.workspace = true
+pollster.workspace = true
 
 [lints]
 workspace = true

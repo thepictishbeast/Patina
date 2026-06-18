@@ -933,12 +933,15 @@ dependencies = [
  "anyhow",
  "clap",
  "console",
+ "pollster",
  "rpro-book",
+ "rpro-core",
  "rpro-lang",
  "rpro-lang-rust",
  "rpro-runner",
  "rpro-state",
  "rpro-storage-fs",
+ "rpro-toolchain-local",
  "rpro-tui",
 ]
 
