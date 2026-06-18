@@ -13,8 +13,9 @@ pub mod status;
 pub mod theme;
 
 use anyhow::Result;
-use app::App;
+use app::{App, Tab};
 use rpro_book::Book;
+use rpro_lang::EditorAssists;
 use rpro_state::ExerciseStatus;
 use rpro_storage_fs::Store;
 use std::time::Duration;
@@ -35,9 +36,15 @@ use ratatui::backend::CrosstermBackend;
 pub fn run_dashboard(store: &Store, _book: &Book) -> Result<()> {
     let theme_name = store.load_config().map_or_else(|_| "dark".to_string(), |c| c.theme);
     let mut app = App::new(theme::Theme::from_env(&theme_name), status::ascii_only());
-    let data = dashboard_data(store);
-    app.set_list_len(data.up_next.len());
-    run_loop(&mut app, |f, app| render::render_dashboard(f, app, &data))
+    let dash = dashboard_data(store);
+    let ex = exercise_view_data(store);
+    app.set_list_len(dash.up_next.len());
+    run_loop(&mut app, |f, app| match app.tab {
+        Tab::Dashboard => render::render_dashboard(f, app, &dash),
+        Tab::Exercise => render::render_exercise(f, app, &ex),
+        Tab::Book => render::render_placeholder(f, app, "Book"),
+        Tab::Roadmap => render::render_placeholder(f, app, "Roadmap"),
+    })
 }
 
 /// Open the book reader. `start_chapter` is optional — if `Some`, the reader
@@ -86,6 +93,34 @@ fn dashboard_data(store: &Store) -> render::DashboardData {
         current_title,
         up_next,
     }
+}
+
+/// Build the exercise view's data from the current exercise on disk. No run has
+/// happened yet (that's the `rpro run` keystone), so output/diagnostics are
+/// empty — the screen shows the ready-to-run scaffold + book refs.
+fn exercise_view_data(store: &Store) -> render::ExerciseViewData {
+    let progress = store.load_progress().unwrap_or_default();
+    let exercises = rpro_runner::discover(&store.root().join("exercises")).unwrap_or_default();
+    let current = progress
+        .entries
+        .iter()
+        .find(|(_, e)| e.status == ExerciseStatus::Current)
+        .map(|(id, _)| id.clone())
+        .and_then(|id| exercises.into_iter().find(|e| e.meta.id == id));
+    current.map_or_else(
+        || render::ExerciseViewData {
+            id: "(no current exercise — run `rpro exercise next`)".into(),
+            assists: EditorAssists::default(),
+            ..Default::default()
+        },
+        |e| render::ExerciseViewData {
+            id: e.meta.id.clone(),
+            title: e.meta.title.clone(),
+            book_refs: e.meta.book_refs.iter().map(|r| (r.chapter.clone(), r.why.clone())).collect(),
+            assists: EditorAssists::default(),
+            ..Default::default()
+        },
+    )
 }
 
 /// The shared event loop: set up the terminal, draw + handle input until quit,
