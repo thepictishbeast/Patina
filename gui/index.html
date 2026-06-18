@@ -89,6 +89,15 @@
   .lesson h1 { font-size:20px; margin:0 0 6px; }
   .lesson .sub { color:var(--fg-dim); font-size:13px; margin-bottom:14px; }
   .lesson p { line-height:1.6; font-size:14px; color:var(--fg); }
+  .predict { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:10px; font-size:13px; }
+  .predict .pl { color:var(--fg-dim); }
+  .pbtn { background:var(--bg-2); color:var(--fg); border:1px solid var(--line); border-radius:8px;
+    padding:5px 10px; cursor:pointer; font-size:12.5px; transition:.12s; }
+  .pbtn:hover { border-color:var(--accent); }
+  .pbtn.sel { border-color:var(--accent); box-shadow:inset 0 -2px 0 var(--accent); }
+  .pin { background:var(--bg-2); color:var(--fg); border:1px solid var(--line); border-radius:8px;
+    padding:5px 8px; font-family:var(--mono); font-size:12px; width:150px; outline:none; }
+  .pv { font-size:12.5px; font-weight:600; }
   .editor { margin:0 20px 14px; border:1px solid var(--line); border-radius:var(--radius); background:var(--bg-2);
     box-shadow:var(--shadow); overflow:hidden; }
   .editor .bar { display:flex; align-items:center; gap:8px; padding:8px 12px; border-bottom:1px solid var(--line);
@@ -162,6 +171,13 @@
         <p><b>Predict first:</b> will this compile? If not, which <b>error code</b> appears,
         and what one-word <code>help:</code> fix will the compiler suggest? Lock your guess,
         then press <b>Run</b> — you'll read the <i>real</i> compiler output, by hand.</p>
+        <div class="predict" id="predictbar">
+          <span class="pl">🔮 Lock your prediction:</span>
+          <button class="pbtn" data-pred="compiles">compiles ✓</button>
+          <button class="pbtn" data-pred="fails">fails ✗</button>
+          <input id="predcode" class="pin" placeholder="error code? e.g. E0382" spellcheck="false" autocomplete="off" />
+          <span id="predverdict" class="pv"></span>
+        </div>
       </div>
 
       <div class="editor">
@@ -272,6 +288,7 @@
           : r('✗ failed') + d(' in ' + out.duration_ms + 'ms — read it top-to-bottom, then fix & re-run');
         term.writeln(''); term.writeln(verdict);
         renderDiag(out);
+        if (op !== 'explain') showPrediction(out);
         statusEl().textContent = out.passed ? 'passed' : 'failed';
         // Refresh the list/gauge/attempts after every run; if a pass advanced
         // the learner, load the next exercise into the editor.
@@ -314,7 +331,28 @@
     }
 
     let curExercise = null, curOriginal = '', hintLevel = 0;
+    let predict = { compiles: null, code: '' };
     const editorEl = () => document.getElementById('editorCode');
+
+    // Compare the learner's locked prediction against the real result.
+    function showPrediction(out) {
+      if (predict.compiles === null) return;
+      const el = document.getElementById('predverdict');
+      const actualCompiles = !!out.passed;
+      const actualCode = lastCode || (((out.raw_stderr || '').match(/error\[(E\d{3,4})\]/) || [])[1] || '');
+      const compRight = predict.compiles === actualCompiles;
+      const parts = [compRight
+        ? '✓ outcome: right'
+        : `✗ you said it ${predict.compiles ? 'compiles' : 'fails'}, it ${actualCompiles ? 'compiled' : 'failed'}`];
+      if (predict.code.trim()) {
+        const guess = predict.code.trim().toUpperCase();
+        if (actualCode && guess === actualCode.toUpperCase()) parts.push(`✓ error ${actualCode} — nailed it`);
+        else if (actualCode) parts.push(`✗ error: you guessed ${guess}, it was ${actualCode}`);
+        else parts.push('(no error code this run)');
+      }
+      el.textContent = parts.join(' · ');
+      el.style.color = compRight ? 'var(--done)' : 'var(--error)';
+    }
     const lsKey = id => 'ts-edit:' + id;
 
     // The hint ladder: each press climbs one rung (concept → expected error →
@@ -352,6 +390,11 @@
       hintLevel = 0;
       const hb = document.getElementById('hintbox'); if (hb) hb.innerHTML = '';
       const hbtn = document.getElementById('hintbtn'); if (hbtn) hbtn.disabled = false;
+      // fresh exercise → reset the prediction
+      predict = { compiles: null, code: '' };
+      document.querySelectorAll('.pbtn').forEach(b => b.classList.remove('sel'));
+      const pc = document.getElementById('predcode'); if (pc) pc.value = '';
+      const pv = document.getElementById('predverdict'); if (pv) pv.textContent = '';
       document.getElementById('lessonTitle').textContent = j.title || j.exercise;
       const mins = j.estimated_minutes ? ` · ~${j.estimated_minutes} min` : '';
       document.getElementById('lessonSub').textContent =
@@ -443,6 +486,13 @@
     editorEl().addEventListener('input', markEdited);
     document.getElementById('resetbtn').onclick = () => { editorEl().value = curOriginal; markEdited(); editorEl().focus(); };
     document.getElementById('hintbtn').onclick = runHint;
+    // predict-first: lock a compiles/fails guess (+ optional error code) before Run
+    document.querySelectorAll('.pbtn').forEach(b => b.onclick = () => {
+      document.querySelectorAll('.pbtn').forEach(x => x.classList.remove('sel'));
+      b.classList.add('sel');
+      predict.compiles = b.dataset.pred === 'compiles';
+    });
+    document.getElementById('predcode').addEventListener('input', e => { predict.code = e.target.value; });
     document.getElementById('explainbtn').onclick = () => {
       const code = (prompt('Diagnostic code to explain (letters/digits only):', lastCode) || '').trim();
       if (code) runOp('explain', { code });
