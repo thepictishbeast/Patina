@@ -6,12 +6,13 @@
 <title>Tempered Studio</title>
 <!--
   Tempered Studio — GUI shell (frontend).
-  Self-contained, no CDN (FOSS-first, works offline). System fonts only.
-  This is the magnificent host shell; the bottom pane is the EMBEDDED TERMINAL
-  that runs the real `rpro` TUI + cargo/rustc (Termux on Android, a pty on
-  desktop/web-backend). Open in any browser to preview — no install.
-  Implements docs/UX.md (palette, status legend, throbber, Free/Learning).
+  Self-contained, no CDN (FOSS-first, works offline). xterm.js is vendored under
+  vendor/xterm/ (MIT). The bottom pane is a REAL terminal widget — the same one
+  the live build will stream rpro + cargo/rustc into over a pty (Termux on
+  Android, a pty on desktop, a pty-over-WebSocket on web). Open in any browser
+  to preview — no install. Implements docs/UX.md.
 -->
+<link rel="stylesheet" href="vendor/xterm/xterm.css" />
 <style>
   :root {
     --accent: #f74c00;          /* Ferris orange */
@@ -32,7 +33,6 @@
     margin:0; font-family:var(--ui); background:var(--bg); color:var(--fg);
     height:100vh; overflow:hidden; -webkit-font-smoothing:antialiased;
   }
-  /* ---------- top bar ---------- */
   header {
     display:flex; align-items:center; gap:18px; padding:10px 16px;
     background:linear-gradient(180deg,var(--bg-2),var(--bg)); border-bottom:1px solid var(--line);
@@ -65,14 +65,12 @@
     border-radius:8px; padding:5px 9px; font-size:14px; transition:.15s; }
   .iconbtn:hover { color:var(--fg); border-color:var(--accent); }
 
-  /* ---------- main grid ---------- */
   main { display:grid; grid-template-columns:248px 1fr 320px; grid-template-rows:1fr; height:calc(100vh - 45px); }
   .pane { border-right:1px solid var(--line); display:flex; flex-direction:column; min-height:0; }
   .pane:last-child { border-right:none; }
   .pane h2 { font-size:11px; text-transform:uppercase; letter-spacing:.12em; color:var(--fg-dim);
     margin:0; padding:12px 14px 8px; font-weight:600; }
 
-  /* left: exercise list */
   .exlist { overflow:auto; padding:0 8px 12px; }
   .ex { display:flex; align-items:center; gap:9px; padding:9px 10px; border-radius:9px; cursor:pointer;
     transition:.12s; border:1px solid transparent; animation:fadein .4s ease both; }
@@ -84,7 +82,6 @@
   .done .chip{color:var(--done)} .current .chip{color:var(--current)}
   .locked{opacity:.6} .locked .chip{color:var(--locked)} .skipped .chip{color:var(--skipped)}
 
-  /* center: lesson + editor */
   .center { display:flex; flex-direction:column; min-height:0; }
   .lesson { padding:16px 20px; overflow:auto; }
   .lesson h1 { font-size:20px; margin:0 0 6px; }
@@ -103,16 +100,15 @@
   .run:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(247,76,0,.5)}
   .ghost{background:var(--bg-2);color:var(--fg);border:1px solid var(--line);padding:9px 14px;border-radius:9px;cursor:pointer;font-size:13px}
 
-  /* embedded terminal — the TUI inside the GUI */
+  /* embedded terminal — a real xterm.js widget */
   .terminal { margin:0 20px 18px; border:1px solid var(--line); border-radius:var(--radius); background:#0a0d12;
-    box-shadow:var(--shadow); display:flex; flex-direction:column; min-height:182px; }
+    box-shadow:var(--shadow); display:flex; flex-direction:column; height:240px; overflow:hidden; }
   .terminal .tbar{display:flex;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid var(--line);
-    font-family:var(--mono);font-size:11.5px;color:var(--fg-dim)}
-  .terminal .body{padding:12px 14px;font-family:var(--mono);font-size:12.5px;line-height:1.55;overflow:auto;color:#cfe3d6;white-space:pre-wrap}
-  .term-prompt{color:var(--done)} .term-err{color:var(--error)} .term-blue{color:var(--note)} .term-dim{color:var(--fg-dim)}
+    font-family:var(--mono);font-size:11.5px;color:var(--fg-dim);flex:0 0 auto}
+  .xterm-host{flex:1;min-height:0;padding:6px 8px}
+  .xterm-host .xterm,.xterm-host .xterm-viewport{height:100%!important;background:transparent!important}
   .throbber{color:var(--accent-soft);display:inline-block}
 
-  /* right: diagnostics + book refs */
   .diag { display:flex; align-items:flex-start; gap:9px; padding:10px 14px; border-bottom:1px solid var(--line); font-size:12.5px; }
   .diag .lvl{font-family:var(--mono);font-weight:700}
   .diag.error .lvl{color:var(--error)} .diag.warn .lvl{color:var(--warn)} .diag.note .lvl{color:var(--note)}
@@ -121,7 +117,6 @@
   .bref:hover{background:var(--bg-2)} .bref .c{font-family:var(--mono);color:var(--note)} .bref small{display:block;color:var(--fg-dim);margin-top:2px}
 
   @keyframes fadein{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
-  @keyframes spin{to{transform:rotate(360deg)}}
   .footer{position:fixed;bottom:0;left:0;right:0;display:flex;gap:18px;justify-content:center;
     padding:6px;background:var(--bg-2);border-top:1px solid var(--line);font-family:var(--mono);font-size:11px;color:var(--fg-dim)}
   .footer b{color:var(--fg)}
@@ -147,7 +142,6 @@
   </header>
 
   <main>
-    <!-- LEFT: exercises -->
     <section class="pane">
       <h2>Exercises · Phase&nbsp;5</h2>
       <div class="exlist scroll">
@@ -160,7 +154,6 @@
       </div>
     </section>
 
-    <!-- CENTER: lesson + editor + embedded terminal -->
     <section class="pane center">
       <div class="lesson scroll">
         <h1>Option&lt;T&gt; — Rust's answer to null 🦀</h1>
@@ -185,28 +178,17 @@
       </div>
       <div class="runrow">
         <button class="run" id="runbtn">▷ Run (cargo run)</button>
-        <button class="ghost">✓ Check</button>
+        <button class="ghost" id="checkbtn">✓ Check</button>
         <button class="ghost">✎ Edit</button>
         <span class="badge" style="margin-left:auto">predict locked: <b style="color:var(--note)">E0277</b></span>
       </div>
 
-      <!-- the embedded TUI / terminal -->
       <div class="terminal">
         <div class="tbar"><span class="throbber" id="throb">⠹</span> rpro · embedded terminal — real cargo/rustc (Termux on Android, pty on desktop)</div>
-        <div class="body scroll" id="termbody"><span class="term-prompt">$ cargo run</span>
-<span class="term-dim">   Compiling exercise v0.1.0</span>
-<span class="term-err">error[E0277]</span>: cannot add `Option&lt;i8&gt;` to `i8`
- <span class="term-blue">--&gt;</span> src/main.rs:5:17
-  <span class="term-blue">|</span>
-<span class="term-blue">5</span> <span class="term-blue">|</span>     let sum = x + y;
-  <span class="term-blue">|</span>                 <span class="term-err">^ no implementation for `i8 + Option&lt;i8&gt;`</span>
-  <span class="term-blue">= help:</span> the trait `Add&lt;Option&lt;i8&gt;&gt;` is not implemented for `i8`
-<span class="term-dim">  = note: convert the `Option&lt;i8&gt;` to an `i8` first (e.g. `y.unwrap()`/`match`)</span>
-<span class="term-dim">✗ failed in 0.31s — read it top-to-bottom, then fix &amp; re-run</span></div>
+        <div id="xterm" class="xterm-host"></div>
       </div>
     </section>
 
-    <!-- RIGHT: diagnostics + book refs -->
     <section class="pane">
       <h2>Diagnostics</h2>
       <div class="diag error"><span class="lvl">[!]</span><span class="msg">E0277 · L5
@@ -226,30 +208,61 @@
 
   <div class="footer"><span><b>r</b> run</span><span><b>c</b> check</span><span><b>h</b> hint</span><span><b>b</b> book</span><span><b>t</b> tasks</span><span><b>?</b> keys</span><span><b>q</b> quit</span></div>
 
-<script>
-  // progress fill animation
-  window.addEventListener('load', () => { document.getElementById('fill').style.width = '30%'; });
-  // throbber animation (braille) — mirrors the TUI Throbber
-  const frames = ["⠋","⠙","⠹","⠸","⠼","⠴","⠦","⠧","⠇","⠏"]; let i = 0;
-  setInterval(() => { document.getElementById('throb').textContent = frames[i++ % frames.length]; }, 90);
-  // tab switching (visual)
-  document.querySelectorAll('.tab').forEach(t => t.onclick = () => {
-    document.querySelector('.tab.active')?.classList.remove('active'); t.classList.add('active');
-  });
-  // exercise selection
-  document.querySelectorAll('.ex').forEach(e => e.onclick = () => {
-    document.querySelector('.ex.sel')?.classList.remove('sel'); e.classList.add('sel');
-  });
-  // theme toggle
-  document.getElementById('theme').onclick = () => {
-    const h = document.documentElement;
-    h.dataset.theme = h.dataset.theme === 'dark' ? 'light' : 'dark';
-  };
-  // run -> re-trigger the throbber/“running” feel
-  document.getElementById('runbtn').onclick = () => {
-    const b = document.getElementById('termbody');
-    b.innerHTML = '<span class="term-prompt">$ cargo run</span>\n<span class="term-dim">   Compiling exercise v0.1.0 ...</span>';
-  };
-</script>
+  <script src="vendor/xterm/xterm.js"></script>
+  <script src="vendor/xterm/addon-fit.js"></script>
+  <script>
+    // ── Real xterm.js terminal — renders true ANSI, like live rpro output ──
+    const C = { fg:'#cfe3d6', bg:'#0a0d12', green:'#36c46b', red:'#ff5c5c',
+                blue:'#5aa9ff', dim:'#9aa7b4', accent:'#ff7a3c' };
+    const term = new Terminal({
+      convertEol:true, cursorBlink:true, fontSize:12.5, scrollback:1000,
+      fontFamily:'ui-monospace, "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace',
+      theme:{ background:C.bg, foreground:C.fg, brightGreen:C.green, red:C.red, blue:C.blue }
+    });
+    const fit = new FitAddon.FitAddon();
+    term.loadAddon(fit);
+    term.open(document.getElementById('xterm'));
+    const refit = () => { try { fit.fit(); } catch (_) {} };
+    refit(); window.addEventListener('resize', refit);
+
+    // ANSI helpers
+    const g=s=>`\x1b[32m${s}\x1b[0m`, r=s=>`\x1b[31m${s}\x1b[0m`,
+          b=s=>`\x1b[34m${s}\x1b[0m`, d=s=>`\x1b[2m${s}\x1b[0m`;
+
+    function showSession() {
+      term.clear();
+      term.writeln(g('$ cargo run'));
+      term.writeln(d('   Compiling exercise v0.1.0'));
+      term.writeln(r('error[E0277]') + ': cannot add `Option<i8>` to `i8`');
+      term.writeln(' ' + b('-->') + ' src/main.rs:5:17');
+      term.writeln('  ' + b('|'));
+      term.writeln(b('5') + ' ' + b('|') + '     let sum = x + y;');
+      term.writeln('  ' + b('|') + '                 ' + r('^ no implementation for `i8 + Option<i8>`'));
+      term.writeln('  ' + b('= help:') + ' convert the `Option<i8>` to an `i8` first');
+      term.writeln(d('✗ failed in 0.31s — read it top-to-bottom, then fix & re-run'));
+    }
+    showSession();
+
+    // throbber in the header (mirrors the TUI Throbber)
+    const frames = ["⠋","⠙","⠹","⠸","⠼","⠴","⠦","⠧","⠇","⠏"]; let i = 0;
+    setInterval(() => { document.getElementById('throb').textContent = frames[i++ % frames.length]; }, 90);
+
+    // tab + exercise selection (visual)
+    document.querySelectorAll('.tab').forEach(t => t.onclick = () => {
+      document.querySelector('.tab.active')?.classList.remove('active'); t.classList.add('active');
+    });
+    document.querySelectorAll('.ex').forEach(e => e.onclick = () => {
+      document.querySelector('.ex.sel')?.classList.remove('sel'); e.classList.add('sel');
+    });
+    document.getElementById('theme').onclick = () => {
+      const h = document.documentElement;
+      h.dataset.theme = h.dataset.theme === 'dark' ? 'light' : 'dark';
+    };
+    // run/check → simulate the compile feel (the live build streams a real pty here)
+    const runseq = () => { term.clear(); term.writeln(g('$ cargo run')); term.writeln(d('   Compiling exercise v0.1.0 ...')); setTimeout(showSession, 650); };
+    document.getElementById('runbtn').onclick = runseq;
+    document.getElementById('checkbtn').onclick = runseq;
+    window.addEventListener('load', () => { document.getElementById('fill').style.width = '30%'; refit(); });
+  </script>
 </body>
 </html>
