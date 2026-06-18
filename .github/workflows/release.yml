@@ -1,0 +1,66 @@
+name: release
+
+# Build the installable desktop packages and attach them to a GitHub Release.
+# Triggered by a version tag (e.g. `v0.1.0`). See docs/DISTRIBUTION.md for the
+# full plan; this workflow covers the Linux desktop artifacts that are buildable
+# today (the `rpro` CLI/TUI). AppImage joins once the GUI lands; APK lives in the
+# mobile repo; the web bundle deploys from its own workflow.
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag to (re)build packages for'
+        required: true
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  linux-packages:
+    name: .deb + .rpm (x86_64)
+    runs-on: [self-hosted, linux, x64, plausiden]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      # cargo install is a no-op when the right version is already present, so
+      # this is cheap on warm runners and self-healing on cold ones.
+      - name: install packaging tools
+        run: |
+          cargo install cargo-deb --version ^3 --locked || cargo install cargo-deb --locked
+          cargo install cargo-generate-rpm --locked
+
+      - name: build release binary
+        run: cargo build --release --locked -p rpro-cli
+
+      - name: build .deb
+        run: cargo deb -p rpro-cli --no-build
+
+      - name: build .rpm
+        run: cargo generate-rpm -p crates/rpro-cli
+
+      - name: collect artifacts
+        run: |
+          mkdir -p dist
+          cp target/debian/*.deb dist/
+          cp target/generate-rpm/*.rpm dist/
+          ls -lh dist/
+
+      - name: upload to the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.inputs.tag || github.ref_name }}
+        run: |
+          # Create the release if the tag push didn't already, then attach the
+          # packages (clobber so re-runs replace stale assets).
+          gh release view "$TAG" >/dev/null 2>&1 \
+            || gh release create "$TAG" --title "$TAG" --generate-notes
+          gh release upload "$TAG" dist/*.deb dist/*.rpm --clobber

@@ -28,3 +28,36 @@ pollster.workspace = true
 
 [lints]
 workspace = true
+
+# ── Packaging ───────────────────────────────────────────────────────────────
+# Produces an installable `tempered-studio` package containing the `rpro`
+# binary. Verified locally with `cargo deb -p rpro-cli`; CI fans the artifacts
+# out to GitHub Releases (see docs/DISTRIBUTION.md).
+
+[package.metadata.deb]
+name = "tempered-studio"
+maintainer = "PlausiDen LLC <redcaptian1917@gmail.com>"
+copyright = "2026, PlausiDen LLC"
+section = "devel"
+priority = "optional"
+extended-description = """\
+Tempered Studio — an interactive, offline-friendly Rust learning environment: \
+graded exercises, the embedded Rust Book, and a CLI/TUI that always shows you \
+the real compiler output so you learn to read errors by hand. The `rpro` \
+binary is the desktop entry point.\
+"""
+depends = "$auto"
+recommends = "rustup"
+assets = [
+    ["target/release/rpro", "usr/bin/", "755"],
+]
+
+[package.metadata.generate-rpm]
+# cargo-generate-rpm reads this; build the release binary first, then
+# `cargo generate-rpm -p crates/rpro-cli`.
+name = "tempered-studio"
+assets = [
+    { source = "target/release/rpro", dest = "/usr/bin/rpro", mode = "755" },
+]
+[package.metadata.generate-rpm.requires]
+# runtime suggestions are soft; the binary degrades gracefully without them
