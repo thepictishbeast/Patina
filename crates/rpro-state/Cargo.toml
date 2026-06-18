@@ -8,6 +8,7 @@ repository.workspace = true
 description = "Rustlings Pro on-disk state — progress, bookmarks, annotations, exercise metadata. Plain JSON / TOML files in ~/.rustlings-pro/."
 
 [dependencies]
+rpro-lang = { path = "../rpro-lang" }
 serde.workspace = true
 serde_json.workspace = true
 toml.workspace = true

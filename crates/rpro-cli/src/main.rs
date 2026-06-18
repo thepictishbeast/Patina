@@ -278,7 +278,7 @@ fn cmd_exercise_hint(show_solution: bool) -> Result<()> {
         println!("     {}", r.why);
         println!(
             "     {}",
-            style(rpro_state::ExerciseMetadata::book_ref_url(r))
+            style(rpro_lang::Language::book_ref_url(&rpro_lang_rust::RustLanguage, r))
                 .dim()
                 .underlined()
         );

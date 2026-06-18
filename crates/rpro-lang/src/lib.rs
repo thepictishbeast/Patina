@@ -197,6 +197,7 @@ pub struct BookRef {
     /// Chapter id (e.g. `ch04-01-what-is-ownership`).
     pub chapter: String,
     /// Optional in-page anchor.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub anchor: Option<String>,
     /// One sentence: why this section helps with this exercise.
     pub why: String,
