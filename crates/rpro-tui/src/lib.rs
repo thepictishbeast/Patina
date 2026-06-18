@@ -237,7 +237,7 @@ fn spawn_run(store_root: &Path, op: RunOp) -> Option<Receiver<RunResult>> {
         .map(|(id, _)| id.clone());
     let ex = current_id.and_then(|id| exercises.into_iter().find(|e| e.meta.id == id))?;
     let code = std::fs::read_to_string(&ex.source).ok()?;
-    let id = ex.meta.id.clone();
+    let id = ex.meta.id;
     let run_dir = store.root().join("run").join(rpro_runner::slug(&id));
     let root = store_root.to_path_buf();
 

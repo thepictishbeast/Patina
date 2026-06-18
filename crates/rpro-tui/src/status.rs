@@ -57,7 +57,7 @@ pub const fn status_glyph(s: ExerciseStatus, ascii: bool) -> &'static str {
 
 /// The style for an exercise status, given the active theme.
 #[must_use]
-pub fn status_style(s: ExerciseStatus, t: &Theme) -> Style {
+pub const fn status_style(s: ExerciseStatus, t: &Theme) -> Style {
     match s {
         ExerciseStatus::Locked => Style::new().fg(t.locked).add_modifier(Modifier::DIM),
         ExerciseStatus::Current => Style::new().fg(t.current).add_modifier(Modifier::BOLD),
@@ -84,7 +84,7 @@ pub const fn diag_token(l: DiagLevel) -> &'static str {
 
 /// The style for a diagnostic level, given the active theme.
 #[must_use]
-pub fn diag_style(l: DiagLevel, t: &Theme) -> Style {
+pub const fn diag_style(l: DiagLevel, t: &Theme) -> Style {
     let c = match l {
         DiagLevel::Error => t.error,
         DiagLevel::Warning => t.warn,

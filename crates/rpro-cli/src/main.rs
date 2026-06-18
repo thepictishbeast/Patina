@@ -169,12 +169,12 @@ fn cmd_init() -> Result<()> {
     // the web server's auto-seed.
     let exercises_dir = store.root().join("exercises");
     let bundled = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../exercises");
-    let have_any = rpro_runner::discover(&exercises_dir).map(|v| !v.is_empty()).unwrap_or(false);
+    let have_any = rpro_runner::discover(&exercises_dir).is_ok_and(|v| !v.is_empty());
     if !have_any && bundled.is_dir() {
         copy_tree(&bundled, &exercises_dir)
             .with_context(|| format!("seeding exercises from {}", bundled.display()))?;
-        let n = rpro_runner::discover(&exercises_dir).map(|v| v.len()).unwrap_or(0);
-        println!("  + seeded {} bundled exercise(s)", n);
+        let n = rpro_runner::discover(&exercises_dir).map_or(0, |v| v.len());
+        println!("  + seeded {n} bundled exercise(s)");
     }
     // Ensure a Current exercise so the first run isn't an empty screen.
     let mut progress = store.load_progress().unwrap_or_default();

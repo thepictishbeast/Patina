@@ -61,11 +61,11 @@ impl RustLanguage {
 }
 
 impl Language for RustLanguage {
-    fn id(&self) -> &str {
+    fn id(&self) -> &'static str {
         "rust"
     }
 
-    fn source_ext(&self) -> &str {
+    fn source_ext(&self) -> &'static str {
         "rs"
     }
 
