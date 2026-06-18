@@ -30,8 +30,9 @@ use std::path::{Path, PathBuf};
 
 use axum::Router;
 use axum::extract::{Query, State};
-use axum::http::StatusCode;
-use axum::response::{IntoResponse, Json};
+use axum::http::{HeaderValue, StatusCode, header};
+use axum::middleware::map_response;
+use axum::response::{IntoResponse, Json, Response};
 use axum::routing::post;
 use serde::{Deserialize, Serialize};
 use tower_http::services::ServeDir;
@@ -509,6 +510,28 @@ fn copy_dir_recursive(from: &Path, to: &Path) -> std::io::Result<()> {
     Ok(())
 }
 
+/// Defense-in-depth security headers on every response. The GUI is fully
+/// self-contained (vendored assets, no CDN) and never renders untrusted HTML —
+/// compiler output goes through xterm (terminal escapes, not HTML) and all
+/// dynamic text is escaped — so a strict policy fits. `'unsafe-inline'` is
+/// allowed for the page's own inline `<style>`/`<script>` (loopback, single
+/// user; not load-bearing for safety here).
+async fn security_headers(mut res: Response) -> Response {
+    let h = res.headers_mut();
+    h.insert(
+        header::CONTENT_SECURITY_POLICY,
+        HeaderValue::from_static(
+            "default-src 'self'; script-src 'self' 'unsafe-inline'; \
+             style-src 'self' 'unsafe-inline'; img-src 'self' data:; \
+             connect-src 'self'; base-uri 'none'; frame-ancestors 'none'",
+        ),
+    );
+    h.insert(header::X_CONTENT_TYPE_OPTIONS, HeaderValue::from_static("nosniff"));
+    h.insert(header::REFERRER_POLICY, HeaderValue::from_static("no-referrer"));
+    h.insert(header::X_FRAME_OPTIONS, HeaderValue::from_static("DENY"));
+    res
+}
+
 #[tokio::main]
 async fn main() {
     // Resolve paths relative to this crate so a plain build-tool run works
@@ -545,6 +568,7 @@ async fn main() {
         .route("/api/roadmap", axum::routing::get(roadmap_handler))
         // Everything else is the static gui/ shell (index.html + vendored xterm).
         .fallback_service(ServeDir::new(&gui_dir))
+        .layer(map_response(security_headers))
         .with_state(state);
 
     // Loopback ONLY — never 0.0.0.0. Port is fixed (8787) or PORT, clamped.
