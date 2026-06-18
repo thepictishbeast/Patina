@@ -47,12 +47,16 @@ jobs:
       - name: build .rpm
         run: cargo generate-rpm -p crates/rpro-cli
 
-      - name: collect artifacts
+      - name: collect artifacts + checksums
         run: |
           mkdir -p dist
           cp target/debian/*.deb dist/
           cp target/generate-rpm/*.rpm dist/
+          # Supply-chain integrity for direct GH-Release downloads / Obtainium:
+          # a checksum file users can verify against (sha256sum -c SHA256SUMS).
+          ( cd dist && sha256sum *.deb *.rpm > SHA256SUMS )
           ls -lh dist/
+          cat dist/SHA256SUMS
 
       - name: upload to the GitHub Release
         env:
@@ -63,4 +67,4 @@ jobs:
           # packages (clobber so re-runs replace stale assets).
           gh release view "$TAG" >/dev/null 2>&1 \
             || gh release create "$TAG" --title "$TAG" --generate-notes
-          gh release upload "$TAG" dist/*.deb dist/*.rpm --clobber
+          gh release upload "$TAG" dist/*.deb dist/*.rpm dist/SHA256SUMS --clobber

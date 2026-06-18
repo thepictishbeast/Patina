@@ -54,7 +54,7 @@ Surfaces: **Web** (`rpro-serve`, shipped + live), **CLI** (`rpro`), **TUI** (`rp
 ## F. Packaging / distribution (#6) — 🔒 environment-gated here
 - [ ] 🔒 **P3 — AppImage / .deb / .rpm / APK** (release.yml exists; needs CI / a machine with native toolchains — crates.io is blocked in this sandbox). Verify release.yml is correct; document local build.
 - [ ] 🔒 **P3 — Android** (Termux `rust` embed) + **Desktop** (Tauri wrap of the same `gui/` frontend). Needs webkit2gtk/node/android-sdk — not buildable here.
-- [ ] **P2 — Verify release.yml** by inspection + a dry-run lint (doable here).
+- [x] **P2 — Verify release.yml** (this tick) — all 3 workflows parse as valid YAML; deb/rpm asset paths match the built `rpro` binary; dispatch/tag fallback + `contents: write` correct; consistent with DISTRIBUTION.md (self-hosted `plausiden` runner is the documented intent). Added a `SHA256SUMS` artifact (collect + upload) for download integrity, and a "Local build & verify" how-to in DISTRIBUTION.md. Open hardening noted: artifact GPG signing, runner exec timeout (SECURITY.md F1).
 
 ## G. Audit & test (run periodically + before "done")
 - [x] **P1 — Full workspace test + build** green — verified every tick; `rpro-serve` endpoint tests added (`bedab94`: op-whitelist, no-leak of solution/expected_error, hint gating) + `record_run` integration tests. Standing gate (re-run before "done").

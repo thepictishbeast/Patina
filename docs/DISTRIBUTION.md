@@ -59,12 +59,40 @@ language-seam crates (`rpro-lang`, `rpro-core`, …) via git dependency or a
 published crate, so the "one seam, many surfaces" architecture is preserved
 across both repos.
 
+## Local build & verify (dry-run the release before tagging)
+
+The packaging is locally reproducible — run this from the workspace root to build
+the same `.deb` / `.rpm` the release workflow produces, **before** pushing a tag:
+
+```sh
+cargo install cargo-deb cargo-generate-rpm        # one-time (tools)
+cargo build --release --locked -p rpro-cli        # → target/release/rpro
+cargo deb -p rpro-cli --no-build                  # → target/debian/*.deb
+cargo generate-rpm -p crates/rpro-cli             # → target/generate-rpm/*.rpm
+# integrity, exactly as the workflow's collect step does it:
+( cd target && sha256sum debian/*.deb generate-rpm/*.rpm )
+```
+
+Both packages install the `rpro` binary at `/usr/bin/rpro` and are named
+`tempered-studio` (see `crates/rpro-cli/Cargo.toml` `[package.metadata.deb]` /
+`[package.metadata.generate-rpm]`). Inspect before shipping:
+`dpkg -c target/debian/*.deb` and `rpm -qlp target/generate-rpm/*.rpm`.
+
+> **Verified (release.yml inspection):** all three workflows parse as valid YAML;
+> the deb/rpm asset paths match the built binary; the dispatch/tag fallback
+> (`inputs.tag || ref_name`) and `contents: write` permission are correct; the
+> self-hosted `plausiden` runner matches the plan below. The workflow now also
+> publishes a `SHA256SUMS` file so direct GH-Release / Obtainium downloads are
+> verifiable (`sha256sum -c SHA256SUMS`). Open hardening: artifact GPG signing
+> (tracked with the APT/dnf key custody decision) and an execution timeout in the
+> runner (see `docs/SECURITY.md` F1).
+
 ## CI / release flow (GitHub Actions)
 
 One `release.yml` triggered on a version tag:
 1. Build release binaries on the self-hosted `plausiden` runner.
 2. Produce AppImage + .deb + .rpm (desktop) and, in the mobile repo, the signed APK.
-3. Create the GitHub Release and attach all artifacts.
+3. Create the GitHub Release and attach all artifacts + a `SHA256SUMS` checksum file.
 4. Refresh the GH Pages APT/dnf repos and the AppImage `.zsync`.
 5. (Mobile) trigger the F-Droid repo rebuild.
 
