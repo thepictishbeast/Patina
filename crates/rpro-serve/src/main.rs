@@ -338,21 +338,25 @@ fn status_str(s: ExerciseStatus) -> &'static str {
 /// Deliberately **omits** `expected_error_code` and `solution_outline` — the
 /// predict-first / guide-don't-solve contract means the page never reveals the
 /// answer. Returns `{ "exercise": null }` when nothing is current.
+/// Build the public JSON for an exercise. Pure (no I/O) so it's unit-testable.
+/// Deliberately omits `expected_error_code` and `solution_outline` — the page
+/// never receives the answer (predict-first / guide-don't-solve).
+fn current_json(ex: &rpro_runner::Exercise, code: &str) -> serde_json::Value {
+    let m = &ex.meta;
+    serde_json::json!({
+        "exercise": m.id,
+        "title": m.title,
+        "code": code,
+        "concept": m.concept,
+        "difficulty": m.difficulty,
+        "estimated_minutes": m.estimated_minutes,
+        "book_refs": m.book_refs,
+    })
+}
+
 async fn current_handler(State(state): State<AppState>) -> impl IntoResponse {
     match current_exercise(&state.store_root) {
-        Some((ex, code)) => {
-            let m = &ex.meta;
-            Json(serde_json::json!({
-                "exercise": m.id,
-                "title": m.title,
-                "code": code,
-                "concept": m.concept,
-                "difficulty": m.difficulty,
-                "estimated_minutes": m.estimated_minutes,
-                "book_refs": m.book_refs,
-            }))
-            .into_response()
-        }
+        Some((ex, code)) => Json(current_json(&ex, &code)).into_response(),
         None => Json(serde_json::json!({ "exercise": null })).into_response(),
     }
 }
@@ -392,22 +396,13 @@ struct HintQuery {
     level: Option<u8>,
 }
 
-/// `GET /api/hint?level=N` — the hint ladder. Escalates: 1 = concept + a "read the
-/// `-->` / `help:` line" nudge; 2 = the expected error code (use Explain); 3 = the
-/// solution OUTLINE, last resort. Levels above what the exercise carries are
-/// clamped. The outline is returned ONLY when the learner explicitly climbs to it
-/// — the tutor guides, it never auto-types the fix.
-async fn hint_handler(
-    State(state): State<AppState>,
-    Query(q): Query<HintQuery>,
-) -> impl IntoResponse {
-    let Some((ex, _code)) = current_exercise(&state.store_root) else {
-        return Json(serde_json::json!({ "level": 0, "max_level": 0, "text": null }))
-            .into_response();
-    };
-    let m = &ex.meta;
+/// The hint ladder, as a pure function (no I/O) so it's unit-testable. Returns
+/// `(clamped_level, max_level, text)`. `max_level` is 3 when the exercise has a
+/// solution outline, else 2. The solution outline is returned ONLY at the top
+/// level — levels 1 and 2 never contain it.
+fn hint_for(m: &rpro_state::ExerciseMetadata, requested: u8) -> (u8, u8, String) {
     let max_level: u8 = if m.solution_outline.is_some() { 3 } else { 2 };
-    let level = q.level.unwrap_or(1).clamp(1, max_level);
+    let level = requested.clamp(1, max_level);
     let text = match level {
         1 => format!(
             "Concept: {}. Start with the book refs, then Run it and read the compiler's \
@@ -428,7 +423,25 @@ async fn hint_handler(
             |s| format!("Solution outline (last resort): {s}"),
         ),
     };
-    Json(serde_json::json!({ "level": level, "max_level": max_level, "text": text })).into_response()
+    (level, max_level, text)
+}
+
+/// `GET /api/hint?level=N` — the hint ladder. Escalates: 1 = concept + a "read the
+/// `-->` / `help:` line" nudge; 2 = the expected error code (use Explain); 3 = the
+/// solution OUTLINE, last resort. Levels above what the exercise carries are
+/// clamped. The outline is returned ONLY when the learner explicitly climbs to it
+/// — the tutor guides, it never auto-types the fix.
+async fn hint_handler(
+    State(state): State<AppState>,
+    Query(q): Query<HintQuery>,
+) -> impl IntoResponse {
+    let Some((ex, _code)) = current_exercise(&state.store_root) else {
+        return Json(serde_json::json!({ "level": 0, "max_level": 0, "text": null }))
+            .into_response();
+    };
+    let (level, max_level, text) = hint_for(&ex.meta, q.level.unwrap_or(1));
+    Json(serde_json::json!({ "level": level, "max_level": max_level, "text": text }))
+        .into_response()
 }
 
 /// Ensure the chosen `store_root` is runnable: it must have an `exercises/` tree
@@ -550,5 +563,92 @@ async fn main() {
     if let Err(e) = axum::serve(listener, app).await {
         eprintln!("fatal: server error: {e}");
         std::process::exit(1);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rpro_state::{Difficulty, ExerciseMetadata};
+
+    fn meta(solution: Option<&str>, err: Option<&str>) -> ExerciseMetadata {
+        ExerciseMetadata {
+            id: "ownership/01_move".into(),
+            title: "Move semantics".into(),
+            difficulty: Difficulty::Beginner,
+            estimated_minutes: 8,
+            concept: "move-semantics".into(),
+            book_refs: vec![],
+            expected_error_code: err.map(String::from),
+            solution_outline: solution.map(String::from),
+        }
+    }
+
+    #[test]
+    fn sanitize_code_accepts_alnum_rejects_junk() {
+        assert_eq!(sanitize_code("E0382").as_deref(), Some("E0382"));
+        assert_eq!(sanitize_code("  e0382 ").as_deref(), Some("e0382"));
+        assert!(sanitize_code("").is_none());
+        assert!(sanitize_code("../etc/passwd").is_none());
+        assert!(sanitize_code("E0382; rm -rf").is_none());
+        assert!(sanitize_code(&"x".repeat(17)).is_none());
+    }
+
+    #[test]
+    fn status_str_maps_lowercase() {
+        assert_eq!(status_str(ExerciseStatus::Locked), "locked");
+        assert_eq!(status_str(ExerciseStatus::Current), "current");
+        assert_eq!(status_str(ExerciseStatus::Done), "done");
+        assert_eq!(status_str(ExerciseStatus::Skipped), "skipped");
+    }
+
+    #[test]
+    fn wireop_whitelist_rejects_unknown_and_parses_known() {
+        use serde_json::json;
+        assert!(serde_json::from_value::<WireOp>(json!({"op": "run"})).is_ok());
+        assert!(serde_json::from_value::<WireOp>(json!({"op": "check"})).is_ok());
+        assert!(serde_json::from_value::<WireOp>(json!({"op": "test"})).is_ok());
+        assert!(serde_json::from_value::<WireOp>(json!({"op": "explain", "code": "E0382"})).is_ok());
+        // off the whitelist → cannot be coaxed into running:
+        assert!(serde_json::from_value::<WireOp>(json!({"op": "fmt"})).is_err());
+        assert!(serde_json::from_value::<WireOp>(json!({"op": "lint"})).is_err());
+        assert!(serde_json::from_value::<WireOp>(json!({"op": "bogus"})).is_err());
+        assert!(serde_json::from_value::<WireOp>(json!({"op": "explain"})).is_err());
+    }
+
+    #[test]
+    fn hint_ladder_escalates_and_gates_solution() {
+        let m = meta(Some("Use s1.clone()"), Some("E0382"));
+        let (l1, max, t1) = hint_for(&m, 1);
+        assert_eq!((l1, max), (1, 3));
+        assert!(!t1.contains("clone"), "L1 must not leak the solution");
+        let (_, _, t2) = hint_for(&m, 2);
+        assert!(t2.contains("E0382"), "L2 names the expected error");
+        assert!(!t2.contains("clone"), "L2 must not leak the solution");
+        let (l3, _, t3) = hint_for(&m, 3);
+        assert_eq!(l3, 3);
+        assert!(t3.contains("clone"), "L3 reveals the outline (last resort)");
+        assert_eq!(hint_for(&m, 9).0, 3, "over-request clamps to max");
+    }
+
+    #[test]
+    fn hint_max_level_2_without_solution_never_reaches_a_solution_rung() {
+        let m = meta(None, Some("E0382"));
+        assert_eq!(hint_for(&m, 1).1, 2);
+        assert_eq!(hint_for(&m, 9).0, 2);
+    }
+
+    #[test]
+    fn current_json_omits_the_answer() {
+        let ex = rpro_runner::Exercise {
+            source: std::path::PathBuf::from("/x/01_move.rs"),
+            meta: meta(Some("Use s1.clone()"), Some("E0382")),
+        };
+        let v = current_json(&ex, "fn main() {}");
+        assert_eq!(v["exercise"], "ownership/01_move");
+        assert_eq!(v["code"], "fn main() {}");
+        assert!(v.get("solution_outline").is_none(), "must not leak the solution");
+        assert!(v.get("expected_error_code").is_none(), "must not leak the expected error");
+        assert!(!v.to_string().contains("clone"), "the answer must appear nowhere in the payload");
     }
 }
