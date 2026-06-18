@@ -979,6 +979,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "rpro-toolchain-local"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "rpro-lang",
+]
+
+[[package]]
 name = "rpro-tui"
 version = "0.1.0"
 dependencies = [

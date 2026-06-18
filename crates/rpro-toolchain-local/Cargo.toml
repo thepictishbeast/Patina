@@ -1,0 +1,16 @@
+[package]
+name = "rpro-toolchain-local"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "Local std::process implementation of the rpro-lang Toolchain seam (desktop / Android-Termux / backend). Not wasm."
+
+[lints]
+workspace = true
+
+[dependencies]
+rpro-lang = { path = "../rpro-lang" }
+async-trait = { workspace = true }
