@@ -15,9 +15,14 @@ pub mod theme;
 use anyhow::Result;
 use app::{App, Tab};
 use rpro_book::Book;
-use rpro_lang::EditorAssists;
+use rpro_core::Core;
+use rpro_lang::{EditorAssists, ExerciseId, ExerciseSource, Outcome, RunOp, ToolError};
+use rpro_lang_rust::RustLanguage;
 use rpro_state::ExerciseStatus;
 use rpro_storage_fs::Store;
+use rpro_toolchain_local::LocalProcess;
+use std::path::Path;
+use std::sync::mpsc::Receiver;
 use std::time::Duration;
 
 use crossterm::event::{self, Event, KeyCode, KeyEventKind};
@@ -25,9 +30,11 @@ use crossterm::execute;
 use crossterm::terminal::{
     EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode,
 };
-use ratatui::Frame;
 use ratatui::Terminal;
 use ratatui::backend::CrosstermBackend;
+
+/// What a background run sends back to the UI thread.
+type RunResult = Result<Outcome, ToolError>;
 
 /// Open the dashboard — progress, the current exercise, and what's up next.
 ///
@@ -50,26 +57,88 @@ pub fn run_book_reader(store: &Store, book: &Book, start_chapter: Option<&str>) 
 }
 
 /// The one tabbed TUI, opened on `start_tab` with row `start_selected`
-/// pre-selected. Every screen shares the tab bar and the one event loop.
+/// pre-selected. Every screen shares the tab bar and one event loop. On the
+/// Exercise tab, `r`/`c` run/check the current exercise on a **background
+/// thread** (so a compile never freezes the UI); the result streams back over a
+/// channel and fills the raw-output pane — the live by-hand-error loop.
 fn run_tui(store: &Store, book: &Book, start_tab: Tab, start_selected: usize) -> Result<()> {
     let theme_name = store.load_config().map_or_else(|_| "dark".to_string(), |c| c.theme);
     let mut app = App::new(theme::Theme::from_env(&theme_name), status::ascii_only());
     app.tab = start_tab;
     app.selected = start_selected;
     let dash = dashboard_data(store);
-    let ex = exercise_view_data(store);
-    // The selectable-list length depends on which screen is showing.
+    let mut ex = exercise_view_data(store);
+    let store_root = store.root().to_path_buf();
     let relen = |tab: Tab| match tab {
         Tab::Dashboard => dash.up_next.len(),
         Tab::Book => book.chapters.len(),
         Tab::Exercise | Tab::Roadmap => 0,
     };
-    run_loop(&mut app, &relen, |f, app| match app.tab {
-        Tab::Dashboard => render::render_dashboard(f, app, &dash),
-        Tab::Exercise => render::render_exercise(f, app, &ex),
-        Tab::Book => render::render_book(f, app, book),
-        Tab::Roadmap => render::render_placeholder(f, app, "Roadmap"),
-    })
+
+    enable_raw_mode()?;
+    let mut stdout = std::io::stdout();
+    execute!(stdout, EnterAlternateScreen)?;
+    let mut terminal = Terminal::new(CrosstermBackend::new(stdout))?;
+    let mut run_rx: Option<Receiver<RunResult>> = None;
+
+    let loop_result = (|| -> Result<()> {
+        loop {
+            app.set_list_len(relen(app.tab));
+            // Collect a finished background run, if one landed.
+            if let Some(rx) = &run_rx {
+                if let Ok(result) = rx.try_recv() {
+                    apply_run_result(&mut ex, result);
+                    app.running = false;
+                    run_rx = None;
+                }
+            }
+            terminal.draw(|f| match app.tab {
+                Tab::Dashboard => render::render_dashboard(f, &app, &dash),
+                Tab::Exercise => render::render_exercise(f, &app, &ex),
+                Tab::Book => render::render_book(f, &app, book),
+                Tab::Roadmap => render::render_placeholder(f, &app, "Roadmap"),
+            })?;
+            if event::poll(Duration::from_millis(80))? {
+                if let Event::Key(key) = event::read()? {
+                    if key.kind == KeyEventKind::Press {
+                        match key.code {
+                            KeyCode::Char('q') | KeyCode::Esc => app.quit(),
+                            KeyCode::Tab => app.next_tab(),
+                            KeyCode::BackTab => app.prev_tab(),
+                            KeyCode::Down | KeyCode::Char('j') => app.select_next(),
+                            KeyCode::Up | KeyCode::Char('k') => app.select_prev(),
+                            KeyCode::Char('r' | 'c')
+                                if app.tab == Tab::Exercise && run_rx.is_none() =>
+                            {
+                                let op = if key.code == KeyCode::Char('c') {
+                                    RunOp::Check
+                                } else {
+                                    RunOp::Run
+                                };
+                                if let Some(rx) = spawn_run(&store_root, op) {
+                                    app.running = true;
+                                    ex.running = true;
+                                    ex.verdict = None;
+                                    run_rx = Some(rx);
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+            } else {
+                app.tick();
+            }
+            if app.should_quit {
+                return Ok(());
+            }
+        }
+    })();
+
+    disable_raw_mode()?;
+    execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
+    terminal.show_cursor()?;
+    loop_result
 }
 
 /// Build the dashboard's display data from on-disk state. Defensive: an
@@ -136,49 +205,71 @@ fn exercise_view_data(store: &Store) -> render::ExerciseViewData {
     )
 }
 
-/// The shared event loop: set up the terminal, draw + handle input until quit,
-/// then always restore the terminal (even on a draw error).
-fn run_loop(
-    app: &mut App,
-    relen: &dyn Fn(Tab) -> usize,
-    mut draw: impl FnMut(&mut Frame, &App),
-) -> Result<()> {
-    enable_raw_mode()?;
-    let mut stdout = std::io::stdout();
-    execute!(stdout, EnterAlternateScreen)?;
-    let mut terminal = Terminal::new(CrosstermBackend::new(stdout))?;
-
-    let loop_result = (|| -> Result<()> {
-        loop {
-            // Keep the selection clamped to whatever list the active screen shows.
-            app.set_list_len(relen(app.tab));
-            terminal.draw(|f| draw(f, &*app))?;
-            // Poll with a timeout so the spinner animates on idle; on input,
-            // route keys; on timeout, advance the throbber.
-            if event::poll(Duration::from_millis(80))? {
-                if let Event::Key(key) = event::read()? {
-                    if key.kind == KeyEventKind::Press {
-                        match key.code {
-                            KeyCode::Char('q') | KeyCode::Esc => app.quit(),
-                            KeyCode::Tab => app.next_tab(),
-                            KeyCode::BackTab => app.prev_tab(),
-                            KeyCode::Down | KeyCode::Char('j') => app.select_next(),
-                            KeyCode::Up | KeyCode::Char('k') => app.select_prev(),
-                            _ => {}
-                        }
-                    }
-                }
-            } else {
-                app.tick();
-            }
-            if app.should_quit {
-                return Ok(());
-            }
+/// Write the language scaffold for `code` into `dir` (creating parents).
+fn write_scaffold(dir: &Path, code: &str) -> std::io::Result<()> {
+    for (rel, contents) in RustLanguage::scaffold(code) {
+        let path = dir.join(rel);
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent)?;
         }
-    })();
+        std::fs::write(&path, contents)?;
+    }
+    Ok(())
+}
 
-    disable_raw_mode()?;
-    execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
-    terminal.show_cursor()?;
-    loop_result
+/// Resolve the current exercise, scaffold it, and run `op` on a **background
+/// thread**; returns the receiver the UI polls (or `None` if there's no current
+/// exercise). The `Core` is built *inside* the thread because it isn't `Send`;
+/// only plain data (paths, code, the `Outcome`) crosses the boundary.
+fn spawn_run(store_root: &Path, op: RunOp) -> Option<Receiver<RunResult>> {
+    let store = Store::at(store_root.to_path_buf());
+    let exercises = rpro_runner::discover(&store.root().join("exercises")).ok()?;
+    let progress = store.load_progress().unwrap_or_default();
+    let current_id = progress
+        .entries
+        .iter()
+        .find(|(_, e)| e.status == ExerciseStatus::Current)
+        .map(|(id, _)| id.clone());
+    let ex = current_id.and_then(|id| exercises.into_iter().find(|e| e.meta.id == id))?;
+    let code = std::fs::read_to_string(&ex.source).ok()?;
+    let id = ex.meta.id.clone();
+    let run_dir = store.root().join("run").join(rpro_runner::slug(&id));
+    let root = store_root.to_path_buf();
+
+    let (tx, rx) = std::sync::mpsc::channel();
+    std::thread::spawn(move || {
+        if write_scaffold(&run_dir, &code).is_err() {
+            let _ = tx.send(Err(ToolError::Spawn("could not write scratch project".into())));
+            return;
+        }
+        // Core is !Send → construct it here, never move it across the boundary.
+        let core =
+            Core::new(Box::new(RustLanguage), Box::new(LocalProcess), Box::new(Store::at(root)));
+        let src = ExerciseSource {
+            id: ExerciseId(id),
+            dir: run_dir.display().to_string(),
+            entry: "src/main.rs".into(),
+        };
+        let _ = tx.send(pollster::block_on(core.run(&src, &op)));
+    });
+    Some(rx)
+}
+
+/// Fold a finished run's result into the exercise view's data.
+fn apply_run_result(ex: &mut render::ExerciseViewData, result: RunResult) {
+    ex.running = false;
+    match result {
+        Ok(outcome) => {
+            ex.verdict = Some((outcome.status == Some(0), outcome.duration_ms));
+            ex.raw_stderr = outcome.raw_stderr;
+            ex.raw_stdout = outcome.raw_stdout;
+            ex.diagnostics = outcome.diagnostics;
+        }
+        Err(e) => {
+            ex.verdict = Some((false, 0));
+            ex.raw_stderr = format!("could not run the toolchain: {e}");
+            ex.raw_stdout = String::new();
+            ex.diagnostics = Vec::new();
+        }
+    }
 }

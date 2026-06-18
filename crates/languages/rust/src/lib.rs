@@ -16,6 +16,19 @@ use rpro_lang::{
 pub struct RustLanguage;
 
 impl RustLanguage {
+    /// The files to drop into a scratch project directory so a single snippet of
+    /// `code` can be built/checked/tested/run. **Pure**: returns
+    /// `(relative path, contents)` pairs; the effectful caller writes them. This
+    /// keeps the Rust-specific project layout (the `Cargo.toml`) inside the
+    /// language crate, where the seam permits language tokens.
+    #[must_use]
+    pub fn scaffold(code: &str) -> Vec<(&'static str, String)> {
+        let manifest = "[package]\nname = \"exercise\"\nversion = \"0.1.0\"\nedition = \"2024\"\n\n\
+                        [[bin]]\nname = \"exercise\"\npath = \"src/main.rs\"\n"
+            .to_string();
+        vec![("Cargo.toml", manifest), ("src/main.rs", code.to_string())]
+    }
+
     /// Build a `cargo <sub> <extra…>` plan rooted at the exercise directory.
     fn cargo(ex: &ExerciseSource, sub: &str, extra: &[&str]) -> CommandPlan {
         let mut args = vec![sub.to_string()];
@@ -241,5 +254,16 @@ mod tests {
         let st = RustLanguage.parse_detect("");
         assert!(!st.present);
         assert!(st.version.is_none());
+    }
+
+    #[test]
+    fn scaffold_emits_manifest_and_entry() {
+        let files = RustLanguage::scaffold("fn main() { let x = 1; }");
+        assert_eq!(files.len(), 2);
+        let manifest = &files.iter().find(|(p, _)| *p == "Cargo.toml").unwrap().1;
+        assert!(manifest.contains("edition = \"2024\""));
+        assert!(manifest.contains("name = \"exercise\""));
+        let entry = files.iter().find(|(p, _)| *p == "src/main.rs").unwrap();
+        assert_eq!(entry.1, "fn main() { let x = 1; }");
     }
 }

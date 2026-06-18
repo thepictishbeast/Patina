@@ -57,6 +57,16 @@ pub struct Exercise {
     pub meta: ExerciseMetadata,
 }
 
+/// Filesystem-safe slug for an exercise id (e.g. `ownership/01_move` →
+/// `ownership_01_move`). Shared by every native surface so they all resolve the
+/// same scratch run-directory for a given exercise.
+#[must_use]
+pub fn slug(id: &str) -> String {
+    id.chars()
+        .map(|c| if c.is_ascii_alphanumeric() || c == '-' || c == '_' { c } else { '_' })
+        .collect()
+}
+
 /// Discover every exercise under `root`. Sorted by id.
 ///
 /// # Errors

@@ -11,11 +11,15 @@ description = "Rustlings Pro TUI shell — ratatui screens for dashboard, exerci
 rpro-state = { path = "../rpro-state" }
 rpro-storage-fs = { path = "../rpro-storage-fs" }
 rpro-lang = { path = "../rpro-lang" }
+rpro-lang-rust = { path = "../languages/rust" }
+rpro-core = { path = "../rpro-core" }
+rpro-toolchain-local = { path = "../rpro-toolchain-local" }
 rpro-book = { path = "../rpro-book" }
 rpro-runner = { path = "../rpro-runner" }
 ratatui.workspace = true
 crossterm.workspace = true
 anyhow.workspace = true
+pollster.workspace = true
 
 [lints]
 workspace = true

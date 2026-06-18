@@ -485,7 +485,7 @@ fn cmd_exec(id: Option<&str>, op: &RunOp) -> Result<()> {
     // safe component that cannot escape `run_base` (no traversal). We still
     // reject an empty slug and assert containment as defense-in-depth.
     let run_base = store.root().join("run");
-    let name = slug(&ex.meta.id);
+    let name = rpro_runner::slug(&ex.meta.id);
     if name.is_empty() {
         return Err(anyhow!("exercise id '{}' has no usable characters", ex.meta.id));
     }
@@ -577,23 +577,19 @@ fn resolve_exercise<'a>(
     exercises.first().ok_or_else(|| anyhow!("no exercises found"))
 }
 
-/// Create a minimal scratch project at `dir` with `main_rs` as `src/main.rs`,
-/// so the toolchain can build and run the learner's code.
+/// Create a minimal scratch project at `dir` from the language's scaffold, so
+/// the toolchain can build and run the learner's code. The project layout comes
+/// from `RustLanguage::scaffold` (keeps the Rust-specifics behind the seam).
 fn prepare_scratch_project(dir: &std::path::Path, main_rs: &str) -> Result<()> {
-    std::fs::create_dir_all(dir.join("src"))
-        .with_context(|| format!("mkdir {}", dir.display()))?;
-    let manifest = "[package]\nname = \"exercise\"\nversion = \"0.1.0\"\nedition = \"2024\"\n\n\
-                    [[bin]]\nname = \"exercise\"\npath = \"src/main.rs\"\n";
-    std::fs::write(dir.join("Cargo.toml"), manifest)?;
-    std::fs::write(dir.join("src/main.rs"), main_rs)?;
+    for (rel, contents) in RustLanguage::scaffold(main_rs) {
+        let path = dir.join(rel);
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent)
+                .with_context(|| format!("mkdir {}", parent.display()))?;
+        }
+        std::fs::write(&path, contents).with_context(|| format!("write {}", path.display()))?;
+    }
     Ok(())
-}
-
-/// Filesystem-safe slug for an exercise id (e.g. `ownership/01_move`).
-fn slug(id: &str) -> String {
-    id.chars()
-        .map(|c| if c.is_ascii_alphanumeric() || c == '-' || c == '_' { c } else { '_' })
-        .collect()
 }
 
 // ---------------------------------------------------------------------------
