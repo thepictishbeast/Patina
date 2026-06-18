@@ -29,6 +29,11 @@ pub enum ExerciseStatus {
 pub struct Progress {
     /// Per-exercise entries.
     pub entries: BTreeMap<String, ProgressEntry>,
+    /// Spaced-repetition state over diagnostic codes (the RECALL beat).
+    /// `#[serde(default)]` so progress files written before this field
+    /// existed still deserialize.
+    #[serde(default)]
+    pub reviews: crate::review::ReviewState,
 }
 
 /// One row in the progress map.
