@@ -179,6 +179,11 @@ fn dashboard_data(store: &Store) -> render::DashboardData {
         current_id,
         current_title,
         up_next,
+        // Spaced-repetition queue from shared progress (web + TUI write the same
+        // `Progress.reviews`); weakest-first, retired codes excluded.
+        due: progress.reviews.due(),
+        mastered: progress.reviews.mastered_count(),
+        tracked: progress.reviews.tracked_count(),
     }
 }
 

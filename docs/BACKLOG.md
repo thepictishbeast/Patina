@@ -40,7 +40,8 @@ Surfaces: **Web** (`rpro-serve`, shipped + live), **CLI** (`rpro`), **TUI** (`rp
 - [ ] **P1 — Hint ladder model** (pure, wasm-safe, seam-clean crate `rpro-edu` or in `rpro-state`): levels keyed on (exercise, attempt count, observed error code). Unit-tested.
 - [x] **P1 — Spaced repetition** keyed on error code — *model done* (`6bbdc39`): `rpro-state::review::ReviewState`, clock-free Leitner-box, pure+wasm-safe, in `Progress.reviews`, 3 tests.
   - [x] **P1 — wire it into the web surface** — rpro-serve `update_progress` folds each run via `fold_review` (guard: the exercise's *own* expected error is the lesson, not a miss — only learner-introduced errors record/reset); `GET /api/review` exposes the weakest-first queue + mastery counts; dashboard shows a "↻ Recall" widget. 5 unit tests + smoke assertion + live round-trip verified.
-  - [ ] **P1 — mirror Recall in rpro-tui** (show the due queue + mastery on a key). *(web resurfacing is now live; TUI parity remains)*
+  - [x] **P1 — mirror Recall in rpro-tui** — dashboard "↻ Recall" panel reads shared `Progress.reviews` (due weakest-first + N/M mastered), hidden until a concept is tracked, ASCII-safe. 3 TestBackend tests.
+  - [ ] **P1 — share progress-update + record on TUI runs** (refactor): `fold_review`/`primary_error_code` → rpro-state (pure); lift `update_progress`'s I/O into a shared helper both rpro-serve and rpro-tui call. **The TUI's `spawn_run` currently writes NO progress at all** (no attempt, no advance, no review) — so the Recall panel only fills from web runs until this lands.
 - [ ] **P1 — Tutor (guide-not-solve)** prompt templates per step of PREDICT→RUN→COMPARE→READ-RAW→DIAGNOSE→GUIDE→EXPLAIN→RETRY→RECALL (spec: docs/EDUCATION.md).
 - [ ] **P2 — Pluggable AI tutor seam** (Claude/Gemini) behind a trait; must refuse to type the fix.
 

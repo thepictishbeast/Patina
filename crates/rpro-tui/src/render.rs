@@ -24,6 +24,14 @@ pub struct DashboardData {
     pub current_title: Option<String>,
     /// "Up next" exercise ids (locked until the current passes).
     pub up_next: Vec<String>,
+    /// Spaced-repetition (RECALL) queue: diagnostic codes due for review,
+    /// weakest first. Read from shared `Progress.reviews` — mirrors the web's
+    /// "↻ Recall" widget so a web+TUI learner sees one review queue.
+    pub due: Vec<String>,
+    /// Distinct codes mastered (retired from review).
+    pub mastered: usize,
+    /// Distinct codes tracked at all. The Recall panel hides when this is 0.
+    pub tracked: usize,
 }
 
 /// The top tab bar, shared by every screen.
@@ -46,13 +54,21 @@ fn tab_bar(app: &App) -> Tabs<'static> {
 /// an "up next" list.
 pub fn render_dashboard(f: &mut Frame, app: &App, data: &DashboardData) {
     let area = f.area();
-    let rows = Layout::vertical([
+    // The Recall row only appears once the learner has tracked a concept, so a
+    // fresh user sees absence rather than a permanently-empty box.
+    let show_recall = data.tracked > 0;
+    let mut constraints = vec![
         Constraint::Length(3), // tabs
         Constraint::Length(3), // gauge
         Constraint::Length(4), // current
-        Constraint::Min(0),    // up next
-    ])
-    .split(area);
+    ];
+    if show_recall {
+        constraints.push(Constraint::Length(3)); // recall
+    }
+    constraints.push(Constraint::Min(0)); // up next
+    let rows = Layout::vertical(constraints).split(area);
+    let recall_idx = 3;
+    let up_next_idx = if show_recall { 4 } else { 3 };
 
     f.render_widget(tab_bar(app), rows[0]);
 
@@ -89,6 +105,43 @@ pub fn render_dashboard(f: &mut Frame, app: &App, data: &DashboardData) {
         rows[2],
     );
 
+    // Recall — the spaced-repetition queue, mirroring the web's "↻ Recall".
+    if show_recall {
+        let title = if app.ascii { " Recall " } else { " ↻ Recall " };
+        let line = if data.due.is_empty() {
+            let check = if app.ascii { "(all mastered)" } else { "all mastered ✓" };
+            Line::from(Span::styled(
+                format!(
+                    "{} concept{} {check}",
+                    data.tracked,
+                    if data.tracked == 1 { "" } else { "s" }
+                ),
+                Style::new().fg(app.theme.done),
+            ))
+        } else {
+            let mut spans: Vec<Span> = data
+                .due
+                .iter()
+                .take(8)
+                .map(|c| {
+                    Span::styled(
+                        format!("{c} "),
+                        Style::new().fg(app.theme.error).add_modifier(Modifier::BOLD),
+                    )
+                })
+                .collect();
+            spans.push(Span::styled(
+                format!("· {}/{} mastered", data.mastered, data.tracked),
+                Style::new().fg(app.theme.muted),
+            ));
+            Line::from(spans)
+        };
+        f.render_widget(
+            Paragraph::new(line).block(Block::bordered().title(title)),
+            rows[recall_idx],
+        );
+    }
+
     // Up next.
     let items: Vec<ListItem> = if data.up_next.is_empty() {
         vec![ListItem::new(Span::styled(
@@ -108,7 +161,7 @@ pub fn render_dashboard(f: &mut Frame, app: &App, data: &DashboardData) {
     };
     f.render_widget(
         List::new(items).block(Block::bordered().title(" Up next ")),
-        rows[3],
+        rows[up_next_idx],
     );
 }
 
@@ -421,6 +474,7 @@ mod tests {
             current_id: Some("ownership/01_move".into()),
             current_title: Some("Move semantics".into()),
             up_next: vec!["ownership/02_clone".into()],
+            ..Default::default()
         };
         let text = screen_text(80, 20, &data);
         assert!(text.contains("Tempered Studio"), "brand title missing:\n{text}");
@@ -437,6 +491,49 @@ mod tests {
         assert!(text.contains("0/0"));
         assert!(text.contains("All caught up") || text.contains("nothing in progress"));
         assert!(text.contains("rpro init")); // empty up-next hint
+    }
+
+    // Recall codes are fake non-E0 tokens on purpose: keeps rpro-tui source
+    // seam-grep-clean (the gate only forbids the literal `E0xxx`).
+    #[test]
+    fn dashboard_shows_recall_queue_when_tracked() {
+        let data = DashboardData {
+            done: 3,
+            total: 23,
+            current_id: Some("control-flow/01".into()),
+            current_title: Some("If is an expression".into()),
+            up_next: vec!["control-flow/02".into()],
+            due: vec!["E4321".into(), "E4399".into()],
+            mastered: 1,
+            tracked: 3,
+        };
+        let text = screen_text(80, 24, &data);
+        assert!(text.contains("Recall"), "recall panel missing:\n{text}");
+        assert!(text.contains("E4321") && text.contains("E4399"), "due codes missing:\n{text}");
+        assert!(text.contains("1/3 mastered"), "mastery count missing:\n{text}");
+    }
+
+    #[test]
+    fn dashboard_recall_hidden_until_tracked() {
+        // tracked == 0 → no Recall panel (a fresh learner sees absence).
+        let data = DashboardData { total: 10, up_next: vec!["a/1".into()], ..Default::default() };
+        let text = screen_text(80, 24, &data);
+        assert!(!text.contains("Recall"), "recall must hide at tracked=0:\n{text}");
+    }
+
+    #[test]
+    fn dashboard_recall_all_mastered_message() {
+        let data = DashboardData {
+            total: 10,
+            done: 5,
+            tracked: 4,
+            mastered: 4,
+            due: vec![],
+            ..Default::default()
+        };
+        let text = screen_text(80, 24, &data);
+        assert!(text.contains("Recall"), "recall panel missing:\n{text}");
+        assert!(text.contains("4 concepts") && text.contains("mastered"), "all-mastered msg missing:\n{text}");
     }
 
     fn screen_text_ex(width: u16, height: u16, data: &ExerciseViewData) -> String {
