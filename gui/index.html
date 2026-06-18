@@ -178,6 +178,7 @@
         <button class="run" id="runbtn">▷ Run</button>
         <button class="ghost" id="checkbtn">✓ Check</button>
         <button class="ghost" id="explainbtn">? Explain</button>
+        <button class="ghost" id="hintbtn">💡 Hint</button>
         <span class="badge" id="statusline" style="margin-left:auto">ready</span>
       </div>
 
@@ -197,7 +198,8 @@
       <div id="brefs"></div>
       <h2>Tutor</h2>
       <div class="bref" style="cursor:default">💡 What did your prediction say, and what does the <code>--&gt;</code> line point at?
-        <small>(I guide — I never type your fix.)</small></div>
+        <small>(I guide — I never type your fix. Press <b>Hint</b> to climb the ladder.)</small></div>
+      <div id="hintbox"></div>
     </section>
   </main>
 
@@ -311,9 +313,25 @@
       }
     }
 
-    let curExercise = null, curOriginal = '';
+    let curExercise = null, curOriginal = '', hintLevel = 0;
     const editorEl = () => document.getElementById('editorCode');
     const lsKey = id => 'ts-edit:' + id;
+
+    // The hint ladder: each press climbs one rung (concept → expected error →
+    // solution outline, last resort). Server clamps to what the exercise carries.
+    async function runHint() {
+      try {
+        const h = await fetch('api/hint?level=' + (hintLevel + 1)).then(r => r.json());
+        if (!h || !h.text) return;
+        hintLevel = h.level;
+        const last = h.level >= h.max_level;
+        const div = document.createElement('div');
+        div.className = 'bref'; div.style.cursor = 'default';
+        div.innerHTML = `<span class="c">hint ${h.level}/${h.max_level}${last ? ' · last resort' : ''}</span> ${esc(h.text)}`;
+        document.getElementById('hintbox').appendChild(div);
+        if (last) document.getElementById('hintbtn').disabled = true;
+      } catch (_) {}
+    }
 
     // Persist the learner's edit per-exercise + reflect dirty state in the bar.
     function markEdited() {
@@ -330,6 +348,10 @@
         return;
       }
       curExercise = j.exercise; curOriginal = j.code || '';
+      // fresh exercise → reset the hint ladder
+      hintLevel = 0;
+      const hb = document.getElementById('hintbox'); if (hb) hb.innerHTML = '';
+      const hbtn = document.getElementById('hintbtn'); if (hbtn) hbtn.disabled = false;
       document.getElementById('lessonTitle').textContent = j.title || j.exercise;
       const mins = j.estimated_minutes ? ` · ~${j.estimated_minutes} min` : '';
       document.getElementById('lessonSub').textContent =
@@ -420,6 +442,7 @@
     // editable code: persist on input, reset restores the original starter.
     editorEl().addEventListener('input', markEdited);
     document.getElementById('resetbtn').onclick = () => { editorEl().value = curOriginal; markEdited(); editorEl().focus(); };
+    document.getElementById('hintbtn').onclick = runHint;
     document.getElementById('explainbtn').onclick = () => {
       const code = (prompt('Diagnostic code to explain (letters/digits only):', lastCode) || '').trim();
       if (code) runOp('explain', { code });

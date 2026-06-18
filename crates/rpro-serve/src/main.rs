@@ -29,7 +29,7 @@ use std::net::Ipv4Addr;
 use std::path::{Path, PathBuf};
 
 use axum::Router;
-use axum::extract::State;
+use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Json};
 use axum::routing::post;
@@ -386,6 +386,51 @@ async fn exercises_handler(State(state): State<AppState>) -> impl IntoResponse {
     Json(serde_json::json!({ "exercises": items, "done": done, "total": total })).into_response()
 }
 
+/// Query for the hint ladder: which escalating level the learner is on.
+#[derive(Debug, Deserialize)]
+struct HintQuery {
+    level: Option<u8>,
+}
+
+/// `GET /api/hint?level=N` — the hint ladder. Escalates: 1 = concept + a "read the
+/// `-->` / `help:` line" nudge; 2 = the expected error code (use Explain); 3 = the
+/// solution OUTLINE, last resort. Levels above what the exercise carries are
+/// clamped. The outline is returned ONLY when the learner explicitly climbs to it
+/// — the tutor guides, it never auto-types the fix.
+async fn hint_handler(
+    State(state): State<AppState>,
+    Query(q): Query<HintQuery>,
+) -> impl IntoResponse {
+    let Some((ex, _code)) = current_exercise(&state.store_root) else {
+        return Json(serde_json::json!({ "level": 0, "max_level": 0, "text": null }))
+            .into_response();
+    };
+    let m = &ex.meta;
+    let max_level: u8 = if m.solution_outline.is_some() { 3 } else { 2 };
+    let level = q.level.unwrap_or(1).clamp(1, max_level);
+    let text = match level {
+        1 => format!(
+            "Concept: {}. Start with the book refs, then Run it and read the compiler's \
+             `-->` line (the location) and the `help:` line — that usually names the fix.",
+            m.concept
+        ),
+        2 => m.expected_error_code.as_ref().map_or_else(
+            || "Read the first error top-to-bottom: the `-->` line is the location, the \
+                `help:` line is usually the fix."
+                .to_string(),
+            |c| format!(
+                "Expect error {c}. Press Explain (or run `rpro explain {c}`) for the full \
+                 description, then look at exactly which value/line it flags."
+            ),
+        ),
+        _ => m.solution_outline.as_ref().map_or_else(
+            || "No solution outline recorded — work from the error's `help:` line.".to_string(),
+            |s| format!("Solution outline (last resort): {s}"),
+        ),
+    };
+    Json(serde_json::json!({ "level": level, "max_level": max_level, "text": text })).into_response()
+}
+
 /// Ensure the chosen `store_root` is runnable: it must have an `exercises/` tree
 /// and a progress file with a `Current` entry. If the root is empty we seed it
 /// by copying the workspace's `exercises/` and marking the first one current.
@@ -476,6 +521,7 @@ async fn main() {
         .route("/api/run", post(run_handler))
         .route("/api/current", axum::routing::get(current_handler))
         .route("/api/exercises", axum::routing::get(exercises_handler))
+        .route("/api/hint", axum::routing::get(hint_handler))
         // Everything else is the static gui/ shell (index.html + vendored xterm).
         .fallback_service(ServeDir::new(&gui_dir))
         .with_state(state);
