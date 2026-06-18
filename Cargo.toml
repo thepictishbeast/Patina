@@ -1,6 +1,7 @@
 [workspace]
 resolver = "2"
 members = [
+    "crates/rpro-lang",
     "crates/rpro-state",
     "crates/rpro-runner",
     "crates/rpro-book",
@@ -20,6 +21,7 @@ authors = ["PlausiDen LLC"]
 # Core
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+async-trait = "0.1"
 toml = "0.8"
 anyhow = "1"
 thiserror = "2"

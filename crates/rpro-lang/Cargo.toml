@@ -1,0 +1,17 @@
+[package]
+name = "rpro-lang"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "Language seam: pure, wasm-safe trait + neutral type definitions for Tempered Studio."
+
+[lints]
+workspace = true
+
+[dependencies]
+serde = { workspace = true }
+async-trait = { workspace = true }
+thiserror = { workspace = true }
