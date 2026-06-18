@@ -233,13 +233,86 @@ async fn run_handler(
     }
 }
 
-/// `GET /api/current` — the current exercise label (or a hint to seed). Lets the
-/// front end show what will run before the first click.
+/// Resolve the current exercise with its full metadata + starter code, so the
+/// front end can render the *real* exercise (title, code, book refs) rather than
+/// a static placeholder. Returns the discovered [`rpro_runner::Exercise`] and its
+/// source. `None` if there is no current exercise.
+fn current_exercise(store_root: &Path) -> Option<(rpro_runner::Exercise, String)> {
+    let store = Store::at(store_root.to_path_buf());
+    let exercises = rpro_runner::discover(&store.root().join("exercises")).ok()?;
+    let progress = store.load_progress().unwrap_or_default();
+    let current_id = progress
+        .entries
+        .iter()
+        .find(|(_, e)| e.status == ExerciseStatus::Current)
+        .map(|(id, _)| id.clone())?;
+    let ex = exercises.into_iter().find(|e| e.meta.id == current_id)?;
+    let code = std::fs::read_to_string(&ex.source).ok()?;
+    Some((ex, code))
+}
+
+/// Lowercase wire name for a status (matches the front end's CSS classes).
+fn status_str(s: ExerciseStatus) -> &'static str {
+    match s {
+        ExerciseStatus::Locked => "locked",
+        ExerciseStatus::Current => "current",
+        ExerciseStatus::Done => "done",
+        ExerciseStatus::Skipped => "skipped",
+    }
+}
+
+/// `GET /api/current` — the current exercise's renderable detail: id, title,
+/// starter code, concept, difficulty, estimated minutes, and book refs.
+///
+/// Deliberately **omits** `expected_error_code` and `solution_outline` — the
+/// predict-first / guide-don't-solve contract means the page never reveals the
+/// answer. Returns `{ "exercise": null }` when nothing is current.
 async fn current_handler(State(state): State<AppState>) -> impl IntoResponse {
-    match resolve_current(&state.store_root) {
-        Some((id, _, _)) => Json(serde_json::json!({ "exercise": id })).into_response(),
+    match current_exercise(&state.store_root) {
+        Some((ex, code)) => {
+            let m = &ex.meta;
+            Json(serde_json::json!({
+                "exercise": m.id,
+                "title": m.title,
+                "code": code,
+                "concept": m.concept,
+                "difficulty": m.difficulty,
+                "estimated_minutes": m.estimated_minutes,
+                "book_refs": m.book_refs,
+            }))
+            .into_response()
+        }
         None => Json(serde_json::json!({ "exercise": null })).into_response(),
     }
+}
+
+/// `GET /api/exercises` — the full exercise list with per-item status + attempts,
+/// plus done/total for the progress gauge. Read-only; selection stays
+/// server-resolved (the current exercise is set by the CLI/TUI, not the wire).
+async fn exercises_handler(State(state): State<AppState>) -> impl IntoResponse {
+    let store = Store::at(state.store_root.clone());
+    let exercises = rpro_runner::discover(&store.root().join("exercises")).unwrap_or_default();
+    let progress = store.load_progress().unwrap_or_default();
+    let total = exercises.len();
+    let mut done = 0usize;
+    let items: Vec<serde_json::Value> = exercises
+        .into_iter()
+        .map(|e| {
+            let entry = progress.entries.get(&e.meta.id);
+            let status = entry.map_or(ExerciseStatus::Locked, |p| p.status);
+            if status == ExerciseStatus::Done {
+                done += 1;
+            }
+            serde_json::json!({
+                "id": e.meta.id,
+                "title": e.meta.title,
+                "concept": e.meta.concept,
+                "status": status_str(status),
+                "attempts": entry.map_or(0, |p| p.attempts),
+            })
+        })
+        .collect();
+    Json(serde_json::json!({ "exercises": items, "done": done, "total": total })).into_response()
 }
 
 /// Ensure the chosen `store_root` is runnable: it must have an `exercises/` tree
@@ -331,6 +404,7 @@ async fn main() {
     let app = Router::new()
         .route("/api/run", post(run_handler))
         .route("/api/current", axum::routing::get(current_handler))
+        .route("/api/exercises", axum::routing::get(exercises_handler))
         // Everything else is the static gui/ shell (index.html + vendored xterm).
         .fallback_service(ServeDir::new(&gui_dir))
         .with_state(state);

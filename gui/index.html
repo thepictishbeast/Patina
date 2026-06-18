@@ -145,21 +145,16 @@
 
   <main>
     <section class="pane">
-      <h2>Exercises · Phase&nbsp;5</h2>
-      <div class="exlist scroll">
-        <div class="ex done"><span class="chip">✓</span><span class="t">structs/01_define<small>[x] done · 2 tries</small></span></div>
-        <div class="ex done"><span class="chip">✓</span><span class="t">structs/02_methods<small>[x] done</small></span></div>
-        <div class="ex current sel"><span class="chip">▸</span><span class="t">enums/01_option<small>[&gt;] current · 3 tries · 8m</small></span></div>
-        <div class="ex locked"><span class="chip">🔒</span><span class="t">enums/02_match<small>[ ] locked</small></span></div>
-        <div class="ex locked"><span class="chip">🔒</span><span class="t">match/01_iflet<small>[ ] locked</small></span></div>
-        <div class="ex skipped"><span class="chip">»</span><span class="t">match/02_guards<small>[~] skipped</small></span></div>
+      <h2 id="exTitle">Exercises</h2>
+      <div class="exlist scroll" id="exlist">
+        <div class="ex"><span class="t" style="color:var(--fg-dim)">loading…</span></div>
       </div>
     </section>
 
     <section class="pane center">
       <div class="lesson scroll">
-        <h1>Option&lt;T&gt; — Rust's answer to null 🦀</h1>
-        <div class="sub">Phase 5 · enums &amp; matching · reads&nbsp;→&nbsp;writes</div>
+        <h1 id="lessonTitle">Tempered Studio</h1>
+        <div class="sub" id="lessonSub">loading the current exercise…</div>
         <p><b>Predict first:</b> will this compile? If not, which <b>error code</b> appears,
         and what one-word <code>help:</code> fix will the compiler suggest? Lock your guess,
         then press <b>Run</b> — you'll read the <i>real</i> compiler output, by hand.</p>
@@ -169,14 +164,8 @@
         <div class="bar"><span class="dot" style="background:var(--error)"></span>
           <span class="dot" style="background:var(--warn)"></span>
           <span class="dot" style="background:var(--done)"></span>
-          &nbsp; enums/01_option · main.rs</div>
-        <pre><span class="cm">// Convert the Option to a number before using it.</span>
-<span class="kw">fn</span> <span class="fn">main</span>() {
-    <span class="kw">let</span> x: i8 = 5;
-    <span class="kw">let</span> y: Option&lt;i8&gt; = <span class="fn">Some</span>(5);
-    <span class="kw">let</span> sum = x + y;   <span class="cm">// &lt;- your fix goes here</span>
-    <span class="fn">println!</span>(<span class="str">"{sum}"</span>);
-}</pre>
+          &nbsp; <span id="editorBar">main.rs</span></div>
+        <pre id="editorCode" class="scroll">// loading the current exercise…</pre>
       </div>
       <div class="runrow">
         <button class="run" id="runbtn">▷ Run</button>
@@ -191,17 +180,14 @@
       </div>
     </section>
 
-    <section class="pane">
+    <section class="pane scroll" style="overflow:auto">
       <h2>Diagnostics</h2>
-      <div class="diag error"><span class="lvl">[!]</span><span class="msg">E0277 · L5
-        <small>cannot add Option&lt;i8&gt; to i8</small></span></div>
-      <div class="diag note"><span class="lvl">[i]</span><span class="msg">help available
-        <small>rustc --explain E0277</small></span></div>
+      <div id="diag">
+        <div class="diag note"><span class="lvl">[i]</span><span class="msg">no run yet
+          <small>press Run / Check to see real diagnostics</small></span></div>
+      </div>
       <h2>Book refs for this exercise</h2>
-      <div class="bref"><span class="c">[1] ch06-01</span> · The Option enum
-        <small>why: Some/None and the billion-dollar mistake</small></div>
-      <div class="bref"><span class="c">[2] ch06-02</span> · match &amp; Option
-        <small>why: extract the value before you use it</small></div>
+      <div id="brefs"></div>
       <h2>Tutor</h2>
       <div class="bref" style="cursor:default">💡 What did your prediction say, and what does the <code>--&gt;</code> line point at?
         <small>(I guide — I never type your fix.)</small></div>
@@ -273,6 +259,7 @@
           ? g('✓ passed') + d(' in ' + out.duration_ms + 'ms')
           : r('✗ failed') + d(' in ' + out.duration_ms + 'ms — read it top-to-bottom, then fix & re-run');
         term.writeln(''); term.writeln(verdict);
+        renderDiag(out);
         statusEl().textContent = out.passed ? 'passed' : 'failed';
       } catch (e) {
         // No server reachable → fall back to the static preview.
@@ -284,14 +271,87 @@
       }
     }
 
-    // On load, ask the server what the current exercise is; if unreachable,
-    // show the static demo so the layout still previews from file://.
+    // ── live rendering: the page reflects the REAL current exercise + list ──
+    let lastCode = '';
+    const esc = s => (s == null ? '' : String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const CHIP = { done:'✓', current:'▸', locked:'🔒', skipped:'»' };
+
+    function renderList(data) {
+      const box = document.getElementById('exlist');
+      const items = (data && data.exercises) || [];
+      box.innerHTML = items.length ? items.map(e => {
+        const st = e.status || 'locked';
+        const sel = st === 'current' ? ' sel' : '';
+        const tries = e.attempts ? ` · ${e.attempts} ${e.attempts === 1 ? 'try' : 'tries'}` : '';
+        return `<div class="ex ${st}${sel}"><span class="chip">${CHIP[st] || '•'}</span>`
+             + `<span class="t">${esc(e.id)}<small>[${st}]${tries}</small></span></div>`;
+      }).join('') : '<div class="ex"><span class="t" style="color:var(--fg-dim)">no exercises</span></div>';
+      if (data && typeof data.total === 'number' && data.total > 0) {
+        const pct = Math.round(100 * (data.done || 0) / data.total);
+        document.getElementById('pct').textContent = `${data.done || 0} / ${data.total} · ${pct}%`;
+        document.getElementById('fill').style.width = pct + '%';
+      }
+    }
+
+    function renderCurrent(j) {
+      if (!j || !j.exercise) {
+        document.getElementById('lessonSub').textContent = 'no current exercise — set one with `rpro exercise next`.';
+        document.getElementById('editorCode').textContent = '';
+        return;
+      }
+      document.getElementById('lessonTitle').textContent = j.title || j.exercise;
+      const mins = j.estimated_minutes ? ` · ~${j.estimated_minutes} min` : '';
+      document.getElementById('lessonSub').textContent =
+        `${j.exercise}${j.concept ? ' · ' + j.concept : ''}${mins} · reads → writes`;
+      document.getElementById('editorBar').textContent = `${j.exercise} · main.rs`;
+      document.getElementById('editorCode').textContent = j.code || '';
+      const refs = j.book_refs || [];
+      document.getElementById('brefs').innerHTML = refs.length ? refs.map((r, i) =>
+        `<div class="bref"><span class="c">[${i + 1}] ${esc(r.chapter)}</span>`
+        + (r.anchor ? ` · ${esc(r.anchor)}` : '')
+        + `<small>${esc(r.why)}</small></div>`).join('')
+        : '<div class="bref" style="cursor:default;color:var(--fg-dim)">none for this exercise</div>';
+    }
+
+    // Diagnostics pane from a run: prefer structured diagnostics, else scrape
+    // error codes from the raw output (and prefill Explain with the first one).
+    function renderDiag(out) {
+      const box = document.getElementById('diag');
+      let rows = [];
+      if (out.diagnostics && out.diagnostics.length) {
+        rows = out.diagnostics.map(dg => {
+          const lvl = String(dg.level || 'note').toLowerCase();
+          const cls = lvl.startsWith('err') ? 'error' : (lvl.startsWith('warn') ? 'warn' : 'note');
+          const loc = dg.span ? ` · L${dg.span.line}` : '';
+          if (cls === 'error' && dg.code) lastCode = lastCode || dg.code;
+          return `<div class="diag ${cls}"><span class="lvl">[${cls === 'error' ? '!' : cls === 'warn' ? '~' : 'i'}]</span>`
+               + `<span class="msg">${esc((dg.code || lvl) + loc)}<small>${esc(dg.message)}</small></span></div>`;
+        });
+      } else {
+        const txt = (out.raw_stderr || '') + '\n' + (out.raw_stdout || '');
+        const codes = [...new Set((txt.match(/error\[(E\d{3,4})\]/g) || []).map(m => m.slice(6, -1)))];
+        if (codes[0]) lastCode = codes[0];
+        rows = codes.map(c =>
+          `<div class="diag error"><span class="lvl">[!]</span><span class="msg">${c}`
+          + `<small>rustc --explain ${c}</small></span></div>`);
+        if (out.passed) rows = ['<div class="diag note"><span class="lvl">[i]</span><span class="msg">passed<small>no diagnostics — nice</small></span></div>'];
+        else if (!rows.length) rows = ['<div class="diag note"><span class="lvl">[i]</span><span class="msg">see terminal<small>read the raw output by hand</small></span></div>'];
+      }
+      box.innerHTML = rows.join('');
+    }
+
+    // On load, fetch the real list + current exercise and render them; if the
+    // server is unreachable (opened via file://), keep the static preview.
     (async () => {
       try {
-        const res = await fetch('api/current');
-        const j = await res.json();
-        if (j && j.exercise) {
-          term.writeln(d('current exercise: ') + b(j.exercise));
+        const [exs, cur] = await Promise.all([
+          fetch('api/exercises').then(r => r.json()).catch(() => null),
+          fetch('api/current').then(r => r.json()).catch(() => null),
+        ]);
+        if (exs) renderList(exs);
+        renderCurrent(cur);
+        if (cur && cur.exercise) {
+          term.writeln(d('current exercise: ') + b(cur.exercise));
           term.writeln(d('press Run / Check / Explain.'));
           statusEl().textContent = 'ready';
         } else {
@@ -319,10 +379,10 @@
     document.getElementById('runbtn').onclick = () => runOp('run');
     document.getElementById('checkbtn').onclick = () => runOp('check');
     document.getElementById('explainbtn').onclick = () => {
-      const code = (prompt('Diagnostic code to explain (letters/digits only):') || '').trim();
+      const code = (prompt('Diagnostic code to explain (letters/digits only):', lastCode) || '').trim();
       if (code) runOp('explain', { code });
     };
-    window.addEventListener('load', () => { document.getElementById('fill').style.width = '30%'; refit(); });
+    window.addEventListener('load', () => { refit(); });
   </script>
 </body>
 </html>
