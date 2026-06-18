@@ -13,6 +13,7 @@ path = "src/main.rs"
 
 [dependencies]
 rpro-state = { path = "../rpro-state" }
+rpro-storage-fs = { path = "../rpro-storage-fs" }
 rpro-lang = { path = "../rpro-lang" }
 rpro-lang-rust = { path = "../languages/rust" }
 rpro-runner = { path = "../rpro-runner" }

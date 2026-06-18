@@ -932,6 +932,7 @@ dependencies = [
  "rpro-lang-rust",
  "rpro-runner",
  "rpro-state",
+ "rpro-storage-fs",
  "rpro-tui",
 ]
 
@@ -969,8 +970,22 @@ name = "rpro-state"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "rpro-lang",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror 2.0.18",
+ "toml",
+]
+
+[[package]]
+name = "rpro-storage-fs"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
  "dirs",
  "rpro-lang",
+ "rpro-state",
  "serde",
  "serde_json",
  "tempfile",
@@ -996,6 +1011,7 @@ dependencies = [
  "rpro-book",
  "rpro-runner",
  "rpro-state",
+ "rpro-storage-fs",
 ]
 
 [[package]]

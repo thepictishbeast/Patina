@@ -9,7 +9,7 @@
 
 use anyhow::Result;
 use rpro_book::Book;
-use rpro_state::Store;
+use rpro_storage_fs::Store;
 
 /// Open the dashboard — entry screen, shows progress + the current
 /// exercise's title + book references.

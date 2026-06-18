@@ -1,0 +1,25 @@
+[package]
+name = "rpro-storage-fs"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "Filesystem implementation of the rpro-lang Storage seam (~/.rustlings-pro/), plus the typed Store used by the native shells. Not wasm."
+
+[lints]
+workspace = true
+
+[dependencies]
+rpro-state = { path = "../rpro-state" }
+rpro-lang = { path = "../rpro-lang" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+toml = { workspace = true }
+thiserror = { workspace = true }
+dirs = { workspace = true }
+async-trait = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }

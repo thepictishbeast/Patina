@@ -21,7 +21,8 @@
 use anyhow::{Context, Result, anyhow};
 use clap::{Parser, Subcommand};
 use console::style;
-use rpro_state::{ExerciseStatus, Store};
+use rpro_state::ExerciseStatus;
+use rpro_storage_fs::Store;
 
 #[derive(Parser, Debug)]
 #[command(name = "rpro", version, about = "Rustlings Pro — Rust learning + the Rust Book", long_about = None)]

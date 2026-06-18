@@ -4,6 +4,7 @@ members = [
     "crates/rpro-lang",
     "crates/languages/rust",
     "crates/rpro-toolchain-local",
+    "crates/rpro-storage-fs",
     "crates/rpro-state",
     "crates/rpro-runner",
     "crates/rpro-book",
