@@ -94,3 +94,12 @@ exercise view to see live compiler output. Quit with `q`.
 - The web server is loopback-only (`127.0.0.1`) and accepts only a closed set of
   operations (run / check / test / explain) on the server-resolved current
   exercise — it cannot be pointed at arbitrary files or commands.
+
+## Smoke test (end-to-end)
+
+`scripts/smoke.sh [PORT]` builds the server, seeds a throwaway store, starts it on
+loopback, and asserts the whole contract: static assets serve, the exercises seed
+in learning order with a current one, `/api/current` never leaks the
+answer (no `solution_outline` / `expected_error_code`), the hint ladder's first
+rung doesn't reveal the solution, and a real op runs through. Exits nonzero on any
+failure — suitable for CI. Needs only the Rust toolchain + `python3` + `curl`.
