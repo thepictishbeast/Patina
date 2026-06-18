@@ -1,0 +1,17 @@
+id = "types/04_struct_method"
+title = "Methods live in impl blocks"
+difficulty = "beginner"
+estimated_minutes = 7
+concept = "method-syntax"
+expected_error_code = "E0599"
+solution_outline = """
+`main` calls `c.increment()`, but no such method exists. Define it in
+the `impl Counter` block, taking `&mut self` so it can change the
+struct: `fn increment(&mut self) { self.count += 1; }`. Methods you
+call must be declared.
+"""
+
+[[book_refs]]
+chapter = "ch05-03-method-syntax"
+anchor = "defining-methods"
+why = "Defining methods in an `impl` block, including `&mut self` for methods that mutate — exactly what the fix needs."

@@ -1,0 +1,17 @@
+id = "types/02_field_privacy"
+title = "Private struct fields: encapsulation"
+difficulty = "beginner"
+estimated_minutes = 7
+concept = "struct-field-privacy"
+expected_error_code = "E0616"
+solution_outline = """
+`area_cache` is private to the `shapes` module, so `main` can't read it.
+Use only the public surface: drop the line that prints `c.area_cache`
+(or print `c.radius` again). A struct can be public while some fields
+stay private — that's the encapsulation boundary.
+"""
+
+[[book_refs]]
+chapter = "ch07-03-paths-for-referring-to-an-item-in-the-module-tree"
+anchor = "making-structs-and-enums-public"
+why = "`pub` on a struct does NOT make its fields public — each field opts in separately. The exact rule the failing line violates."

@@ -1,0 +1,16 @@
+id = "types/01_struct_build"
+title = "Build a struct: every field must be set"
+difficulty = "beginner"
+estimated_minutes = 5
+concept = "struct-construction"
+expected_error_code = "E0063"
+solution_outline = """
+Give the missing field a value in the struct literal, e.g.
+`let p = Point { x: 3, y: 4 };`. Rust has no uninitialized fields — a
+struct value is only valid once every field is set.
+"""
+
+[[book_refs]]
+chapter = "ch05-01-defining-structs"
+anchor = "instantiating-structs"
+why = "Creating a struct value: you list every field. This is the rule the failing line breaks."

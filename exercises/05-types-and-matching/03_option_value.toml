@@ -1,0 +1,22 @@
+id = "types/03_option_value"
+title = "Option<T> is not T: get the value out first"
+difficulty = "beginner"
+estimated_minutes = 8
+concept = "option-extract-value"
+expected_error_code = "E0308"
+solution_outline = """
+Pull the inner value out before binding it to an `i32`. Idiomatic:
+`let value = match maybe { Some(n) => n, None => 0 };` (decide what to do
+when there's no value). Or `if let Some(n) = maybe { ... }`. `unwrap()`
+works too but panics on `None` — matching is safer.
+"""
+
+[[book_refs]]
+chapter = "ch06-01-defining-an-enum"
+anchor = "the-option-enum-and-its-advantages-over-null-values"
+why = "Why `Option<i32>` and `i32` are different types — the billion-dollar mistake, fixed by the type system."
+
+[[book_refs]]
+chapter = "ch06-02-the-match-control-flow-construct"
+anchor = "patterns-that-bind-to-values"
+why = "How to extract the inner value with `match Some(n) => n` — the fix this exercise points to."
