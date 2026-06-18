@@ -11,6 +11,7 @@ members = [
     "crates/rpro-book",
     "crates/rpro-tui",
     "crates/rpro-cli",
+    "crates/rpro-serve",
 ]
 
 [workspace.package]

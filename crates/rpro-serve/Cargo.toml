@@ -1,0 +1,32 @@
+[package]
+name = "rpro-serve"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Tempered Studio local web server — serves the gui/ shell and runs the current exercise in a browser with zero native UI deps. Loopback-only, op-whitelisted."
+
+[[bin]]
+name = "rpro-serve"
+path = "src/main.rs"
+
+[dependencies]
+rpro-state = { path = "../rpro-state" }
+rpro-storage-fs = { path = "../rpro-storage-fs" }
+rpro-lang = { path = "../rpro-lang" }
+rpro-lang-rust = { path = "../languages/rust" }
+rpro-core = { path = "../rpro-core" }
+rpro-toolchain-local = { path = "../rpro-toolchain-local" }
+rpro-runner = { path = "../rpro-runner" }
+
+serde = { workspace = true }
+serde_json = { workspace = true }
+pollster = { workspace = true }
+
+axum = "0.7.9"
+tokio = { version = "1.52", features = ["rt-multi-thread", "macros", "net"] }
+tower-http = { version = "0.6", features = ["fs"] }
+
+[lints]
+workspace = true

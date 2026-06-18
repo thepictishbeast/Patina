@@ -7,10 +7,12 @@
 <!--
   Tempered Studio — GUI shell (frontend).
   Self-contained, no CDN (FOSS-first, works offline). xterm.js is vendored under
-  vendor/xterm/ (MIT). The bottom pane is a REAL terminal widget — the same one
-  the live build will stream rpro + cargo/rustc into over a pty (Termux on
-  Android, a pty on desktop, a pty-over-WebSocket on web). Open in any browser
-  to preview — no install. Implements docs/UX.md.
+  vendor/xterm/ (MIT). The bottom pane is a REAL terminal widget. When served by
+  the local rpro-serve binary, Run/Check/Explain POST to /api/run; the server
+  runs the toolchain off-thread and returns the raw output (Outcome), which we
+  write verbatim into xterm (ANSI colors pass through). Opened directly from
+  disk (file://) with no server, it falls back to a static demo so the layout
+  still previews. No pty — a single JSON request/response. Implements docs/UX.md.
 -->
 <link rel="stylesheet" href="vendor/xterm/xterm.css" />
 <style>
@@ -177,14 +179,14 @@
 }</pre>
       </div>
       <div class="runrow">
-        <button class="run" id="runbtn">▷ Run (cargo run)</button>
+        <button class="run" id="runbtn">▷ Run</button>
         <button class="ghost" id="checkbtn">✓ Check</button>
-        <button class="ghost">✎ Edit</button>
-        <span class="badge" style="margin-left:auto">predict locked: <b style="color:var(--note)">E0277</b></span>
+        <button class="ghost" id="explainbtn">? Explain</button>
+        <span class="badge" id="statusline" style="margin-left:auto">ready</span>
       </div>
 
       <div class="terminal">
-        <div class="tbar"><span class="throbber" id="throb">⠹</span> rpro · embedded terminal — real cargo/rustc (Termux on Android, pty on desktop)</div>
+        <div class="tbar"><span class="throbber" id="throb">⠹</span> rpro · embedded terminal — live output from the local server (/api/run)</div>
         <div id="xterm" class="xterm-host"></div>
       </div>
     </section>
@@ -229,19 +231,74 @@
     const g=s=>`\x1b[32m${s}\x1b[0m`, r=s=>`\x1b[31m${s}\x1b[0m`,
           b=s=>`\x1b[34m${s}\x1b[0m`, d=s=>`\x1b[2m${s}\x1b[0m`;
 
-    function showSession() {
+    // Static preview shown only when there is no server (opened via file://).
+    function showDemo() {
       term.clear();
-      term.writeln(g('$ cargo run'));
+      term.writeln(d('(no server — static preview. Launch `cargo run -p rpro-serve`,'));
+      term.writeln(d(' then open http://127.0.0.1:8787/ to run exercises live.)'));
+      term.writeln('');
+      term.writeln(g('$ run'));
       term.writeln(d('   Compiling exercise v0.1.0'));
-      term.writeln(r('error[E0277]') + ': cannot add `Option<i8>` to `i8`');
-      term.writeln(' ' + b('-->') + ' src/main.rs:5:17');
-      term.writeln('  ' + b('|'));
-      term.writeln(b('5') + ' ' + b('|') + '     let sum = x + y;');
-      term.writeln('  ' + b('|') + '                 ' + r('^ no implementation for `i8 + Option<i8>`'));
-      term.writeln('  ' + b('= help:') + ' convert the `Option<i8>` to an `i8` first');
-      term.writeln(d('✗ failed in 0.31s — read it top-to-bottom, then fix & re-run'));
+      term.writeln(r('error') + ': example diagnostic — read it top-to-bottom, then fix & re-run');
     }
-    showSession();
+
+    const statusEl = () => document.getElementById('statusline');
+
+    // Live path: POST a whitelisted op to the local server and stream the raw
+    // output (already ANSI-colored by the toolchain) into the xterm terminal.
+    async function runOp(op, extra) {
+      const btns = ['runbtn','checkbtn','explainbtn'].map(id=>document.getElementById(id));
+      btns.forEach(x=>x && (x.disabled=true));
+      statusEl().textContent = op + '…';
+      term.clear();
+      term.writeln(d('$ ' + op + ' — running on the local server…'));
+      try {
+        const res = await fetch('api/run', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify(Object.assign({ op }, extra || {}))
+        });
+        if (!res.ok) {
+          const msg = await res.text();
+          term.clear();
+          term.writeln(r('request rejected') + ' (' + res.status + '): ' + msg);
+          statusEl().textContent = 'error';
+          return;
+        }
+        const out = await res.json();
+        term.clear();
+        // Raw bytes carry ANSI from the toolchain — write verbatim, no recolor.
+        if (out.raw_stdout) term.write(out.raw_stdout.replace(/\n/g,'\r\n'));
+        if (out.raw_stderr) term.write(out.raw_stderr.replace(/\n/g,'\r\n'));
+        const verdict = out.passed
+          ? g('✓ passed') + d(' in ' + out.duration_ms + 'ms')
+          : r('✗ failed') + d(' in ' + out.duration_ms + 'ms — read it top-to-bottom, then fix & re-run');
+        term.writeln(''); term.writeln(verdict);
+        statusEl().textContent = out.passed ? 'passed' : 'failed';
+      } catch (e) {
+        // No server reachable → fall back to the static preview.
+        showDemo();
+        statusEl().textContent = 'offline';
+      } finally {
+        btns.forEach(x=>x && (x.disabled=false));
+        refit();
+      }
+    }
+
+    // On load, ask the server what the current exercise is; if unreachable,
+    // show the static demo so the layout still previews from file://.
+    (async () => {
+      try {
+        const res = await fetch('api/current');
+        const j = await res.json();
+        if (j && j.exercise) {
+          term.writeln(d('current exercise: ') + b(j.exercise));
+          term.writeln(d('press Run / Check / Explain.'));
+          statusEl().textContent = 'ready';
+        } else {
+          term.writeln(d('no current exercise on the server.'));
+        }
+      } catch (_) { showDemo(); }
+    })();
 
     // throbber in the header (mirrors the TUI Throbber)
     const frames = ["⠋","⠙","⠹","⠸","⠼","⠴","⠦","⠧","⠇","⠏"]; let i = 0;
@@ -258,10 +315,13 @@
       const h = document.documentElement;
       h.dataset.theme = h.dataset.theme === 'dark' ? 'light' : 'dark';
     };
-    // run/check → simulate the compile feel (the live build streams a real pty here)
-    const runseq = () => { term.clear(); term.writeln(g('$ cargo run')); term.writeln(d('   Compiling exercise v0.1.0 ...')); setTimeout(showSession, 650); };
-    document.getElementById('runbtn').onclick = runseq;
-    document.getElementById('checkbtn').onclick = runseq;
+    // run/check/explain → live POST to the local server, raw output into xterm.
+    document.getElementById('runbtn').onclick = () => runOp('run');
+    document.getElementById('checkbtn').onclick = () => runOp('check');
+    document.getElementById('explainbtn').onclick = () => {
+      const code = (prompt('Diagnostic code to explain (letters/digits only):') || '').trim();
+      if (code) runOp('explain', { code });
+    };
     window.addEventListener('load', () => { document.getElementById('fill').style.width = '30%'; refit(); });
   </script>
 </body>
