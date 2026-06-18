@@ -1,0 +1,21 @@
+id = "collections/04_vec_moved"
+title = "`for x in v` moves the vector — borrow to keep it"
+difficulty = "beginner"
+estimated_minutes = 7
+concept = "iterate-by-reference"
+expected_error_code = "E0382"
+solution_outline = """
+`for name in names` takes the vector by value (moves it), so `names` is
+gone afterward. Iterate over a reference instead: `for name in &names`
+(now `name` is a `&String`). Then `names` is still yours after the loop.
+"""
+
+[[book_refs]]
+chapter = "ch08-01-storing-lists-of-values-with-vectors"
+anchor = "iterating-over-the-values-in-a-vector"
+why = "Iterating with `&v` vs `v`: the reference form keeps the vector usable afterward."
+
+[[book_refs]]
+chapter = "ch04-01-what-is-ownership"
+anchor = "ways-variables-and-data-interact-move"
+why = "Why consuming `names` makes it unusable later — the move rule, now seen through a collection."

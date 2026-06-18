@@ -1,0 +1,16 @@
+id = "collections/01_vec_push_type"
+title = "A Vec is homogeneous: one element type"
+difficulty = "beginner"
+estimated_minutes = 5
+concept = "vec-element-type"
+expected_error_code = "E0308"
+solution_outline = """
+`scores` is a `Vec<i32>`, so every element must be an `i32`. Replace the
+`"perfect"` push with a number, e.g. `scores.push(100);`. (If you truly
+needed mixed types you'd reach for an enum — see the book ref.)
+"""
+
+[[book_refs]]
+chapter = "ch08-01-storing-lists-of-values-with-vectors"
+anchor = "creating-a-new-vector"
+why = "A vector holds values of one type; the annotation `Vec<i32>` fixes that type. The rule the failing push breaks."

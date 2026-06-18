@@ -1,0 +1,21 @@
+id = "collections/03_iter_collect"
+title = "Iterators are lazy: collect to get a Vec"
+difficulty = "beginner"
+estimated_minutes = 7
+concept = "iterator-collect"
+expected_error_code = "E0308"
+solution_outline = """
+`.map(...)` returns a lazy iterator, not a `Vec`. Finish the chain with
+`.collect()`: `let doubled: Vec<i32> = nums.iter().map(|n| n * 2).collect();`.
+The `Vec<i32>` annotation tells collect what to build.
+"""
+
+[[book_refs]]
+chapter = "ch13-02-processing-a-series-of-items-with-iterators"
+anchor = "methods-that-produce-other-iterators"
+why = "Iterator adaptors like map are lazy — they produce another iterator and do nothing until consumed."
+
+[[book_refs]]
+chapter = "ch13-02-processing-a-series-of-items-with-iterators"
+anchor = "methods-that-consume-the-iterator"
+why = "collect() is the consuming method that turns the iterator into a collection — the missing step."
