@@ -1,0 +1,55 @@
+name: seam-gates
+
+# The two structural gates the language-pluggable architecture depends on
+# (MASTERPLAN.md §10.3). They run from Phase 0 — long before web exists — so a
+# Rust-ism leaking into the pure core, or a non-wasm import, fails the build.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: seam-gates-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  wasm32-pure-core:
+    name: wasm32 build (pure core)
+    runs-on: [self-hosted, linux, x64, plausiden]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - name: build the language-agnostic pure core for wasm32
+        # A stray std::fs / dirs / std::process / walkdir in any of these fails
+        # here. rpro-sync / rpro-narrate / rpro-ai / rpro-core join the list as
+        # they land; rpro-toolchain-local + rpro-storage-fs are effect impls and
+        # are intentionally NOT wasm-safe.
+        run: >
+          cargo build --locked --target wasm32-unknown-unknown
+          -p rpro-lang -p rpro-lang-rust -p rpro-state -p rpro-book
+
+  seam-grep:
+    name: language-seam guard
+    runs-on: [self-hosted, linux, x64, plausiden]
+    steps:
+      - uses: actions/checkout@v4
+      - name: no language-specific tokens outside crates/languages/
+        run: |
+          set -euo pipefail
+          hits=$(grep -rnE '\b(cargo|rustc|rust-analyzer|clippy|rustfmt)\b|doc\.rust-lang|E0[0-9]{3}' \
+                   crates/ --include='*.rs' \
+                 | grep -vE '///|//!' \
+                 | grep -v 'clippy::' \
+                 | grep -v 'crates/languages/' || true)
+          if [ -n "$hits" ]; then
+            echo "::error::language-specific tokens leaked outside crates/languages/:"
+            echo "$hits"
+            exit 1
+          fi
+          echo "seam clean — no language tokens outside crates/languages/"
