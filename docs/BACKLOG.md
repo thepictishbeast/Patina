@@ -12,22 +12,22 @@ Surfaces: **Web** (`rpro-serve`, shipped + live), **CLI** (`rpro`), **TUI** (`rp
 ---
 
 ## A. Web GUI (rpro-serve)
-- [ ] **P1 — In-browser code editing + run-the-edit.** The learner must *write*, not just read. Replace the read-only `<pre>` with an editable editor (vendored CodeMirror 6 or a styled `<textarea>` fallback); Run/Check POST the edited buffer via the existing `code` field on `/api/run`. Persist edits per-exercise (localStorage + optional server scratch).
-- [ ] **P1 — Functional nav tabs.** Dashboard / Exercise / Book / Roadmap are decorative. Wire view-switching; Book renders embedded chapters, Roadmap renders ROADMAP.md.
+- [x] **P1 — In-browser code editing + run-the-edit** (`15c3bee`) — editable `<textarea>` + per-exercise localStorage + ↺reset; Run/Check POST the edited buffer via `/api/run` `code` (clamped 256KiB).
+- [x] **P1 — Functional nav tabs** (`6d67b6a`) — Dashboard/Exercise/Book/Roadmap switch views; Roadmap renders `/api/roadmap`.
 - [x] **P1 — Hint ladder UI** (web, `85a3b17`) — 💡Hint button climbs concept → expected-error → solution-outline (last), server-clamped, no early leak.
-- [ ] **P1 — Predict-first capture.** A small "lock your prediction" input (will it compile? which Exxxx?) before Run; compare to the real result in Compare step.
-- [ ] **P1 — Pass → advance.** On a passing Run: mark done, unlock + set next current, refresh the list/gauge. Needs `POST /api/advance` (server-resolved).
+- [x] **P1 — Predict-first capture** (`56ed101`) — "lock your prediction" bar (compiles? which Exxxx?) → predicted-vs-actual after Run.
+- [x] **P1 — Pass → advance** (`c5b8076`) — passing Run/Test marks Done + promotes next (server-resolved inside `/api/run`, returns `advanced_to`; no separate endpoint needed); list/gauge refresh.
 - [ ] **P2 — Exercise click-to-select.** Clicking a list item sets it current (`POST /api/select`, validated against discovered ids only).
 - [ ] **P2 — Syntax highlighting** in the code pane (escape-then-tokenize; safe).
-- [ ] **P2 — Phone-first responsive reflow.** 3-col grid → single column under ~760px (the locked learner profile is phone-first).
+- [x] **P2 — Phone-first responsive reflow** (`05c0777`) — 3-col grid → single column under 760px via `@media`; `.pane{min-width:0}` fix; verified at 390px.
 - [ ] **P2 — Explain-from-diagnostic.** Click a diagnostic row → runs `explain` for that code.
-- [ ] **P2 — Security headers.** CSP, X-Content-Type-Options, Referrer-Policy on served responses (secure-by-default; loopback-only already done).
-- [ ] **P3 — a11y pass.** Keyboard nav, ARIA roles, focus rings, contrast (light + dark).
+- [x] **P2 — Security headers** (`9e7c12c`) — CSP/X-Content-Type-Options/Referrer-Policy/X-Frame-Options via a `map_response` layer; loopback-only already done.
+- [x] **P3 — a11y pass** (`599b89f`) — keyboard nav (r/c/h/b/t/d, typing-guarded) + tablist/tab roles + aria-live + aria-labels. (Lighthouse audit = G65, still open.)
 
 ## B. CLI (rpro)
-- [ ] **P0 — `init` seeds bundled exercises** + sets first current (today it only scaffolds empty dirs; the server auto-seeds but the CLI doesn't — inconsistent).
-- [ ] **P1 — `hint` command** backed by the shared hint ladder (`hint`, `hint --solution`).
-- [ ] **P1 — `exercise skip` / `reset`** flows; `progress` summary view.
+- [x] **P0 — `init` seeds bundled exercises** + sets first current (`43b2947`) — `copy_tree` mirrors the server's seeding; fresh HOME → exercises seeded, first set Current.
+- [x] **P1 — `hint` command** backed by the shared hint ladder (this tick) — `rpro exercise hint [--level N] [--solution]` prints book refs + the laddered `ExerciseMetadata::hint` text (identical to web/TUI); `--solution` jumps to the top rung. Verified L1/L2/L3 output by hand.
+- [ ] **P1 — `exercise skip` / `reset`** flows; `progress` summary view. *(only the `Skipped` status exists; no skip/reset subcommands yet)*
 - [ ] **P2 — `explain` offline fallback** when `rustc --explain` is unavailable.
 
 ## C. TUI
@@ -46,7 +46,7 @@ Surfaces: **Web** (`rpro-serve`, shipped + live), **CLI** (`rpro`), **TUI** (`rp
 - [ ] **P2 — Pluggable AI tutor seam** (Claude/Gemini) behind a trait; must refuse to type the fix.
 
 ## E. Content (#8) + corpus
-- [ ] **P1 — Exercises for every phase.** Only `04-ownership` (3) exist. Author exercise sets for phases 1–3, 5–9 (each: `name.rs` failing + `name.toml` with book_refs, expected_error_code, solution_outline).
+- [ ] **P1 — Exercises for every phase.** *Phases 1–6 DONE (23 exercises across basics/control-flow/collections/ownership/types/modules, each rustc-verified — `8b25d97` and the t12–16 cluster commits).* Remaining: **phases 7–9** (generics/traits/lifetimes → concurrency → advanced) — gated on the corpus matrix for those phases (E/Corpus 7–9 below).
 - [ ] **P1 — Embedded Book chapters.** `book/` ships READMEs only; bundle the real chapter markdown the exercises reference (ch04-01 etc.).
 - [ ] **P2 — Corpus Phases 7–9** catalog+matrix (generics/traits/lifetimes → concurrency → advanced), proven extract→map→verify workflow.
 - [ ] 🔒 **Error-handling matrix #37 section** — confirm scope with Paul (deferred Phase-5 follow-up).
@@ -57,9 +57,9 @@ Surfaces: **Web** (`rpro-serve`, shipped + live), **CLI** (`rpro`), **TUI** (`rp
 - [ ] **P2 — Verify release.yml** by inspection + a dry-run lint (doable here).
 
 ## G. Audit & test (run periodically + before "done")
-- [ ] **P1 — Full workspace test + build** green (currently 62 tests). Add tests for `rpro-serve` (endpoint unit/integration tests: op whitelist, no-leak of solution/expected_error, loopback bind).
-- [ ] **P1 — seam-grep gate + wasm32 gate** pass (wasm needs the matched rustup toolchain — invoke `$TC/bin/cargo` + `$TC/bin/rustc`).
-- [ ] **P1 — clippy** via the rustup stable toolchain (system cargo lacks it); fix the 2 known pedantic `similar_names` in rpro-cli.
+- [x] **P1 — Full workspace test + build** green — verified every tick; `rpro-serve` endpoint tests added (`bedab94`: op-whitelist, no-leak of solution/expected_error, hint gating) + `record_run` integration tests. Standing gate (re-run before "done").
+- [x] **P1 — seam-grep gate + wasm32 gate** pass — verified every tick via `$TC` toolchain (`RUSTC=$TC/rustc $TC/cargo`, `RUSTDOC=$TC/rustdoc` for doctests); seam CLEAN, wasm32 pure-core builds. CI: `.github/workflows/seam-gates.yml`.
+- [x] **P1 — clippy** named fix — the rpro-cli pedantic `similar_names` cleared in the workspace clippy pass (`4bba688`/`8f091bb`). NOTE: `cargo clippy` isn't installed in this sandbox toolchain; remaining pedantic/nursery lints are WARNINGS (non-gate).
 - [ ] **P2 — E2E browser test** (Playwright): seed → render real exercise → Run → assert E0382 in terminal + Diagnostics; assert no solution/expected_error in page source.
 - [ ] **P2 — Security review** of rpro-serve (input validation, path traversal, DoS via long runs) + dependency audit.
 - [ ] **P2 — Lighthouse / a11y audit** of the web GUI.

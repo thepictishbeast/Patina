@@ -84,10 +84,14 @@ enum ExerciseCmd {
     List,
     /// Jump to the next unfinished exercise (sets it to Current).
     Next,
-    /// Book references for the current exercise — what to read
-    /// when stuck.
+    /// Book references + a laddered hint for the current exercise — what
+    /// to read (and think) when stuck.
     Hint {
-        /// Also surface the (one-line) solution outline.
+        /// Climb the shared hint ladder to this rung: 1 = concept nudge,
+        /// 2 = the expected error code, 3 = the solution outline.
+        #[arg(long, default_value_t = 1)]
+        level: u8,
+        /// Shortcut for the top rung — surface the one-line solution outline.
         #[arg(long)]
         solution: bool,
     },
@@ -110,7 +114,7 @@ fn main() -> Result<()> {
         Some(Cmd::Exercise { sub }) => match sub {
             ExerciseCmd::List => cmd_exercise_list(),
             ExerciseCmd::Next => cmd_exercise_next(),
-            ExerciseCmd::Hint { solution } => cmd_exercise_hint(solution),
+            ExerciseCmd::Hint { level, solution } => cmd_exercise_hint(level, solution),
         },
         Some(Cmd::Book { sub }) => match sub {
             None => cmd_book_open(),
@@ -303,7 +307,7 @@ fn cmd_exercise_next() -> Result<()> {
     Ok(())
 }
 
-fn cmd_exercise_hint(show_solution: bool) -> Result<()> {
+fn cmd_exercise_hint(level: u8, show_solution: bool) -> Result<()> {
     let store = Store::user()?;
     let progress = store.load_progress()?;
     let exercises = rpro_runner::discover(&store.root().join("exercises"))?;
@@ -344,22 +348,29 @@ fn cmd_exercise_hint(show_solution: bool) -> Result<()> {
         );
         println!();
     }
-    if show_solution {
-        if let Some(s) = &ex.meta.solution_outline {
-            println!("{}", style("Solution outline (one line):").yellow().bold());
-            println!("  {s}");
-        } else {
-            println!(
-                "{}",
-                style("(no solution outline shipped with this exercise)").dim()
-            );
+    // Laddered hint text — the SAME shared ladder the web + TUI show
+    // (`ExerciseMetadata::hint`), so guidance never drifts across surfaces.
+    // `--solution` jumps to the top rung; otherwise climb to `--level`.
+    let requested = if show_solution { u8::MAX } else { level.max(1) };
+    let (lvl, max, text) = ex.meta.hint(requested);
+    let last = lvl >= max;
+    println!(
+        "{}",
+        style(format!(
+            "Hint {lvl}/{max}{}:",
+            if last { " · last resort" } else { "" }
+        ))
+        .yellow()
+        .bold()
+    );
+    println!("  {text}");
+    if !last {
+        println!();
+        let mut tip = format!("rpro exercise hint --level {}", lvl + 1);
+        if max >= 3 {
+            tip.push_str("  (or --solution for the outline)");
         }
-    } else {
-        println!(
-            "  {} `{}` to also reveal the one-line solution outline.",
-            style("Tip:").yellow(),
-            style("rpro exercise hint --solution").bold()
-        );
+        println!("  {} {}", style("Tip:").yellow(), style(tip).bold());
     }
     Ok(())
 }
