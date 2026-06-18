@@ -7,7 +7,9 @@
 
 #![doc(html_no_source)]
 
+use rpro_lang::{DiagLevel, Diagnostic};
 use rpro_state::ExerciseMetadata;
+use rpro_storage_fs::Store;
 use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
 
@@ -109,6 +111,58 @@ pub fn discover(root: &Path) -> Result<Vec<Exercise>, DiscoveryError> {
     Ok(exercises)
 }
 
+/// The first *error*-level diagnostic code in a run's output — the wall the
+/// learner is hitting right now. Warnings/notes and code-less diagnostics are
+/// skipped. Pure (no I/O).
+#[must_use]
+pub fn primary_error_code(diags: &[Diagnostic]) -> Option<&str> {
+    diags
+        .iter()
+        .find(|d| d.level == DiagLevel::Error && d.code.is_some())
+        .and_then(|d| d.code.as_deref())
+}
+
+/// Record one finished run into on-disk progress — the single source of truth
+/// every surface (web, TUI, CLI) shares, so they all advance and accrue spaced
+/// repetition identically.
+///
+/// Bumps the attempt counter, folds the result into the review queue (via
+/// `ReviewState::fold_run`), and — when `advance` is set (a passing Run/Test) —
+/// marks `id` Done and promotes the next exercise in learning order to Current.
+/// Returns the id advanced to, if any. Best-effort: a failed load/save returns
+/// `None` rather than erroring, so it never breaks a run. `discover` already
+/// returns exercises in learning order, so no re-sort is needed here.
+pub fn record_run(
+    store: &Store,
+    id: &str,
+    diagnostics: &[Diagnostic],
+    passed: bool,
+    advance: bool,
+) -> Option<String> {
+    let mut progress = store.load_progress().unwrap_or_default();
+    progress.record_attempt(id);
+    let exs = discover(&store.root().join("exercises")).unwrap_or_default();
+    let expected = exs
+        .iter()
+        .find(|e| e.meta.id == id)
+        .and_then(|e| e.meta.expected_error_code.as_deref());
+    progress
+        .reviews
+        .fold_run(expected, primary_error_code(diagnostics), passed);
+    let mut advanced_to = None;
+    if advance {
+        progress.set_done(id);
+        if let Some(pos) = exs.iter().position(|e| e.meta.id == id) {
+            if let Some(next) = exs.get(pos + 1) {
+                progress.set_current(&next.meta.id);
+                advanced_to = Some(next.meta.id.clone());
+            }
+        }
+    }
+    let _ = store.save_progress(&progress);
+    advanced_to
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -183,5 +237,72 @@ book_refs = []
             DiscoveryError::Invalid { reason, .. } => assert!(reason.contains("book_refs")),
             other => panic!("wrong: {other:?}"),
         }
+    }
+
+    // Diagnostic codes below are fake non-E0 tokens on purpose: the seam gate
+    // forbids the literal `E0xxx` outside crates/languages, and this is a runner.
+    fn diag(code: &str) -> Diagnostic {
+        Diagnostic { code: Some(code.into()), level: DiagLevel::Error, message: "m".into(), span: None }
+    }
+
+    #[test]
+    fn primary_error_code_picks_first_error_with_a_code() {
+        let note = Diagnostic { code: Some("E4001".into()), level: DiagLevel::Note, ..diag("x") };
+        let warn = Diagnostic { code: None, level: DiagLevel::Warning, ..diag("x") };
+        let diags = vec![warn, note, diag("E4321"), diag("E4399")];
+        assert_eq!(primary_error_code(&diags), Some("E4321"));
+        assert_eq!(primary_error_code(&[]), None);
+        let codeless = Diagnostic { code: None, ..diag("x") };
+        assert_eq!(primary_error_code(&[codeless]), None);
+    }
+
+    // Two exercises in learning order; `01` teaches E4321.
+    fn seed_two(root: &Path) -> Store {
+        let ex = root.join("exercises/01-basics");
+        write(&ex.join("01_first.rs"), "fn main() {}\n");
+        write(
+            &ex.join("01_first.toml"),
+            "id = \"basics/01_first\"\ntitle = \"First\"\ndifficulty = \"beginner\"\n\
+             estimated_minutes = 3\nconcept = \"first\"\nexpected_error_code = \"E4321\"\n\
+             [[book_refs]]\nchapter = \"ch01\"\nwhy = \"x\"\n",
+        );
+        write(&ex.join("02_second.rs"), "fn main() {}\n");
+        write(
+            &ex.join("02_second.toml"),
+            "id = \"basics/02_second\"\ntitle = \"Second\"\ndifficulty = \"beginner\"\n\
+             estimated_minutes = 3\nconcept = \"second\"\n\
+             [[book_refs]]\nchapter = \"ch01\"\nwhy = \"x\"\n",
+        );
+        let store = Store::at(root.to_path_buf());
+        let mut p = rpro_state::Progress::default();
+        p.set_current("basics/01_first");
+        store.save_progress(&p).unwrap();
+        store
+    }
+
+    #[test]
+    fn record_run_pass_advances_and_records_overcome() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = seed_two(dir.path());
+        // A PASS on 01 (advance) → 01 Done, 02 Current, E4321 bumped to box 1.
+        let advanced = record_run(&store, "basics/01_first", &[], true, true);
+        assert_eq!(advanced.as_deref(), Some("basics/02_second"));
+        let p = store.load_progress().unwrap();
+        assert_eq!(p.entries["basics/01_first"].status, rpro_state::ExerciseStatus::Done);
+        assert_eq!(p.entries["basics/02_second"].status, rpro_state::ExerciseStatus::Current);
+        assert_eq!(p.entries["basics/01_first"].attempts, 1);
+        assert_eq!(p.reviews.due(), vec!["E4321".to_string()]); // box 1, still due
+    }
+
+    #[test]
+    fn record_run_guards_expected_but_records_unexpected() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = seed_two(dir.path());
+        // FAIL with the EXPECTED error → the lesson, not a stumble: not recorded.
+        record_run(&store, "basics/01_first", &[diag("E4321")], false, false);
+        assert_eq!(store.load_progress().unwrap().reviews.tracked_count(), 0);
+        // FAIL with an UNEXPECTED error → a fresh miss enters the review queue.
+        record_run(&store, "basics/01_first", &[diag("E4399")], false, false);
+        assert_eq!(store.load_progress().unwrap().reviews.due(), vec!["E4399".to_string()]);
     }
 }

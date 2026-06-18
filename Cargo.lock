@@ -1181,7 +1181,9 @@ name = "rpro-runner"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "rpro-lang",
  "rpro-state",
+ "rpro-storage-fs",
  "serde",
  "tempfile",
  "thiserror 2.0.18",

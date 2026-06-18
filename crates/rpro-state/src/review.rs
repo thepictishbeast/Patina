@@ -33,6 +33,31 @@ impl ReviewState {
         *b = if overcome { (*b + 1).min(MAX_BOX) } else { 0 };
     }
 
+    /// Fold one finished run into the queue. `expected` is the concept the
+    /// exercise teaches (its `expected_error_code`); `primary` is the first
+    /// error-level diagnostic code the run actually emitted.
+    ///
+    /// * **Pass** — the compile error is gone, so the learner *overcame* the
+    ///   exercise's concept → bump `expected` up a box.
+    /// * **Fail** — every exercise *starts* in its own expected-error state, so
+    ///   the expected error appearing is the lesson working as designed, **not** a
+    ///   stumble. Only an *unexpected* error (one the learner introduced) counts
+    ///   as a fresh miss → reset that code to box 0.
+    ///
+    /// Without the `primary != expected` guard, a recurring code would oscillate
+    /// box 0↔1 forever and never master — making retirement unreachable.
+    pub fn fold_run(&mut self, expected: Option<&str>, primary: Option<&str>, passed: bool) {
+        if passed {
+            if let Some(code) = expected {
+                self.record(code, true);
+            }
+        } else if let Some(p) = primary {
+            if expected != Some(p) {
+                self.record(p, false);
+            }
+        }
+    }
+
     /// Whether `code` is mastered (retired from the review queue).
     #[must_use]
     pub fn is_mastered(&self, code: &str) -> bool {
@@ -112,5 +137,43 @@ mod tests {
         assert_eq!(r.due(), vec!["trait".to_string(), "borrow".to_string()]);
         assert_eq!(r.mastered_count(), 1);
         assert_eq!(r.tracked_count(), 3);
+    }
+
+    #[test]
+    fn fold_run_pass_bumps_expected_concept() {
+        let mut r = ReviewState::default();
+        r.fold_run(Some("move"), None, true);
+        assert_eq!(r.tracked_count(), 1);
+        assert_eq!(r.due(), vec!["move".to_string()]); // box 1, still due
+    }
+
+    #[test]
+    fn fold_run_expected_failure_is_the_lesson_not_a_miss() {
+        // Every exercise starts failing with its OWN taught error — the
+        // curriculum working, so it must never pollute the review queue.
+        let mut r = ReviewState::default();
+        r.fold_run(Some("move"), Some("move"), false);
+        assert_eq!(r.tracked_count(), 0, "the designed error is not a stumble");
+    }
+
+    #[test]
+    fn fold_run_unexpected_failure_is_recorded() {
+        let mut r = ReviewState::default();
+        r.fold_run(Some("move"), Some("borrow"), false);
+        assert_eq!(r.due(), vec!["borrow".to_string()]);
+    }
+
+    #[test]
+    fn fold_run_recurring_code_eventually_masters() {
+        // The same concept across three exercises (fail-with-expected, then
+        // fix-to-pass each time) must climb box 1→2→3 and retire. Without the
+        // `primary != expected` guard this oscillates 0↔1 forever.
+        let mut r = ReviewState::default();
+        for _ in 0..3 {
+            r.fold_run(Some("mismatch"), Some("mismatch"), false); // designed fail
+            r.fold_run(Some("mismatch"), None, true); // fixed → pass
+        }
+        assert!(r.is_mastered("mismatch"));
+        assert!(r.due().is_empty(), "mastered codes drop out of the queue");
     }
 }

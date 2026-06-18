@@ -40,7 +40,7 @@ use tower_http::services::ServeDir;
 use rpro_core::Core;
 use rpro_lang::{ExerciseId, ExerciseSource, RunOp};
 use rpro_lang_rust::RustLanguage;
-use rpro_state::{ExerciseStatus, Progress, ReviewState};
+use rpro_state::{ExerciseStatus, Progress};
 use rpro_storage_fs::Store;
 use rpro_toolchain_local::LocalProcess;
 
@@ -243,19 +243,22 @@ async fn run_handler(
     match joined {
         Ok(Ok(outcome)) => {
             let passed = outcome.status == Some(0);
-            // The error the learner is currently hitting (owned, so the diagnostics
-            // can still move into the response below).
-            let primary = primary_error_code(&outcome.diagnostics).map(str::to_owned);
-            // Record the attempt + fold into spaced repetition; advance (mark done +
-            // set next current) on a passing Run/Test. Plain on-disk state update.
-            let advanced_to = update_progress(
-                &state.store_root,
-                &label,
-                is_exec,
-                advance_on_pass && passed,
-                passed,
-                primary.as_deref(),
-            );
+            // Record into shared on-disk progress (attempt + spaced repetition +
+            // advance on a passing Run/Test) via the one helper every surface
+            // shares. Exec ops only; Explain never touches progress. Borrows the
+            // diagnostics before they move into the response below.
+            let advanced_to = if is_exec {
+                let store = Store::at(state.store_root.clone());
+                rpro_runner::record_run(
+                    &store,
+                    &label,
+                    &outcome.diagnostics,
+                    passed,
+                    advance_on_pass && passed,
+                )
+            } else {
+                None
+            };
             Json(RunResponse {
                 passed,
                 status: outcome.status,
@@ -283,94 +286,6 @@ async fn run_handler(
         // The blocking task itself panicked / was cancelled.
         Err(_) => (StatusCode::INTERNAL_SERVER_ERROR, "run task failed").into_response(),
     }
-}
-
-/// The first *error*-level diagnostic code in a run's output — the wall the
-/// learner is hitting right now. Warnings/notes and code-less diagnostics are
-/// skipped. Pure (no I/O) so it's unit-testable.
-fn primary_error_code(diags: &[rpro_lang::Diagnostic]) -> Option<&str> {
-    diags
-        .iter()
-        .find(|d| d.level == rpro_lang::DiagLevel::Error && d.code.is_some())
-        .and_then(|d| d.code.as_deref())
-}
-
-/// Fold one run's result into the spaced-repetition (RECALL) state. Pure (no I/O)
-/// so it's unit-testable. `expected` is the concept the exercise teaches;
-/// `primary` is the first error-level diagnostic code the run actually emitted.
-///
-/// * **Pass** — the compile error is gone, so the learner *overcame* this
-///   exercise's concept → bump `expected` up a Leitner box.
-/// * **Fail** — every exercise *starts* in its own expected-error state, so the
-///   expected error appearing is the lesson working as designed, **not** a
-///   stumble. Only an *unexpected* error (one the learner introduced) counts as a
-///   fresh miss worth resurfacing → reset that code to box 0.
-///
-/// Without the `primary != expected` guard, a recurring code (e.g. a type
-/// mismatch taught across several exercises) would oscillate box 0↔1 forever and
-/// never master — making the model's retirement contract dead code.
-fn fold_review(
-    reviews: &mut ReviewState,
-    expected: Option<&str>,
-    primary: Option<&str>,
-    passed: bool,
-) {
-    if passed {
-        if let Some(code) = expected {
-            reviews.record(code, true);
-        }
-    } else if let Some(p) = primary {
-        if expected != Some(p) {
-            reviews.record(p, false);
-        }
-    }
-}
-
-/// Update on-disk progress after a run: record the attempt + fold the result into
-/// spaced repetition (for exec ops) and, when `advance` is set (a passing
-/// Run/Test), mark the current exercise Done and promote the next one (by sorted
-/// id) to Current. Returns the id advanced to, if any. Best-effort: a failed
-/// load/save never breaks the run response.
-fn update_progress(
-    store_root: &Path,
-    id: &str,
-    is_exec: bool,
-    advance: bool,
-    passed: bool,
-    primary_code: Option<&str>,
-) -> Option<String> {
-    let store = Store::at(store_root.to_path_buf());
-    let mut progress = store.load_progress().unwrap_or_default();
-    if is_exec {
-        progress.record_attempt(id);
-    }
-    // Discover once — needed for both the spaced-rep concept lookup and advancing.
-    let exs = rpro_runner::discover(&store.root().join("exercises"))
-        .map(|mut v| {
-            v.sort_by(|a, b| a.source.cmp(&b.source)); // path order = learning order
-            v
-        })
-        .unwrap_or_default();
-    // RECALL beat: fold this run into the learner's review queue (exec ops only).
-    if is_exec {
-        let expected = exs
-            .iter()
-            .find(|e| e.meta.id == id)
-            .and_then(|e| e.meta.expected_error_code.as_deref());
-        fold_review(&mut progress.reviews, expected, primary_code, passed);
-    }
-    let mut advanced_to = None;
-    if advance {
-        progress.set_done(id);
-        if let Some(pos) = exs.iter().position(|e| e.meta.id == id) {
-            if let Some(next) = exs.get(pos + 1) {
-                progress.set_current(&next.meta.id);
-                advanced_to = Some(next.meta.id.clone());
-            }
-        }
-    }
-    let _ = store.save_progress(&progress);
-    advanced_to
 }
 
 /// Resolve the current exercise with its full metadata + starter code, so the
@@ -778,64 +693,7 @@ mod tests {
         assert!(v.get("expected_error_code").is_none(), "must not leak the expected error");
         assert!(!v.to_string().contains("clone"), "the answer must appear nowhere in the payload");
     }
-
-    // Spaced-repetition wiring. Keys are concept words (not E-codes) so the
-    // seam gate stays clean; `ReviewState` is generic over the string.
-    #[test]
-    fn primary_error_code_picks_first_error_with_a_code() {
-        use rpro_lang::{DiagLevel, Diagnostic};
-        let mk = |code: Option<&str>, level| Diagnostic {
-            code: code.map(String::from),
-            level,
-            message: "m".into(),
-            span: None,
-        };
-        let diags = vec![
-            mk(None, DiagLevel::Warning),        // skipped: a warning
-            mk(Some("borrow"), DiagLevel::Note), // skipped: not error-level
-            mk(Some("move"), DiagLevel::Error),  // <- first error-level with a code
-            mk(Some("trait"), DiagLevel::Error),
-        ];
-        assert_eq!(primary_error_code(&diags), Some("move"));
-        assert_eq!(primary_error_code(&[]), None);
-        assert_eq!(primary_error_code(&[mk(None, DiagLevel::Error)]), None);
-    }
-
-    #[test]
-    fn fold_review_pass_bumps_expected_concept() {
-        let mut r = ReviewState::default();
-        fold_review(&mut r, Some("move"), None, true);
-        assert_eq!(r.tracked_count(), 1);
-        assert_eq!(r.due(), vec!["move".to_string()]); // box 1, still due
-    }
-
-    #[test]
-    fn fold_review_expected_failure_is_the_lesson_not_a_miss() {
-        // Every exercise starts failing with its OWN expected error — that's the
-        // curriculum working, so it must never pollute the review queue.
-        let mut r = ReviewState::default();
-        fold_review(&mut r, Some("move"), Some("move"), false);
-        assert_eq!(r.tracked_count(), 0, "the designed error is not a stumble");
-    }
-
-    #[test]
-    fn fold_review_unexpected_failure_is_recorded() {
-        let mut r = ReviewState::default();
-        fold_review(&mut r, Some("move"), Some("borrow"), false);
-        assert_eq!(r.due(), vec!["borrow".to_string()]);
-    }
-
-    #[test]
-    fn fold_review_recurring_code_eventually_masters() {
-        // The same concept taught across three exercises (fail-with-expected, then
-        // fix-to-pass each time) must climb box 1→2→3 and retire from review.
-        // Without the `primary != expected` guard this oscillates 0↔1 forever.
-        let mut r = ReviewState::default();
-        for _ in 0..3 {
-            fold_review(&mut r, Some("mismatch"), Some("mismatch"), false); // designed fail
-            fold_review(&mut r, Some("mismatch"), None, true); // fixed → pass
-        }
-        assert!(r.is_mastered("mismatch"));
-        assert!(r.due().is_empty(), "mastered codes drop out of the queue");
-    }
+    // Spaced-repetition logic now lives in its shared home: ReviewState::fold_run
+    // (rpro-state) and primary_error_code / record_run (rpro-runner), each tested
+    // there. rpro-serve just calls record_run.
 }

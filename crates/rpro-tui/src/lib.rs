@@ -69,30 +69,44 @@ fn run_tui(store: &Store, book: &Book, start_tab: Tab, start_selected: usize) ->
     let mut app = App::new(theme::Theme::from_env(&theme_name), status::ascii_only());
     app.tab = start_tab;
     app.selected = start_selected;
-    let dash = dashboard_data(store);
+    let mut dash = dashboard_data(store);
     let mut ex = exercise_view_data(store);
     let store_root = store.root().to_path_buf();
-    let relen = |tab: Tab| match tab {
-        Tab::Dashboard => dash.up_next.len(),
-        Tab::Book => book.chapters.len(),
-        Tab::Exercise | Tab::Roadmap => 0,
-    };
 
     enable_raw_mode()?;
     let mut stdout = std::io::stdout();
     execute!(stdout, EnterAlternateScreen)?;
     let mut terminal = Terminal::new(CrosstermBackend::new(stdout))?;
     let mut run_rx: Option<Receiver<RunResult>> = None;
+    // Whether the in-flight run advances the learner on pass (Run/Test, not Check).
+    let mut run_advances = false;
 
     let loop_result = (|| -> Result<()> {
         loop {
-            app.set_list_len(relen(app.tab));
+            let list_len = match app.tab {
+                Tab::Dashboard => dash.up_next.len(),
+                Tab::Book => book.chapters.len(),
+                Tab::Exercise | Tab::Roadmap => 0,
+            };
+            app.set_list_len(list_len);
             // Collect a finished background run, if one landed.
             if let Some(rx) = &run_rx {
                 if let Ok(result) = rx.try_recv() {
                     apply_run_result(&mut ex, result);
                     app.running = false;
                     run_rx = None;
+                    // Record into shared progress (attempt + spaced repetition +
+                    // advance) via the one helper the web surface also uses, then
+                    // refresh the dashboard so the gauge + Recall reflect it.
+                    let passed = ex.verdict.is_some_and(|(p, _)| p);
+                    let advanced =
+                        rpro_runner::record_run(store, &ex.id, &ex.diagnostics, passed, run_advances && passed);
+                    dash = dashboard_data(store);
+                    if advanced.is_some() {
+                        // Promote the next exercise into the view so r/c target it.
+                        ex = exercise_view_data(store);
+                        app.scroll = 0;
+                    }
                 }
             }
             terminal.draw(|f| match app.tab {
@@ -120,11 +134,13 @@ fn run_tui(store: &Store, book: &Book, start_tab: Tab, start_selected: usize) ->
                                 } else {
                                     RunOp::Run
                                 };
+                                let advances = matches!(op, RunOp::Run | RunOp::Test);
                                 if let Some(rx) = spawn_run(&store_root, op) {
                                     app.running = true;
                                     ex.running = true;
                                     ex.verdict = None;
                                     run_rx = Some(rx);
+                                    run_advances = advances;
                                 }
                             }
                             _ => {}

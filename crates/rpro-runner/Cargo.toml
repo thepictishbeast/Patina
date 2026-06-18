@@ -9,6 +9,8 @@ description = "Rustlings Pro exercise runner — discovery, cargo invocation, re
 
 [dependencies]
 rpro-state = { path = "../rpro-state" }
+rpro-lang = { path = "../rpro-lang" }
+rpro-storage-fs = { path = "../rpro-storage-fs" }
 serde.workspace = true
 toml.workspace = true
 walkdir.workspace = true
