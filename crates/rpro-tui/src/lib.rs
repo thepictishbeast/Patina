@@ -33,30 +33,43 @@ use ratatui::backend::CrosstermBackend;
 ///
 /// # Errors
 /// I/O setting up the terminal or driving the render loop.
-pub fn run_dashboard(store: &Store, _book: &Book) -> Result<()> {
-    let theme_name = store.load_config().map_or_else(|_| "dark".to_string(), |c| c.theme);
-    let mut app = App::new(theme::Theme::from_env(&theme_name), status::ascii_only());
-    let dash = dashboard_data(store);
-    let ex = exercise_view_data(store);
-    app.set_list_len(dash.up_next.len());
-    run_loop(&mut app, |f, app| match app.tab {
-        Tab::Dashboard => render::render_dashboard(f, app, &dash),
-        Tab::Exercise => render::render_exercise(f, app, &ex),
-        Tab::Book => render::render_placeholder(f, app, "Book"),
-        Tab::Roadmap => render::render_placeholder(f, app, "Roadmap"),
-    })
+pub fn run_dashboard(store: &Store, book: &Book) -> Result<()> {
+    run_tui(store, book, Tab::Dashboard, 0)
 }
 
-/// Open the book reader. `start_chapter` is optional — if `Some`, the reader
-/// scrolls to that chapter id; if `None`, it opens at the first chapter.
+/// Open the TUI on the book reader. `start_chapter`, if `Some`, selects that
+/// chapter id; otherwise the first chapter.
 ///
 /// # Errors
-/// I/O setting up the terminal.
-///
-/// v0: the reader screen joins the event loop next; for now it is a no-op shell.
-pub fn run_book_reader(_book: &Book, _start_chapter: Option<&str>) -> Result<()> {
-    println!("(rpro-tui: book reader screen joins the event loop next)");
-    Ok(())
+/// I/O setting up the terminal or driving the render loop.
+pub fn run_book_reader(store: &Store, book: &Book, start_chapter: Option<&str>) -> Result<()> {
+    let start = start_chapter
+        .and_then(|c| book.chapters.keys().position(|k| k == c))
+        .unwrap_or(0);
+    run_tui(store, book, Tab::Book, start)
+}
+
+/// The one tabbed TUI, opened on `start_tab` with row `start_selected`
+/// pre-selected. Every screen shares the tab bar and the one event loop.
+fn run_tui(store: &Store, book: &Book, start_tab: Tab, start_selected: usize) -> Result<()> {
+    let theme_name = store.load_config().map_or_else(|_| "dark".to_string(), |c| c.theme);
+    let mut app = App::new(theme::Theme::from_env(&theme_name), status::ascii_only());
+    app.tab = start_tab;
+    app.selected = start_selected;
+    let dash = dashboard_data(store);
+    let ex = exercise_view_data(store);
+    // The selectable-list length depends on which screen is showing.
+    let relen = |tab: Tab| match tab {
+        Tab::Dashboard => dash.up_next.len(),
+        Tab::Book => book.chapters.len(),
+        Tab::Exercise | Tab::Roadmap => 0,
+    };
+    run_loop(&mut app, &relen, |f, app| match app.tab {
+        Tab::Dashboard => render::render_dashboard(f, app, &dash),
+        Tab::Exercise => render::render_exercise(f, app, &ex),
+        Tab::Book => render::render_book(f, app, book),
+        Tab::Roadmap => render::render_placeholder(f, app, "Roadmap"),
+    })
 }
 
 /// Build the dashboard's display data from on-disk state. Defensive: an
@@ -125,7 +138,11 @@ fn exercise_view_data(store: &Store) -> render::ExerciseViewData {
 
 /// The shared event loop: set up the terminal, draw + handle input until quit,
 /// then always restore the terminal (even on a draw error).
-fn run_loop(app: &mut App, mut draw: impl FnMut(&mut Frame, &App)) -> Result<()> {
+fn run_loop(
+    app: &mut App,
+    relen: &dyn Fn(Tab) -> usize,
+    mut draw: impl FnMut(&mut Frame, &App),
+) -> Result<()> {
     enable_raw_mode()?;
     let mut stdout = std::io::stdout();
     execute!(stdout, EnterAlternateScreen)?;
@@ -133,6 +150,8 @@ fn run_loop(app: &mut App, mut draw: impl FnMut(&mut Frame, &App)) -> Result<()>
 
     let loop_result = (|| -> Result<()> {
         loop {
+            // Keep the selection clamped to whatever list the active screen shows.
+            app.set_list_len(relen(app.tab));
             terminal.draw(|f| draw(f, &*app))?;
             // Poll with a timeout so the spinner animates on idle; on input,
             // route keys; on timeout, advance the throbber.

@@ -7,7 +7,8 @@ use ratatui::Frame;
 use ratatui::layout::{Constraint, Layout};
 use ratatui::style::{Modifier, Style};
 use ratatui::text::{Line, Span};
-use ratatui::widgets::{Block, Gauge, List, ListItem, Paragraph, Tabs, Wrap};
+use ratatui::widgets::{Block, Gauge, List, ListItem, ListState, Paragraph, Tabs, Wrap};
+use rpro_book::Book;
 use rpro_lang::{Diagnostic, EditorAssists};
 
 /// Display data for the dashboard, decoupled from storage so the render is pure.
@@ -254,6 +255,65 @@ pub fn render_exercise(f: &mut Frame, app: &App, data: &ExerciseViewData) {
     );
 }
 
+/// Render the book reader: tab bar, a chapter list (left), and the selected
+/// chapter's markdown (right), with light heading styling. `app.selected`
+/// chooses the chapter. Stacks on narrow widths.
+pub fn render_book(f: &mut Frame, app: &App, book: &Book) {
+    let area = f.area();
+    let rows = Layout::vertical([Constraint::Length(3), Constraint::Min(0)]).split(area);
+    f.render_widget(tab_bar(app), rows[0]);
+
+    let ids: Vec<&String> = book.chapters.keys().collect();
+    if ids.is_empty() {
+        f.render_widget(
+            Paragraph::new("\n  No book content yet — run `rpro init --refresh-book` (v0.1).")
+                .block(Block::bordered().title(" Book ")),
+            rows[1],
+        );
+        return;
+    }
+    let sel = app.selected.min(ids.len() - 1);
+
+    let body = if App::is_narrow(area.width) {
+        Layout::vertical([Constraint::Length(7), Constraint::Min(0)]).split(rows[1])
+    } else {
+        Layout::horizontal([Constraint::Percentage(32), Constraint::Percentage(68)]).split(rows[1])
+    };
+
+    // chapter list (left)
+    let items: Vec<ListItem> = ids.iter().map(|id| ListItem::new((*id).clone())).collect();
+    let list = List::new(items)
+        .block(Block::bordered().title(format!(" Chapters ({}) ", ids.len())))
+        .highlight_style(Style::new().fg(app.theme.accent).add_modifier(Modifier::BOLD))
+        .highlight_symbol("▸ ");
+    let mut state = ListState::default();
+    state.select(Some(sel));
+    f.render_stateful_widget(list, body[0], &mut state);
+
+    // chapter content (right), with light markdown heading styling
+    let md = &book.chapters[ids[sel]].markdown;
+    let lines: Vec<Line> = md
+        .lines()
+        .map(|raw| {
+            let t = raw.trim_start();
+            if let Some(h) = t.strip_prefix('#') {
+                Line::from(Span::styled(
+                    h.trim_start_matches('#').trim().to_string(),
+                    Style::new().fg(app.theme.accent).add_modifier(Modifier::BOLD),
+                ))
+            } else {
+                Line::from(raw.to_string())
+            }
+        })
+        .collect();
+    f.render_widget(
+        Paragraph::new(lines)
+            .wrap(Wrap { trim: false })
+            .block(Block::bordered().title(format!(" {} ", ids[sel]))),
+        body[1],
+    );
+}
+
 /// A simple "coming soon" screen for tabs whose full screen isn't built yet,
 /// keeping the tab bar so navigation stays consistent.
 pub fn render_placeholder(f: &mut Frame, app: &App, title: &str) {
@@ -373,5 +433,44 @@ mod tests {
         );
         assert!(text.contains("no output yet"));
         assert!(text.contains("[FREE]"));
+    }
+
+    #[test]
+    fn book_reader_lists_chapters_and_renders_selected_markdown() {
+        use rpro_book::{Book, Chapter};
+        use std::collections::BTreeMap;
+        use std::path::PathBuf;
+        let mut chapters = BTreeMap::new();
+        chapters.insert(
+            "ch03-01-variables".to_string(),
+            Chapter {
+                id: "ch03-01-variables".into(),
+                path: PathBuf::from("a"),
+                markdown: "# Variables\nLet bindings are immutable by default.".into(),
+            },
+        );
+        chapters.insert(
+            "ch04-01-ownership".to_string(),
+            Chapter {
+                id: "ch04-01-ownership".into(),
+                path: PathBuf::from("b"),
+                markdown: "# Ownership\nMove semantics.".into(),
+            },
+        );
+        let book = Book { chapters };
+        let app = App::new(Theme::dark(), true); // selected = 0 → first (ch03) chapter
+        let mut term = Terminal::new(TestBackend::new(90, 20)).unwrap();
+        term.draw(|f| render_book(f, &app, &book)).unwrap();
+        let buf = term.backend().buffer();
+        let mut s = String::new();
+        for y in 0..buf.area.height {
+            for x in 0..buf.area.width {
+                s.push_str(buf[(x, y)].symbol());
+            }
+        }
+        assert!(s.contains("ch03-01-variables"), "chapter list missing:\n{s}");
+        assert!(s.contains("ch04-01-ownership"), "second chapter missing");
+        assert!(s.contains("Variables"), "selected heading missing");
+        assert!(s.contains("immutable"), "selected content missing");
     }
 }

@@ -341,7 +341,7 @@ fn cmd_exercise_hint(show_solution: bool) -> Result<()> {
 fn cmd_book_open() -> Result<()> {
     let store = Store::user()?;
     let book = rpro_book::Book::load(&store.root().join("book"))?;
-    rpro_tui::run_book_reader(&book, None)?;
+    rpro_tui::run_book_reader(&store, &book, None)?;
     Ok(())
 }
 
