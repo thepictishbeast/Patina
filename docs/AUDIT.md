@@ -10,7 +10,7 @@ to reproduce; every number here is from a clean run, not recall.
 
 | Area | Status |
 |---|---|
-| Workspace build + unit/integration tests | ✅ **119 passing, 0 failing** |
+| Workspace build + unit/integration tests | ✅ **122 passing, 0 failing** |
 | seam-grep gate (language-seam purity) | ✅ CLEAN |
 | wasm32 pure-core gate | ✅ builds |
 | E2E smoke (web server contract) | ✅ **18/18** |
@@ -51,7 +51,7 @@ node scripts/verify-book-anchors.mjs   # every exercise book_ref anchor resolves
 | Crate | Tests | Covers |
 |---|---|---|
 | `rpro-state` | 28 | progress (incl. skip/reset/**select** — single-Current invariant + done-count preserved), Leitner review + `fold_run`, exercise meta + hint ladder, tutor scaffolding, annotations/bookmarks/config |
-| `rpro-tui` | 26 | dashboard + Recall panel, exercise view + hint panel, book reader (incl. mdBook-directive cleanup + blockquote rail) + roadmap render, tab/scroll/selection model (TestBackend) |
+| `rpro-tui` | 29 | dashboard + Recall panel, exercise view + hint panel, book reader (incl. mdBook-directive cleanup + blockquote rail + **inline markdown → styled spans**: `` `code` ``/bold/italic/links, no raw markers, intraword-`_` safe) + roadmap render, tab/scroll/selection model (TestBackend) |
 | `rpro-serve` | 17 | op-whitelist, no-answer-leak, `sanitize_code`, status mapping + **router oneshot tests**: /api/current no-leak, unknown-op→400, oversized-body→413, /api/review shape, security headers, hint L1 no-leak, **book TOC + chapter fetch + traversal-is-a-miss + `?q=` search (ranked hits, blank→empty)**, **/api/select switch + unknown-id→400 + done→409** |
 | `rpro-book` | 12 | chapter loading + `clean_mdbook_source` (directive→link-out, hidden-line drop, `##`-unescape, fence normalize, non-rust passthrough) + `title()` + **`search()`** (counts, frequency ordering, case-insensitive, blank→empty, snippet marker-strip/truncate) |
 | `rpro-lang-rust` | 7 | the Rust `Language` seam impl (incl. `book_ref_url`) |
@@ -108,7 +108,7 @@ this sandbox, so the check lives in CI rather than being run here.
 ## Conclusion
 
 For everything runnable in this environment, **#12 is green and comprehensive**:
-119 tests, both seam/wasm gates, an 18-assertion E2E smoke (incl. the success
+122 tests, both seam/wasm gates, an 18-assertion E2E smoke (incl. the success
 path: fix → run → pass → advance, the Book reader's path-traversal guarantee,
 and full-text search), a cited security review with one fix landed,
 and a verified packaging pipeline — all reproducible from the commands above. The

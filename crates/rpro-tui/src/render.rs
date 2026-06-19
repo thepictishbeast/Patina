@@ -3,6 +3,7 @@
 
 use crate::app::{App, Tab};
 use crate::status;
+use crate::theme::Theme;
 use ratatui::Frame;
 use ratatui::layout::{Constraint, Layout};
 use ratatui::style::{Modifier, Style};
@@ -343,6 +344,99 @@ pub fn render_exercise(f: &mut Frame, app: &App, data: &ExerciseViewData) {
     );
 }
 
+/// Parse one prose line's inline markdown into styled spans so the TUI reader
+/// shows clean text instead of raw markers (mirrors the web `mdToHtml` inline
+/// pass): `` `code` `` → tinted, `**bold**` → bold, `_emph_`/`*emph*` → italic,
+/// `[text](url)` → just the underlined text. Unmatched markers stay literal.
+/// `_` uses the GFM intraword rule (only opens at a word boundary) so
+/// `snake_case` is never mangled.
+fn inline_spans(text: &str, theme: &Theme) -> Vec<Span<'static>> {
+    let chars: Vec<char> = text.chars().collect();
+    let find = |from: usize, ch: char| (from..chars.len()).find(|&j| chars[j] == ch);
+    let mut spans: Vec<Span<'static>> = Vec::new();
+    let mut plain = String::new();
+    let mut i = 0;
+    while i < chars.len() {
+        let c = chars[i];
+        let take = |a: usize, b: usize| chars[a..b].iter().collect::<String>();
+        // inline code `...`
+        if c == '`' {
+            if let Some(end) = find(i + 1, '`') {
+                if end > i + 1 {
+                    flush_plain(&mut plain, &mut spans);
+                    spans.push(Span::styled(take(i + 1, end), Style::new().fg(theme.note)));
+                    i = end + 1;
+                    continue;
+                }
+            }
+        }
+        // bold **...**
+        if c == '*' && chars.get(i + 1) == Some(&'*') {
+            if let Some(end) = (i + 2..chars.len().saturating_sub(1))
+                .find(|&j| chars[j] == '*' && chars[j + 1] == '*')
+            {
+                flush_plain(&mut plain, &mut spans);
+                spans.push(Span::styled(take(i + 2, end), Style::new().add_modifier(Modifier::BOLD)));
+                i = end + 2;
+                continue;
+            }
+        }
+        // emphasis *...* (single)
+        if c == '*' {
+            if let Some(end) = find(i + 1, '*') {
+                if end > i + 1 {
+                    flush_plain(&mut plain, &mut spans);
+                    spans.push(Span::styled(take(i + 1, end), Style::new().add_modifier(Modifier::ITALIC)));
+                    i = end + 1;
+                    continue;
+                }
+            }
+        }
+        // emphasis _..._ — only at a word boundary (GFM intraword rule).
+        if c == '_' && i.checked_sub(1).is_none_or(|p| !chars[p].is_alphanumeric()) {
+            if let Some(end) = (i + 1..chars.len()).find(|&j| {
+                chars[j] == '_' && chars.get(j + 1).is_none_or(|n| !n.is_alphanumeric())
+            }) {
+                if end > i + 1 {
+                    flush_plain(&mut plain, &mut spans);
+                    spans.push(Span::styled(take(i + 1, end), Style::new().add_modifier(Modifier::ITALIC)));
+                    i = end + 1;
+                    continue;
+                }
+            }
+        }
+        // link [text](url) → keep the text only (underlined to hint it links out).
+        if c == '[' {
+            if let Some(close) = find(i + 1, ']') {
+                if chars.get(close + 1) == Some(&'(') {
+                    if let Some(paren) = find(close + 2, ')') {
+                        flush_plain(&mut plain, &mut spans);
+                        spans.push(Span::styled(
+                            take(i + 1, close),
+                            Style::new().fg(theme.note).add_modifier(Modifier::UNDERLINED),
+                        ));
+                        i = paren + 1;
+                        continue;
+                    }
+                }
+            }
+        }
+        plain.push(c);
+        i += 1;
+    }
+    flush_plain(&mut plain, &mut spans);
+    if spans.is_empty() {
+        spans.push(Span::raw(String::new()));
+    }
+    spans
+}
+
+fn flush_plain(plain: &mut String, spans: &mut Vec<Span<'static>>) {
+    if !plain.is_empty() {
+        spans.push(Span::raw(std::mem::take(plain)));
+    }
+}
+
 /// Render the book reader: tab bar, a chapter list (left), and the selected
 /// chapter's markdown (right), with light heading styling. `app.selected`
 /// chooses the chapter. Stacks on narrow widths.
@@ -417,7 +511,9 @@ pub fn render_book(f: &mut Frame, app: &App, book: &Book) {
                     Style::new().fg(app.theme.muted).add_modifier(Modifier::ITALIC),
                 )))
             } else {
-                Some(Line::from(raw.to_string()))
+                // Prose line: render inline markdown as styled spans (no raw
+                // `_`/`**`/`` ` ``/`[]()` markers leaking into the reader).
+                Some(Line::from(inline_spans(raw, &app.theme)))
             }
         })
         .collect();
@@ -790,5 +886,61 @@ mod tests {
         let scrolled = render(8);
         assert!(!scrolled.contains("line-00"), "line-00 should scroll off");
         assert!(scrolled.contains("line-08"), "later lines show when scrolled");
+    }
+
+    #[test]
+    fn inline_renders_markdown_as_spans_without_raw_markers() {
+        let th = Theme::dark();
+        let sp = inline_spans("the _rules_ of `String`, see **this** and [docs](http://x.io)", &th);
+        let joined: String = sp.iter().map(|s| s.content.as_ref()).collect();
+        // The styled content survives; the raw markers do not.
+        assert!(joined.contains("rules") && joined.contains("String") && joined.contains("this") && joined.contains("docs"));
+        assert!(!joined.contains('_') && !joined.contains('`') && !joined.contains('*') && !joined.contains('['),
+            "raw markers leaked: {joined:?}");
+        assert!(!joined.contains("http://x.io"), "link url dropped, text kept: {joined:?}");
+        // The right spans carry the right styles.
+        assert!(sp.iter().any(|s| s.content == "rules" && s.style.add_modifier.contains(Modifier::ITALIC)));
+        assert!(sp.iter().any(|s| s.content == "this" && s.style.add_modifier.contains(Modifier::BOLD)));
+        assert!(sp.iter().any(|s| s.content == "String" && s.style.fg == Some(th.note)));
+        assert!(sp.iter().any(|s| s.content == "docs" && s.style.add_modifier.contains(Modifier::UNDERLINED)));
+    }
+
+    #[test]
+    fn inline_preserves_snake_case_and_unmatched_markers() {
+        let th = Theme::dark();
+        let sp = inline_spans("call to_string and a * b here", &th);
+        let joined: String = sp.iter().map(|s| s.content.as_ref()).collect();
+        assert_eq!(joined, "call to_string and a * b here", "intraword _ and lone * stay literal");
+        assert!(sp.iter().all(|s| !s.style.add_modifier.contains(Modifier::ITALIC)), "nothing italicised");
+    }
+
+    #[test]
+    fn book_reader_styles_inline_markup() {
+        use rpro_book::{Book, Chapter};
+        use std::collections::BTreeMap;
+        use std::path::PathBuf;
+        let mut chapters = BTreeMap::new();
+        chapters.insert(
+            "ch".to_string(),
+            Chapter {
+                id: "ch".into(),
+                path: PathBuf::from("a"),
+                markdown: "# H\nVariables are _immutable_ by default; use `mut` to opt in.".into(),
+            },
+        );
+        let book = Book { chapters };
+        let app = App::new(Theme::dark(), true);
+        let mut term = Terminal::new(TestBackend::new(90, 12)).unwrap();
+        term.draw(|f| render_book(f, &app, &book)).unwrap();
+        let buf = term.backend().buffer();
+        let mut s = String::new();
+        for y in 0..buf.area.height {
+            for x in 0..buf.area.width {
+                s.push_str(buf[(x, y)].symbol());
+            }
+        }
+        assert!(s.contains("immutable") && s.contains("mut"), "inline content present:\n{s}");
+        assert!(!s.contains("_immutable_"), "literal underscore markers leaked:\n{s}");
+        assert!(!s.contains("`mut`"), "literal backtick markers leaked:\n{s}");
     }
 }
