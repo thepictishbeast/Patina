@@ -511,7 +511,7 @@
       curBookRefs = refs;
       const brefsEl = document.getElementById('brefs');
       brefsEl.innerHTML = refs.length ? refs.map((r, i) =>
-        `<div class="bref" data-ch="${esc(r.chapter)}" role="button" tabindex="0" aria-label="Open ${esc(r.chapter)} in the Book reader" title="open this chapter in the Book tab">`
+        `<div class="bref" data-ch="${esc(r.chapter)}" data-anchor="${esc(r.anchor || '')}" role="button" tabindex="0" aria-label="Open ${esc(r.chapter)} in the Book reader" title="open this chapter in the Book tab">`
         + `<span class="c">[${i + 1}] ${esc(r.chapter)}</span>`
         + (r.anchor ? ` · ${esc(r.anchor)}` : '')
         + ` <span aria-hidden="true" style="color:var(--fg-dim)">↗</span>`
@@ -520,7 +520,7 @@
       // The book-refs LOOK clickable (pointer + hover) — make them so: jump
       // straight to the cited chapter in the Book reader (reads-before-writes).
       brefsEl.querySelectorAll('.bref[data-ch]').forEach(el => {
-        const open = () => showView('book', el.dataset.ch);
+        const open = () => showView('book', el.dataset.ch, el.dataset.anchor || null);
         el.onclick = open;
         el.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } };
       });
@@ -643,6 +643,11 @@
       const isSep = s => /\|/.test(s) && /-/.test(s) && /^[\s|:-]+$/.test(s);
       // Split a `| a | b |` row into trimmed, inline-rendered cells (escape-safe).
       const cells = r => r.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map(c => inline(c.trim()));
+      // GitHub-style heading slug → stable id, so an exercise book_ref's anchor
+      // lands on the cited section (e.g. "The Rules of References" →
+      // the-rules-of-references). Slugged from the raw text → only [a-z0-9_-],
+      // attribute-safe. Backticks/punctuation dropped to match GitHub's scheme.
+      const slug = s => s.toLowerCase().replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-');
       for (let i = 0; i < lines.length; i++) {
         const ln = lines[i];
         // ``` toggles a raw code block: no inline/list/heading handling inside.
@@ -672,9 +677,10 @@
         const ol = ln.match(/^\s*\d+\.\s+(.*)$/);
         if (ol) { if (list !== 'ol') { closeList(); html += '<ol>'; list = 'ol'; } html += '<li>' + inline(ol[1]) + '</li>'; continue; }
         closeList();
-        // ATX headings, h1–h6 (single regex; the corpus uses through h4).
+        // ATX headings, h1–h6 (single regex; the corpus uses through h4). Each
+        // carries a slug `id` so book_ref anchors can scroll to the section.
         const hm = ln.match(/^(#{1,6})\s+(.*)$/);
-        if (hm) html += '<h' + hm[1].length + '>' + inline(hm[2]) + '</h' + hm[1].length + '>';
+        if (hm) { const lv = hm[1].length, id = slug(hm[2]); html += '<h' + lv + (id ? ' id="' + id + '"' : '') + '>' + inline(hm[2]) + '</h' + lv + '>'; }
         else if (ln.trim()) html += '<p>' + inline(ln) + '</p>';
       }
       if (inCode) html += '<pre><code>' + highlightRust(code.join('\n')) + '</code></pre>';
@@ -682,7 +688,7 @@
       flushQuote();
       return html;
     }
-    async function showView(view, chapter) {
+    async function showView(view, chapter, anchor) {
       document.querySelectorAll('.tab').forEach(t => {
         const on = t.dataset.view === view;
         t.classList.toggle('active', on);
@@ -697,7 +703,7 @@
         try { const j = await fetch('api/roadmap').then(r => r.json()); d.innerHTML = mdToHtml(j.markdown || ''); }
         catch (_) { d.innerHTML = '<p>Roadmap unavailable (open via the local server).</p>'; }
       } else if (view === 'book') {
-        await renderBook(chapter || null);
+        await renderBook(chapter || null, anchor || null);
       }
     }
 
@@ -708,7 +714,7 @@
     // Chapters are RAW mdBook source: a few `{{#rustdoc_include}}` directives and
     // hidden `#` lines show through. This is TUI-parity rendering, not a polished
     // reader — directive-stripping is a deliberate follow-up.
-    async function renderBook(chapter) {
+    async function renderBook(chapter, anchor) {
       const d = document.getElementById('docview');
       const refs = curBookRefs || [];
       const quick = refs.length
@@ -747,6 +753,12 @@
         d.innerHTML = back + '<div class="bookbody">' + mdToHtml(ch.markdown) + '</div>';
       }
       wire();
+      // If a book_ref anchor was given, scroll to that section's heading id.
+      if (anchor) {
+        const target = d.querySelector('#' + (window.CSS && CSS.escape ? CSS.escape(anchor) : anchor));
+        if (target) target.scrollIntoView({ block: 'start' });
+        else d.scrollTop = 0;
+      } else { d.scrollTop = 0; }
     }
     document.querySelectorAll('.tab').forEach(t => t.onclick = () => showView(t.dataset.view));
 

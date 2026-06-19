@@ -16,9 +16,24 @@ import { readFileSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { execFileSync } from 'node:child_process';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const html = readFileSync(join(here, '..', 'gui', 'index.html'), 'utf8');
+
+// Step 0 — the WHOLE app <script> must parse. The per-function tests below only
+// import mdToHtml/highlightRust; this guards the rest (showView, renderBook,
+// event wiring) against a syntax error slipping in. `node --check` parses without
+// executing, so browser globals (document/window/fetch) are irrelevant.
+{
+  const m = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(x => x[1]).find(s => s.includes('function mdToHtml'));
+  if (!m) { console.log('  FAIL — could not find the app <script> block'); process.exit(1); }
+  const d = mkdtempSync(join(tmpdir(), 'ts-gui-chk-')), p = join(d, 'app.js');
+  writeFileSync(p, m);
+  try { execFileSync(process.execPath, ['--check', p], { stdio: 'pipe' }); }
+  catch (e) { console.log('  FAIL — app <script> has a syntax error:\n' + (e.stderr || e).toString()); process.exit(1); }
+  finally { rmSync(d, { recursive: true, force: true }); }
+}
 
 // Pull a `function NAME(...) { ... }` body out of the HTML by brace-matching.
 function grabFn(name) {
@@ -117,12 +132,12 @@ check(bothBI.includes('<strong>bold</strong>') && bothBI.includes('<em>em</em>')
 const emXss = mdToHtml('danger _<b>x</b>_ here');
 check(!emXss.includes('<b>') && emXss.includes('<em>') && emXss.includes('&lt;b&gt;'), 'emphasis content stays escaped (no raw tag)');
 
-// 7. Headings h1–h6 (corpus uses through h4).
-check(mdToHtml('# Title').includes('<h1>Title</h1>'), '`# x` → <h1>');
-check(mdToHtml('### Sub').includes('<h3>Sub</h3>'), '`### x` → <h3>');
-check(mdToHtml('#### Deeper').includes('<h4>Deeper</h4>'), '`#### x` → <h4> (was literal before)');
-check(mdToHtml('###### Deepest').includes('<h6>Deepest</h6>'), '`###### x` → <h6>');
-check(!mdToHtml('#nospace heading').includes('<h1>'), '`#nospace` (no space) is NOT a heading');
+// 7. Headings h1–h6 (corpus uses through h4); each carries a slug id.
+check(mdToHtml('# Title').includes('<h1 id="title">Title</h1>'), '`# x` → <h1> (with id)');
+check(mdToHtml('### Sub').includes('<h3 id="sub">Sub</h3>'), '`### x` → <h3> (with id)');
+check(mdToHtml('#### Deeper').includes('<h4 id="deeper">Deeper</h4>'), '`#### x` → <h4> (was literal before)');
+check(mdToHtml('###### Deepest').includes('<h6 id="deepest">Deepest</h6>'), '`###### x` → <h6>');
+check(!mdToHtml('#nospace heading').includes('<h1'), '`#nospace` (no space) is NOT a heading');
 
 // 8. GFM tables (the ch03 integer-types table renders as a real <table>).
 const tbl = mdToHtml('| Length | Signed |\n|--------|--------|\n| 8-bit | `i8` |\n| 16-bit | `i16` |');
@@ -135,6 +150,15 @@ const tblXss = mdToHtml('| H |\n|---|\n| <b>x</b> |');
 check(!tblXss.includes('<b>') && tblXss.includes('&lt;b&gt;'), 'table cell content stays escaped');
 const notTbl = mdToHtml('costs are a | b in prose');
 check(!notTbl.includes('<table>') && notTbl.includes('<p>'), 'a stray pipe with no separator row is NOT a table');
+
+// 9. Heading slug ids (so book_ref anchors can scroll to the cited section).
+check(mdToHtml('### The Rules of References').includes('<h3 id="the-rules-of-references">'),
+      'heading → GitHub-style slug id (matches an authored anchor)');
+const useId = mdToHtml('## Bringing Paths into Scope with the `use` Keyword');
+check(useId.includes('id="bringing-paths-into-scope-with-the-use-keyword"'),
+      'slug drops backticks/punctuation (matches the `use`-keyword anchor)');
+const idMatch = mdToHtml('#### Mutable References').match(/id="([^"]*)"/);
+check(idMatch && /^[a-z0-9_-]*$/.test(idMatch[1]), 'slug id is attribute-safe ([a-z0-9_-] only)');
 
 console.log('');
 if (fails === 0) console.log('GUI TRANSFORM TESTS PASS ✓');
