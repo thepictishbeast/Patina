@@ -94,6 +94,15 @@
   .docview table { border-collapse:collapse; margin:12px 0; font-size:12.5px; display:block; overflow-x:auto; }
   .docview th, .docview td { border:1px solid var(--line); padding:5px 11px; text-align:left; }
   .docview thead th { background:var(--bg-3); font-weight:600; }
+  .docview .booksearch input { width:100%; box-sizing:border-box; padding:9px 12px; font-size:14px; font-family:var(--ui);
+    color:var(--fg); background:var(--bg-2); border:1px solid var(--line); border-radius:8px; margin:6px 0 4px; }
+  .docview .booksearch input:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 2px rgba(247,76,0,.18); }
+  .docview .bsresults ul { list-style:none; padding:0; margin:8px 0 0; }
+  .docview .bsresults li { padding:7px 2px; border-bottom:1px solid var(--line); }
+  .docview .bsresults a.bookhit { color:var(--note); font-weight:600; text-decoration:none; cursor:pointer; }
+  .docview .bsresults small { display:block; color:var(--fg-dim); margin-top:2px; font-size:12px; }
+  .docview .bscount { color:var(--fg-dim); font:600 11px var(--mono); margin-left:6px; }
+  .bshit-flash { background:rgba(247,76,0,.18); border-radius:4px; transition:background 1.4s ease; }
   .booktoc { list-style:none; padding:0; } .booktoc li { margin:3px 0; }
   .booktoc a { font-size:13.5px; } .booktoc small { margin-left:8px; }
   .pane { border-right:1px solid var(--line); display:flex; flex-direction:column; min-height:0; }
@@ -714,7 +723,26 @@
     // Chapters are RAW mdBook source: a few `{{#rustdoc_include}}` directives and
     // hidden `#` lines show through. This is TUI-parity rendering, not a polished
     // reader — directive-stripping is a deliberate follow-up.
-    async function renderBook(chapter, anchor) {
+    // Full-text search over the embedded book via /api/book?q=. Renders a ranked
+    // hit list into #bsr; each hit opens its chapter and scrolls to the match.
+    async function runBookSearch(term) {
+      const box = document.getElementById('bsr');
+      if (!box) return;
+      const q = (term || '').trim();
+      if (!q) { box.innerHTML = ''; return; }
+      let hits = [];
+      try { hits = (await fetch('api/book?q=' + encodeURIComponent(q)).then(r => r.json())).hits || []; }
+      catch (_) { box.innerHTML = '<p style="color:var(--fg-dim)">search unavailable.</p>'; return; }
+      box.innerHTML = hits.length
+        ? '<ul>' + hits.map(h =>
+            `<li><a href="#" class="bookhit" data-ch="${esc(h.chapter)}" data-term="${esc(q)}">${esc(h.title)}<span class="bscount">${h.count} ${h.count === 1 ? 'match' : 'matches'}</span></a>`
+            + `<small>${esc(h.snippet)}</small></li>`).join('') + '</ul>'
+        : `<p style="color:var(--fg-dim)">no chapters match “${esc(q)}”.</p>`;
+      box.querySelectorAll('.bookhit').forEach(a =>
+        a.onclick = e => { e.preventDefault(); renderBook(a.dataset.ch, null, a.dataset.term); });
+    }
+
+    async function renderBook(chapter, anchor, term) {
       const d = document.getElementById('docview');
       const refs = curBookRefs || [];
       const quick = refs.length
@@ -733,6 +761,7 @@
         catch (_) { d.innerHTML = '<h1>📖 The Rust Book</h1><p>Book unavailable (open via the local server).</p>' + quick; wire(); return; }
         const items = toc.chapters || [];
         d.innerHTML = '<h1>📖 The Rust Book</h1>'
+          + '<div class="booksearch"><input id="bsq" type="search" placeholder="Search the book…" aria-label="Search the Rust Book" autocomplete="off" autocapitalize="off" spellcheck="false"><div id="bsr" class="bsresults" aria-live="polite"></div></div>'
           + `<p style="color:var(--fg-dim)">${items.length} embedded chapters — click one to read. Source is raw Book text, so a few include directives show through.</p>`
           + quick
           + (items.length
@@ -740,6 +769,14 @@
                 `<li><a href="#" class="bookjump" data-ch="${esc(c.id)}">${esc(c.title)}</a><small style="color:var(--fg-dim)">${esc(c.id)}</small></li>`).join('') + '</ul>'
             : '<p>no chapters seeded — run the server with the bundled book/.</p>');
         wire();
+        // Debounced full-text search as you type (Enter also triggers immediately).
+        const inp = document.getElementById('bsq');
+        if (inp) {
+          let t = null;
+          inp.addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => runBookSearch(inp.value), 200); });
+          inp.addEventListener('keydown', e => { if (e.key === 'Enter') { clearTimeout(t); runBookSearch(inp.value); } });
+        }
+        d.scrollTop = 0;
         return;
       }
       d.innerHTML = '<p style="color:var(--fg-dim)">loading chapter…</p>';
@@ -753,11 +790,22 @@
         d.innerHTML = back + '<div class="bookbody">' + mdToHtml(ch.markdown) + '</div>';
       }
       wire();
-      // If a book_ref anchor was given, scroll to that section's heading id.
+      // Scroll priority: a book_ref anchor (heading id) wins; else a search term
+      // scrolls to the first element containing it (with a brief highlight); else top.
       if (anchor) {
         const target = d.querySelector('#' + (window.CSS && CSS.escape ? CSS.escape(anchor) : anchor));
-        if (target) target.scrollIntoView({ block: 'start' });
-        else d.scrollTop = 0;
+        if (target) { target.scrollIntoView({ block: 'start' }); return; }
+        d.scrollTop = 0;
+      } else if (term) {
+        const lc = term.toLowerCase();
+        const els = d.querySelectorAll('.bookbody h1, .bookbody h2, .bookbody h3, .bookbody h4, .bookbody h5, .bookbody h6, .bookbody p, .bookbody li, .bookbody td, .bookbody blockquote, .bookbody pre');
+        let hit = null;
+        for (const el of els) { if (el.textContent.toLowerCase().includes(lc)) { hit = el; break; } }
+        if (hit) {
+          hit.scrollIntoView({ block: 'center' });
+          hit.classList.add('bshit-flash');
+          setTimeout(() => hit.classList.remove('bshit-flash'), 1600);
+        } else { d.scrollTop = 0; }
       } else { d.scrollTop = 0; }
     }
     document.querySelectorAll('.tab').forEach(t => t.onclick = () => showView(t.dataset.view));
