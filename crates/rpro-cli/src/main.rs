@@ -473,7 +473,18 @@ fn cmd_book_search(term: &str) -> Result<()> {
         return Ok(());
     }
     for h in &hits {
-        println!("{}: {} matches", style(&h.chapter).cyan().bold(), h.count);
+        let n = if h.count == 1 { "match" } else { "matches" };
+        // Human title first, then the chapter id (the canonical ref) + count;
+        // the snippet gives one line of context — all from the shared SearchHit.
+        println!(
+            "{}  {}  {}",
+            style(&h.title).cyan().bold(),
+            style(&h.chapter).dim(),
+            style(format!("({} {n})", h.count)).dim(),
+        );
+        if !h.snippet.is_empty() {
+            println!("    {}", style(&h.snippet).dim());
+        }
     }
     Ok(())
 }

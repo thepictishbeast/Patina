@@ -64,10 +64,13 @@ else
   fail "rpro explain E0384"
 fi
 
-# 5. book search finds matches across the seeded chapters (offline full-text).
+# 5. book search finds matches across the seeded chapters (offline full-text),
+# now showing the human title (not just the slug) + count, from the shared hit.
 out="$("$RPRO" book search ownership 2>&1)"
-if printf '%s' "$out" | grep -q "ch04-01-what-is-ownership" && printf '%s' "$out" | grep -qi match; then
-  ok "rpro book search finds matches across chapters"
+if printf '%s' "$out" | grep -q "ch04-01-what-is-ownership" \
+   && printf '%s' "$out" | grep -qi match \
+   && printf '%s' "$out" | grep -qi "What Is Ownership"; then
+  ok "rpro book search shows title + slug + count across chapters"
 else
   fail "rpro book search"; printf '%s\n' "$out" | head -3
 fi
