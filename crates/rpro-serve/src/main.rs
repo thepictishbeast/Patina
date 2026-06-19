@@ -516,6 +516,25 @@ async fn security_headers(mut res: Response) -> Response {
     res
 }
 
+/// Build the application router. Extracted from [`main`] so the handler contract
+/// (no-leak, op-whitelist, body limit, response headers) is testable end-to-end
+/// via `tower::ServiceExt::oneshot` — no socket bind, no real toolchain run.
+fn build_router(state: AppState, gui_dir: &Path) -> Router {
+    Router::new()
+        .route("/api/run", post(run_handler))
+        .route("/api/current", axum::routing::get(current_handler))
+        .route("/api/exercises", axum::routing::get(exercises_handler))
+        .route("/api/review", axum::routing::get(review_handler))
+        .route("/api/hint", axum::routing::get(hint_handler))
+        .route("/api/roadmap", axum::routing::get(roadmap_handler))
+        // Everything else is the static gui/ shell (index.html + vendored xterm).
+        .fallback_service(ServeDir::new(gui_dir))
+        .layer(map_response(security_headers))
+        // Defence-in-depth: cap the request body before it is parsed.
+        .layer(DefaultBodyLimit::max(MAX_BODY_BYTES))
+        .with_state(state)
+}
+
 #[tokio::main]
 async fn main() {
     // Resolve paths relative to this crate so a plain build-tool run works
@@ -543,20 +562,7 @@ async fn main() {
     }
 
     let state = AppState { store_root: store_root.clone() };
-
-    let app = Router::new()
-        .route("/api/run", post(run_handler))
-        .route("/api/current", axum::routing::get(current_handler))
-        .route("/api/exercises", axum::routing::get(exercises_handler))
-        .route("/api/review", axum::routing::get(review_handler))
-        .route("/api/hint", axum::routing::get(hint_handler))
-        .route("/api/roadmap", axum::routing::get(roadmap_handler))
-        // Everything else is the static gui/ shell (index.html + vendored xterm).
-        .fallback_service(ServeDir::new(&gui_dir))
-        .layer(map_response(security_headers))
-        // Defence-in-depth: cap the request body before it is parsed.
-        .layer(DefaultBodyLimit::max(MAX_BODY_BYTES))
-        .with_state(state);
+    let app = build_router(state, &gui_dir);
 
     // Loopback ONLY — never 0.0.0.0. Port is fixed (8787) or PORT, clamped.
     let port: u16 = std::env::var("PORT")
@@ -659,4 +665,98 @@ mod tests {
     // Spaced-repetition logic now lives in its shared home: ReviewState::fold_run
     // (rpro-state) and primary_error_code / record_run (rpro-runner), each tested
     // there. rpro-serve just calls record_run.
+
+    // ── handler contract, driven through the real router via oneshot ──
+    // These bring the network-surface guarantees (no-leak, op-whitelist, body
+    // limit, security headers) into the standard test gate (not only the bash
+    // smoke script). They deliberately avoid ops that trigger a real toolchain
+    // run, so they're fast and toolchain-independent.
+    use axum::body::Body;
+    use axum::http::{Request, StatusCode};
+    use tower::ServiceExt; // oneshot
+
+    fn seeded_app() -> (tempfile::TempDir, axum::Router) {
+        let dir = tempfile::tempdir().unwrap();
+        let manifest = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+        ensure_seeded(dir.path(), &manifest.join("../../exercises")).unwrap();
+        let state = AppState { store_root: dir.path().to_path_buf() };
+        let app = build_router(state, &manifest.join("../../gui"));
+        (dir, app)
+    }
+
+    async fn body_string(res: axum::response::Response) -> String {
+        let bytes = axum::body::to_bytes(res.into_body(), 1 << 20).await.unwrap();
+        String::from_utf8_lossy(&bytes).into_owned()
+    }
+
+    fn get(uri: &str) -> Request<Body> {
+        Request::builder().uri(uri).body(Body::empty()).unwrap()
+    }
+
+    #[tokio::test]
+    async fn current_endpoint_serves_without_leaking_the_answer() {
+        let (_d, app) = seeded_app();
+        let res = app.oneshot(get("/api/current")).await.unwrap();
+        assert_eq!(res.status(), StatusCode::OK);
+        let s = body_string(res).await;
+        assert!(s.contains("\"exercise\""), "renders the current exercise: {s}");
+        assert!(!s.contains("solution_outline"), "no solution leak");
+        assert!(!s.contains("expected_error_code"), "no expected-error leak");
+    }
+
+    #[tokio::test]
+    async fn run_rejects_unknown_op_with_400() {
+        let (_d, app) = seeded_app();
+        let req = Request::builder()
+            .method("POST")
+            .uri("/api/run")
+            .header("content-type", "application/json")
+            .body(Body::from("{\"op\":\"fmt\"}"))
+            .unwrap();
+        assert_eq!(app.oneshot(req).await.unwrap().status(), StatusCode::BAD_REQUEST);
+    }
+
+    #[tokio::test]
+    async fn run_rejects_oversized_body_with_413() {
+        let (_d, app) = seeded_app();
+        let req = Request::builder()
+            .method("POST")
+            .uri("/api/run")
+            .header("content-type", "application/json")
+            .body(Body::from(vec![b'x'; MAX_BODY_BYTES + 1024]))
+            .unwrap();
+        assert_eq!(app.oneshot(req).await.unwrap().status(), StatusCode::PAYLOAD_TOO_LARGE);
+    }
+
+    #[tokio::test]
+    async fn review_endpoint_has_the_expected_shape() {
+        let (_d, app) = seeded_app();
+        let res = app.oneshot(get("/api/review")).await.unwrap();
+        assert_eq!(res.status(), StatusCode::OK);
+        let v: serde_json::Value = serde_json::from_str(&body_string(res).await).unwrap();
+        assert!(v.get("due").is_some() && v.get("mastered").is_some() && v.get("tracked").is_some());
+    }
+
+    #[tokio::test]
+    async fn responses_carry_security_headers() {
+        let (_d, app) = seeded_app();
+        let res = app.oneshot(get("/api/current")).await.unwrap();
+        let h = res.headers();
+        assert!(h.contains_key("content-security-policy"), "CSP present");
+        assert_eq!(h.get("x-content-type-options").unwrap(), "nosniff");
+        assert_eq!(h.get("x-frame-options").unwrap(), "DENY");
+    }
+
+    #[tokio::test]
+    async fn hint_level1_serves_without_the_solution() {
+        let (_d, app) = seeded_app();
+        let res = app.oneshot(get("/api/hint?level=1")).await.unwrap();
+        assert_eq!(res.status(), StatusCode::OK);
+        let v: serde_json::Value = serde_json::from_str(&body_string(res).await).unwrap();
+        assert_eq!(v["level"], 1);
+        assert!(
+            !v["text"].as_str().unwrap_or("").to_lowercase().contains("solution outline"),
+            "L1 must not reveal the solution outline"
+        );
+    }
 }

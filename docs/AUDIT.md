@@ -3,14 +3,14 @@
 Single source of truth for "is Tempered Studio tested?" Re-run the commands below
 to reproduce; every number here is from a clean run, not recall.
 
-> As of commit `ffb22fe` on `textbook-integration`. Refresh when crates, gates, or
-> the smoke contract change.
+> As of `textbook-integration` HEAD. Refresh when crates, gates, or the smoke
+> contract change.
 
 ## Summary
 
 | Area | Status |
 |---|---|
-| Workspace build + unit/integration tests | ✅ **85 passing, 0 failing** |
+| Workspace build + unit/integration tests | ✅ **94 passing, 0 failing** |
 | seam-grep gate (language-seam purity) | ✅ CLEAN |
 | wasm32 pure-core gate | ✅ builds |
 | E2E smoke (web server contract) | ✅ **8/8** |
@@ -48,7 +48,7 @@ bash scripts/smoke.sh           # builds, seeds, serves, asserts the contract
 | `rpro-runner` | 7 | discovery, `primary_error_code`, `record_run` (tempfile integration) |
 | `rpro-core` | 6 | the run engine |
 | `rpro-storage-fs` | 5 | on-disk store round-trips |
-| `rpro-serve` | 4 | op-whitelist, no-answer-leak, `sanitize_code`, status mapping |
+| `rpro-serve` | 10 | op-whitelist, no-answer-leak, `sanitize_code`, status mapping + **6 router oneshot tests**: /api/current no-leak, unknown-op→400, oversized-body→413, /api/review shape, security headers present, hint L1 no-leak |
 | `rpro-book` | 3 | chapter loading |
 | `rpro-toolchain-local` | 2 | local process exec |
 
@@ -60,8 +60,11 @@ first current; `/api/current` leaks neither solution nor expected error; the L1
 hint never reveals the solution; a real `/api/run` executes; `/api/review` is
 internally consistent (`len(due)+mastered==tracked`); an over-limit body → 413.
 
-This is the committed E2E coverage of the **API + serving contract**. It does not
-execute the page's JavaScript — that's the Playwright gap below.
+This is the committed E2E coverage of the **API + serving contract**. The same
+guarantees (no-leak, op-whitelist→400, oversized-body→413, security headers) are
+*also* now asserted at the unit level via `tower::ServiceExt::oneshot` against the
+extracted `build_router`, so they run in the standard test gate, not only this
+bash script. Neither executes the page's JavaScript — that's the Playwright gap below.
 
 ## Open items (browser-tooling-gated, tracked as CI tasks)
 
