@@ -11,6 +11,6 @@ needed mixed types you'd reach for an enum — see the book ref.)
 """
 
 [[book_refs]]
-chapter = "ch08-01-storing-lists-of-values-with-vectors"
+chapter = "ch08-01-vectors"
 anchor = "creating-a-new-vector"
 why = "A vector holds values of one type; the annotation `Vec<i32>` fixes that type. The rule the failing push breaks."

@@ -17,6 +17,6 @@ anchor = "the-option-enum-and-its-advantages-over-null-values"
 why = "Why `Option<i32>` and `i32` are different types — the billion-dollar mistake, fixed by the type system."
 
 [[book_refs]]
-chapter = "ch06-02-the-match-control-flow-construct"
+chapter = "ch06-02-match"
 anchor = "patterns-that-bind-to-values"
 why = "How to extract the inner value with `match Some(n) => n` — the fix this exercise points to."

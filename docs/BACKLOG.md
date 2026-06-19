@@ -47,7 +47,7 @@ Surfaces: **Web** (`rpro-serve`, shipped + live), **CLI** (`rpro`), **TUI** (`rp
 
 ## E. Content (#8) + corpus
 - [x] **P1 — Exercises for every phase — DONE (all 9 phases, 32 rustc-verified exercises).** 1 basics → 2 control-flow → 3 collections → 4 ownership → 5 types/matching → 6 modules → 7 generics/traits/lifetimes (E0369/E0277/E0106) → 8 concurrency (E0373/E0277/E0594) → 9 advanced (unsafe E0133, collect-inference E0283, move-out-of-borrow E0507). Each: a single-file program that fails with a real probed error code + `.toml` (book refs, expected code, fix-shape outline); fresh `rpro init` discovers all 32 in learning order. (Embedded Book chapters = separate item below.)
-- [ ] **P1 — Embedded Book chapters.** `book/` ships READMEs only; bundle the real chapter markdown the exercises reference (ch04-01 etc.).
+- [~] **P1 — Embedded Book chapters.** *Content bundled (this tick):* `book/` now holds the **23 real Rust Book chapters** the exercises reference, vendored from rust-lang/book (MIT/Apache, NOTICE.txt). Found + fixed 4 broken `book_refs` (404 chapter ids → ch06-02-match, ch08-01-vectors, ch13-02-iterators, ch20-01-unsafe-rust); ALL refs now resolve to a bundled chapter; `Book::load` + `rpro book search` verified on the real content. **Remaining: wire seeding** — `rpro init` / `ensure_seeded` must copy `book/` → the store (today they don't; the Book tab only gets the content after that lands).
 - [ ] **P2 — Corpus Phases 7–9** catalog+matrix (generics/traits/lifetimes → concurrency → advanced), proven extract→map→verify workflow.
 - [ ] 🔒 **Error-handling matrix #37 section** — confirm scope with Paul (deferred Phase-5 follow-up).
 

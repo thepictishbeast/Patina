@@ -11,7 +11,7 @@ gone afterward. Iterate over a reference instead: `for name in &names`
 """
 
 [[book_refs]]
-chapter = "ch08-01-storing-lists-of-values-with-vectors"
+chapter = "ch08-01-vectors"
 anchor = "iterating-over-the-values-in-a-vector"
 why = "Iterating with `&v` vs `v`: the reference form keeps the vector usable afterward."
 

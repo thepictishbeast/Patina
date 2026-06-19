@@ -12,11 +12,11 @@ is the point: you can't forget a case.
 """
 
 [[book_refs]]
-chapter = "ch06-02-the-match-control-flow-construct"
+chapter = "ch06-02-match"
 anchor = "matches-are-exhaustive"
 why = "The exact rule the failing code breaks: a `match` must cover every possibility, and the compiler proves it."
 
 [[book_refs]]
-chapter = "ch06-02-the-match-control-flow-construct"
+chapter = "ch06-02-match"
 anchor = "catch-all-patterns-and-the-_-placeholder"
 why = "The `_` placeholder — the other way to satisfy exhaustiveness when you don't need every case by name."

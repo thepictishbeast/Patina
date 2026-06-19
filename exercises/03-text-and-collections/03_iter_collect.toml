@@ -11,11 +11,11 @@ The `Vec<i32>` annotation tells collect what to build.
 """
 
 [[book_refs]]
-chapter = "ch13-02-processing-a-series-of-items-with-iterators"
+chapter = "ch13-02-iterators"
 anchor = "methods-that-produce-other-iterators"
 why = "Iterator adaptors like map are lazy — they produce another iterator and do nothing until consumed."
 
 [[book_refs]]
-chapter = "ch13-02-processing-a-series-of-items-with-iterators"
+chapter = "ch13-02-iterators"
 anchor = "methods-that-consume-the-iterator"
 why = "collect() is the consuming method that turns the iterator into a collection — the missing step."

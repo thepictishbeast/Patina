@@ -1,0 +1,10 @@
+# Embedded Rust Book chapters
+
+The `*.md` files in this directory are chapters of *The Rust Programming
+Language* (a.k.a. "the Rust Book"), vendored from <https://github.com/rust-lang/book>
+(`main` branch) so the Book reader works fully offline — no CDN, no install-time
+fetch. Only the chapters referenced by the exercises' `book_refs` are included.
+
+© The Rust Project Developers. Redistributed under the MIT and Apache-2.0
+licenses, the same dual license as this project (see the repo `LICENSE` files and
+<https://github.com/rust-lang/book>).

@@ -13,6 +13,6 @@ this — trust me here," scoped to exactly that line.
 """
 
 [[book_refs]]
-chapter = "ch19-01-unsafe-rust"
+chapter = "ch20-01-unsafe-rust"
 anchor = "dereferencing-a-raw-pointer"
 why = "Exactly this: raw pointers can be created in safe code, but dereferencing them requires `unsafe`."
