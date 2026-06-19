@@ -718,9 +718,9 @@
       document.getElementById('resetbtn')?.setAttribute('aria-label', 'Reset code to the original starter');
       document.getElementById('xterm')?.setAttribute('aria-label', 'Compiler output terminal');
     })();
-    document.querySelectorAll('.ex').forEach(e => e.onclick = () => {
-      document.querySelector('.ex.sel')?.classList.remove('sel'); e.classList.add('sel');
-    });
+    // (Exercise-list clicks are wired in renderList → POST /api/select, which also
+    // rebuilds the list; the old init-time visual-only `.sel` toggle here was dead
+    // code after that landed.)
     document.getElementById('theme').onclick = () => {
       const h = document.documentElement;
       h.dataset.theme = h.dataset.theme === 'dark' ? 'light' : 'dark';

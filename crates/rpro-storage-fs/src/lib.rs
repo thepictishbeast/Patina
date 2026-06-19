@@ -44,7 +44,7 @@ pub enum StoreError {
         source: TomlError,
     },
     /// `~/.rustlings-pro/` couldn't be located (no $HOME set).
-    #[error("no home directory available — set $HOME or pass --root")]
+    #[error("no home directory available — set $HOME")]
     NoHome,
 }
 
