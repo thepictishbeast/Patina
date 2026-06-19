@@ -11,7 +11,7 @@ so the learner (and Paul) can see what's done and what's next. Status:
 - [x] Local toolchain + filesystem storage impls
 - [x] CI gates: wasm32 pure-core build + language-seam grep guard
 - [x] rpro run / check / test / explain — real cargo/rustc, by hand
-- [x] Audit baseline: 94 tests + end-to-end smoke (also a CI job) + cited security review (docs/AUDIT.md, docs/SECURITY.md)
+- [x] Audit baseline: 107 tests + 15-assertion end-to-end smoke (also a CI job) + cited security review (docs/AUDIT.md, docs/SECURITY.md)
 
 ## Phase 1 — Terminal UI (TUI)
 - [x] Theme + status vocabulary (color, glyphs, throbber, NO_COLOR)
@@ -19,7 +19,7 @@ so the learner (and Paul) can see what's done and what's next. Status:
 - [x] Dashboard: progress gauge, current exercise, up-next
 - [x] Exercise view: raw output + additive diagnostics + Free/Learning badge
 - [x] Live run: r/c compiles on a background thread, fills the raw pane
-- [x] Book reader: chapter list + markdown
+- [x] Book reader: chapter list + cleaned markdown (mdBook directives stripped, code listings linked out, blockquote rails)
 - [x] Roadmap screen (this view)
 - [x] Book + roadmap content scroll (PgUp/PgDn)
 - [x] Hint ladder on `h` + "↻ Recall" spaced-repetition panel (shared state)
@@ -32,14 +32,16 @@ so the learner (and Paul) can see what's done and what's next. Status:
 - [x] Live terminal: xterm.js streams the REAL run output via the server (no pty needed)
 - [x] Editable code pane + run-the-edit (textarea + per-exercise localStorage)
 - [x] Full educational loop in-browser: predict-first → run → diagnose → hint ladder → pass→advance → ↻ Recall; click-a-diagnostic-to-explain; phone reflow; keyboard + a11y
+- [x] Embedded Book reader (web): /api/book TOC + cleaned chapters, exercise book-refs jump to the chapter; tap a list item to switch exercise (/api/select)
 - [ ] Wrap in Tauri v2 → desktop + Android (Termux rust), reusing this frontend (env-gated here)
 
 ## Phase 3 — Learning content
 - [x] Merged corpus: concept matrix Phases 1–6 (compile-verified)
-- [x] 23 rustc-verified exercises across 6 phases (basics → modules), each with book refs + expected error + solution outline
+- [x] 32 rustc-verified exercises across 9 phases (basics → advanced), each with book refs + expected error + solution outline
+- [x] 23 embedded Book chapters (bundled + seeded into the store; code listings link out to the live Book — see the vendor-vs-link decision below)
 - [x] Education engine — spec (docs/EDUCATION.md) AND implementation: shared hint ladder, spaced-repetition, tutor guide-not-solve scaffolding
 - [ ] Lesson 1 calibration (needs Paul) → unlocks Lessons 2–8
-- [ ] Content Phases 7–9 (generics/traits/lifetimes → concurrency → advanced) + embedded Book chapters
+- [ ] Corpus concept-matrix for Phases 7–9; book code-listings: vendor ~200 files vs keep link-out (needs Paul)
 
 ## Phase 4 — Distribution & sync
 - [x] Packaging plan + .deb/.rpm + release CI (docs/DISTRIBUTION.md)
