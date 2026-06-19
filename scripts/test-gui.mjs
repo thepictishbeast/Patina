@@ -102,6 +102,21 @@ check(out.includes('<pre><code>') && out.includes('<span class="tok-k">let</span
 const ref = highlightRust(esc('let r: &str = "x";'));
 check(ref.includes('&amp;') && ref.includes('<span class="tok-t">str</span>'), 'reference `&str` → &amp; intact + str typed');
 
+// 6. Inline emphasis (_x_ / *x*) → <em>, GFM-intraword-safe, escape-first.
+check(mdToHtml('A _variable_ binds a value.').includes('<em>variable</em>'), '`_x_` → <em>');
+check(mdToHtml('This is *very* important.').includes('<em>very</em>'), '`*x*` → <em>');
+check(mdToHtml('Two _key_ _terms_ here.').includes('<em>key</em>') && mdToHtml('Two _key_ _terms_ here.').includes('<em>terms</em>'),
+      'two emphases on one line both wrap');
+const snake = mdToHtml('Call to_string and read foo_bar_baz now.');
+check(!snake.includes('<em>') && snake.includes('to_string') && snake.includes('foo_bar_baz'),
+      'intraword snake_case is NOT italicised');
+const codeEm = mdToHtml('Use `a_b_c` carefully.');
+check(codeEm.includes('<code>a_b_c</code>') && !codeEm.includes('<em>'), 'underscores inside `code` are not italicised');
+const bothBI = mdToHtml('A **bold** and an _em_ word.');
+check(bothBI.includes('<strong>bold</strong>') && bothBI.includes('<em>em</em>'), 'bold and italic coexist (bold not eaten by em)');
+const emXss = mdToHtml('danger _<b>x</b>_ here');
+check(!emXss.includes('<b>') && emXss.includes('<em>') && emXss.includes('&lt;b&gt;'), 'emphasis content stays escaped (no raw tag)');
+
 console.log('');
 if (fails === 0) console.log('GUI TRANSFORM TESTS PASS ✓');
 else { console.log('GUI TRANSFORM TESTS FAILED: ' + fails); process.exit(1); }
