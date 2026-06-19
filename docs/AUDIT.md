@@ -24,7 +24,7 @@ to reproduce; every number here is from a clean run, not recall.
 - **`seam-gates.yml`** — (a) `wasm32-pure-core`: the pure crates compile to
   `wasm32-unknown-unknown`; (b) `seam-grep`: no toolchain/error-code literals leak
   outside `crates/languages/`.
-- **`ci.yml`** — `fmt`, `clippy`, `test`, `doc`.
+- **`ci.yml`** — `fmt`, `clippy`, `test`, `doc`, **`e2e smoke`** (runs `scripts/smoke.sh` on every push/PR).
 - **`release.yml`** — tag-triggered `.deb` + `.rpm` packaging (verified; see
   DISTRIBUTION.md).
 
