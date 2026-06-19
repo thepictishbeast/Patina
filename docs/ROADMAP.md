@@ -11,6 +11,7 @@ so the learner (and Paul) can see what's done and what's next. Status:
 - [x] Local toolchain + filesystem storage impls
 - [x] CI gates: wasm32 pure-core build + language-seam grep guard
 - [x] rpro run / check / test / explain — real cargo/rustc, by hand
+- [x] Audit baseline: 94 tests + end-to-end smoke (also a CI job) + cited security review (docs/AUDIT.md, docs/SECURITY.md)
 
 ## Phase 1 — Terminal UI (TUI)
 - [x] Theme + status vocabulary (color, glyphs, throbber, NO_COLOR)
@@ -19,21 +20,26 @@ so the learner (and Paul) can see what's done and what's next. Status:
 - [x] Exercise view: raw output + additive diagnostics + Free/Learning badge
 - [x] Live run: r/c compiles on a background thread, fills the raw pane
 - [x] Book reader: chapter list + markdown
-- [>] Roadmap screen (this view)
-- [ ] Nicer markdown rendering + content scroll
-- [ ] Snapshot tests at wide + narrow widths
+- [x] Roadmap screen (this view)
+- [x] Book + roadmap content scroll (PgUp/PgDn)
+- [x] Hint ladder on `h` + "↻ Recall" spaced-repetition panel (shared state)
+- [x] Records each run into shared progress (attempt + spaced-rep + advance)
+- [x] TestBackend render tests (dashboard/exercise/book/roadmap, incl. narrow reflow)
 
-## Phase 2 — GUI shell (web → Tauri v2 → Android/desktop)
-- [x] Magnificent web shell (gui/): layout + visual system, render-verified
-- [ ] Live embedded terminal (xterm.js ↔ pty backend) running rpro
-- [ ] Editor pane (Monaco/CodeMirror)
-- [ ] Wrap in Tauri v2 → desktop + Android (Termux rust), web frontend reuse
+## Phase 2 — Web GUI (live; → Tauri v2 → Android/desktop)
+- [x] Web shell (gui/): layout + visual system, vendored xterm.js (no CDN)
+- [x] Local web server (rpro-serve): loopback axum, Core front-end, op-whitelist, security headers, body limit
+- [x] Live terminal: xterm.js streams the REAL run output via the server (no pty needed)
+- [x] Editable code pane + run-the-edit (textarea + per-exercise localStorage)
+- [x] Full educational loop in-browser: predict-first → run → diagnose → hint ladder → pass→advance → ↻ Recall; click-a-diagnostic-to-explain; phone reflow; keyboard + a11y
+- [ ] Wrap in Tauri v2 → desktop + Android (Termux rust), reusing this frontend (env-gated here)
 
 ## Phase 3 — Learning content
-- [x] Merged corpus: concept matrix Phases 1–5 (compile-verified)
-- [x] Education engine spec: interactive loop + hint ladder (docs/EDUCATION.md)
+- [x] Merged corpus: concept matrix Phases 1–6 (compile-verified)
+- [x] 23 rustc-verified exercises across 6 phases (basics → modules), each with book refs + expected error + solution outline
+- [x] Education engine — spec (docs/EDUCATION.md) AND implementation: shared hint ladder, spaced-repetition, tutor guide-not-solve scaffolding
 - [ ] Lesson 1 calibration (needs Paul) → unlocks Lessons 2–8
-- [ ] Content Phases 6–9 (generics/traits/lifetimes → concurrency → advanced)
+- [ ] Content Phases 7–9 (generics/traits/lifetimes → concurrency → advanced) + embedded Book chapters
 
 ## Phase 4 — Distribution & sync
 - [x] Packaging plan + .deb/.rpm + release CI (docs/DISTRIBUTION.md)
