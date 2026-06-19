@@ -75,10 +75,15 @@ This works for both rustlings-derived exercises (where the metadata is generated
 
 Source: <https://github.com/rust-lang/book> (MIT/Apache-2.0). The project is
 **offline-first** — there is no install-time network fetch. `rpro init` seeds the
-*bundled* exercise set from the workspace and sets the first one current; the web
-server auto-seeds on first start. Embedding the referenced Book chapters as local
-markdown (so the Book tab renders real content rather than placeholders) is
-tracked but not yet done — see Content in `docs/BACKLOG.md`.
+*bundled* exercise set **and the 23 referenced Book chapters** from the workspace
+and sets the first exercise current; the web server auto-seeds on first start. The
+Book tab (web + TUI) renders those chapters offline, cleaned for display (mdBook
+`{{#rustdoc_include}}`/`{{#include}}` directives and hidden lines stripped, fence
+annotations normalized). The chapters' example code lives in upstream
+`../listings/` files that are **not** vendored, so each listing links out to the
+live chapter on doc.rust-lang.org — the bundled book is prose + links-to-code, not
+a self-contained code textbook (the vendor-vs-link decision is queued for Paul; see
+Content in `docs/BACKLOG.md`).
 
 ## Workspace crates — a language-agnostic seam
 
