@@ -76,7 +76,7 @@ pub fn clean_mdbook_source(source: &str, url: &str) -> String {
     let callout = format!("📖 Read this code listing in the Rust Book: {url}");
     let mut out = String::new();
     // Suppress a run of identical link callouts (adjacent includes collapse to one).
-    let mut push_callout = |out: &mut String| {
+    let push_callout = |out: &mut String| {
         if !out.trim_end().ends_with(&callout) {
             out.push_str(&callout);
             out.push('\n');

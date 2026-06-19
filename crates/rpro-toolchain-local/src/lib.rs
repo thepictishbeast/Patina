@@ -84,7 +84,7 @@ impl LocalProcess {
             }
         };
 
-        let mut stdout = out_h.join().unwrap_or_default();
+        let stdout = out_h.join().unwrap_or_default();
         let mut stderr = err_h.join().unwrap_or_default();
         if timed_out {
             // Surface *why* it stopped in the raw bytes the learner reads.
