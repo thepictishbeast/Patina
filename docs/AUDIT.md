@@ -10,11 +10,12 @@ to reproduce; every number here is from a clean run, not recall.
 
 | Area | Status |
 |---|---|
-| Workspace build + unit/integration tests | ✅ **112 passing, 0 failing** |
+| Workspace build + unit/integration tests | ✅ **113 passing, 0 failing** |
 | seam-grep gate (language-seam purity) | ✅ CLEAN |
 | wasm32 pure-core gate | ✅ builds |
 | E2E smoke (web server contract) | ✅ **17/17** |
 | Curriculum integrity (every exercise emits its taught error) | ✅ **32/32** (`scripts/verify-exercises.sh`) |
+| CLI E2E (`rpro` init/list/check/explain/progress) | ✅ **7/7** (`scripts/smoke-cli.sh`) |
 | Security review + dependency audit | ✅ `docs/SECURITY.md` (posture sound) |
 | Packaging pipeline | ✅ verified by inspection (`docs/DISTRIBUTION.md`) |
 | `unsafe` code | ✅ **0** (`unsafe_code = "forbid"` workspace-wide) |
@@ -25,7 +26,7 @@ to reproduce; every number here is from a clean run, not recall.
 - **`seam-gates.yml`** — (a) `wasm32-pure-core`: the pure crates compile to
   `wasm32-unknown-unknown`; (b) `seam-grep`: no toolchain/error-code literals leak
   outside `crates/languages/`.
-- **`ci.yml`** — `fmt`, `clippy`, `test`, `doc`, **`e2e smoke`** (`scripts/smoke.sh`), **`exercise integrity`** (`scripts/verify-exercises.sh` — compiles all 32 exercises, asserts each emits its taught error code) — on every push/PR.
+- **`ci.yml`** — `fmt`, `clippy`, `test`, `doc`, **`e2e smoke`** (`scripts/smoke.sh`), **`exercise integrity`** (`scripts/verify-exercises.sh` — compiles all 32 exercises, asserts each emits its taught error code), **`cli smoke`** (`scripts/smoke-cli.sh` — drives the real `rpro` binary against an isolated `RPRO_STORE`) — on every push/PR.
 - **`release.yml`** — tag-triggered `.deb` + `.rpm` packaging (verified; see
   DISTRIBUTION.md).
 
@@ -38,9 +39,10 @@ grep -rnE '\b(cargo|rustc|rust-analyzer|clippy|rustfmt)\b|doc\.rust-lang|E0[0-9]
   crates/ --include='*.rs' | grep -vE '///|//!' | grep -v 'clippy::' | grep -v 'crates/languages/'
 bash scripts/smoke.sh           # builds, seeds, serves, asserts the contract
 RUSTC=$TC/rustc bash scripts/verify-exercises.sh   # every exercise emits its taught error code
+bash scripts/smoke-cli.sh       # drives the real `rpro` binary (isolated RPRO_STORE)
 ```
 
-## Test inventory (112 unit/integration)
+## Test inventory (113 unit/integration)
 
 | Crate | Tests | Covers |
 |---|---|---|
@@ -51,7 +53,7 @@ RUSTC=$TC/rustc bash scripts/verify-exercises.sh   # every exercise emits its ta
 | `rpro-lang-rust` | 7 | the Rust `Language` seam impl (incl. `book_ref_url`) |
 | `rpro-runner` | 7 | discovery, `primary_error_code`, `record_run` (tempfile integration) |
 | `rpro-core` | 6 | the run engine |
-| `rpro-storage-fs` | 5 | on-disk store round-trips |
+| `rpro-storage-fs` | 6 | on-disk store round-trips + `resolve_user_root` (RPRO_STORE override → home fallback) |
 | `rpro-toolchain-local` | 5 | local process exec (incl. run-timeout: runaway-kill + pipe-drain deadlock-avoidance) |
 | `rpro-cli` | 5 | CLI helper logic: current-exercise resolution, `resolve_exercise` precedence (explicit id → current → first; unknown id errors), `write_if_missing` no-overwrite, `copy_tree` seeding (files + nested subdirs); **+ data invariant: every exercise `book_ref` resolves to a bundled chapter** |
 
@@ -97,7 +99,7 @@ this sandbox, so the check lives in CI rather than being run here.
 ## Conclusion
 
 For everything runnable in this environment, **#12 is green and comprehensive**:
-112 tests, both seam/wasm gates, a 17-assertion E2E smoke (incl. the success
+113 tests, both seam/wasm gates, a 17-assertion E2E smoke (incl. the success
 path: fix → run → pass → advance, and the Book
 reader's path-traversal guarantee), a cited security review with one fix landed,
 and a verified packaging pipeline — all reproducible from the commands above. The

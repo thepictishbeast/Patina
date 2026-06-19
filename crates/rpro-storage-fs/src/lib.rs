@@ -76,11 +76,16 @@ impl Store {
     /// Construct the user-default store at `~/.rustlings-pro/`, creating the
     /// directory if needed.
     ///
+    /// An explicit **`RPRO_STORE`** env var overrides the location — this lets an
+    /// operator relocate the store (off `$HOME`, onto another disk) and makes the
+    /// CLI testable in isolation without clobbering the real `$HOME`, mirroring
+    /// the server's `TS_SERVE_ROOT`.
+    ///
     /// # Errors
-    /// `NoHome` if no home directory is available; `Io` if it can't be created.
+    /// `NoHome` if no override is set and no home directory is available; `Io` if
+    /// the directory can't be created.
     pub fn user() -> Result<Self, StoreError> {
-        let home = dirs::home_dir().ok_or(StoreError::NoHome)?;
-        let root = home.join(".rustlings-pro");
+        let root = resolve_user_root(std::env::var_os("RPRO_STORE"), dirs::home_dir())?;
         std::fs::create_dir_all(&root).map_err(|e| StoreError::Io {
             kind: "mkdir",
             path: root.display().to_string(),
@@ -267,9 +272,22 @@ fn write_atomic(path: &Path, bytes: &[u8]) -> Result<(), StoreError> {
     Ok(())
 }
 
+/// Resolve the user store root: an explicit `RPRO_STORE` override (non-empty)
+/// wins; otherwise `<home>/.rustlings-pro`. Pure so it's testable without
+/// mutating the process environment (which is `unsafe` under edition 2024).
+fn resolve_user_root(
+    override_var: Option<std::ffi::OsString>,
+    home: Option<PathBuf>,
+) -> Result<PathBuf, StoreError> {
+    match override_var {
+        Some(p) if !p.is_empty() => Ok(PathBuf::from(p)),
+        _ => Ok(home.ok_or(StoreError::NoHome)?.join(".rustlings-pro")),
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{Store, TomlError};
+    use super::{Store, TomlError, resolve_user_root};
     use rpro_state::{Bookmarks, Config, ExerciseStatus, Progress};
 
     #[test]
@@ -277,6 +295,28 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let s = Store::at(dir.path());
         assert!(s.load_progress().unwrap().entries.is_empty());
+    }
+
+    #[test]
+    fn resolve_user_root_prefers_override_then_home() {
+        use std::path::PathBuf;
+        // A non-empty RPRO_STORE override wins.
+        assert_eq!(
+            resolve_user_root(Some("/srv/store".into()), Some(PathBuf::from("/home/u"))).unwrap(),
+            PathBuf::from("/srv/store")
+        );
+        // An empty override is ignored → falls back to <home>/.rustlings-pro.
+        assert_eq!(
+            resolve_user_root(Some(String::new().into()), Some(PathBuf::from("/home/u"))).unwrap(),
+            PathBuf::from("/home/u/.rustlings-pro")
+        );
+        // No override → <home>/.rustlings-pro.
+        assert_eq!(
+            resolve_user_root(None, Some(PathBuf::from("/home/u"))).unwrap(),
+            PathBuf::from("/home/u/.rustlings-pro")
+        );
+        // No override and no home → NoHome.
+        assert!(resolve_user_root(None, None).is_err());
     }
 
     #[test]
