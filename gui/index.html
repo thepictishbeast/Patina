@@ -77,6 +77,8 @@
   .docview code { background:var(--bg-3); padding:1px 5px; border-radius:5px; font-family:var(--mono); font-size:12.5px; }
   .docview pre { background:var(--bg-3); padding:12px 14px; border-radius:8px; overflow:auto; margin:10px 0; line-height:1.55; }
   .docview pre code { background:none; padding:0; border-radius:0; font-size:12.5px; white-space:pre; }
+  .docview blockquote { margin:10px 0; padding:6px 14px; border-left:3px solid var(--note); background:var(--bg-2); color:var(--fg-dim); border-radius:0 6px 6px 0; line-height:1.6; }
+  .docview ol { padding-left:22px; } .docview ol li { line-height:1.7; }
   .docview a { color:var(--note); }
   .booktoc { list-style:none; padding:0; } .booktoc li { margin:3px 0; }
   .booktoc a { font-size:13.5px; } .booktoc small { margin-left:8px; }
@@ -558,10 +560,13 @@
     // ── nav tabs: real view switching ──
     // Tiny, safe-by-construction markdown → HTML: escape EVERYTHING first, then
     // re-introduce a closed set of tags. No user HTML can survive. Handles ATX
-    // headings, `-`/`*` lists, inline code/bold/links, and ``` fenced code blocks
-    // (emitted verbatim, so chapter code samples stay legible).
+    // headings, `-`/`*` and `N.` lists, `>` blockquotes (the Rust Book's many
+    // Note/Warning callouts), inline code/bold/links, and ``` fenced code blocks
+    // (emitted verbatim, so chapter code samples stay legible). NOTE: `esc` has
+    // already turned `>` into `&gt;`, so blockquotes are matched as `&gt;`.
     function mdToHtml(md) {
-      const lines = esc(md).split('\n'); let html = '', inList = false, inCode = false;
+      const lines = esc(md).split('\n');
+      let html = '', list = null, inCode = false, quote = [];
       const inline = s => s
         .replace(/`([^`]+)`/g, '<code>$1</code>')
         .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
@@ -569,24 +574,33 @@
         // bare URLs too (only at start/after whitespace, so the [..](url) hrefs
         // produced above — preceded by '"' — are never re-wrapped).
         .replace(/(^|\s)(https?:\/\/[^\s<)]+)/g, '$1<a href="$2" target="_blank" rel="noopener">$2</a>');
+      const closeList = () => { if (list) { html += list === 'ol' ? '</ol>' : '</ul>'; list = null; } };
+      const flushQuote = () => { if (quote.length) { html += '<blockquote>' + inline(quote.join(' ')) + '</blockquote>'; quote = []; } };
       for (const ln of lines) {
         // ``` toggles a raw code block: no inline/list/heading handling inside.
         if (/^\s*```/.test(ln)) {
           if (inCode) { html += '</code></pre>'; inCode = false; }
-          else { if (inList) { html += '</ul>'; inList = false; } html += '<pre><code>'; inCode = true; }
+          else { closeList(); flushQuote(); html += '<pre><code>'; inCode = true; }
           continue;
         }
         if (inCode) { html += ln + '\n'; continue; }
-        const li = ln.match(/^\s*[-*]\s+(.*)$/);
-        if (li) { if (!inList) { html += '<ul>'; inList = true; } html += '<li>' + inline(li[1]) + '</li>'; continue; }
-        if (inList) { html += '</ul>'; inList = false; }
+        // Blockquote: accumulate consecutive `&gt;` lines into one callout.
+        const q = ln.match(/^&gt;\s?(.*)$/);
+        if (q) { closeList(); quote.push(q[1]); continue; }
+        flushQuote();
+        const ul = ln.match(/^\s*[-*]\s+(.*)$/);
+        if (ul) { if (list !== 'ul') { closeList(); html += '<ul>'; list = 'ul'; } html += '<li>' + inline(ul[1]) + '</li>'; continue; }
+        const ol = ln.match(/^\s*\d+\.\s+(.*)$/);
+        if (ol) { if (list !== 'ol') { closeList(); html += '<ol>'; list = 'ol'; } html += '<li>' + inline(ol[1]) + '</li>'; continue; }
+        closeList();
         if (/^###\s+/.test(ln)) html += '<h3>' + inline(ln.replace(/^###\s+/, '')) + '</h3>';
         else if (/^##\s+/.test(ln)) html += '<h2>' + inline(ln.replace(/^##\s+/, '')) + '</h2>';
         else if (/^#\s+/.test(ln)) html += '<h1>' + inline(ln.replace(/^#\s+/, '')) + '</h1>';
         else if (ln.trim()) html += '<p>' + inline(ln) + '</p>';
       }
       if (inCode) html += '</code></pre>';
-      if (inList) html += '</ul>';
+      closeList();
+      flushQuote();
       return html;
     }
     async function showView(view, chapter) {

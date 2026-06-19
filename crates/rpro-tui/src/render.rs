@@ -408,6 +408,14 @@ pub fn render_book(f: &mut Frame, app: &App, book: &Book) {
                     h.trim_start_matches('#').trim().to_string(),
                     Style::new().fg(app.theme.accent).add_modifier(Modifier::BOLD),
                 )))
+            } else if let Some(b) = t.strip_prefix("> ").or_else(|| (t == ">").then_some("")) {
+                // Blockquote (the Book's many Note/Warning callouts): a muted,
+                // marked left rail instead of a literal `>`. ASCII-safe rail.
+                let rail = if app.ascii { "| " } else { "▏ " };
+                Some(Line::from(Span::styled(
+                    format!("{rail}{b}"),
+                    Style::new().fg(app.theme.muted).add_modifier(Modifier::ITALIC),
+                )))
             } else {
                 Some(Line::from(raw.to_string()))
             }
@@ -712,7 +720,7 @@ mod tests {
             Chapter {
                 id: "ch04-01-what-is-ownership".into(),
                 path: PathBuf::from("a"),
-                markdown: "# Ownership\n```rust\n{{#rustdoc_include ../listings/x:here}}\n```\n".into(),
+                markdown: "# Ownership\n> Note: borrows don't own.\n```rust\n{{#rustdoc_include ../listings/x:here}}\n```\n".into(),
             },
         );
         let book = Book { chapters };
@@ -729,6 +737,9 @@ mod tests {
         assert!(!s.contains("{{#"), "raw mdBook directive leaked into the TUI:\n{s}");
         assert!(!s.contains("```"), "code fence line not hidden:\n{s}");
         assert!(s.contains("Read this code listing"), "missing link-out callout:\n{s}");
+        // Blockquote rendered as a marked rail, not a literal `>` (ascii mode → `|`).
+        assert!(s.contains("| Note: borrows"), "blockquote not styled as a rail:\n{s}");
+        assert!(!s.contains("> Note:"), "literal blockquote marker leaked:\n{s}");
     }
 
     #[test]
