@@ -737,3 +737,76 @@ fn copy_tree(from: &std::path::Path, to: &std::path::Path) -> std::io::Result<()
     }
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rpro_state::{Difficulty, ExerciseMetadata, Progress};
+    use std::path::PathBuf;
+
+    fn ex(id: &str) -> rpro_runner::Exercise {
+        rpro_runner::Exercise {
+            source: PathBuf::from(format!("/x/{id}.rs")),
+            meta: ExerciseMetadata {
+                id: id.to_string(),
+                title: id.to_string(),
+                difficulty: Difficulty::Beginner,
+                estimated_minutes: 5,
+                concept: "concept".into(),
+                book_refs: vec![],
+                expected_error_code: None,
+                solution_outline: None,
+            },
+        }
+    }
+
+    #[test]
+    fn current_exercise_id_finds_only_the_current() {
+        let mut p = Progress::default();
+        assert_eq!(current_exercise_id(&p), None, "empty progress has no current");
+        p.set_done("a/1");
+        assert_eq!(current_exercise_id(&p), None, "a Done entry is not current");
+        p.set_current("a/2");
+        assert_eq!(current_exercise_id(&p).as_deref(), Some("a/2"));
+    }
+
+    #[test]
+    fn resolve_exercise_prefers_id_then_current_then_first() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = Store::at(dir.path().to_path_buf());
+        let exs = vec![ex("a/1"), ex("a/2"), ex("a/3")];
+        // An explicit id wins.
+        assert_eq!(resolve_exercise(&store, &exs, Some("a/2")).unwrap().meta.id, "a/2");
+        // An unknown explicit id is an error (never silently falls back).
+        assert!(resolve_exercise(&store, &exs, Some("missing")).is_err());
+        // No id + no progress → the first exercise (learning order).
+        assert_eq!(resolve_exercise(&store, &exs, None).unwrap().meta.id, "a/1");
+        // No id + a saved Current → that one.
+        let mut p = Progress::default();
+        p.set_current("a/3");
+        store.save_progress(&p).unwrap();
+        assert_eq!(resolve_exercise(&store, &exs, None).unwrap().meta.id, "a/3");
+    }
+
+    #[test]
+    fn write_if_missing_never_overwrites() {
+        let dir = tempfile::tempdir().unwrap();
+        let f = dir.path().join("f.txt");
+        write_if_missing(&f, "first").unwrap();
+        write_if_missing(&f, "second").unwrap();
+        assert_eq!(std::fs::read_to_string(&f).unwrap(), "first", "existing file is kept");
+    }
+
+    #[test]
+    fn copy_tree_copies_files_and_nested_subdirs() {
+        let src = tempfile::tempdir().unwrap();
+        std::fs::write(src.path().join("top.txt"), "t").unwrap();
+        std::fs::create_dir(src.path().join("sub")).unwrap();
+        std::fs::write(src.path().join("sub").join("inner.txt"), "i").unwrap();
+        let dst = tempfile::tempdir().unwrap();
+        let to = dst.path().join("out");
+        copy_tree(src.path(), &to).unwrap();
+        assert_eq!(std::fs::read_to_string(to.join("top.txt")).unwrap(), "t");
+        assert_eq!(std::fs::read_to_string(to.join("sub").join("inner.txt")).unwrap(), "i");
+    }
+}

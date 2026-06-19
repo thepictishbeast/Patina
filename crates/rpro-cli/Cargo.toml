@@ -26,6 +26,9 @@ anyhow.workspace = true
 console.workspace = true
 pollster.workspace = true
 
+[dev-dependencies]
+tempfile = { workspace = true }
+
 [lints]
 workspace = true
 

@@ -1148,6 +1148,7 @@ dependencies = [
  "rpro-storage-fs",
  "rpro-toolchain-local",
  "rpro-tui",
+ "tempfile",
 ]
 
 [[package]]

@@ -10,7 +10,7 @@ to reproduce; every number here is from a clean run, not recall.
 
 | Area | Status |
 |---|---|
-| Workspace build + unit/integration tests | ✅ **107 passing, 0 failing** |
+| Workspace build + unit/integration tests | ✅ **111 passing, 0 failing** |
 | seam-grep gate (language-seam purity) | ✅ CLEAN |
 | wasm32 pure-core gate | ✅ builds |
 | E2E smoke (web server contract) | ✅ **15/15** |
@@ -38,7 +38,7 @@ grep -rnE '\b(cargo|rustc|rust-analyzer|clippy|rustfmt)\b|doc\.rust-lang|E0[0-9]
 bash scripts/smoke.sh           # builds, seeds, serves, asserts the contract
 ```
 
-## Test inventory (107 unit/integration)
+## Test inventory (111 unit/integration)
 
 | Crate | Tests | Covers |
 |---|---|---|
@@ -51,6 +51,7 @@ bash scripts/smoke.sh           # builds, seeds, serves, asserts the contract
 | `rpro-core` | 6 | the run engine |
 | `rpro-storage-fs` | 5 | on-disk store round-trips |
 | `rpro-toolchain-local` | 5 | local process exec (incl. run-timeout: runaway-kill + pipe-drain deadlock-avoidance) |
+| `rpro-cli` | 4 | CLI helper logic: current-exercise resolution, `resolve_exercise` precedence (explicit id → current → first; unknown id errors), `write_if_missing` no-overwrite, `copy_tree` seeding (files + nested subdirs) |
 
 ## E2E — `scripts/smoke.sh` (15/15)
 
@@ -90,7 +91,7 @@ this sandbox, so the check lives in CI rather than being run here.
 ## Conclusion
 
 For everything runnable in this environment, **#12 is green and comprehensive**:
-107 tests, both seam/wasm gates, a 15-assertion E2E smoke (incl. the Book
+111 tests, both seam/wasm gates, a 15-assertion E2E smoke (incl. the Book
 reader's path-traversal guarantee), a cited security review with one fix landed,
 and a verified packaging pipeline — all reproducible from the commands above. The
 only outstanding audit pieces (Playwright, Lighthouse) require a headless browser
