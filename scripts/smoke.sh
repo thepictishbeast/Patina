@@ -15,7 +15,12 @@ PORT="${1:-8799}"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
-STATE="$(mktemp -d "${TMPDIR:-/tmp}/ts-smoke.XXXXXX")"
+# Root the throwaway store under an EXEC-capable base: the success-path assertion
+# runs the compiled exercise binary, and some systems mount /tmp `noexec`. Default
+# to ~/.cache (where rpro-serve itself stores state); override with TS_SMOKE_DIR.
+SMOKE_BASE="${TS_SMOKE_DIR:-${HOME:-/tmp}/.cache}"
+mkdir -p "$SMOKE_BASE" 2>/dev/null || SMOKE_BASE="${TMPDIR:-/tmp}"
+STATE="$(mktemp -d "$SMOKE_BASE/ts-smoke.XXXXXX")"
 BASE="http://127.0.0.1:${PORT}"
 SRV_PID=""
 fails=0
@@ -85,6 +90,24 @@ d = json.load(sys.stdin)
 assert "passed" in d and "raw_stderr" in d and "exercise" in d, "run response shape"
 print("  ok   — /api/run executed (exercise=" + str(d["exercise"]) + ", passed=" + str(d["passed"]) + ")")
 ' || fail "/api/run end-to-end"
+
+# 5b. SUCCESS path, end-to-end through the real toolchain: submit a correct fix
+# for the first exercise (add `mut`) → it compiles, RUNS, passes, and the learner
+# advances to the next exercise. This is the app's core payoff — previously only
+# the failing path was exercised here, and `advance` only unit-tested.
+python3 - >"$STATE/fix.json" <<'PY'
+import json
+src = "fn main() {\n    let mut count = 0;\n    count = count + 1;\n    println!(\"count is {count}\");\n}\n"
+print(json.dumps({"op": "run", "source": src}))
+PY
+curl -s -X POST "$BASE/api/run" -H 'Content-Type: application/json' --data-binary @"$STATE/fix.json" \
+  | python3 -c '
+import sys, json
+d = json.load(sys.stdin)
+assert d.get("passed") is True, "the corrected source must pass: " + json.dumps(d)[:200]
+assert d.get("advanced_to"), "a passing Run must advance the learner to the next exercise"
+print("  ok   — correct fix runs + passes + advances to " + str(d["advanced_to"]))
+' || fail "/api/run success path (compile + run + pass + advance)"
 
 # 6. spaced-repetition (RECALL) queue is wired + internally consistent. Every
 # tracked code is either due (box < mastered) or mastered, so the counts must
