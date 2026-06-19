@@ -46,7 +46,7 @@ Surfaces: **Web** (`rpro-serve`, shipped + live), **CLI** (`rpro`), **TUI** (`rp
 - [ ] **P2 — Pluggable AI tutor seam** (Claude/Gemini) behind a trait; must refuse to type the fix.
 
 ## E. Content (#8) + corpus
-- [ ] **P1 — Exercises for every phase.** *Phases 1–7 DONE (26 exercises, each rustc-verified): 1–6 (basics→modules, `8b25d97` + t12–16) + **Phase 7 generics/traits/lifetimes** (this tick): generic bound E0369, trait impl E0277, lifetime E0106.* NOT gated — exercises are failing programs + metadata (the lesson-calibration gate is on learner-facing lesson prose only). Remaining: **phases 8–9** (concurrency → advanced).
+- [ ] **P1 — Exercises for every phase.** *Phases 1–8 DONE (29 exercises, each rustc-verified): 1–6 (basics→modules) + Phase 7 generics/traits/lifetimes (E0369/E0277/E0106) + **Phase 8 concurrency** (this tick): spawn-needs-move E0373, Rc-not-Send E0277, Arc-needs-Mutex E0594.* NOT gated — exercises are failing programs + metadata (the lesson-calibration gate is on learner-facing lesson prose only). Remaining: **Phase 9** (advanced — closures/iterators, smart pointers, or unsafe/macros).
 - [ ] **P1 — Embedded Book chapters.** `book/` ships READMEs only; bundle the real chapter markdown the exercises reference (ch04-01 etc.).
 - [ ] **P2 — Corpus Phases 7–9** catalog+matrix (generics/traits/lifetimes → concurrency → advanced), proven extract→map→verify workflow.
 - [ ] 🔒 **Error-handling matrix #37 section** — confirm scope with Paul (deferred Phase-5 follow-up).

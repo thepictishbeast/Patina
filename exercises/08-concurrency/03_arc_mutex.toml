@@ -1,0 +1,23 @@
+id = "concurrency/03_arc_mutex"
+title = "Arc shares; it doesn't grant mutation — that needs a Mutex"
+difficulty = "advanced"
+estimated_minutes = 15
+concept = "shared-mutable-state"
+expected_error_code = "E0594"
+solution_outline = """
+`Arc<i32>` lets many threads *read* the same value, but it hands out shared (not
+mutable) access, so `*c += 1` is rejected. Put a lock around the data so only one
+thread mutates at a time: `Arc<Mutex<i32>>`. Then each thread does
+`*c.lock().unwrap() += 1` (the lock guards the data; the `Arc` shares the lock).
+Arc = shared ownership; Mutex = safe mutation. You need both.
+"""
+
+[[book_refs]]
+chapter = "ch16-03-shared-state"
+anchor = "using-mutexes-to-allow-access-to-data-from-one-thread-at-a-time"
+why = "Mutex is how you get safe mutable access to shared data — the missing half here."
+
+[[book_refs]]
+chapter = "ch16-03-shared-state"
+anchor = "sharing-a-mutext-between-multiple-threads"
+why = "The exact `Arc<Mutex<T>>` pattern this exercise is building toward."

@@ -1,0 +1,22 @@
+id = "concurrency/02_rc_not_send"
+title = "Rc isn't safe to send between threads — Arc is"
+difficulty = "advanced"
+estimated_minutes = 12
+concept = "send-across-threads"
+expected_error_code = "E0277"
+solution_outline = """
+`Rc` does its reference counting without locking, which is fast but unsound across
+threads — so it doesn't implement `Send`, and `thread::spawn` rejects it. Swap it
+for the atomic version: `use std::sync::Arc;` and `Arc::new` / `Arc::clone`. Same
+shape, but the count is updated atomically, so it's safe to share between threads.
+"""
+
+[[book_refs]]
+chapter = "ch16-03-shared-state"
+anchor = "atomic-reference-counting-with-arct"
+why = "Arc is the thread-safe Rc — the drop-in fix the error is pushing you toward."
+
+[[book_refs]]
+chapter = "ch16-04-extensible-concurrency-sync-and-send"
+anchor = "allowing-transference-of-ownership-between-threads-with-send"
+why = "Why the bound the error names — `Send` — is what `Rc` lacks and `Arc` provides."

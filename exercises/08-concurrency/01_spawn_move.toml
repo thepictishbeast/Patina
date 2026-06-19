@@ -1,0 +1,18 @@
+id = "concurrency/01_spawn_move"
+title = "A thread that borrows a local can't prove it outlives the borrow"
+difficulty = "advanced"
+estimated_minutes = 12
+concept = "thread-move-closures"
+expected_error_code = "E0373"
+solution_outline = """
+The spawned thread might keep running after `main` returns, so a closure that
+*borrows* `v` could outlive the value it points at — the compiler refuses to
+gamble. Hand ownership to the thread instead of lending it: `thread::spawn(move ||
+{ ... })`. The `move` keyword pulls `v` into the closure so it lives as long as
+the thread does.
+"""
+
+[[book_refs]]
+chapter = "ch16-01-threads"
+anchor = "using-move-closures-with-threads"
+why = "Exactly this: why a thread closure usually needs `move` to take ownership of what it uses."
