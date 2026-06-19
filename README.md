@@ -84,11 +84,14 @@ Full run notes, env knobs, and the smoke test: [RUN.md](RUN.md).
 
 ## Content
 
-23 exercises across 6 phases (basics → control-flow → collections → ownership →
-types → modules), each a single-file program that fails with a real, rustc-verified
-error code, paired with `.toml` metadata (concept, expected error, book refs,
-solution outline). Phases 7–9 and the structured lessons are pending (the lessons
-are gated on calibration — see [docs/BACKLOG.md](docs/BACKLOG.md)).
+32 exercises across 9 phases (basics → control-flow → collections → ownership →
+types/matching → modules → generics/traits/lifetimes → concurrency → advanced),
+each a single-file program that fails with a real, rustc-verified error code,
+paired with `.toml` metadata (concept, expected error, book refs, solution
+outline). Plus 23 embedded Rust Book chapters (bundled + seeded; readable in the
+web/TUI Book tab — code listings link out to the live Book). The structured
+lessons are pending (gated on Paul's calibration — see
+[docs/BACKLOG.md](docs/BACKLOG.md)).
 
 ## Architecture
 
