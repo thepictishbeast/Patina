@@ -1,0 +1,23 @@
+id = "advanced/03_move_out_of_borrow"
+title = "You can't move something out of a value you only borrowed"
+difficulty = "advanced"
+estimated_minutes = 12
+concept = "move-out-of-borrow"
+expected_error_code = "E0507"
+solution_outline = """
+`first` takes `&Vec<String>` — a borrow — so it doesn't own the strings and can't
+move one out (that would leave a hole in the caller's vector). Give back a copy
+instead of the original: `words[0].clone()`. The rule: a borrow lets you *look*,
+not *take*; to hand back an owned `String` from borrowed data, you clone it (or
+change the signature to take ownership).
+"""
+
+[[book_refs]]
+chapter = "ch04-02-references-and-borrowing"
+anchor = "references-and-borrowing"
+why = "A borrow gives access without ownership — which is exactly why you can't move out of one."
+
+[[book_refs]]
+chapter = "ch04-01-what-is-ownership"
+anchor = "ways-variables-and-data-interact-clone"
+why = "`clone` is how you produce an owned value from data you don't own."

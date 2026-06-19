@@ -1,0 +1,23 @@
+id = "advanced/02_collect_annotation"
+title = "collect() can build many collections — you have to pick one"
+difficulty = "advanced"
+estimated_minutes = 10
+concept = "iterator-collect-inference"
+expected_error_code = "E0283"
+solution_outline = """
+`collect` is generic over the target collection (`Vec`, `HashSet`, `String`, …),
+and here nothing pins it down, so type inference is stuck. Name the type on the
+binding: `let doubled: Vec<i32> = ...`. (You can also tell `collect` directly with
+the turbofish: `.collect::<Vec<i32>>()`.) Iterators stay lazy and untyped until a
+consumer like `collect` forces a concrete result.
+"""
+
+[[book_refs]]
+chapter = "ch13-02-iterators"
+anchor = "methods-that-consume-the-iterator"
+why = "`collect` is a consuming adapter — it's where a lazy iterator becomes a concrete collection."
+
+[[book_refs]]
+chapter = "ch13-04-performance"
+anchor = "comparing-performance-loops-vs-iterators"
+why = "Background on how iterator chains compile down — useful once you're reaching for adapters."

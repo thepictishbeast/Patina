@@ -1,0 +1,18 @@
+id = "advanced/01_unsafe_deref"
+title = "Dereferencing a raw pointer is a promise you make with `unsafe`"
+difficulty = "advanced"
+estimated_minutes = 12
+concept = "unsafe-raw-pointers"
+expected_error_code = "E0133"
+solution_outline = """
+Creating a raw pointer (`*const i32`) is safe; *following* it is not — the
+compiler can't guarantee it still points at valid memory, so it makes you take
+responsibility explicitly. Wrap the dereference in an `unsafe` block:
+`let value = unsafe { *p };`. The block is you telling the compiler "I've checked
+this — trust me here," scoped to exactly that line.
+"""
+
+[[book_refs]]
+chapter = "ch19-01-unsafe-rust"
+anchor = "dereferencing-a-raw-pointer"
+why = "Exactly this: raw pointers can be created in safe code, but dereferencing them requires `unsafe`."
