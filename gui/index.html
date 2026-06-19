@@ -145,6 +145,9 @@
   .diag .lvl{font-family:var(--mono);font-weight:700}
   .diag.error .lvl{color:var(--error)} .diag.warn .lvl{color:var(--warn)} .diag.note .lvl{color:var(--note)}
   .diag .msg small{display:block;color:var(--fg-dim);font-family:var(--mono);font-size:11px;margin-top:2px}
+  .diag[data-code]{cursor:pointer;transition:background .12s}
+  .diag[data-code]:hover{background:var(--bg-2)}
+  .diag[data-code]:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
   .bref{padding:10px 14px;font-size:12.5px;border-bottom:1px solid var(--line);cursor:pointer;transition:.12s}
   .bref:hover{background:var(--bg-2)} .bref .c{font-family:var(--mono);color:var(--note)} .bref small{display:block;color:var(--fg-dim);margin-top:2px}
 
@@ -486,16 +489,21 @@
           const cls = lvl.startsWith('err') ? 'error' : (lvl.startsWith('warn') ? 'warn' : 'note');
           const loc = dg.span ? ` · L${dg.span.line}` : '';
           if (cls === 'error' && dg.code) lastCode = lastCode || dg.code;
-          return `<div class="diag ${cls}"><span class="lvl">[${cls === 'error' ? '!' : cls === 'warn' ? '~' : 'i'}]</span>`
-               + `<span class="msg">${esc((dg.code || lvl) + loc)}<small>${esc(dg.message)}</small></span></div>`;
+          // Rows that carry a code are clickable → Explain that code.
+          const act = dg.code
+            ? ` data-code="${esc(dg.code)}" role="button" tabindex="0" aria-label="Explain ${esc(dg.code)}" title="click to explain ${esc(dg.code)}"`
+            : '';
+          const hint = dg.code ? ' · click to explain' : '';
+          return `<div class="diag ${cls}"${act}><span class="lvl">[${cls === 'error' ? '!' : cls === 'warn' ? '~' : 'i'}]</span>`
+               + `<span class="msg">${esc((dg.code || lvl) + loc)}<small>${esc(dg.message)}${hint}</small></span></div>`;
         });
       } else {
         const txt = (out.raw_stderr || '') + '\n' + (out.raw_stdout || '');
         const codes = [...new Set((txt.match(/error\[(E\d{3,4})\]/g) || []).map(m => m.slice(6, -1)))];
         if (codes[0]) lastCode = codes[0];
         rows = codes.map(c =>
-          `<div class="diag error"><span class="lvl">[!]</span><span class="msg">${c}`
-          + `<small>rustc --explain ${c}</small></span></div>`);
+          `<div class="diag error" data-code="${esc(c)}" role="button" tabindex="0" aria-label="Explain ${esc(c)}" title="click to explain ${esc(c)}"><span class="lvl">[!]</span><span class="msg">${esc(c)}`
+          + `<small>click to explain ${esc(c)}</small></span></div>`);
         if (out.passed) rows = ['<div class="diag note"><span class="lvl">[i]</span><span class="msg">passed<small>no diagnostics — nice</small></span></div>'];
         else if (!rows.length) rows = ['<div class="diag note"><span class="lvl">[i]</span><span class="msg">see terminal<small>read the raw output by hand</small></span></div>'];
       }
@@ -630,6 +638,20 @@
       const code = (prompt('Diagnostic code to explain (letters/digits only):', lastCode) || '').trim();
       if (code) runOp('explain', { code });
     };
+    // Explain-from-diagnostic: click (or Enter/Space) a diagnostic row that carries
+    // a code to run Explain for it — no typing. Delegated so it survives re-renders.
+    const diagBox = document.getElementById('diag');
+    const explainFromRow = row => { const c = row && row.getAttribute('data-code'); if (c) runOp('explain', { code: c }); };
+    diagBox.addEventListener('click', e => {
+      const row = e.target.closest('.diag[data-code]');
+      if (row) explainFromRow(row);
+    });
+    diagBox.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        const row = e.target.closest('.diag[data-code]');
+        if (row) { e.preventDefault(); explainFromRow(row); }
+      }
+    });
     window.addEventListener('load', () => { refit(); });
   </script>
 </body>

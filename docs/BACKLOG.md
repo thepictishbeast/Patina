@@ -20,7 +20,7 @@ Surfaces: **Web** (`rpro-serve`, shipped + live), **CLI** (`rpro`), **TUI** (`rp
 - [ ] **P2 — Exercise click-to-select.** Clicking a list item sets it current (`POST /api/select`, validated against discovered ids only).
 - [ ] **P2 — Syntax highlighting** in the code pane (escape-then-tokenize; safe).
 - [x] **P2 — Phone-first responsive reflow** (`05c0777`) — 3-col grid → single column under 760px via `@media`; `.pane{min-width:0}` fix; verified at 390px.
-- [ ] **P2 — Explain-from-diagnostic.** Click a diagnostic row → runs `explain` for that code.
+- [x] **P2 — Explain-from-diagnostic** (this tick) — diagnostic rows carrying a code are clickable (and keyboard-operable: `role=button`/`tabindex`/Enter-Space, focus ring) → run `explain` for that code via the existing `/api/run` path; delegated handler survives re-renders. Verified: inline JS parses, smoke 8/8, live explain returns the real description.
 - [x] **P2 — Security headers** (`9e7c12c`) — CSP/X-Content-Type-Options/Referrer-Policy/X-Frame-Options via a `map_response` layer; loopback-only already done.
 - [x] **P3 — a11y pass** (`599b89f`) — keyboard nav (r/c/h/b/t/d, typing-guarded) + tablist/tab roles + aria-live + aria-labels. (Lighthouse audit = G65, still open.)
 
