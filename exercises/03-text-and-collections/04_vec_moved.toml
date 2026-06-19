@@ -17,5 +17,5 @@ why = "Iterating with `&v` vs `v`: the reference form keeps the vector usable af
 
 [[book_refs]]
 chapter = "ch04-01-what-is-ownership"
-anchor = "ways-variables-and-data-interact-move"
+anchor = "variables-and-data-interacting-with-move"
 why = "Why consuming `names` makes it unusable later — the move rule, now seen through a collection."

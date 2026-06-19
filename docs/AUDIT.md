@@ -16,7 +16,8 @@ to reproduce; every number here is from a clean run, not recall.
 | E2E smoke (web server contract) | ✅ **17/17** |
 | Curriculum integrity (every exercise emits its taught error) | ✅ **32/32** (`scripts/verify-exercises.sh`) |
 | CLI E2E (`rpro` init/list/check/explain/book-search/hint/next/progress) | ✅ **10/10** (`scripts/smoke-cli.sh`) |
-| Web GUI pure transforms (`mdToHtml`, `highlightRust` — incl. XSS invariant) + app-script parse-check | ✅ **39/39** (`scripts/test-gui.mjs`) |
+| Web GUI pure transforms (`mdToHtml`, `highlightRust` — incl. XSS invariant) + app-script parse-check | ✅ **40/40** (`scripts/test-gui.mjs`) |
+| Book-ref anchor integrity (every `anchor` resolves to a chapter heading slug) | ✅ **51/51** (`scripts/verify-book-anchors.mjs`) |
 | Security review + dependency audit | ✅ `docs/SECURITY.md` (posture sound) |
 | Packaging pipeline | ✅ verified by inspection (`docs/DISTRIBUTION.md`) |
 | `unsafe` code | ✅ **0** (`unsafe_code = "forbid"` workspace-wide) |
@@ -27,7 +28,7 @@ to reproduce; every number here is from a clean run, not recall.
 - **`seam-gates.yml`** — (a) `wasm32-pure-core`: the pure crates compile to
   `wasm32-unknown-unknown`; (b) `seam-grep`: no toolchain/error-code literals leak
   outside `crates/languages/`.
-- **`ci.yml`** — `fmt`, `clippy`, `test`, `doc`, **`e2e smoke`** (`scripts/smoke.sh`), **`exercise integrity`** (`scripts/verify-exercises.sh` — compiles all 32 exercises, asserts each emits its taught error code), **`cli smoke`** (`scripts/smoke-cli.sh` — drives the real `rpro` binary against an isolated `RPRO_STORE`), **`gui transforms`** (`scripts/test-gui.mjs` — pins the web GUI's pure transforms: `esc`→`mdToHtml` and `highlightRust`, incl. the highlighter's XSS-safety invariant) — on every push/PR.
+- **`ci.yml`** — `fmt`, `clippy`, `test`, `doc`, **`e2e smoke`** (`scripts/smoke.sh`), **`exercise integrity`** (`scripts/verify-exercises.sh` — compiles all 32 exercises, asserts each emits its taught error code), **`cli smoke`** (`scripts/smoke-cli.sh` — drives the real `rpro` binary against an isolated `RPRO_STORE`), **`gui transforms`** (`scripts/test-gui.mjs` — pins the web GUI's pure transforms: `esc`→`mdToHtml` and `highlightRust`, incl. the highlighter's XSS-safety invariant), **`book anchors`** (`scripts/verify-book-anchors.mjs` — every exercise book_ref `anchor` resolves to a chapter heading slug) — on every push/PR.
 - **`release.yml`** — tag-triggered `.deb` + `.rpm` packaging (verified; see
   DISTRIBUTION.md).
 
@@ -42,6 +43,7 @@ bash scripts/smoke.sh           # builds, seeds, serves, asserts the contract
 RUSTC=$TC/rustc bash scripts/verify-exercises.sh   # every exercise emits its taught error code
 bash scripts/smoke-cli.sh       # drives the real `rpro` binary (isolated RPRO_STORE)
 node scripts/test-gui.mjs       # web GUI pure transforms (mdToHtml + highlightRust XSS invariant)
+node scripts/verify-book-anchors.mjs   # every exercise book_ref anchor resolves to a chapter heading
 ```
 
 ## Test inventory (113 unit/integration)

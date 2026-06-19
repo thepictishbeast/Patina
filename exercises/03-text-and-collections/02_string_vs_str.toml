@@ -17,5 +17,5 @@ why = "How to make an owned String from a &str literal (to_string / String::from
 
 [[book_refs]]
 chapter = "ch08-02-strings"
-anchor = "what-is-a-string"
+anchor = "defining-strings"
 why = "Why there are two string types at all: owned String vs borrowed &str."

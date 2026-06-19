@@ -159,6 +159,10 @@ check(useId.includes('id="bringing-paths-into-scope-with-the-use-keyword"'),
       'slug drops backticks/punctuation (matches the `use`-keyword anchor)');
 const idMatch = mdToHtml('#### Mutable References').match(/id="([^"]*)"/);
 check(idMatch && /^[a-z0-9_-]*$/.test(idMatch[1]), 'slug id is attribute-safe ([a-z0-9_-] only)');
+// `<T>` headings: esc → &lt;/&gt;, which the slug must STRIP (else `arclttgt`),
+// so the GitHub-style anchor `the-api-of-mutext` resolves.
+check(mdToHtml('### The API of Mutex<T>').includes('id="the-api-of-mutext"'),
+      'angle-bracket heading slug strips entities (Mutex<T> → the-api-of-mutext)');
 
 console.log('');
 if (fails === 0) console.log('GUI TRANSFORM TESTS PASS ✓');

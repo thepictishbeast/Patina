@@ -647,7 +647,7 @@
       // lands on the cited section (e.g. "The Rules of References" →
       // the-rules-of-references). Slugged from the raw text → only [a-z0-9_-],
       // attribute-safe. Backticks/punctuation dropped to match GitHub's scheme.
-      const slug = s => s.toLowerCase().replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-');
+      const slug = s => s.replace(/&(?:lt|gt|amp|quot|#\d+);/g, '').toLowerCase().replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-');
       for (let i = 0; i < lines.length; i++) {
         const ln = lines[i];
         // ``` toggles a raw code block: no inline/list/heading handling inside.

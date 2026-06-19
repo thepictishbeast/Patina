@@ -12,5 +12,5 @@ struct value is only valid once every field is set.
 
 [[book_refs]]
 chapter = "ch05-01-defining-structs"
-anchor = "instantiating-structs"
+anchor = "defining-and-instantiating-structs"
 why = "Creating a struct value: you list every field. This is the rule the failing line breaks."

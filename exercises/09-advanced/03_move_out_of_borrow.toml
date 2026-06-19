@@ -19,5 +19,5 @@ why = "A borrow gives access without ownership — which is exactly why you can'
 
 [[book_refs]]
 chapter = "ch04-01-what-is-ownership"
-anchor = "ways-variables-and-data-interact-clone"
+anchor = "variables-and-data-interacting-with-clone"
 why = "`clone` is how you produce an owned value from data you don't own."

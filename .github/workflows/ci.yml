@@ -93,3 +93,13 @@ jobs:
       # highlighter's XSS-safety invariant (strip the spans → the input). No
       # browser needed; just node (preinstalled on the runner).
       - run: node scripts/test-gui.mjs
+
+  book-anchors:
+    name: book anchors
+    runs-on: [self-hosted, linux, x64, plausiden]
+    steps:
+      - uses: actions/checkout@v4
+      # Asserts every exercise book_ref `anchor` resolves to a heading slug in
+      # its bundled chapter (the web reader scrolls clicked refs to that id).
+      # Catches drift when chapters are re-vendored or an anchor is typo'd.
+      - run: node scripts/verify-book-anchors.mjs

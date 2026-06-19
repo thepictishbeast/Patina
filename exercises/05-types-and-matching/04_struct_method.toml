@@ -13,5 +13,5 @@ call must be declared.
 
 [[book_refs]]
 chapter = "ch05-03-method-syntax"
-anchor = "defining-methods"
+anchor = "method-syntax"
 why = "Defining methods in an `impl` block, including `&mut self` for methods that mutate — exactly what the fix needs."

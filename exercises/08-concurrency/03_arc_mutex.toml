@@ -14,10 +14,10 @@ Arc = shared ownership; Mutex = safe mutation. You need both.
 
 [[book_refs]]
 chapter = "ch16-03-shared-state"
-anchor = "using-mutexes-to-allow-access-to-data-from-one-thread-at-a-time"
+anchor = "controlling-access-with-mutexes"
 why = "Mutex is how you get safe mutable access to shared data — the missing half here."
 
 [[book_refs]]
 chapter = "ch16-03-shared-state"
-anchor = "sharing-a-mutext-between-multiple-threads"
+anchor = "multiple-ownership-with-multiple-threads"
 why = "The exact `Arc<Mutex<T>>` pattern this exercise is building toward."

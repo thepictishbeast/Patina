@@ -19,5 +19,5 @@ why = "`collect` is a consuming adapter — it's where a lazy iterator becomes a
 
 [[book_refs]]
 chapter = "ch13-04-performance"
-anchor = "comparing-performance-loops-vs-iterators"
+anchor = "performance-in-loops-vs-iterators"
 why = "Background on how iterator chains compile down — useful once you're reaching for adapters."

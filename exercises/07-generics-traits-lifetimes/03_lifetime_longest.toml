@@ -19,5 +19,5 @@ why = "What `<'a>` and `&'a str` mean — annotating, not changing, how long a r
 
 [[book_refs]]
 chapter = "ch10-03-lifetime-syntax"
-anchor = "lifetime-annotations-in-function-signatures"
+anchor = "in-function-signatures"
 why = "Exactly this case: relating the lifetime of a returned reference to the function's inputs."

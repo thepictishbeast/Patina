@@ -19,5 +19,5 @@ why = "How a concrete type implements a trait — the `impl Trait for Type` bloc
 
 [[book_refs]]
 chapter = "ch10-02-traits"
-anchor = "traits-as-parameters"
+anchor = "using-traits-as-parameters"
 why = "Why `fn show<T: Display>` only accepts types that have implemented `Display`."

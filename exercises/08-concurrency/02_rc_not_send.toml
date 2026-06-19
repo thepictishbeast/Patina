@@ -18,5 +18,5 @@ why = "Arc is the thread-safe Rc — the drop-in fix the error is pushing you to
 
 [[book_refs]]
 chapter = "ch16-04-extensible-concurrency-sync-and-send"
-anchor = "allowing-transference-of-ownership-between-threads-with-send"
+anchor = "transferring-ownership-between-threads"
 why = "Why the bound the error names — `Send` — is what `Rc` lacks and `Arc` provides."

@@ -28,5 +28,5 @@ why = "The three rules of references summarized — print this and stick it on t
 
 [[book_refs]]
 chapter = "ch10-03-lifetime-syntax"
-anchor = "non-lexical-lifetimes"
+anchor = "the-borrow-checker"
 why = "Modern Rust ends a borrow at the last point of USE, not the closing brace. This is why reordering the println!s fixes it without explicit scoping."

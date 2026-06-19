@@ -13,7 +13,7 @@ works too but panics on `None` — matching is safer.
 
 [[book_refs]]
 chapter = "ch06-01-defining-an-enum"
-anchor = "the-option-enum-and-its-advantages-over-null-values"
+anchor = "the-option-enum"
 why = "Why `Option<i32>` and `i32` are different types — the billion-dollar mistake, fixed by the type system."
 
 [[book_refs]]
