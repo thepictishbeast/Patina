@@ -46,7 +46,7 @@ node scripts/test-gui.mjs       # web GUI pure transforms (mdToHtml + highlightR
 node scripts/verify-book-anchors.mjs   # every exercise book_ref anchor resolves to a chapter heading
 ```
 
-## Test inventory (113 unit/integration)
+## Test inventory (122 unit/integration)
 
 | Crate | Tests | Covers |
 |---|---|---|
