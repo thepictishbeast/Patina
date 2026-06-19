@@ -187,6 +187,18 @@ fn cmd_init() -> Result<()> {
         let n = rpro_runner::discover(&exercises_dir).map_or(0, |v| v.len());
         println!("  + seeded {n} bundled exercise(s)");
     }
+    // Seed the bundled Rust Book chapters the same way, so the Book reader has
+    // real content offline (parity with the exercises seed).
+    let book_dir = store.root().join("book");
+    let bundled_book = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../book");
+    let have_book = rpro_book::Book::load(&book_dir).is_ok_and(|b| !b.chapters.is_empty());
+    if !have_book && bundled_book.is_dir() {
+        copy_tree(&bundled_book, &book_dir)
+            .with_context(|| format!("seeding book from {}", bundled_book.display()))?;
+        if let Ok(b) = rpro_book::Book::load(&book_dir) {
+            println!("  + seeded {} Rust Book chapter(s)", b.chapters.len());
+        }
+    }
     // Ensure a Current exercise so the first run isn't an empty screen.
     let mut progress = store.load_progress().unwrap_or_default();
     let has_current = progress.entries.values().any(|e| e.status == ExerciseStatus::Current);
@@ -201,20 +213,15 @@ fn cmd_init() -> Result<()> {
         }
     }
 
-    // Drop a README in each dir so the layout is discoverable. The book content
-    // ships in a later pass (see docs/BACKLOG.md §E).
+    // Drop a README in the exercises dir so the layout is discoverable. (The book
+    // dir intentionally gets no README: it's seeded with the real chapters, and a
+    // `.md` there would be picked up by the book loader as a bogus chapter.)
     write_if_missing(
         &store.root().join("exercises/README.md"),
         "Exercises live here (seeded from the bundled set on `rpro init`). Each \
          exercise is a `name.rs` (the failing starter) plus a sibling `name.toml` \
          with metadata (id, title, difficulty, concept, expected_error_code, \
          book_refs). Drop your own alongside them.\n",
-    )?;
-    write_if_missing(
-        &store.root().join("book/README.md"),
-        "The Rust Book chapters live here as one markdown file per chapter, \
-         filename = chapter id (e.g. `ch04-01-what-is-ownership.md`). Run \
-         `rpro init --refresh-book` (v0.1) to fetch the official content.\n",
     )?;
 
     println!();
