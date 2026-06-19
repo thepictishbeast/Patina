@@ -14,6 +14,7 @@ to reproduce; every number here is from a clean run, not recall.
 | seam-grep gate (language-seam purity) | ✅ CLEAN |
 | wasm32 pure-core gate | ✅ builds |
 | E2E smoke (web server contract) | ✅ **15/15** |
+| Curriculum integrity (every exercise emits its taught error) | ✅ **32/32** (`scripts/verify-exercises.sh`) |
 | Security review + dependency audit | ✅ `docs/SECURITY.md` (posture sound) |
 | Packaging pipeline | ✅ verified by inspection (`docs/DISTRIBUTION.md`) |
 | `unsafe` code | ✅ **0** (`unsafe_code = "forbid"` workspace-wide) |
@@ -24,7 +25,7 @@ to reproduce; every number here is from a clean run, not recall.
 - **`seam-gates.yml`** — (a) `wasm32-pure-core`: the pure crates compile to
   `wasm32-unknown-unknown`; (b) `seam-grep`: no toolchain/error-code literals leak
   outside `crates/languages/`.
-- **`ci.yml`** — `fmt`, `clippy`, `test`, `doc`, **`e2e smoke`** (runs `scripts/smoke.sh` on every push/PR).
+- **`ci.yml`** — `fmt`, `clippy`, `test`, `doc`, **`e2e smoke`** (`scripts/smoke.sh`), **`exercise integrity`** (`scripts/verify-exercises.sh` — compiles all 32 exercises, asserts each emits its taught error code) — on every push/PR.
 - **`release.yml`** — tag-triggered `.deb` + `.rpm` packaging (verified; see
   DISTRIBUTION.md).
 
@@ -36,6 +37,7 @@ RUSTC=$TC/rustc $TC/cargo build --offline --target wasm32-unknown-unknown \
 grep -rnE '\b(cargo|rustc|rust-analyzer|clippy|rustfmt)\b|doc\.rust-lang|E0[0-9]{3}' \
   crates/ --include='*.rs' | grep -vE '///|//!' | grep -v 'clippy::' | grep -v 'crates/languages/'
 bash scripts/smoke.sh           # builds, seeds, serves, asserts the contract
+RUSTC=$TC/rustc bash scripts/verify-exercises.sh   # every exercise emits its taught error code
 ```
 
 ## Test inventory (111 unit/integration)

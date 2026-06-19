@@ -61,3 +61,14 @@ jobs:
       # asserts the API + serving contract (no-leak, body limit, hint gating,
       # real run). Deps beyond the toolchain: python3 + curl (standard on linux).
       - run: bash scripts/smoke.sh
+
+  curriculum:
+    name: exercise integrity
+    runs-on: [self-hosted, linux, x64, plausiden]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      # Compiles every exercise and asserts it emits the error code its .toml
+      # claims to teach — the curriculum's central invariant. Catches an edited
+      # exercise that no longer fails, a typo'd code, or a toolchain code shift.
+      - run: bash scripts/verify-exercises.sh
