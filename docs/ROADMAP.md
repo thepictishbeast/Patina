@@ -11,7 +11,7 @@ so the learner (and Paul) can see what's done and what's next. Status:
 - [x] Local toolchain + filesystem storage impls
 - [x] CI gates: wasm32 pure-core build + language-seam grep guard
 - [x] rpro run / check / test / explain — real cargo/rustc, by hand
-- [x] Audit baseline: 107 tests + 15-assertion end-to-end smoke (also a CI job) + cited security review (docs/AUDIT.md, docs/SECURITY.md)
+- [x] Audit baseline: 122 tests + 18-assertion end-to-end smoke + curriculum-integrity, book-anchor & GUI-transform gates (all CI jobs) + cited security review (docs/AUDIT.md, docs/SECURITY.md)
 
 ## Phase 1 — Terminal UI (TUI)
 - [x] Theme + status vocabulary (color, glyphs, throbber, NO_COLOR)
@@ -19,7 +19,7 @@ so the learner (and Paul) can see what's done and what's next. Status:
 - [x] Dashboard: progress gauge, current exercise, up-next
 - [x] Exercise view: raw output + additive diagnostics + Free/Learning badge
 - [x] Live run: r/c compiles on a background thread, fills the raw pane
-- [x] Book reader: chapter list + cleaned markdown (mdBook directives stripped, code listings linked out, blockquote rails)
+- [x] Book reader: chapter list + cleaned markdown (mdBook directives stripped, code listings linked out, blockquote rails, inline markup styled — code/bold/italic/links)
 - [x] Roadmap screen (this view)
 - [x] Book + roadmap content scroll (PgUp/PgDn)
 - [x] Hint ladder on `h` + "↻ Recall" spaced-repetition panel (shared state)
@@ -32,7 +32,7 @@ so the learner (and Paul) can see what's done and what's next. Status:
 - [x] Live terminal: xterm.js streams the REAL run output via the server (no pty needed)
 - [x] Editable code pane + run-the-edit (textarea + per-exercise localStorage)
 - [x] Full educational loop in-browser: predict-first → run → diagnose → hint ladder → pass→advance → ↻ Recall; click-a-diagnostic-to-explain; phone reflow; keyboard + a11y
-- [x] Embedded Book reader (web): /api/book TOC + cleaned chapters, exercise book-refs jump to the chapter; tap a list item to switch exercise (/api/select)
+- [x] Embedded Book reader (web): /api/book TOC + cleaned chapters with syntax-highlighted code, rich markdown (tables, emphasis, h1–h6, callouts); full-text search box (/api/book?q=, ranked hits → jump-to-match); exercise book-refs jump to the cited section (heading-slug anchors); tap a list item to switch exercise (/api/select)
 - [ ] Wrap in Tauri v2 → desktop + Android (Termux rust), reusing this frontend (env-gated here)
 
 ## Phase 3 — Learning content
