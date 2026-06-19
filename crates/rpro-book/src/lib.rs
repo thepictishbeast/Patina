@@ -66,6 +66,23 @@ impl Chapter {
     pub fn display_markdown(&self, chapter_url: &str) -> String {
         clean_mdbook_source(&self.markdown, chapter_url)
     }
+
+    /// The chapter's title: the first ATX heading's text, or the id if the
+    /// chapter has no heading. Used by the TOC and search result lists.
+    #[must_use]
+    pub fn title(&self) -> String {
+        self.markdown
+            .lines()
+            .find_map(|l| {
+                let t = l.trim_start();
+                if !t.starts_with('#') {
+                    return None;
+                }
+                let title = t.trim_start_matches('#').trim();
+                (!title.is_empty()).then(|| title.to_string())
+            })
+            .unwrap_or_else(|| self.id.clone())
+    }
 }
 
 /// Pure transform behind [`Chapter::display_markdown`]; `url` is the live-chapter
@@ -200,6 +217,70 @@ impl Book {
     pub fn is_empty(&self) -> bool {
         self.chapters.is_empty()
     }
+
+    /// Case-insensitive full-text search across all chapters. Returns one
+    /// [`SearchHit`] per matching chapter, sorted by descending match count
+    /// (ties keep reading order). An empty/blank term returns no hits.
+    ///
+    /// The matching is the same substring test the CLI `book search` has always
+    /// used; lifting it here lets the web surface share one implementation.
+    #[must_use]
+    pub fn search(&self, term: &str) -> Vec<SearchHit> {
+        let needle = term.trim().to_lowercase();
+        if needle.is_empty() {
+            return Vec::new();
+        }
+        let mut hits: Vec<SearchHit> = self
+            .chapters
+            .values()
+            .filter_map(|c| {
+                let count = c.markdown.to_lowercase().matches(&needle).count();
+                (count > 0).then(|| SearchHit {
+                    chapter: c.id.clone(),
+                    title: c.title(),
+                    count,
+                    snippet: first_match_snippet(&c.markdown, &needle),
+                })
+            })
+            .collect();
+        // Stable sort keeps reading order within equal match counts.
+        hits.sort_by(|a, b| b.count.cmp(&a.count));
+        hits
+    }
+}
+
+/// One chapter's full-text search result.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SearchHit {
+    /// Chapter id (the map key — what `Book::get` takes).
+    pub chapter: String,
+    /// Chapter title (first heading, see [`Chapter::title`]).
+    pub title: String,
+    /// Number of case-insensitive occurrences of the term in the chapter.
+    pub count: usize,
+    /// The first source line containing the term, trimmed of heading/markdown
+    /// markers and truncated — a plain-text preview for the results list.
+    pub snippet: String,
+}
+
+/// First source line containing `needle_lower` (already lowercased), trimmed of
+/// leading `#`/`>`/`-`/`*` markers and truncated to ~140 chars on a char
+/// boundary. Line-based (not byte-sliced) so it is panic-safe on UTF-8 and keeps
+/// the original casing.
+fn first_match_snippet(markdown: &str, needle_lower: &str) -> String {
+    markdown
+        .lines()
+        .find(|l| l.to_lowercase().contains(needle_lower))
+        .map(|l| {
+            let t = l.trim().trim_start_matches(['#', '>', '-', '*', ' ']).trim();
+            if t.chars().count() > 140 {
+                let head: String = t.chars().take(140).collect();
+                format!("{head}…")
+            } else {
+                t.to_string()
+            }
+        })
+        .unwrap_or_default()
 }
 
 #[cfg(test)]
@@ -290,5 +371,52 @@ mod tests {
         let src = "```console\n$ run-it\n# a comment in output\n```\n";
         let out = clean_mdbook_source(src, URL);
         assert!(out.contains("# a comment in output"), "non-rust hash kept: {out}");
+    }
+
+    fn chap(id: &str, md: &str) -> Chapter {
+        Chapter { id: id.into(), path: PathBuf::from(format!("{id}.md")), markdown: md.into() }
+    }
+    fn book(chs: &[(&str, &str)]) -> Book {
+        Book { chapters: chs.iter().map(|(id, md)| ((*id).to_string(), chap(id, md))).collect() }
+    }
+
+    #[test]
+    fn title_is_first_heading_or_id() {
+        assert_eq!(chap("ch04-01", "## What Is Ownership?\n\nbody").title(), "What Is Ownership?");
+        assert_eq!(chap("ch00", "no heading here").title(), "ch00", "falls back to id");
+    }
+
+    #[test]
+    fn search_finds_counts_and_orders_by_frequency() {
+        let b = book(&[
+            ("ch04-01-what-is-ownership", "# Ownership\n\nownership ownership ownership"),
+            ("ch01-intro", "# Intro\n\none mention of ownership here"),
+            ("ch99-empty", "# Misc\n\nnothing relevant"),
+        ]);
+        let hits = b.search("ownership");
+        assert_eq!(hits.len(), 2, "only matching chapters: {hits:?}");
+        // ch04 has more occurrences → it sorts first.
+        assert_eq!(hits[0].chapter, "ch04-01-what-is-ownership");
+        assert_eq!(hits[0].count, 4);
+        assert_eq!(hits[0].title, "Ownership");
+        assert_eq!(hits[1].chapter, "ch01-intro");
+        assert!(hits[1].snippet.contains("one mention of ownership"), "snippet: {:?}", hits[1].snippet);
+    }
+
+    #[test]
+    fn search_is_case_insensitive_and_blank_term_is_empty() {
+        let b = book(&[("ch", "# H\n\nThe Borrow Checker enforces rules")]);
+        assert_eq!(b.search("borrow checker").len(), 1, "case-insensitive match");
+        assert!(b.search("   ").is_empty(), "blank term → no hits");
+        assert!(b.search("absent-term").is_empty(), "no match → no hits");
+    }
+
+    #[test]
+    fn snippet_strips_markers_and_is_truncated() {
+        let long = format!("# T\n\n> {}", "ownership ".repeat(40));
+        let hits = book(&[("ch", &long)]).search("ownership");
+        assert!(!hits[0].snippet.starts_with('>'), "blockquote marker trimmed: {:?}", hits[0].snippet);
+        assert!(hits[0].snippet.chars().count() <= 141, "truncated (≤140 + ellipsis)");
+        assert!(hits[0].snippet.ends_with('…'), "ellipsis on truncation");
     }
 }

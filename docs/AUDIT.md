@@ -10,10 +10,10 @@ to reproduce; every number here is from a clean run, not recall.
 
 | Area | Status |
 |---|---|
-| Workspace build + unit/integration tests | ✅ **113 passing, 0 failing** |
+| Workspace build + unit/integration tests | ✅ **119 passing, 0 failing** |
 | seam-grep gate (language-seam purity) | ✅ CLEAN |
 | wasm32 pure-core gate | ✅ builds |
-| E2E smoke (web server contract) | ✅ **17/17** |
+| E2E smoke (web server contract) | ✅ **18/18** |
 | Curriculum integrity (every exercise emits its taught error) | ✅ **32/32** (`scripts/verify-exercises.sh`) |
 | CLI E2E (`rpro` init/list/check/explain/book-search/hint/next/progress) | ✅ **10/10** (`scripts/smoke-cli.sh`) |
 | Web GUI pure transforms (`mdToHtml`, `highlightRust` — incl. XSS invariant) + app-script parse-check | ✅ **40/40** (`scripts/test-gui.mjs`) |
@@ -52,8 +52,8 @@ node scripts/verify-book-anchors.mjs   # every exercise book_ref anchor resolves
 |---|---|---|
 | `rpro-state` | 28 | progress (incl. skip/reset/**select** — single-Current invariant + done-count preserved), Leitner review + `fold_run`, exercise meta + hint ladder, tutor scaffolding, annotations/bookmarks/config |
 | `rpro-tui` | 26 | dashboard + Recall panel, exercise view + hint panel, book reader (incl. mdBook-directive cleanup + blockquote rail) + roadmap render, tab/scroll/selection model (TestBackend) |
-| `rpro-serve` | 15 | op-whitelist, no-answer-leak, `sanitize_code`, status mapping + **router oneshot tests**: /api/current no-leak, unknown-op→400, oversized-body→413, /api/review shape, security headers, hint L1 no-leak, **book TOC + chapter fetch + traversal-is-a-miss**, **/api/select switch + unknown-id→400 + done→409** |
-| `rpro-book` | 8 | chapter loading + `clean_mdbook_source` (directive→link-out, hidden-line drop, `##`-unescape, fence normalize, non-rust passthrough) |
+| `rpro-serve` | 17 | op-whitelist, no-answer-leak, `sanitize_code`, status mapping + **router oneshot tests**: /api/current no-leak, unknown-op→400, oversized-body→413, /api/review shape, security headers, hint L1 no-leak, **book TOC + chapter fetch + traversal-is-a-miss + `?q=` search (ranked hits, blank→empty)**, **/api/select switch + unknown-id→400 + done→409** |
+| `rpro-book` | 12 | chapter loading + `clean_mdbook_source` (directive→link-out, hidden-line drop, `##`-unescape, fence normalize, non-rust passthrough) + `title()` + **`search()`** (counts, frequency ordering, case-insensitive, blank→empty, snippet marker-strip/truncate) |
 | `rpro-lang-rust` | 7 | the Rust `Language` seam impl (incl. `book_ref_url`) |
 | `rpro-runner` | 7 | discovery, `primary_error_code`, `record_run` (tempfile integration) |
 | `rpro-core` | 6 | the run engine |
@@ -61,7 +61,7 @@ node scripts/verify-book-anchors.mjs   # every exercise book_ref anchor resolves
 | `rpro-toolchain-local` | 5 | local process exec (incl. run-timeout: runaway-kill + pipe-drain deadlock-avoidance) |
 | `rpro-cli` | 5 | CLI helper logic: current-exercise resolution, `resolve_exercise` precedence (explicit id → current → first; unknown id errors), `write_if_missing` no-overwrite, `copy_tree` seeding (files + nested subdirs); **+ data invariant: every exercise `book_ref` resolves to a bundled chapter** |
 
-## E2E — `scripts/smoke.sh` (17/17)
+## E2E — `scripts/smoke.sh` (18/18)
 
 Builds the server, seeds a throwaway store, serves on loopback, asserts: static
 index + vendored xterm served; 32 exercises seeded in learning order with the
@@ -75,9 +75,10 @@ now with the overcome code tracked after the pass); an over-limit body → 413;
 the embedded Book TOC seeds (≥10 chapters); a chapter fetch returns cleaned
 markdown (no raw mdBook directives, listings linked out); and **3 adversarial
 book-traversal probes** (`../../etc/passwd`, percent-encoded, `/etc/passwd`) each
-miss the chapter map and return null — never a file from disk; and `POST
-/api/select` switches the current exercise (validated against discovered ids,
-unknown id → 400).
+miss the chapter map and return null — never a file from disk; **`/api/book?q=`
+full-text search returns ranked hits** (the same `rpro_book::Book::search` the
+CLI uses); and `POST /api/select` switches the current exercise (validated
+against discovered ids, unknown id → 400).
 
 This is the committed E2E coverage of the **API + serving contract**. The same
 guarantees (no-leak, op-whitelist→400, oversized-body→413, security headers) are
@@ -107,9 +108,9 @@ this sandbox, so the check lives in CI rather than being run here.
 ## Conclusion
 
 For everything runnable in this environment, **#12 is green and comprehensive**:
-113 tests, both seam/wasm gates, a 17-assertion E2E smoke (incl. the success
-path: fix → run → pass → advance, and the Book
-reader's path-traversal guarantee), a cited security review with one fix landed,
+119 tests, both seam/wasm gates, an 18-assertion E2E smoke (incl. the success
+path: fix → run → pass → advance, the Book reader's path-traversal guarantee,
+and full-text search), a cited security review with one fix landed,
 and a verified packaging pipeline — all reproducible from the commands above. The
 only outstanding audit pieces (Playwright, Lighthouse) require a headless browser
 and are tracked as CI tasks, not in-sandbox gaps.

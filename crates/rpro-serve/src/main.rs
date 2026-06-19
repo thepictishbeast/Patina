@@ -492,28 +492,16 @@ async fn roadmap_handler() -> impl IntoResponse {
 #[derive(Debug, Deserialize)]
 struct BookQuery {
     chapter: Option<String>,
-}
-
-/// Best-effort chapter title: the first ATX heading (`#`/`##`/…), trimmed of its
-/// leading hashes. Used only as the TOC label; rendering the body is the front
-/// end's job. Empty when no heading is found (caller falls back to the id).
-fn chapter_title(markdown: &str) -> String {
-    markdown
-        .lines()
-        .find_map(|l| {
-            let t = l.trim_start();
-            if !t.starts_with('#') {
-                return None;
-            }
-            let title = t.trim_start_matches('#').trim();
-            (!title.is_empty()).then(|| title.to_string())
-        })
-        .unwrap_or_default()
+    /// Full-text search term. When present, the handler returns matching
+    /// chapters (id + title + match count + a snippet) instead of the TOC.
+    #[serde(default)]
+    q: Option<String>,
 }
 
 /// `GET /api/book` — the embedded Rust Book. With no query, returns the table of
 /// contents (chapter ids + titles, in reading order). With `?chapter=ID`,
-/// returns that chapter's raw markdown.
+/// returns that chapter's raw markdown. With `?q=TERM`, returns full-text search
+/// hits (shared with the CLI via [`rpro_book::Book::search`]).
 ///
 /// SECURITY: `chapter` is used **only** as a [`BTreeMap`](std::collections::BTreeMap)
 /// key via [`rpro_book::Book::get`] — it is never joined onto a filesystem path.
@@ -527,17 +515,30 @@ async fn book_handler(
 ) -> impl IntoResponse {
     let store = Store::at(state.store_root);
     let book = rpro_book::Book::load(&store.root().join("book")).unwrap_or_default();
+    // `?q=TERM` — full-text search (shared impl). Checked before `chapter` so a
+    // search never path-joins anything; it only reads chapter markdown in memory.
+    if let Some(term) = q.q.as_deref() {
+        let hits: Vec<serde_json::Value> = book
+            .search(term)
+            .into_iter()
+            .map(|h| {
+                serde_json::json!({
+                    "chapter": h.chapter,
+                    "title": h.title,
+                    "count": h.count,
+                    "snippet": h.snippet,
+                })
+            })
+            .collect();
+        return Json(serde_json::json!({ "hits": hits })).into_response();
+    }
     match q.chapter {
         None => {
             let chapters: Vec<serde_json::Value> = book
                 .chapters
                 .values()
                 .map(|c| {
-                    let title = chapter_title(&c.markdown);
-                    serde_json::json!({
-                        "id": c.id,
-                        "title": if title.is_empty() { c.id.clone() } else { title },
-                    })
+                    serde_json::json!({ "id": c.id, "title": c.title() })
                 })
                 .collect();
             Json(serde_json::json!({ "chapters": chapters })).into_response()
@@ -935,6 +936,35 @@ mod tests {
                 .any(|c| c["id"] == "ch04-01-what-is-ownership"),
             "ownership chapter is in the TOC"
         );
+    }
+
+    #[tokio::test]
+    async fn book_search_returns_hits_with_counts_and_snippets() {
+        let (_d, app) = seeded_app();
+        let res = app.oneshot(get("/api/book?q=ownership")).await.unwrap();
+        assert_eq!(res.status(), StatusCode::OK);
+        let v: serde_json::Value = serde_json::from_str(&body_string(res).await).unwrap();
+        let hits = v["hits"].as_array().expect("hits array");
+        assert!(!hits.is_empty(), "`ownership` matches at least one chapter");
+        // The ownership chapter should be among the hits, with a positive count.
+        let own = hits
+            .iter()
+            .find(|h| h["chapter"] == "ch04-01-what-is-ownership")
+            .expect("ownership chapter is a hit");
+        assert!(own["count"].as_u64().unwrap_or(0) > 0, "match count is reported");
+        assert!(own["title"].as_str().is_some_and(|s| !s.is_empty()), "title present");
+        // Hits are ordered by descending match count.
+        let counts: Vec<u64> = hits.iter().map(|h| h["count"].as_u64().unwrap_or(0)).collect();
+        assert!(counts.windows(2).all(|w| w[0] >= w[1]), "hits sorted by count desc: {counts:?}");
+    }
+
+    #[tokio::test]
+    async fn book_search_blank_term_returns_no_hits() {
+        let (_d, app) = seeded_app();
+        let res = app.oneshot(get("/api/book?q=%20%20")).await.unwrap();
+        assert_eq!(res.status(), StatusCode::OK);
+        let v: serde_json::Value = serde_json::from_str(&body_string(res).await).unwrap();
+        assert_eq!(v["hits"].as_array().map(Vec::len), Some(0), "blank term → empty hits");
     }
 
     #[tokio::test]

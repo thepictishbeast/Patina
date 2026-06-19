@@ -171,6 +171,20 @@ assert "doc.rust-lang.org/book/ch04-01-what-is-ownership.html" in md, "listing l
 print("  ok   — /api/book?chapter= returns cleaned markdown (directives stripped, listings linked)")
 ' || fail "/api/book chapter fetch"
 
+# 9b. full-text search (?q=) returns matching chapters with counts + snippet —
+# the same rpro_book::Book::search the CLI `book search` uses, exposed to the web.
+curl -s "$BASE/api/book?q=ownership" | python3 -c '
+import sys, json
+d = json.load(sys.stdin)
+hits = d.get("hits") or []
+assert len(hits) >= 1, "search returned no hits for ownership"
+assert any(h.get("chapter") == "ch04-01-what-is-ownership" for h in hits), "ownership chapter not in hits"
+assert all(h.get("count", 0) > 0 for h in hits), "a hit has no match count"
+counts = [h.get("count", 0) for h in hits]
+assert counts == sorted(counts, reverse=True), "hits not sorted by count desc"
+print("  ok   — /api/book?q= full-text search returns ranked hits (" + str(len(hits)) + ")")
+' || fail "/api/book search"
+
 # 10. SECURITY: the chapter param is a map KEY, never a path. A traversal value
 # must MISS the map (chapter:null) and never return a file from disk. Asserted
 # raw and percent-encoded, against the live server (the network-surface twin of

@@ -466,21 +466,14 @@ fn cmd_book_search(term: &str) -> Result<()> {
         );
         return Ok(());
     }
-    let needle = term.to_lowercase();
-    let mut hits = 0;
-    for chap in book.chapters.values() {
-        let lower = chap.markdown.to_lowercase();
-        if lower.contains(&needle) {
-            hits += 1;
-            println!(
-                "{}: {} matches",
-                style(&chap.id).cyan().bold(),
-                lower.matches(&needle).count()
-            );
-        }
-    }
-    if hits == 0 {
+    // Shared with the web surface (rpro-serve `/api/book?q=`) via rpro-book.
+    let hits = book.search(term);
+    if hits.is_empty() {
         println!("{}", style(format!("no chapters match `{term}`")).dim());
+        return Ok(());
+    }
+    for h in &hits {
+        println!("{}: {} matches", style(&h.chapter).cyan().bold(), h.count);
     }
     Ok(())
 }
