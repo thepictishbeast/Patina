@@ -75,7 +75,11 @@
   .docview h3 { font-size:13.5px; color:var(--fg-dim); letter-spacing:.04em; margin:14px 0 6px; }
   .docview p { line-height:1.65; } .docview li { line-height:1.7; }
   .docview code { background:var(--bg-3); padding:1px 5px; border-radius:5px; font-family:var(--mono); font-size:12.5px; }
+  .docview pre { background:var(--bg-3); padding:12px 14px; border-radius:8px; overflow:auto; margin:10px 0; line-height:1.55; }
+  .docview pre code { background:none; padding:0; border-radius:0; font-size:12.5px; white-space:pre; }
   .docview a { color:var(--note); }
+  .booktoc { list-style:none; padding:0; } .booktoc li { margin:3px 0; }
+  .booktoc a { font-size:13.5px; } .booktoc small { margin-left:8px; }
   .pane { border-right:1px solid var(--line); display:flex; flex-direction:column; min-height:0; }
   .pane:last-child { border-right:none; }
   .pane h2 { font-size:11px; text-transform:uppercase; letter-spacing:.12em; color:var(--fg-dim);
@@ -542,13 +546,24 @@
 
     // tab + exercise selection (visual)
     // ── nav tabs: real view switching ──
+    // Tiny, safe-by-construction markdown → HTML: escape EVERYTHING first, then
+    // re-introduce a closed set of tags. No user HTML can survive. Handles ATX
+    // headings, `-`/`*` lists, inline code/bold/links, and ``` fenced code blocks
+    // (emitted verbatim, so chapter code samples stay legible).
     function mdToHtml(md) {
-      const lines = esc(md).split('\n'); let html = '', inList = false;
+      const lines = esc(md).split('\n'); let html = '', inList = false, inCode = false;
       const inline = s => s
         .replace(/`([^`]+)`/g, '<code>$1</code>')
         .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
         .replace(/\[([^\]]+)\]\((https?:[^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
       for (const ln of lines) {
+        // ``` toggles a raw code block: no inline/list/heading handling inside.
+        if (/^\s*```/.test(ln)) {
+          if (inCode) { html += '</code></pre>'; inCode = false; }
+          else { if (inList) { html += '</ul>'; inList = false; } html += '<pre><code>'; inCode = true; }
+          continue;
+        }
+        if (inCode) { html += ln + '\n'; continue; }
         const li = ln.match(/^\s*[-*]\s+(.*)$/);
         if (li) { if (!inList) { html += '<ul>'; inList = true; } html += '<li>' + inline(li[1]) + '</li>'; continue; }
         if (inList) { html += '</ul>'; inList = false; }
@@ -557,6 +572,7 @@
         else if (/^#\s+/.test(ln)) html += '<h1>' + inline(ln.replace(/^#\s+/, '')) + '</h1>';
         else if (ln.trim()) html += '<p>' + inline(ln) + '</p>';
       }
+      if (inCode) html += '</code></pre>';
       if (inList) html += '</ul>';
       return html;
     }
@@ -575,12 +591,56 @@
         try { const j = await fetch('api/roadmap').then(r => r.json()); d.innerHTML = mdToHtml(j.markdown || ''); }
         catch (_) { d.innerHTML = '<p>Roadmap unavailable (open via the local server).</p>'; }
       } else if (view === 'book') {
-        const refs = curBookRefs || [];
-        d.innerHTML = '<h1>📖 Book</h1><p style="color:var(--fg-dim)">Full embedded chapters arrive with the content pass; for now, the references for the current exercise:</p>'
-          + (refs.length
-            ? '<ul>' + refs.map(r => '<li><code>' + esc(r.chapter) + '</code>' + (r.anchor ? ' · ' + esc(r.anchor) : '') + ' — ' + esc(r.why) + '</li>').join('') + '</ul>'
-            : '<p>no current exercise.</p>');
+        await renderBook(null);
       }
+    }
+
+    // The embedded Rust Book reader. With no chapter it renders the table of
+    // contents from /api/book; with one it fetches /api/book?chapter=ID and
+    // renders the markdown. The chapter id is the server's map KEY — there is no
+    // filesystem path here, so a click can only ever land on a real chapter.
+    // Chapters are RAW mdBook source: a few `{{#rustdoc_include}}` directives and
+    // hidden `#` lines show through. This is TUI-parity rendering, not a polished
+    // reader — directive-stripping is a deliberate follow-up.
+    async function renderBook(chapter) {
+      const d = document.getElementById('docview');
+      const refs = curBookRefs || [];
+      const quick = refs.length
+        ? '<p style="color:var(--fg-dim)">For this exercise: '
+          + refs.map(r => `<a href="#" class="bookjump" data-ch="${esc(r.chapter)}"><code>${esc(r.chapter)}</code></a>`).join(' · ')
+          + '</p>'
+        : '';
+      const wire = () => {
+        d.querySelectorAll('.bookjump').forEach(a => a.onclick = e => { e.preventDefault(); renderBook(a.dataset.ch); });
+        d.querySelectorAll('.bookback').forEach(a => a.onclick = e => { e.preventDefault(); renderBook(null); });
+      };
+      if (!chapter) {
+        d.innerHTML = '<h1>📖 The Rust Book</h1><p style="color:var(--fg-dim)">loading contents…</p>';
+        let toc;
+        try { toc = await fetch('api/book').then(r => r.json()); }
+        catch (_) { d.innerHTML = '<h1>📖 The Rust Book</h1><p>Book unavailable (open via the local server).</p>' + quick; wire(); return; }
+        const items = toc.chapters || [];
+        d.innerHTML = '<h1>📖 The Rust Book</h1>'
+          + `<p style="color:var(--fg-dim)">${items.length} embedded chapters — click one to read. Source is raw Book text, so a few include directives show through.</p>`
+          + quick
+          + (items.length
+            ? '<ul class="booktoc">' + items.map(c =>
+                `<li><a href="#" class="bookjump" data-ch="${esc(c.id)}">${esc(c.title)}</a><small style="color:var(--fg-dim)">${esc(c.id)}</small></li>`).join('') + '</ul>'
+            : '<p>no chapters seeded — run the server with the bundled book/.</p>');
+        wire();
+        return;
+      }
+      d.innerHTML = '<p style="color:var(--fg-dim)">loading chapter…</p>';
+      let ch = null;
+      try { ch = await fetch('api/book?chapter=' + encodeURIComponent(chapter)).then(r => r.json()); }
+      catch (_) { ch = null; }
+      const back = '<p><a href="#" class="bookback">← contents</a>' + (ch && ch.id ? ` · <small style="color:var(--fg-dim)">${esc(ch.id)}</small>` : '') + '</p>';
+      if (!ch || !ch.markdown) {
+        d.innerHTML = back + '<p>Chapter not found.</p>';
+      } else {
+        d.innerHTML = back + '<div class="bookbody">' + mdToHtml(ch.markdown) + '</div>';
+      }
+      wire();
     }
     document.querySelectorAll('.tab').forEach(t => t.onclick = () => showView(t.dataset.view));
 

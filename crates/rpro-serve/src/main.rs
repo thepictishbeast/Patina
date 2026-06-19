@@ -438,19 +438,99 @@ async fn roadmap_handler() -> impl IntoResponse {
     Json(serde_json::json!({ "markdown": md })).into_response()
 }
 
+/// Query for a single Book chapter. `chapter` is a *map key*, never a path —
+/// see [`book_handler`].
+#[derive(Debug, Deserialize)]
+struct BookQuery {
+    chapter: Option<String>,
+}
+
+/// Best-effort chapter title: the first ATX heading (`#`/`##`/…), trimmed of its
+/// leading hashes. Used only as the TOC label; rendering the body is the front
+/// end's job. Empty when no heading is found (caller falls back to the id).
+fn chapter_title(markdown: &str) -> String {
+    markdown
+        .lines()
+        .find_map(|l| {
+            let t = l.trim_start();
+            if !t.starts_with('#') {
+                return None;
+            }
+            let title = t.trim_start_matches('#').trim();
+            (!title.is_empty()).then(|| title.to_string())
+        })
+        .unwrap_or_default()
+}
+
+/// `GET /api/book` — the embedded Rust Book. With no query, returns the table of
+/// contents (chapter ids + titles, in reading order). With `?chapter=ID`,
+/// returns that chapter's raw markdown.
+///
+/// SECURITY: `chapter` is used **only** as a [`BTreeMap`](std::collections::BTreeMap)
+/// key via [`rpro_book::Book::get`] — it is never joined onto a filesystem path.
+/// A traversal value such as `../../etc/passwd` simply misses the map and yields
+/// `{ "chapter": null }`; it can never read an arbitrary file. The book root is
+/// the server-seeded `book/` dir; no client input chooses a file. This guarantee
+/// is pinned by the `book_traversal_*` tests and the smoke script.
+async fn book_handler(
+    State(state): State<AppState>,
+    Query(q): Query<BookQuery>,
+) -> impl IntoResponse {
+    let store = Store::at(state.store_root);
+    let book = rpro_book::Book::load(&store.root().join("book")).unwrap_or_default();
+    match q.chapter {
+        None => {
+            let chapters: Vec<serde_json::Value> = book
+                .chapters
+                .values()
+                .map(|c| {
+                    let title = chapter_title(&c.markdown);
+                    serde_json::json!({
+                        "id": c.id,
+                        "title": if title.is_empty() { c.id.clone() } else { title },
+                    })
+                })
+                .collect();
+            Json(serde_json::json!({ "chapters": chapters })).into_response()
+        }
+        // KEY LOOKUP — never a path join. A traversal string just misses the map.
+        Some(id) => match book.get(&id) {
+            Some(c) => {
+                Json(serde_json::json!({ "id": c.id, "markdown": c.markdown })).into_response()
+            }
+            None => Json(serde_json::json!({ "chapter": null })).into_response(),
+        },
+    }
+}
+
 /// Ensure the chosen `store_root` is runnable: it must have an `exercises/` tree
-/// and a progress file with a `Current` entry. If the root is empty we seed it
-/// by copying the workspace's `exercises/` and marking the first one current.
+/// and a progress file with a `Current` entry, plus the embedded `book/` for the
+/// in-app reader. If the root is empty we seed it by copying the workspace's
+/// `exercises/` (marking the first one current) and `book/`.
 ///
 /// This is what makes "usable in a browser" true out of the box: a fresh
-/// `cargo run` lands on a real, runnable exercise rather than an empty store.
-fn ensure_seeded(store_root: &Path, workspace_exercises: &Path) -> std::io::Result<()> {
+/// `cargo run` lands on a real, runnable exercise — and the Book tab has the
+/// chapters — rather than an empty store.
+fn ensure_seeded(
+    store_root: &Path,
+    workspace_exercises: &Path,
+    workspace_book: &Path,
+) -> std::io::Result<()> {
     let store = Store::at(store_root.to_path_buf());
     let ex_dir = store.root().join("exercises");
 
     // Copy exercises in if we don't have any yet.
     if rpro_runner::discover(&ex_dir).map_or(true, |v| v.is_empty()) {
         copy_dir_recursive(workspace_exercises, &ex_dir)?;
+    }
+
+    // Copy the bundled Book in if we don't have it yet — gives the web Book tab
+    // the same chapters the CLI/TUI seed (web/TUI parity). The book dir is
+    // server-fixed; nothing here comes from the wire.
+    let book_dir = store.root().join("book");
+    let have_book = rpro_book::Book::load(&book_dir).is_ok_and(|b| !b.is_empty());
+    if !have_book && workspace_book.is_dir() {
+        copy_dir_recursive(workspace_book, &book_dir)?;
     }
 
     // Make sure progress.json has a Current entry; if not, set the first one.
@@ -527,6 +607,7 @@ fn build_router(state: AppState, gui_dir: &Path) -> Router {
         .route("/api/review", axum::routing::get(review_handler))
         .route("/api/hint", axum::routing::get(hint_handler))
         .route("/api/roadmap", axum::routing::get(roadmap_handler))
+        .route("/api/book", axum::routing::get(book_handler))
         // Everything else is the static gui/ shell (index.html + vendored xterm).
         .fallback_service(ServeDir::new(gui_dir))
         .layer(map_response(security_headers))
@@ -542,6 +623,7 @@ async fn main() {
     let manifest = Path::new(env!("CARGO_MANIFEST_DIR"));
     let gui_dir = manifest.join("../../gui");
     let workspace_exercises = manifest.join("../../exercises");
+    let workspace_book = manifest.join("../../book");
 
     // Writable state/run root: a fixed cache dir under $HOME (exec-ok, off the
     // git tree, never /tmp). Overridable via TS_SERVE_ROOT for the operator.
@@ -557,7 +639,7 @@ async fn main() {
         eprintln!("fatal: cannot create state root {}: {e}", store_root.display());
         std::process::exit(1);
     }
-    if let Err(e) = ensure_seeded(&store_root, &workspace_exercises) {
+    if let Err(e) = ensure_seeded(&store_root, &workspace_exercises, &workspace_book) {
         eprintln!("warning: could not seed exercises into {}: {e}", store_root.display());
     }
 
@@ -678,7 +760,12 @@ mod tests {
     fn seeded_app() -> (tempfile::TempDir, axum::Router) {
         let dir = tempfile::tempdir().unwrap();
         let manifest = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
-        ensure_seeded(dir.path(), &manifest.join("../../exercises")).unwrap();
+        ensure_seeded(
+            dir.path(),
+            &manifest.join("../../exercises"),
+            &manifest.join("../../book"),
+        )
+        .unwrap();
         let state = AppState { store_root: dir.path().to_path_buf() };
         let app = build_router(state, &manifest.join("../../gui"));
         (dir, app)
@@ -758,5 +845,68 @@ mod tests {
             !v["text"].as_str().unwrap_or("").to_lowercase().contains("solution outline"),
             "L1 must not reveal the solution outline"
         );
+    }
+
+    #[tokio::test]
+    async fn book_toc_lists_seeded_chapters() {
+        let (_d, app) = seeded_app();
+        let res = app.oneshot(get("/api/book")).await.unwrap();
+        assert_eq!(res.status(), StatusCode::OK);
+        let v: serde_json::Value = serde_json::from_str(&body_string(res).await).unwrap();
+        let chapters = v["chapters"].as_array().expect("chapters array");
+        assert!(!chapters.is_empty(), "the seeded book has chapters");
+        // Every entry carries an id and a non-empty title (id fallback guarantees it).
+        assert!(chapters.iter().all(|c| {
+            c["id"].as_str().is_some_and(|s| !s.is_empty())
+                && c["title"].as_str().is_some_and(|s| !s.is_empty())
+        }));
+        // A known seeded chapter is present.
+        assert!(
+            chapters
+                .iter()
+                .any(|c| c["id"] == "ch04-01-what-is-ownership"),
+            "ownership chapter is in the TOC"
+        );
+    }
+
+    #[tokio::test]
+    async fn book_chapter_returns_its_markdown() {
+        let (_d, app) = seeded_app();
+        let res = app
+            .oneshot(get("/api/book?chapter=ch04-01-what-is-ownership"))
+            .await
+            .unwrap();
+        assert_eq!(res.status(), StatusCode::OK);
+        let v: serde_json::Value = serde_json::from_str(&body_string(res).await).unwrap();
+        assert_eq!(v["id"], "ch04-01-what-is-ownership");
+        assert!(
+            v["markdown"].as_str().is_some_and(|m| m.contains("Ownership")),
+            "returns the chapter's real markdown body"
+        );
+    }
+
+    // SECURITY pin: the `chapter` param is a map KEY, never a path. A traversal
+    // string must miss the map and return null — never the contents of a file on
+    // disk. Tested both raw and percent-encoded so neither the Query decoder nor a
+    // future refactor can turn this into a path join. This is the network-surface
+    // half of the same guarantee the smoke script asserts against a live server.
+    #[tokio::test]
+    async fn book_traversal_is_a_miss_not_a_file_read() {
+        let (_d, app) = seeded_app();
+        for uri in [
+            "/api/book?chapter=../../etc/passwd",
+            "/api/book?chapter=..%2F..%2F..%2Fetc%2Fpasswd",
+            "/api/book?chapter=%2Fetc%2Fpasswd",
+        ] {
+            let res = app.clone().oneshot(get(uri)).await.unwrap();
+            assert_eq!(res.status(), StatusCode::OK, "{uri} still resolves on the map");
+            let body = body_string(res).await;
+            let v: serde_json::Value = serde_json::from_str(&body).unwrap();
+            assert!(v["chapter"].is_null(), "{uri} must miss the map, got: {body}");
+            assert!(
+                !body.contains("root:") && !body.contains("/bin/"),
+                "{uri} must not return any /etc/passwd content"
+            );
+        }
     }
 }

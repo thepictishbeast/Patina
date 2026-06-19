@@ -19,6 +19,7 @@ rpro-lang-rust = { path = "../languages/rust" }
 rpro-core = { path = "../rpro-core" }
 rpro-toolchain-local = { path = "../rpro-toolchain-local" }
 rpro-runner = { path = "../rpro-runner" }
+rpro-book = { path = "../rpro-book" }
 
 serde = { workspace = true }
 serde_json = { workspace = true }

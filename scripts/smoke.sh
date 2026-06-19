@@ -110,6 +110,44 @@ else
   fail "body-limit: expected 413, got $body_code"
 fi
 
+# 8. embedded Book: the table of contents seeds with real chapters (ids+titles).
+curl -s "$BASE/api/book" | python3 -c '
+import sys, json
+d = json.load(sys.stdin)
+chs = d.get("chapters", [])
+assert len(chs) >= 10, "too few book chapters seeded: " + str(len(chs))
+assert all(c.get("id") and c.get("title") for c in chs), "a chapter is missing id/title"
+ids = {c["id"] for c in chs}
+assert "ch04-01-what-is-ownership" in ids, "ownership chapter not seeded"
+print("  ok   — " + str(len(chs)) + " book chapters in the TOC")
+' || fail "/api/book TOC"
+
+# 9. a chapter fetch returns that chapter's real markdown body.
+curl -s "$BASE/api/book?chapter=ch04-01-what-is-ownership" | python3 -c '
+import sys, json
+d = json.load(sys.stdin)
+assert d.get("id") == "ch04-01-what-is-ownership", "wrong chapter id"
+assert "Ownership" in (d.get("markdown") or ""), "chapter markdown missing"
+print("  ok   — /api/book?chapter= returns the chapter markdown")
+' || fail "/api/book chapter fetch"
+
+# 10. SECURITY: the chapter param is a map KEY, never a path. A traversal value
+# must MISS the map (chapter:null) and never return a file from disk. Asserted
+# raw and percent-encoded, against the live server (the network-surface twin of
+# the book_traversal_* unit tests).
+for q in "../../etc/passwd" "..%2F..%2F..%2Fetc%2Fpasswd" "%2Fetc%2Fpasswd"; do
+  out="$(curl -s "$BASE/api/book?chapter=$q")"
+  if printf '%s' "$out" | python3 -c '
+import sys, json
+d = json.load(sys.stdin)
+assert d.get("chapter", "MISSING") is None, "did not miss the map"
+' && ! printf '%s' "$out" | grep -q "root:"; then
+    ok "book traversal [$q] -> null (no file read)"
+  else
+    fail "book traversal [$q] leaked or resolved"
+  fi
+done
+
 echo
 if [ "$fails" -eq 0 ]; then
   echo "SMOKE PASS ✓"
