@@ -16,6 +16,7 @@ to reproduce; every number here is from a clean run, not recall.
 | E2E smoke (web server contract) | ✅ **17/17** |
 | Curriculum integrity (every exercise emits its taught error) | ✅ **32/32** (`scripts/verify-exercises.sh`) |
 | CLI E2E (`rpro` init/list/check/explain/book-search/hint/next/progress) | ✅ **10/10** (`scripts/smoke-cli.sh`) |
+| Web GUI pure transforms (`mdToHtml`, `highlightRust` — incl. XSS invariant) | ✅ **17/17** (`scripts/test-gui.mjs`) |
 | Security review + dependency audit | ✅ `docs/SECURITY.md` (posture sound) |
 | Packaging pipeline | ✅ verified by inspection (`docs/DISTRIBUTION.md`) |
 | `unsafe` code | ✅ **0** (`unsafe_code = "forbid"` workspace-wide) |
@@ -26,7 +27,7 @@ to reproduce; every number here is from a clean run, not recall.
 - **`seam-gates.yml`** — (a) `wasm32-pure-core`: the pure crates compile to
   `wasm32-unknown-unknown`; (b) `seam-grep`: no toolchain/error-code literals leak
   outside `crates/languages/`.
-- **`ci.yml`** — `fmt`, `clippy`, `test`, `doc`, **`e2e smoke`** (`scripts/smoke.sh`), **`exercise integrity`** (`scripts/verify-exercises.sh` — compiles all 32 exercises, asserts each emits its taught error code), **`cli smoke`** (`scripts/smoke-cli.sh` — drives the real `rpro` binary against an isolated `RPRO_STORE`) — on every push/PR.
+- **`ci.yml`** — `fmt`, `clippy`, `test`, `doc`, **`e2e smoke`** (`scripts/smoke.sh`), **`exercise integrity`** (`scripts/verify-exercises.sh` — compiles all 32 exercises, asserts each emits its taught error code), **`cli smoke`** (`scripts/smoke-cli.sh` — drives the real `rpro` binary against an isolated `RPRO_STORE`), **`gui transforms`** (`scripts/test-gui.mjs` — pins the web GUI's pure transforms: `esc`→`mdToHtml` and `highlightRust`, incl. the highlighter's XSS-safety invariant) — on every push/PR.
 - **`release.yml`** — tag-triggered `.deb` + `.rpm` packaging (verified; see
   DISTRIBUTION.md).
 
@@ -40,6 +41,7 @@ grep -rnE '\b(cargo|rustc|rust-analyzer|clippy|rustfmt)\b|doc\.rust-lang|E0[0-9]
 bash scripts/smoke.sh           # builds, seeds, serves, asserts the contract
 RUSTC=$TC/rustc bash scripts/verify-exercises.sh   # every exercise emits its taught error code
 bash scripts/smoke-cli.sh       # drives the real `rpro` binary (isolated RPRO_STORE)
+node scripts/test-gui.mjs       # web GUI pure transforms (mdToHtml + highlightRust XSS invariant)
 ```
 
 ## Test inventory (113 unit/integration)
@@ -79,7 +81,11 @@ This is the committed E2E coverage of the **API + serving contract**. The same
 guarantees (no-leak, op-whitelist→400, oversized-body→413, security headers) are
 *also* now asserted at the unit level via `tower::ServiceExt::oneshot` against the
 extracted `build_router`, so they run in the standard test gate, not only this
-bash script. Neither executes the page's JavaScript — that's the Playwright gap below.
+bash script. The bash smoke doesn't run a browser; the **security-critical pure
+page JS** (`mdToHtml`/`highlightRust`) is now covered headless by
+`scripts/test-gui.mjs` (the XSS strip-spans invariant), so the remaining
+Playwright gap is the page's *interactive* JS (DOM wiring, event handlers,
+localStorage), not its sanitisation logic.
 
 ## Open items (browser-tooling-gated, tracked as CI tasks)
 

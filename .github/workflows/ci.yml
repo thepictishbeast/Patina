@@ -82,3 +82,14 @@ jobs:
       # Drives the real `rpro` binary against an isolated store (RPRO_STORE):
       # init seeding, exercise list, by-hand check, explain, progress.
       - run: bash scripts/smoke-cli.sh
+
+  gui-test:
+    name: gui transforms
+    runs-on: [self-hosted, linux, x64, plausiden]
+    steps:
+      - uses: actions/checkout@v4
+      # Pulls the pure transforms out of gui/index.html (esc→mdToHtml,
+      # highlightRust) and pins their contract — most importantly the
+      # highlighter's XSS-safety invariant (strip the spans → the input). No
+      # browser needed; just node (preinstalled on the runner).
+      - run: node scripts/test-gui.mjs

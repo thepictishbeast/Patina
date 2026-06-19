@@ -25,10 +25,13 @@
     --fg: #e6edf3; --fg-dim: #9aa7b4; --mono: ui-monospace, "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
     --ui: system-ui, -apple-system, "Segoe UI", Roboto, Inter, sans-serif;
     --radius: 12px; --shadow: 0 6px 24px rgba(0,0,0,.35);
+    /* syntax-highlight palette for rendered (read-only) Rust code blocks */
+    --tok-k:#ff7a3c; --tok-s:#7ec97e; --tok-c:#6b7884; --tok-n:#d2a8ff; --tok-t:#5aa9ff; --tok-m:#e0b020;
   }
   html[data-theme="light"] {
     --bg:#f6f7f9; --bg-2:#ffffff; --bg-3:#eef1f5; --line:#dde3ea;
     --fg:#1b2330; --fg-dim:#5b6776; --accent:#b7410e; --shadow:0 6px 24px rgba(0,0,0,.10);
+    --tok-k:#b7410e; --tok-s:#2e7d32; --tok-c:#6b7884; --tok-n:#6f42c1; --tok-t:#0a66c2; --tok-m:#9a6700;
   }
   * { box-sizing: border-box; }
   body {
@@ -77,6 +80,13 @@
   .docview code { background:var(--bg-3); padding:1px 5px; border-radius:5px; font-family:var(--mono); font-size:12.5px; }
   .docview pre { background:var(--bg-3); padding:12px 14px; border-radius:8px; overflow:auto; margin:10px 0; line-height:1.55; }
   .docview pre code { background:none; padding:0; border-radius:0; font-size:12.5px; white-space:pre; }
+  /* token highlighting for rendered Rust code blocks (escape-then-tokenize) */
+  .docview pre code .tok-k { color:var(--tok-k); }
+  .docview pre code .tok-s { color:var(--tok-s); }
+  .docview pre code .tok-c { color:var(--tok-c); font-style:italic; }
+  .docview pre code .tok-n { color:var(--tok-n); }
+  .docview pre code .tok-t { color:var(--tok-t); }
+  .docview pre code .tok-m { color:var(--tok-m); }
   .docview blockquote { margin:10px 0; padding:6px 14px; border-left:3px solid var(--note); background:var(--bg-2); color:var(--fg-dim); border-radius:0 6px 6px 0; line-height:1.6; }
   .docview ol { padding-left:22px; } .docview ol li { line-height:1.7; }
   .docview a { color:var(--note); }
@@ -582,9 +592,34 @@
     // Note/Warning callouts), inline code/bold/links, and ``` fenced code blocks
     // (emitted verbatim, so chapter code samples stay legible). NOTE: `esc` has
     // already turned `>` into `&gt;`, so blockquotes are matched as `&gt;`.
+    // Syntax-highlight a block of ALREADY-ESCAPED Rust source (the output of
+    // `esc`, so the only entities present are &amp; / &lt; / &gt; and quotes are
+    // literal). A single left-to-right master-regex replace with comments and
+    // string/char literals ordered FIRST, so a keyword inside a string or
+    // comment is consumed by that match and never re-tokenized. The replacer
+    // only ever WRAPS matched runs in fixed-class <span>s — it inserts no other
+    // markup and copies every character through verbatim, so the escape-first
+    // XSS guarantee is preserved (invariant: strip the spans → the input).
+    const RS_KW = /^(?:as|async|await|break|const|continue|crate|dyn|else|enum|extern|false|fn|for|if|impl|in|let|loop|match|mod|move|mut|pub|ref|return|self|Self|static|struct|super|trait|true|type|union|unsafe|use|where|while)$/;
+    const RS_PRIM = /^(?:i8|i16|i32|i64|i128|isize|u8|u16|u32|u64|u128|usize|f32|f64|bool|char|str)$/;
+    function highlightRust(code) {
+      return code.replace(
+        /\/\/[^\n]*|\/\*[\s\S]*?\*\/|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])'|[A-Za-z_]\w*!?|\d[\d_]*(?:\.\d[\d_]*)?(?:[eE][+-]?\d+)?(?:[iuf](?:8|16|32|64|128|size))?/g,
+        m => {
+          let cls;
+          if (m.startsWith('//') || m.startsWith('/*')) cls = 'tok-c';
+          else if (m[0] === '"' || m[0] === "'") cls = 'tok-s';
+          else if (/^\d/.test(m)) cls = 'tok-n';
+          else if (m.endsWith('!')) cls = 'tok-m';
+          else if (RS_KW.test(m)) cls = 'tok-k';
+          else if (RS_PRIM.test(m) || /^[A-Z]/.test(m)) cls = 'tok-t';
+          else return m; // ordinary identifier (incl. &amp;/&lt;/&gt; letters) — leave as-is
+          return '<span class="' + cls + '">' + m + '</span>';
+        });
+    }
     function mdToHtml(md) {
       const lines = esc(md).split('\n');
-      let html = '', list = null, inCode = false, quote = [];
+      let html = '', list = null, inCode = false, quote = [], code = [];
       const inline = s => s
         .replace(/`([^`]+)`/g, '<code>$1</code>')
         .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
@@ -597,11 +632,11 @@
       for (const ln of lines) {
         // ``` toggles a raw code block: no inline/list/heading handling inside.
         if (/^\s*```/.test(ln)) {
-          if (inCode) { html += '</code></pre>'; inCode = false; }
-          else { closeList(); flushQuote(); html += '<pre><code>'; inCode = true; }
+          if (inCode) { html += '<pre><code>' + highlightRust(code.join('\n')) + '</code></pre>'; inCode = false; }
+          else { closeList(); flushQuote(); code = []; inCode = true; }
           continue;
         }
-        if (inCode) { html += ln + '\n'; continue; }
+        if (inCode) { code.push(ln); continue; }
         // Blockquote: accumulate consecutive `&gt;` lines into one callout.
         const q = ln.match(/^&gt;\s?(.*)$/);
         if (q) { closeList(); quote.push(q[1]); continue; }
@@ -616,7 +651,7 @@
         else if (/^#\s+/.test(ln)) html += '<h1>' + inline(ln.replace(/^#\s+/, '')) + '</h1>';
         else if (ln.trim()) html += '<p>' + inline(ln) + '</p>';
       }
-      if (inCode) html += '</code></pre>';
+      if (inCode) html += '<pre><code>' + highlightRust(code.join('\n')) + '</code></pre>';
       closeList();
       flushQuote();
       return html;
