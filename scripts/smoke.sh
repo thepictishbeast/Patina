@@ -122,13 +122,17 @@ assert "ch04-01-what-is-ownership" in ids, "ownership chapter not seeded"
 print("  ok   — " + str(len(chs)) + " book chapters in the TOC")
 ' || fail "/api/book TOC"
 
-# 9. a chapter fetch returns that chapter's real markdown body.
+# 9. a chapter fetch returns that chapter's real markdown body, cleaned for
+# display: no raw mdBook include directives, un-bundled listings linked out.
 curl -s "$BASE/api/book?chapter=ch04-01-what-is-ownership" | python3 -c '
 import sys, json
 d = json.load(sys.stdin)
+md = d.get("markdown") or ""
 assert d.get("id") == "ch04-01-what-is-ownership", "wrong chapter id"
-assert "Ownership" in (d.get("markdown") or ""), "chapter markdown missing"
-print("  ok   — /api/book?chapter= returns the chapter markdown")
+assert "Ownership" in md, "chapter markdown missing"
+assert "{{#" not in md, "raw mdBook directive leaked into /api/book"
+assert "doc.rust-lang.org/book/ch04-01-what-is-ownership.html" in md, "listing link-out missing"
+print("  ok   — /api/book?chapter= returns cleaned markdown (directives stripped, listings linked)")
 ' || fail "/api/book chapter fetch"
 
 # 10. SECURITY: the chapter param is a map KEY, never a path. A traversal value

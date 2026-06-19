@@ -462,7 +462,7 @@ fn cmd_book_search(term: &str) -> Result<()> {
     if book.is_empty() {
         println!(
             "{}",
-            style("No book content yet. Run `rpro init --refresh-book` (v0.1).").yellow()
+            style("No book content yet. Run `rpro init` to seed the bundled chapters.").yellow()
         );
         return Ok(());
     }

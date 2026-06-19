@@ -42,6 +42,99 @@ impl Chapter {
     pub fn parse(&self) -> pulldown_cmark::Parser<'_> {
         pulldown_cmark::Parser::new_ext(&self.markdown, pulldown_cmark::Options::all())
     }
+
+    /// Render the chapter's raw mdBook **source** into clean display markdown
+    /// suitable for a plain renderer (the TUI line styler or the web `mdToHtml`),
+    /// without an mdBook preprocessing pass. `chapter_url` is the live online
+    /// page for this chapter, supplied by the caller's language adapter (this
+    /// crate is language-neutral and holds no Rust-specific URLs).
+    ///
+    /// What it fixes — and an honest limitation:
+    ///
+    /// * **`{{#rustdoc_include}}` / `{{#include}}` directives** pull example code
+    ///   from `../listings/` files that are **not** bundled with these chapters.
+    ///   We cannot show code we do not have, so a lone-include code block is
+    ///   replaced with a link to the live chapter (where the runnable listing
+    ///   lives) rather than a confusing raw directive path. **The bundled book is
+    ///   therefore prose + links-to-code, not a self-contained code textbook** —
+    ///   closing that gap means vendoring ~200 listing files (a separate call).
+    /// * **mdBook hidden lines** (`# …` inside a code block) are dropped and
+    ///   `##`-escapes unindented to `#`, exactly as mdBook would render them.
+    /// * **Fence info strings** (e.g. annotated rust fences) are normalized to the
+    ///   bare language so annotations don't leak into the page.
+    #[must_use]
+    pub fn display_markdown(&self, chapter_url: &str) -> String {
+        clean_mdbook_source(&self.markdown, chapter_url)
+    }
+}
+
+/// Pure transform behind [`Chapter::display_markdown`]; `url` is the live-chapter
+/// link substituted for un-bundled code listings. Kept free-standing (and
+/// URL-agnostic) so it is unit-testable without constructing a [`Chapter`].
+#[must_use]
+pub fn clean_mdbook_source(source: &str, url: &str) -> String {
+    let callout = format!("📖 Read this code listing in the Rust Book: {url}");
+    let mut out = String::new();
+    // Suppress a run of identical link callouts (adjacent includes collapse to one).
+    let mut push_callout = |out: &mut String| {
+        if !out.trim_end().ends_with(&callout) {
+            out.push_str(&callout);
+            out.push('\n');
+        }
+    };
+    let mut lines = source.lines().peekable();
+    while let Some(line) = lines.next() {
+        let trimmed = line.trim_start();
+        // A fenced code block: collect its body up to the closing fence, then
+        // decide how to emit it (a lone-include block becomes a link).
+        if let Some(info) = trimmed.strip_prefix("```") {
+            let lang = info.split(',').next().unwrap_or("").trim();
+            let is_rust = lang.is_empty() || lang == "rust";
+            let mut body: Vec<&str> = Vec::new();
+            for l in lines.by_ref() {
+                if l.trim_start().starts_with("```") {
+                    break;
+                }
+                body.push(l);
+            }
+            let is_directive = |l: &&str| l.trim_start().starts_with("{{#");
+            let only_includes = body.iter().any(is_directive)
+                && body.iter().all(|l| l.trim().is_empty() || is_directive(l));
+            if only_includes {
+                // No code to show — link to the live listing instead of an empty fence.
+                push_callout(&mut out);
+                continue;
+            }
+            out.push_str("```");
+            out.push_str(lang);
+            out.push('\n');
+            for l in body {
+                let t = l.trim_start();
+                if t.starts_with("{{#") {
+                    out.push_str("// (listing omitted — read it in the Rust Book)\n");
+                } else if is_rust && (t == "#" || t.starts_with("# ")) {
+                    // mdBook hidden line — not shown to the reader.
+                } else if is_rust && t.starts_with("##") {
+                    // mdBook `##`-escape renders as a literal single `#`.
+                    out.push_str(&t[1..]);
+                    out.push('\n');
+                } else {
+                    out.push_str(l);
+                    out.push('\n');
+                }
+            }
+            out.push_str("```\n");
+            continue;
+        }
+        // A stray include outside any fence (e.g. an `output.txt` include).
+        if trimmed.starts_with("{{#") {
+            push_callout(&mut out);
+            continue;
+        }
+        out.push_str(line);
+        out.push('\n');
+    }
+    out
 }
 
 /// All loaded chapters indexed by id.
@@ -147,5 +240,55 @@ mod tests {
     fn missing_root_returns_empty() {
         let book = Book::load(Path::new("/this/does/not/exist")).unwrap();
         assert!(book.is_empty());
+    }
+
+    // A neutral stand-in for the live-chapter URL (this crate is language-neutral;
+    // the real URL is supplied by the caller's language adapter at runtime).
+    const URL: &str = "https://book.example/ch04.html";
+
+    #[test]
+    fn lone_include_block_becomes_a_link() {
+        let src = "Intro.\n\n```rust\n{{#rustdoc_include ../listings/x/src/main.rs:here}}\n```\n\nMore.";
+        let out = clean_mdbook_source(src, URL);
+        assert!(!out.contains("{{#"), "raw directive must be gone: {out}");
+        assert!(!out.contains("```"), "empty code fence dropped: {out}");
+        assert!(out.contains(URL), "links to the live listing: {out}");
+        assert!(out.contains("Intro.") && out.contains("More."), "prose preserved");
+    }
+
+    #[test]
+    fn adjacent_includes_collapse_to_one_link() {
+        let src = "```rust\n{{#rustdoc_include a:here}}\n```\n```rust\n{{#rustdoc_include b:here}}\n```\n";
+        let out = clean_mdbook_source(src, URL);
+        assert_eq!(out.matches(URL).count(), 1, "collapsed to a single callout: {out}");
+    }
+
+    #[test]
+    fn hidden_lines_dropped_and_escapes_unindented() {
+        // `# ` hidden lines vanish; `##` escapes render as a literal `#`; real
+        // code and attributes (`#[...]`) survive.
+        let src = "```rust\n# use std::fmt;\n#[derive(Debug)]\nstruct S;\n## not hidden\n```\n";
+        let out = clean_mdbook_source(src, URL);
+        assert!(!out.contains("use std::fmt"), "hidden line removed: {out}");
+        assert!(out.contains("#[derive(Debug)]"), "attribute kept: {out}");
+        assert!(out.contains("struct S;"), "real code kept");
+        assert!(out.contains("# not hidden"), "## unescaped to #: {out}");
+    }
+
+    #[test]
+    fn fence_info_string_normalized_and_real_code_kept() {
+        let src = "```rust,ignore,does_not_compile\nlet x = 5;\n```\n";
+        let out = clean_mdbook_source(src, URL);
+        assert!(out.contains("```rust\n"), "info string normalized to bare lang: {out}");
+        assert!(!out.contains("does_not_compile"), "annotations stripped");
+        assert!(out.contains("let x = 5;"), "code body kept");
+    }
+
+    #[test]
+    fn non_rust_block_keeps_hash_lines() {
+        // A console block's `#` lines are NOT mdBook hidden lines — keep them.
+        let src = "```console\n$ run-it\n# a comment in output\n```\n";
+        let out = clean_mdbook_source(src, URL);
+        assert!(out.contains("# a comment in output"), "non-rust hash kept: {out}");
     }
 }

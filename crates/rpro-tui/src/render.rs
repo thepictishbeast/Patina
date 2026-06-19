@@ -9,7 +9,8 @@ use ratatui::style::{Modifier, Style};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Gauge, List, ListItem, ListState, Paragraph, Tabs, Wrap};
 use rpro_book::Book;
-use rpro_lang::{Diagnostic, EditorAssists};
+use rpro_lang::{BookRef, Diagnostic, EditorAssists, Language};
+use rpro_lang_rust::RustLanguage;
 
 /// Display data for the dashboard, decoupled from storage so the render is pure.
 #[derive(Debug, Clone, Default)]
@@ -353,7 +354,7 @@ pub fn render_book(f: &mut Frame, app: &App, book: &Book) {
     let ids: Vec<&String> = book.chapters.keys().collect();
     if ids.is_empty() {
         f.render_widget(
-            Paragraph::new("\n  No book content yet — run `rpro init --refresh-book` (v0.1).")
+            Paragraph::new("\n  No book content yet — run `rpro init` to seed the bundled chapters.")
                 .block(Block::bordered().title(" Book ")),
             rows[1],
         );
@@ -377,19 +378,38 @@ pub fn render_book(f: &mut Frame, app: &App, book: &Book) {
     state.select(Some(sel));
     f.render_stateful_widget(list, body[0], &mut state);
 
-    // chapter content (right), with light markdown heading styling
-    let md = &book.chapters[ids[sel]].markdown;
+    // chapter content (right): cleaned for display (mdBook directives/hidden
+    // lines stripped, un-bundled listings linked out — see rpro-book), with
+    // light heading styling and code-fence lines hidden + bodies tinted.
+    let chapter = &book.chapters[ids[sel]];
+    let url = RustLanguage.book_ref_url(&BookRef {
+        chapter: chapter.id.clone(),
+        anchor: None,
+        why: String::new(),
+    });
+    let md = chapter.display_markdown(&url);
+    let mut in_code = false;
     let lines: Vec<Line> = md
         .lines()
-        .map(|raw| {
+        .filter_map(|raw| {
             let t = raw.trim_start();
+            if t.starts_with("```") {
+                in_code = !in_code; // swallow the fence line itself
+                return None;
+            }
+            if in_code {
+                return Some(Line::from(Span::styled(
+                    format!("  {raw}"),
+                    Style::new().fg(app.theme.note),
+                )));
+            }
             if let Some(h) = t.strip_prefix('#') {
-                Line::from(Span::styled(
+                Some(Line::from(Span::styled(
                     h.trim_start_matches('#').trim().to_string(),
                     Style::new().fg(app.theme.accent).add_modifier(Modifier::BOLD),
-                ))
+                )))
             } else {
-                Line::from(raw.to_string())
+                Some(Line::from(raw.to_string()))
             }
         })
         .collect();
@@ -679,6 +699,36 @@ mod tests {
         assert!(s.contains("ch04-01-ownership"), "second chapter missing");
         assert!(s.contains("Variables"), "selected heading missing");
         assert!(s.contains("immutable"), "selected content missing");
+    }
+
+    #[test]
+    fn book_reader_cleans_mdbook_directives() {
+        use rpro_book::{Book, Chapter};
+        use std::collections::BTreeMap;
+        use std::path::PathBuf;
+        let mut chapters = BTreeMap::new();
+        chapters.insert(
+            "ch04-01-what-is-ownership".to_string(),
+            Chapter {
+                id: "ch04-01-what-is-ownership".into(),
+                path: PathBuf::from("a"),
+                markdown: "# Ownership\n```rust\n{{#rustdoc_include ../listings/x:here}}\n```\n".into(),
+            },
+        );
+        let book = Book { chapters };
+        let app = App::new(Theme::dark(), true);
+        let mut term = Terminal::new(TestBackend::new(110, 20)).unwrap();
+        term.draw(|f| render_book(f, &app, &book)).unwrap();
+        let buf = term.backend().buffer();
+        let mut s = String::new();
+        for y in 0..buf.area.height {
+            for x in 0..buf.area.width {
+                s.push_str(buf[(x, y)].symbol());
+            }
+        }
+        assert!(!s.contains("{{#"), "raw mdBook directive leaked into the TUI:\n{s}");
+        assert!(!s.contains("```"), "code fence line not hidden:\n{s}");
+        assert!(s.contains("Read this code listing"), "missing link-out callout:\n{s}");
     }
 
     #[test]

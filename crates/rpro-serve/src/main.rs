@@ -38,7 +38,7 @@ use serde::{Deserialize, Serialize};
 use tower_http::services::ServeDir;
 
 use rpro_core::Core;
-use rpro_lang::{ExerciseId, ExerciseSource, RunOp};
+use rpro_lang::{BookRef, ExerciseId, ExerciseSource, Language, RunOp};
 use rpro_lang_rust::RustLanguage;
 use rpro_state::{ExerciseStatus, Progress};
 use rpro_storage_fs::Store;
@@ -494,9 +494,18 @@ async fn book_handler(
             Json(serde_json::json!({ "chapters": chapters })).into_response()
         }
         // KEY LOOKUP — never a path join. A traversal string just misses the map.
+        // `display_markdown` strips mdBook directives/hidden lines and links the
+        // un-bundled code listings out to the live chapter; the URL comes from the
+        // Rust language adapter (the seam's only home for Rust-specific links).
         Some(id) => match book.get(&id) {
             Some(c) => {
-                Json(serde_json::json!({ "id": c.id, "markdown": c.markdown })).into_response()
+                let url = RustLanguage.book_ref_url(&BookRef {
+                    chapter: c.id.clone(),
+                    anchor: None,
+                    why: String::new(),
+                });
+                Json(serde_json::json!({ "id": c.id, "markdown": c.display_markdown(&url) }))
+                    .into_response()
             }
             None => Json(serde_json::json!({ "chapter": null })).into_response(),
         },
@@ -879,9 +888,14 @@ mod tests {
         assert_eq!(res.status(), StatusCode::OK);
         let v: serde_json::Value = serde_json::from_str(&body_string(res).await).unwrap();
         assert_eq!(v["id"], "ch04-01-what-is-ownership");
+        let md = v["markdown"].as_str().unwrap_or("");
+        assert!(md.contains("Ownership"), "returns the chapter's real markdown body");
+        // Cleaned for display: no raw mdBook include directives leak through, and
+        // the un-bundled code listings link out to the live chapter.
+        assert!(!md.contains("{{#"), "raw mdBook directives must be stripped");
         assert!(
-            v["markdown"].as_str().is_some_and(|m| m.contains("Ownership")),
-            "returns the chapter's real markdown body"
+            md.contains("book/ch04-01-what-is-ownership.html"),
+            "un-bundled listings link out to the live chapter"
         );
     }
 
