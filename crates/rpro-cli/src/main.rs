@@ -809,4 +809,30 @@ mod tests {
         assert_eq!(std::fs::read_to_string(to.join("top.txt")).unwrap(), "t");
         assert_eq!(std::fs::read_to_string(to.join("sub").join("inner.txt")).unwrap(), "i");
     }
+
+    /// Data invariant behind the in-app Book jump links: every exercise's
+    /// `book_refs` must resolve to a *bundled* chapter. A broken ref would
+    /// otherwise only surface when a learner clicked it (chapter-not-found).
+    /// Reads the real workspace `exercises/` + `book/` (pure data — no toolchain).
+    #[test]
+    fn every_book_ref_resolves_to_a_bundled_chapter() {
+        let manifest = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+        let exercises = rpro_runner::discover(&manifest.join("../../exercises"))
+            .expect("discover workspace exercises");
+        let book = rpro_book::Book::load(&manifest.join("../../book")).expect("load bundled book");
+        assert!(!exercises.is_empty() && !book.is_empty(), "fixtures present");
+        let mut broken = Vec::new();
+        for ex in &exercises {
+            for r in &ex.meta.book_refs {
+                if book.get(&r.chapter).is_none() {
+                    broken.push(format!("{} -> {}", ex.meta.id, r.chapter));
+                }
+            }
+        }
+        assert!(
+            broken.is_empty(),
+            "book_refs with no bundled chapter:\n{}",
+            broken.join("\n")
+        );
+    }
 }
