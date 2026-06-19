@@ -43,6 +43,10 @@ Then open <http://127.0.0.1:8787/> in any browser.
   `~/.cache/ts-serve`. On first start the server seeds this root from the
   workspace `exercises/` and marks the first exercise current, so a fresh run
   lands on a real, runnable exercise.
+- Cap each run's wall-clock time (stops a runaway `loop{}` from hanging a
+  worker): `RPRO_RUN_TIMEOUT_SECS=60 cargo run -p rpro-serve`. Unset / `0` = no
+  cap (the default; the CLI/TUI are unaffected). Use a generous value so a cold
+  compile isn't killed. See `docs/SECURITY.md` F1.
 
 Stop the server with Ctrl-C.
 

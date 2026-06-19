@@ -5,10 +5,17 @@
 //! the `Language` seam), it just executes the plan and returns the raw output.
 //! Not wasm-safe (uses `std::process`); the web surface uses a remote executor.
 
-use std::process::Command;
-use std::time::Instant;
+use std::io::Read;
+use std::process::{Command, Stdio};
+use std::time::{Duration, Instant};
 
 use rpro_lang::{CommandPlan, Outcome, ToolError, Toolchain};
+
+/// Env knob: cap a single run at N seconds (`0`/unset/invalid = no cap, the
+/// default — so the CLI/TUI keep their current behaviour and only an operator who
+/// opts in, e.g. the loopback web server, gets the cap). See `docs/SECURITY.md`
+/// F1: a runaway exercise (`loop{}`) otherwise hangs the worker until killed.
+const RUN_TIMEOUT_ENV: &str = "RPRO_RUN_TIMEOUT_SECS";
 
 /// Executes commands locally through `std::process`.
 #[derive(Debug, Clone, Copy, Default)]
@@ -21,6 +28,16 @@ impl LocalProcess {
     /// [`rpro_lang::Diagnostic`]s is the `Language` layer's job, which keeps this
     /// executor dumb and reusable across every language.
     fn exec(plan: &CommandPlan) -> Result<Outcome, ToolError> {
+        Self::exec_inner(plan, run_timeout_from_env())
+    }
+
+    /// The real executor, with the timeout passed explicitly so it's testable
+    /// without touching process-global env. `timeout = None` is the original
+    /// `Command::output()` path, byte-for-byte; `Some(dur)` spawns with piped
+    /// output, **drains stdout/stderr on separate threads** (so a child that
+    /// fills a pipe buffer can't deadlock against a non-reading parent), and
+    /// kills the child if it outlives the deadline.
+    fn exec_inner(plan: &CommandPlan, timeout: Option<Duration>) -> Result<Outcome, ToolError> {
         let mut cmd = Command::new(&plan.program);
         cmd.args(&plan.args);
         if let Some(cwd) = &plan.cwd {
@@ -30,20 +47,91 @@ impl LocalProcess {
             cmd.env(k, v);
         }
         let started = Instant::now();
-        let output = cmd.output().map_err(|e| {
-            if e.kind() == std::io::ErrorKind::NotFound {
-                ToolError::NotFound(plan.program.clone())
-            } else {
-                ToolError::Spawn(e.to_string())
+
+        let Some(limit) = timeout else {
+            // No cap: the simple, well-trodden path. Unchanged behaviour.
+            let output = cmd.output().map_err(|e| map_spawn_err(e, plan))?;
+            return Ok(outcome(
+                output.status.code(),
+                String::from_utf8_lossy(&output.stdout).into_owned(),
+                String::from_utf8_lossy(&output.stderr).into_owned(),
+                started,
+            ));
+        };
+
+        cmd.stdout(Stdio::piped()).stderr(Stdio::piped());
+        let mut child = cmd.spawn().map_err(|e| map_spawn_err(e, plan))?;
+        // Drain both pipes concurrently so the child never blocks on a full
+        // buffer while we poll for exit (the classic timeout+capture deadlock).
+        let mut out = child.stdout.take();
+        let mut err = child.stderr.take();
+        let out_h = std::thread::spawn(move || drain(out.as_mut()));
+        let err_h = std::thread::spawn(move || drain(err.as_mut()));
+
+        let mut timed_out = false;
+        let status = loop {
+            match child.try_wait().map_err(|e| ToolError::Spawn(e.to_string()))? {
+                Some(s) => break s,
+                None => {
+                    if started.elapsed() >= limit {
+                        let _ = child.kill();
+                        let s = child.wait().map_err(|e| ToolError::Spawn(e.to_string()))?;
+                        timed_out = true;
+                        break s;
+                    }
+                    std::thread::sleep(Duration::from_millis(20));
+                }
             }
-        })?;
-        Ok(Outcome {
-            status: output.status.code(),
-            raw_stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
-            raw_stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
-            diagnostics: Vec::new(),
-            duration_ms: u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX),
-        })
+        };
+
+        let mut stdout = out_h.join().unwrap_or_default();
+        let mut stderr = err_h.join().unwrap_or_default();
+        if timed_out {
+            // Surface *why* it stopped in the raw bytes the learner reads.
+            stderr.push_str(&format!(
+                "\n[rpro: run exceeded the {}s timeout and was stopped]\n",
+                limit.as_secs()
+            ));
+        }
+        Ok(outcome(status.code(), stdout, stderr, started))
+    }
+}
+
+/// Parse [`RUN_TIMEOUT_ENV`]: a positive integer of seconds, else no cap.
+fn run_timeout_from_env() -> Option<Duration> {
+    std::env::var(RUN_TIMEOUT_ENV)
+        .ok()
+        .and_then(|v| v.trim().parse::<u64>().ok())
+        .filter(|&n| n > 0)
+        .map(Duration::from_secs)
+}
+
+/// Read a child pipe to EOF, lossily as UTF-8. `None` (pipe absent) → empty.
+fn drain(pipe: Option<&mut impl Read>) -> String {
+    let mut buf = Vec::new();
+    if let Some(p) = pipe {
+        let _ = p.read_to_end(&mut buf);
+    }
+    String::from_utf8_lossy(&buf).into_owned()
+}
+
+/// Build an [`Outcome`] (diagnostics stay empty — the `Language` layer fills them).
+fn outcome(status: Option<i32>, raw_stdout: String, raw_stderr: String, started: Instant) -> Outcome {
+    Outcome {
+        status,
+        raw_stdout,
+        raw_stderr,
+        diagnostics: Vec::new(),
+        duration_ms: u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX),
+    }
+}
+
+/// Map a spawn I/O error to the right [`ToolError`].
+fn map_spawn_err(e: std::io::Error, plan: &CommandPlan) -> ToolError {
+    if e.kind() == std::io::ErrorKind::NotFound {
+        ToolError::NotFound(plan.program.clone())
+    } else {
+        ToolError::Spawn(e.to_string())
     }
 }
 
@@ -65,30 +153,61 @@ impl Toolchain for LocalProcess {
 mod tests {
     use super::LocalProcess;
     use rpro_lang::{CommandPlan, ToolError};
+    use std::time::{Duration, Instant};
+
+    fn plan(program: &str, args: &[&str]) -> CommandPlan {
+        CommandPlan {
+            program: program.into(),
+            args: args.iter().map(|s| (*s).to_string()).collect(),
+            cwd: None,
+            env: vec![],
+            display: String::new(),
+        }
+    }
 
     #[test]
     fn runs_a_local_command_and_captures_output() {
-        let plan = CommandPlan {
-            program: "echo".into(),
-            args: vec!["hello-rpro".into()],
-            cwd: None,
-            env: vec![],
-            display: "echo hello-rpro".into(),
-        };
-        let out = LocalProcess::exec(&plan).expect("echo should run");
+        let out = LocalProcess::exec(&plan("echo", &["hello-rpro"])).expect("echo should run");
         assert_eq!(out.status, Some(0));
         assert!(out.raw_stdout.contains("hello-rpro"));
     }
 
     #[test]
     fn missing_program_is_not_found() {
-        let plan = CommandPlan {
-            program: "definitely-not-a-real-binary-xyz".into(),
-            args: vec![],
-            cwd: None,
-            env: vec![],
-            display: String::new(),
-        };
-        assert!(matches!(LocalProcess::exec(&plan), Err(ToolError::NotFound(_))));
+        let p = plan("definitely-not-a-real-binary-xyz", &[]);
+        assert!(matches!(LocalProcess::exec(&p), Err(ToolError::NotFound(_))));
+    }
+
+    #[test]
+    fn timeout_path_still_captures_a_fast_command() {
+        // A generous cap takes the piped+threaded path; output must round-trip.
+        let out = LocalProcess::exec_inner(&plan("echo", &["hi-timed"]), Some(Duration::from_secs(10)))
+            .expect("echo should run");
+        assert_eq!(out.status, Some(0));
+        assert!(out.raw_stdout.contains("hi-timed"));
+    }
+
+    #[test]
+    fn timeout_kills_a_runaway_command() {
+        let started = Instant::now();
+        let out = LocalProcess::exec_inner(&plan("sleep", &["10"]), Some(Duration::from_millis(200)))
+            .expect("spawn should succeed");
+        // Killed well before its 10s — not waited out.
+        assert!(started.elapsed() < Duration::from_secs(3), "should be killed promptly");
+        assert!(out.status.is_none(), "a signal-killed child has no exit code");
+        assert!(out.raw_stderr.contains("timeout"), "the stop reason is surfaced: {}", out.raw_stderr);
+    }
+
+    #[test]
+    fn timeout_does_not_deadlock_on_heavy_output() {
+        // `yes` floods stdout forever; if the parent polled try_wait WITHOUT
+        // draining the pipe, the child would block on a full buffer and this test
+        // would hang. The reader threads must keep it flowing until the kill.
+        let started = Instant::now();
+        let out = LocalProcess::exec_inner(&plan("yes", &[]), Some(Duration::from_millis(300)))
+            .expect("spawn should succeed");
+        assert!(started.elapsed() < Duration::from_secs(3), "must not deadlock on full pipe");
+        assert!(out.raw_stderr.contains("timeout"));
+        assert!(!out.raw_stdout.is_empty(), "drained at least some flooded output");
     }
 }

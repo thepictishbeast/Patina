@@ -46,17 +46,19 @@ transport encryption (loopback only), secret management (none are handled).
 
 ## 3. Findings
 
-### F1 — No execution timeout on a run *(Low; availability, not a vulnerability)*
-`LocalProcess::exec` calls `cmd.output()`, which blocks until the child exits. A
-runaway exercise (`fn main(){ loop{} }`) submitted via `/api/run` hangs the
-`spawn_blocking` worker until the server is killed. **This is not a security
-issue** under the threat model — there is no privilege boundary, and a user can
-only self-DoS their own tool (which they can `Ctrl-C`). It is a robustness gap.
-- **Recommendation (carved as a follow-up):** a deadline+kill executor. Note the
-  implementation must read stdout/stderr on separate threads while polling
-  `try_wait`, or a child that fills the pipe buffer deadlocks against a
-  non-reading parent. Make the timeout env-configurable (`0` = disabled) so the
-  CLI/TUI keep today's behaviour by default.
+### F1 — Run execution timeout *(Low; availability — resolved as an opt-in knob)*
+Previously `LocalProcess::exec` called `cmd.output()` with no deadline, so a
+runaway exercise (`fn main(){ loop{} }`) submitted via `/api/run` hung the
+`spawn_blocking` worker until the server was killed. (Not a security issue under
+the threat model — no privilege boundary, self-DoS only — but a robustness gap.)
+- **Resolved:** the executor now honours `RPRO_RUN_TIMEOUT_SECS`. Unset / `0` /
+  invalid = no cap (the default — CLI/TUI keep today's behaviour). A positive
+  value caps each run: the executor spawns with piped output, **drains
+  stdout/stderr on separate threads** (so a child that floods a pipe can't
+  deadlock the poller — covered by a `yes`-flood test), kills the child past the
+  deadline, and appends a `[rpro: run exceeded the Ns timeout…]` note to the raw
+  output. Operators of the loopback server should set it (see `RUN.md`); a
+  generous value (e.g. 60) avoids killing a cold compile.
 
 ### F2 — CSP allows `'unsafe-inline'` for script + style *(Low; informational)*
 The whole GUI is a single self-contained `index.html` with an inline `<script>`
