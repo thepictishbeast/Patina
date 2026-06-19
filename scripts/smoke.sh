@@ -109,6 +109,19 @@ assert d.get("advanced_to"), "a passing Run must advance the learner to the next
 print("  ok   — correct fix runs + passes + advances to " + str(d["advanced_to"]))
 ' || fail "/api/run success path (compile + run + pass + advance)"
 
+# 5c. `explain` returns the real toolchain explanation (the "diagnose by hand"
+# payoff: a learner clicks a diagnostic and gets the official write-up). Explain
+# only prints text — no binary is run — so it works even on a noexec store.
+curl -s -X POST "$BASE/api/run" -H 'Content-Type: application/json' -d '{"op":"explain","code":"E0384"}' \
+  | python3 -c '
+import sys, json
+d = json.load(sys.stdin)
+body = d.get("raw_stdout") or ""
+assert len(body) > 100, "explain should return a substantial write-up, got " + str(len(body)) + " chars"
+assert "immutable" in body.lower(), "the E0384 explanation should mention immutability"
+print("  ok   — explain returns the real E0384 write-up (" + str(len(body)) + " chars)")
+' || fail "/api/run explain returns real content"
+
 # 6. spaced-repetition (RECALL) queue is wired + internally consistent. Every
 # tracked code is either due (box < mastered) or mastered, so the counts must
 # satisfy len(due) + mastered == tracked regardless of seeded content.

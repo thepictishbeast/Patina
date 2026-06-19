@@ -13,7 +13,7 @@ to reproduce; every number here is from a clean run, not recall.
 | Workspace build + unit/integration tests | ✅ **112 passing, 0 failing** |
 | seam-grep gate (language-seam purity) | ✅ CLEAN |
 | wasm32 pure-core gate | ✅ builds |
-| E2E smoke (web server contract) | ✅ **16/16** |
+| E2E smoke (web server contract) | ✅ **17/17** |
 | Curriculum integrity (every exercise emits its taught error) | ✅ **32/32** (`scripts/verify-exercises.sh`) |
 | Security review + dependency audit | ✅ `docs/SECURITY.md` (posture sound) |
 | Packaging pipeline | ✅ verified by inspection (`docs/DISTRIBUTION.md`) |
@@ -55,7 +55,7 @@ RUSTC=$TC/rustc bash scripts/verify-exercises.sh   # every exercise emits its ta
 | `rpro-toolchain-local` | 5 | local process exec (incl. run-timeout: runaway-kill + pipe-drain deadlock-avoidance) |
 | `rpro-cli` | 5 | CLI helper logic: current-exercise resolution, `resolve_exercise` precedence (explicit id → current → first; unknown id errors), `write_if_missing` no-overwrite, `copy_tree` seeding (files + nested subdirs); **+ data invariant: every exercise `book_ref` resolves to a bundled chapter** |
 
-## E2E — `scripts/smoke.sh` (16/16)
+## E2E — `scripts/smoke.sh` (17/17)
 
 Builds the server, seeds a throwaway store, serves on loopback, asserts: static
 index + vendored xterm served; 32 exercises seeded in learning order with the
@@ -63,7 +63,8 @@ first current; `/api/current` leaks neither solution nor expected error; the L1
 hint never reveals the solution; a real `/api/run` executes; **the success path
 end-to-end** — a correct fix for the first exercise compiles, runs, passes, and
 advances the learner to the next (the app's core payoff, through the real
-toolchain); `/api/review` is internally consistent (`len(due)+mastered==tracked`,
+toolchain); **`explain` returns the real `rustc --explain` write-up** for a code
+(the "diagnose by hand" payoff); `/api/review` is internally consistent (`len(due)+mastered==tracked`,
 now with the overcome code tracked after the pass); an over-limit body → 413;
 the embedded Book TOC seeds (≥10 chapters); a chapter fetch returns cleaned
 markdown (no raw mdBook directives, listings linked out); and **3 adversarial
@@ -96,7 +97,7 @@ this sandbox, so the check lives in CI rather than being run here.
 ## Conclusion
 
 For everything runnable in this environment, **#12 is green and comprehensive**:
-112 tests, both seam/wasm gates, a 16-assertion E2E smoke (incl. the success
+112 tests, both seam/wasm gates, a 17-assertion E2E smoke (incl. the success
 path: fix → run → pass → advance, and the Book
 reader's path-traversal guarantee), a cited security review with one fix landed,
 and a verified packaging pipeline — all reproducible from the commands above. The
