@@ -64,7 +64,31 @@ else
   fail "rpro explain E0384"
 fi
 
-# 5. progress prints a summary without erroring.
+# 5. book search finds matches across the seeded chapters (offline full-text).
+out="$("$RPRO" book search ownership 2>&1)"
+if printf '%s' "$out" | grep -q "ch04-01-what-is-ownership" && printf '%s' "$out" | grep -qi match; then
+  ok "rpro book search finds matches across chapters"
+else
+  fail "rpro book search"; printf '%s\n' "$out" | head -3
+fi
+
+# 6. exercise hint prints the laddered guidance (book refs for the current).
+out="$("$RPRO" exercise hint 2>&1)"
+if printf '%s' "$out" | grep -qiE 'book ref|ch0[0-9]'; then
+  ok "rpro exercise hint prints laddered guidance"
+else
+  fail "rpro exercise hint"; printf '%s\n' "$out" | head -3
+fi
+
+# 7. exercise next resolves a real exercise to work on (navigation).
+out="$("$RPRO" exercise next 2>&1)"
+if printf '%s' "$out" | grep -qE 'basics/|control-flow/|ownership/'; then
+  ok "rpro exercise next navigates to an exercise"
+else
+  fail "rpro exercise next"; printf '%s\n' "$out" | head -3
+fi
+
+# 8. progress prints a summary without erroring.
 if "$RPRO" progress >/dev/null 2>&1; then ok "rpro progress runs"; else fail "rpro progress"; fi
 
 echo

@@ -15,7 +15,7 @@ to reproduce; every number here is from a clean run, not recall.
 | wasm32 pure-core gate | ✅ builds |
 | E2E smoke (web server contract) | ✅ **17/17** |
 | Curriculum integrity (every exercise emits its taught error) | ✅ **32/32** (`scripts/verify-exercises.sh`) |
-| CLI E2E (`rpro` init/list/check/explain/progress) | ✅ **7/7** (`scripts/smoke-cli.sh`) |
+| CLI E2E (`rpro` init/list/check/explain/book-search/hint/next/progress) | ✅ **10/10** (`scripts/smoke-cli.sh`) |
 | Security review + dependency audit | ✅ `docs/SECURITY.md` (posture sound) |
 | Packaging pipeline | ✅ verified by inspection (`docs/DISTRIBUTION.md`) |
 | `unsafe` code | ✅ **0** (`unsafe_code = "forbid"` workspace-wide) |
