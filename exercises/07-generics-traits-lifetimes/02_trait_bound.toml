@@ -1,0 +1,23 @@
+id = "traits/01_display_bound"
+title = "A type must implement a trait before a bound will accept it"
+difficulty = "intermediate"
+estimated_minutes = 12
+concept = "trait-implementation"
+expected_error_code = "E0277"
+solution_outline = """
+`show` only accepts types that implement `Display`, and `Point` doesn't — so the
+bound `T: Display` rejects it. Teach `Point` how to display itself by implementing
+the trait: `impl std::fmt::Display for Point { fn fmt(&self, f: &mut Formatter)
+-> Result { write!(f, "({}, {})", self.x, self.y) } }`. The bound is a contract;
+the `impl` is how a type signs it.
+"""
+
+[[book_refs]]
+chapter = "ch10-02-traits"
+anchor = "implementing-a-trait-on-a-type"
+why = "How a concrete type implements a trait — the `impl Trait for Type` block the bound is asking for."
+
+[[book_refs]]
+chapter = "ch10-02-traits"
+anchor = "traits-as-parameters"
+why = "Why `fn show<T: Display>` only accepts types that have implemented `Display`."

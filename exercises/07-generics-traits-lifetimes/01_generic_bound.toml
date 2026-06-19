@@ -1,0 +1,22 @@
+id = "generics/01_bound"
+title = "A bare generic type can do nothing until you bound it"
+difficulty = "intermediate"
+estimated_minutes = 10
+concept = "generic-trait-bounds"
+expected_error_code = "E0369"
+solution_outline = """
+A plain `T` makes no promises, so the compiler won't let you use `>` on it —
+that operator comes from the `PartialOrd` trait. Constrain the type parameter
+so the function only accepts types that can be compared (and copied out of the
+slice): `fn largest<T: PartialOrd + Copy>(list: &[T]) -> T`.
+"""
+
+[[book_refs]]
+chapter = "ch10-01-syntax"
+anchor = "in-function-definitions"
+why = "Generic type parameters in a function signature — what `<T>` means and where it goes."
+
+[[book_refs]]
+chapter = "ch10-02-traits"
+anchor = "trait-bound-syntax"
+why = "A trait bound (`T: PartialOrd`) is the promise that unlocks the operations `>` needs."
