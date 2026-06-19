@@ -475,11 +475,21 @@
       markEdited();
       const refs = j.book_refs || [];
       curBookRefs = refs;
-      document.getElementById('brefs').innerHTML = refs.length ? refs.map((r, i) =>
-        `<div class="bref"><span class="c">[${i + 1}] ${esc(r.chapter)}</span>`
+      const brefsEl = document.getElementById('brefs');
+      brefsEl.innerHTML = refs.length ? refs.map((r, i) =>
+        `<div class="bref" data-ch="${esc(r.chapter)}" role="button" tabindex="0" aria-label="Open ${esc(r.chapter)} in the Book reader" title="open this chapter in the Book tab">`
+        + `<span class="c">[${i + 1}] ${esc(r.chapter)}</span>`
         + (r.anchor ? ` · ${esc(r.anchor)}` : '')
+        + ` <span aria-hidden="true" style="color:var(--fg-dim)">↗</span>`
         + `<small>${esc(r.why)}</small></div>`).join('')
         : '<div class="bref" style="cursor:default;color:var(--fg-dim)">none for this exercise</div>';
+      // The book-refs LOOK clickable (pointer + hover) — make them so: jump
+      // straight to the cited chapter in the Book reader (reads-before-writes).
+      brefsEl.querySelectorAll('.bref[data-ch]').forEach(el => {
+        const open = () => showView('book', el.dataset.ch);
+        el.onclick = open;
+        el.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } };
+      });
     }
 
     // Diagnostics pane from a run: prefer structured diagnostics, else scrape
@@ -579,7 +589,7 @@
       if (inList) html += '</ul>';
       return html;
     }
-    async function showView(view) {
+    async function showView(view, chapter) {
       document.querySelectorAll('.tab').forEach(t => {
         const on = t.dataset.view === view;
         t.classList.toggle('active', on);
@@ -594,7 +604,7 @@
         try { const j = await fetch('api/roadmap').then(r => r.json()); d.innerHTML = mdToHtml(j.markdown || ''); }
         catch (_) { d.innerHTML = '<p>Roadmap unavailable (open via the local server).</p>'; }
       } else if (view === 'book') {
-        await renderBook(null);
+        await renderBook(chapter || null);
       }
     }
 

@@ -10,10 +10,10 @@ to reproduce; every number here is from a clean run, not recall.
 
 | Area | Status |
 |---|---|
-| Workspace build + unit/integration tests | ✅ **94 passing, 0 failing** |
+| Workspace build + unit/integration tests | ✅ **103 passing, 0 failing** |
 | seam-grep gate (language-seam purity) | ✅ CLEAN |
 | wasm32 pure-core gate | ✅ builds |
-| E2E smoke (web server contract) | ✅ **8/8** |
+| E2E smoke (web server contract) | ✅ **13/13** |
 | Security review + dependency audit | ✅ `docs/SECURITY.md` (posture sound) |
 | Packaging pipeline | ✅ verified by inspection (`docs/DISTRIBUTION.md`) |
 | `unsafe` code | ✅ **0** (`unsafe_code = "forbid"` workspace-wide) |
@@ -38,27 +38,31 @@ grep -rnE '\b(cargo|rustc|rust-analyzer|clippy|rustfmt)\b|doc\.rust-lang|E0[0-9]
 bash scripts/smoke.sh           # builds, seeds, serves, asserts the contract
 ```
 
-## Test inventory (85 unit/integration)
+## Test inventory (103 unit/integration)
 
 | Crate | Tests | Covers |
 |---|---|---|
 | `rpro-state` | 26 | progress (incl. skip/reset), Leitner review + `fold_run`, exercise meta + hint ladder, tutor scaffolding, annotations/bookmarks/config |
-| `rpro-tui` | 25 | dashboard + Recall panel, exercise view + hint panel, book/roadmap render, tab/scroll/selection model (TestBackend) |
-| `rpro-lang-rust` | 7 | the Rust `Language` seam impl |
+| `rpro-tui` | 26 | dashboard + Recall panel, exercise view + hint panel, book reader (incl. mdBook-directive cleanup) + roadmap render, tab/scroll/selection model (TestBackend) |
+| `rpro-serve` | 13 | op-whitelist, no-answer-leak, `sanitize_code`, status mapping + **router oneshot tests**: /api/current no-leak, unknown-op→400, oversized-body→413, /api/review shape, security headers, hint L1 no-leak, **book TOC + chapter fetch + traversal-is-a-miss** |
+| `rpro-book` | 8 | chapter loading + `clean_mdbook_source` (directive→link-out, hidden-line drop, `##`-unescape, fence normalize, non-rust passthrough) |
+| `rpro-lang-rust` | 7 | the Rust `Language` seam impl (incl. `book_ref_url`) |
 | `rpro-runner` | 7 | discovery, `primary_error_code`, `record_run` (tempfile integration) |
 | `rpro-core` | 6 | the run engine |
 | `rpro-storage-fs` | 5 | on-disk store round-trips |
-| `rpro-serve` | 10 | op-whitelist, no-answer-leak, `sanitize_code`, status mapping + **6 router oneshot tests**: /api/current no-leak, unknown-op→400, oversized-body→413, /api/review shape, security headers present, hint L1 no-leak |
-| `rpro-book` | 3 | chapter loading |
-| `rpro-toolchain-local` | 2 | local process exec |
+| `rpro-toolchain-local` | 5 | local process exec (incl. run-timeout: runaway-kill + pipe-drain deadlock-avoidance) |
 
-## E2E — `scripts/smoke.sh` (8/8)
+## E2E — `scripts/smoke.sh` (13/13)
 
 Builds the server, seeds a throwaway store, serves on loopback, asserts: static
-index + vendored xterm served; 23 exercises seeded in learning order with the
+index + vendored xterm served; 32 exercises seeded in learning order with the
 first current; `/api/current` leaks neither solution nor expected error; the L1
 hint never reveals the solution; a real `/api/run` executes; `/api/review` is
-internally consistent (`len(due)+mastered==tracked`); an over-limit body → 413.
+internally consistent (`len(due)+mastered==tracked`); an over-limit body → 413;
+the embedded Book TOC seeds (≥10 chapters); a chapter fetch returns cleaned
+markdown (no raw mdBook directives, listings linked out); and **3 adversarial
+book-traversal probes** (`../../etc/passwd`, percent-encoded, `/etc/passwd`) each
+miss the chapter map and return null — never a file from disk.
 
 This is the committed E2E coverage of the **API + serving contract**. The same
 guarantees (no-leak, op-whitelist→400, oversized-body→413, security headers) are
@@ -84,7 +88,8 @@ this sandbox, so the check lives in CI rather than being run here.
 ## Conclusion
 
 For everything runnable in this environment, **#12 is green and comprehensive**:
-85 tests, both seam/wasm gates, an 8-assertion E2E smoke, a cited security review
-with one fix landed, and a verified packaging pipeline — all reproducible from the
-commands above. The only outstanding audit pieces (Playwright, Lighthouse) require
-a headless browser and are tracked as CI tasks, not in-sandbox gaps.
+103 tests, both seam/wasm gates, a 13-assertion E2E smoke (incl. the Book
+reader's path-traversal guarantee), a cited security review with one fix landed,
+and a verified packaging pipeline — all reproducible from the commands above. The
+only outstanding audit pieces (Playwright, Lighthouse) require a headless browser
+and are tracked as CI tasks, not in-sandbox gaps.
