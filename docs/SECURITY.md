@@ -4,11 +4,11 @@ A focused review of the only network-facing component, `crates/rpro-serve`. Ever
 control below is cited by file + symbol so the claim can be re-verified against the
 code; findings carry an honest severity tied to the threat model.
 
-> Last reviewed on branch `textbook-integration`; Controls table extended to the
-> `/api/book` (chapter = map key, never a path) and `/api/select` (id validated
-> against the discovered set) endpoints added since the initial review. Re-run
-> when the run path, the wire protocol, the endpoint set, or the served frontend
-> changes.
+> Last reviewed on branch `textbook-integration`; Controls table covers the
+> `/api/book` chapter lookup (chapter = map key, never a path), its `?q=` search
+> (in-memory substring match, no path/regex/shell), and `/api/select` (id
+> validated against the discovered set). Re-run when the run path, the wire
+> protocol, the endpoint set, or the served frontend changes.
 
 ## 1. Scope & threat model
 
@@ -45,6 +45,7 @@ transport encryption (loopback only), secret management (none are handled).
 | Answer leak | `current_json` omits `solution_outline` + `expected_error_code`; the hint ladder gates the outline to the top rung only; `/api/review` surfaces only codes the learner already saw in their own output | `current_json`, `ExerciseMetadata::hint`, tests `current_json_omits_the_answer`, smoke `/api/review` |
 | Static files | `ServeDir` (tower-http) serves `gui/` with built-in path-traversal protection; the roadmap reads a **fixed, compile-time** path (`CARGO_MANIFEST_DIR/../../docs/ROADMAP.md`), no client input | router, `roadmap_handler` |
 | Book lookup | `GET /api/book?chapter=ID` resolves `ID` as a **`BTreeMap` key** (`Book::get`), **never** path-joined — a traversal value (`../../etc/passwd`, percent-encoded) simply misses the map → `{chapter:null}`, never a file read. The book root is the server-seeded `book/` dir | `book_handler`, tests `book_traversal_is_a_miss_not_a_file_read` (3 URIs), smoke book-traversal probes |
+| Book search | `GET /api/book?q=TERM` runs a **case-insensitive substring match over in-memory chapter markdown** (`Book::search`) — no filesystem path is built from `q`, no regex (no ReDoS), no shell. Output (chapter id, title, count, snippet) is derived **only from bundled chapter content**, never echoed user input, and the web client `esc`-es every field before display. A blank term returns no hits | `book_handler` (`?q=` branch), `rpro_book::Book::search`, tests `book_search_returns_hits_with_counts_and_snippets`, `book_search_blank_term_returns_no_hits`, smoke `/api/book?q=` |
 | Select target | `POST /api/select` validates `id` against the **discovered** exercise set (`rpro_runner::discover`) before use — an unknown id is `400` (and is only ever a map key/lookup, never a path); a *completed* exercise is refused `409` (no gauge regression). Mutates only on-disk progress, never a file path from the wire | `select_handler`, tests `select_switches_current_and_validates_id`, `select_refuses_a_completed_exercise_with_409`, smoke select |
 | HTTP headers | CSP, `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, `X-Frame-Options: DENY` on every response | `security_headers` |
 | Memory safety | `unsafe_code = "forbid"` workspace-wide; **0** `unsafe` in `rpro-serve` | `Cargo.toml` |
