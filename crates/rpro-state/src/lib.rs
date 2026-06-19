@@ -1,14 +1,15 @@
-//! On-disk state for Rustlings Pro.
+//! On-disk state for Tempered Studio (the `rpro` workspace).
 //!
 //! Everything the user produces (progress, bookmarks, annotations,
 //! preferences) lives as a plain JSON or TOML file under
 //! `~/.rustlings-pro/`. No database. A user can `git init` their
 //! state directory and version-control their notes.
 //!
-//! The core types here are also the wire format consumed by
-//! `rpro-runner`, `rpro-book`, `rpro-tui`, and the future
-//! `rpro-gui` — write changes through this crate, never by hand-
-//! editing the JSON.
+//! The core types here are also the shared model consumed by
+//! `rpro-runner` and every surface — `rpro-cli`, `rpro-tui`, and the
+//! `rpro-serve` web server — so progress, hints, and the spaced-
+//! repetition queue stay identical across them. Write changes through
+//! this crate, never by hand-editing the JSON.
 
 #![doc(html_no_source)]
 

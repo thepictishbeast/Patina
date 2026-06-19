@@ -1,10 +1,10 @@
 //! Rust Book content loader.
 //!
-//! v0 scope: load chapter markdown from a directory, expose a
+//! Loads chapter markdown from a directory and exposes a
 //! `Book::chapters()` iterator and a `Book::get(chapter_id)`
-//! lookup. Markdown rendering (to ratatui spans for the TUI, to
-//! Iced widgets for the GUI) is handled by the consuming crate;
-//! this one stops at parsing the markdown into events.
+//! lookup. Rendering (to ratatui spans for the TUI, to HTML for the
+//! web GUI) is handled by the consuming crate; this one stops at
+//! parsing the markdown into events.
 
 #![doc(html_no_source)]
 
