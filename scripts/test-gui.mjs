@@ -117,6 +117,25 @@ check(bothBI.includes('<strong>bold</strong>') && bothBI.includes('<em>em</em>')
 const emXss = mdToHtml('danger _<b>x</b>_ here');
 check(!emXss.includes('<b>') && emXss.includes('<em>') && emXss.includes('&lt;b&gt;'), 'emphasis content stays escaped (no raw tag)');
 
+// 7. Headings h1–h6 (corpus uses through h4).
+check(mdToHtml('# Title').includes('<h1>Title</h1>'), '`# x` → <h1>');
+check(mdToHtml('### Sub').includes('<h3>Sub</h3>'), '`### x` → <h3>');
+check(mdToHtml('#### Deeper').includes('<h4>Deeper</h4>'), '`#### x` → <h4> (was literal before)');
+check(mdToHtml('###### Deepest').includes('<h6>Deepest</h6>'), '`###### x` → <h6>');
+check(!mdToHtml('#nospace heading').includes('<h1>'), '`#nospace` (no space) is NOT a heading');
+
+// 8. GFM tables (the ch03 integer-types table renders as a real <table>).
+const tbl = mdToHtml('| Length | Signed |\n|--------|--------|\n| 8-bit | `i8` |\n| 16-bit | `i16` |');
+check(tbl.includes('<table>') && tbl.includes('</table>'), 'pipe table → <table>');
+check((tbl.match(/<th>/g) || []).length === 2, 'header row → 2 <th>');
+check((tbl.match(/<tr>/g) || []).length === 3, 'header + 2 body rows → 3 <tr>');
+check(tbl.includes('<td><code>i8</code></td>'), 'table cells are inline-rendered (`i8` → <code>)');
+check(!tbl.includes('<p>|'), 'table is not left as literal pipe paragraphs');
+const tblXss = mdToHtml('| H |\n|---|\n| <b>x</b> |');
+check(!tblXss.includes('<b>') && tblXss.includes('&lt;b&gt;'), 'table cell content stays escaped');
+const notTbl = mdToHtml('costs are a | b in prose');
+check(!notTbl.includes('<table>') && notTbl.includes('<p>'), 'a stray pipe with no separator row is NOT a table');
+
 console.log('');
 if (fails === 0) console.log('GUI TRANSFORM TESTS PASS ✓');
 else { console.log('GUI TRANSFORM TESTS FAILED: ' + fails); process.exit(1); }

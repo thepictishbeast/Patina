@@ -90,6 +90,10 @@
   .docview blockquote { margin:10px 0; padding:6px 14px; border-left:3px solid var(--note); background:var(--bg-2); color:var(--fg-dim); border-radius:0 6px 6px 0; line-height:1.6; }
   .docview ol { padding-left:22px; } .docview ol li { line-height:1.7; }
   .docview a { color:var(--note); }
+  .docview h4 { font-size:12.5px; margin:12px 0 5px; } .docview h5, .docview h6 { font-size:12px; color:var(--fg-dim); margin:10px 0 4px; }
+  .docview table { border-collapse:collapse; margin:12px 0; font-size:12.5px; display:block; overflow-x:auto; }
+  .docview th, .docview td { border:1px solid var(--line); padding:5px 11px; text-align:left; }
+  .docview thead th { background:var(--bg-3); font-weight:600; }
   .booktoc { list-style:none; padding:0; } .booktoc li { margin:3px 0; }
   .booktoc a { font-size:13.5px; } .booktoc small { margin-left:8px; }
   .pane { border-right:1px solid var(--line); display:flex; flex-direction:column; min-height:0; }
@@ -635,7 +639,12 @@
         .replace(/(^|[^A-Za-z0-9*])\*([^*\s](?:[^*]*[^*\s])?)\*(?![A-Za-z0-9*])/g, '$1<em>$2</em>');
       const closeList = () => { if (list) { html += list === 'ol' ? '</ol>' : '</ul>'; list = null; } };
       const flushQuote = () => { if (quote.length) { html += '<blockquote>' + inline(quote.join(' ')) + '</blockquote>'; quote = []; } };
-      for (const ln of lines) {
+      // A GFM table separator row, e.g. `|----|:--:|---|` — pipes + dashes, opt. colons.
+      const isSep = s => /\|/.test(s) && /-/.test(s) && /^[\s|:-]+$/.test(s);
+      // Split a `| a | b |` row into trimmed, inline-rendered cells (escape-safe).
+      const cells = r => r.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map(c => inline(c.trim()));
+      for (let i = 0; i < lines.length; i++) {
+        const ln = lines[i];
         // ``` toggles a raw code block: no inline/list/heading handling inside.
         if (/^\s*```/.test(ln)) {
           if (inCode) { html += '<pre><code>' + highlightRust(code.join('\n')) + '</code></pre>'; inCode = false; }
@@ -643,6 +652,17 @@
           continue;
         }
         if (inCode) { code.push(ln); continue; }
+        // GFM table: a `|`-row immediately followed by a |---|--- separator row.
+        if (ln.includes('|') && isSep(lines[i + 1] || '')) {
+          closeList(); flushQuote();
+          let t = '<table><thead><tr>' + cells(ln).map(c => '<th>' + c + '</th>').join('') + '</tr></thead><tbody>';
+          let j = i + 2;
+          for (; j < lines.length && lines[j].includes('|') && lines[j].trim(); j++)
+            t += '<tr>' + cells(lines[j]).map(c => '<td>' + c + '</td>').join('') + '</tr>';
+          html += t + '</tbody></table>';
+          i = j - 1;
+          continue;
+        }
         // Blockquote: accumulate consecutive `&gt;` lines into one callout.
         const q = ln.match(/^&gt;\s?(.*)$/);
         if (q) { closeList(); quote.push(q[1]); continue; }
@@ -652,9 +672,9 @@
         const ol = ln.match(/^\s*\d+\.\s+(.*)$/);
         if (ol) { if (list !== 'ol') { closeList(); html += '<ol>'; list = 'ol'; } html += '<li>' + inline(ol[1]) + '</li>'; continue; }
         closeList();
-        if (/^###\s+/.test(ln)) html += '<h3>' + inline(ln.replace(/^###\s+/, '')) + '</h3>';
-        else if (/^##\s+/.test(ln)) html += '<h2>' + inline(ln.replace(/^##\s+/, '')) + '</h2>';
-        else if (/^#\s+/.test(ln)) html += '<h1>' + inline(ln.replace(/^#\s+/, '')) + '</h1>';
+        // ATX headings, h1–h6 (single regex; the corpus uses through h4).
+        const hm = ln.match(/^(#{1,6})\s+(.*)$/);
+        if (hm) html += '<h' + hm[1].length + '>' + inline(hm[2]) + '</h' + hm[1].length + '>';
         else if (ln.trim()) html += '<p>' + inline(ln) + '</p>';
       }
       if (inCode) html += '<pre><code>' + highlightRust(code.join('\n')) + '</code></pre>';
