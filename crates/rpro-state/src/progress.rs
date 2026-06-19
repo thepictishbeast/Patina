@@ -129,6 +129,24 @@ impl Progress {
         entry.attempts = 0;
     }
 
+    /// Jump the learner to `id`, keeping the **single-Current** invariant: any
+    /// *other* exercise that was Current is demoted to Locked (it was set aside,
+    /// not completed — Locked is the neutral inactive state; `attempts`/
+    /// `started_at` are untouched), then `id` is made Current.
+    ///
+    /// This deliberately never changes a `Done` entry, so the done-count/gauge
+    /// cannot regress. Callers select only *not-yet-Done* exercises (revisiting a
+    /// completed one is [`reset`](Self::reset)'s job); `select` is the pure state
+    /// transition and assumes the caller has validated `id`.
+    pub fn select(&mut self, id: &str) {
+        for (eid, entry) in &mut self.entries {
+            if eid != id && entry.status == ExerciseStatus::Current {
+                entry.status = ExerciseStatus::Locked;
+            }
+        }
+        self.set_current(id);
+    }
+
     /// Count of Done exercises.
     #[must_use]
     pub fn done_count(&self) -> usize {
@@ -174,6 +192,41 @@ mod tests {
         p.record_attempt("a/b");
         p.record_attempt("a/b");
         assert_eq!(p.entries["a/b"].attempts, 3);
+    }
+
+    #[test]
+    fn select_keeps_single_current_and_preserves_done() {
+        let mut p = Progress::default();
+        p.set_current("a/1");
+        p.set_done("a/1"); // a/1 Done
+        p.set_current("a/2"); // a/2 Current
+        p.record_attempt("a/2"); // a/2 has history
+        // Jump to a never-touched exercise.
+        p.select("a/3");
+        // Exactly one Current, and it's the selected one.
+        let currents: Vec<_> = p
+            .entries
+            .iter()
+            .filter(|(_, e)| e.status == ExerciseStatus::Current)
+            .map(|(id, _)| id.clone())
+            .collect();
+        assert_eq!(currents, vec!["a/3".to_string()], "single Current = selection");
+        // The previous Current was demoted to Locked, NOT lost (attempts kept).
+        assert_eq!(p.entries["a/2"].status, ExerciseStatus::Locked);
+        assert_eq!(p.entries["a/2"].attempts, 1, "demote preserves attempts");
+        // The Done entry is untouched → gauge cannot regress.
+        assert_eq!(p.entries["a/1"].status, ExerciseStatus::Done);
+        assert_eq!(p.done_count(), 1);
+    }
+
+    #[test]
+    fn select_back_to_a_demoted_exercise_restores_it_current() {
+        let mut p = Progress::default();
+        p.set_current("a/1");
+        p.select("a/2"); // a/1 -> Locked, a/2 Current
+        p.select("a/1"); // back to a/1
+        assert_eq!(p.entries["a/1"].status, ExerciseStatus::Current);
+        assert_eq!(p.entries["a/2"].status, ExerciseStatus::Locked);
     }
 
     #[test]

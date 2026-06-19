@@ -373,9 +373,27 @@
         const st = e.status || 'locked';
         const sel = st === 'current' ? ' sel' : '';
         const tries = e.attempts ? ` · ${e.attempts} ${e.attempts === 1 ? 'try' : 'tries'}` : '';
-        return `<div class="ex ${st}${sel}"><span class="chip">${CHIP[st] || '•'}</span>`
+        return `<div class="ex ${st}${sel}" data-id="${esc(e.id)}" role="button" tabindex="0" aria-label="Switch to ${esc(e.id)}"><span class="chip">${CHIP[st] || '•'}</span>`
              + `<span class="t">${esc(e.id)}<small>[${st}]${tries}</small></span></div>`;
       }).join('') : '<div class="ex"><span class="t" style="color:var(--fg-dim)">no exercises</span></div>';
+      // The list items LOOK clickable (pointer cursor) — make them switch the
+      // current exercise (`POST /api/select`). The server validates the id and
+      // refuses re-opening a completed one (409 → nudge to Reset).
+      box.querySelectorAll('.ex[data-id]').forEach(el => {
+        const go = async () => {
+          try {
+            const res = await fetch('api/select', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ id: el.dataset.id }),
+            });
+            if (res.ok) { statusEl().textContent = 'switched'; await loadState(false); }
+            else if (res.status === 409) { statusEl().textContent = '“' + el.dataset.id + '” is done — press ↺ Reset to redo it'; }
+            else { statusEl().textContent = 'could not switch exercise'; }
+          } catch (_) { statusEl().textContent = 'offline — could not switch'; }
+        };
+        el.onclick = go;
+        el.onkeydown = ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); go(); } };
+      });
       if (data && typeof data.total === 'number' && data.total > 0) {
         const pct = Math.round(100 * (data.done || 0) / data.total);
         document.getElementById('pct').textContent = `${data.done || 0} / ${data.total} · ${pct}%`;

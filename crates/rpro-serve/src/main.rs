@@ -355,6 +355,55 @@ async fn current_handler(State(state): State<AppState>) -> impl IntoResponse {
     }
 }
 
+/// Body for `POST /api/select`: the exercise id to switch to.
+#[derive(Debug, Deserialize)]
+struct SelectBody {
+    id: String,
+}
+
+/// `POST /api/select` — make a chosen exercise the current one (phone-first: tap
+/// a list item to switch). The `id` is validated against the **discovered**
+/// exercise set — it is only ever used as a known map key, never a path, so the
+/// wire cannot point the runner at an arbitrary file.
+///
+/// Deliberately minimal + safe: it never un-completes a finished exercise (that
+/// would regress the progress gauge) — selecting a `Done` exercise returns 409
+/// with a nudge to Reset. Any previously-current exercise is demoted to Locked
+/// (see [`Progress::select`]); the single-Current invariant holds. Returns the
+/// new current's detail (same shape as `/api/current`) on success.
+async fn select_handler(
+    State(state): State<AppState>,
+    body: Result<Json<SelectBody>, axum::extract::rejection::JsonRejection>,
+) -> impl IntoResponse {
+    let Json(SelectBody { id }) = match body {
+        Ok(j) => j,
+        Err(rej) => return rej.into_response(),
+    };
+    let store = Store::at(state.store_root.clone());
+    // Validate against discovered ids — never trust the wire to name a file.
+    let exercises = rpro_runner::discover(&store.root().join("exercises")).unwrap_or_default();
+    if !exercises.iter().any(|e| e.meta.id == id) {
+        return (StatusCode::BAD_REQUEST, "unknown exercise").into_response();
+    }
+    let mut progress = store.load_progress().unwrap_or_default();
+    // Never un-complete a finished exercise — Reset is the path to redo it.
+    if progress.entries.get(&id).map(|e| e.status) == Some(ExerciseStatus::Done) {
+        return (
+            StatusCode::CONFLICT,
+            "exercise already completed — reset it to practise again",
+        )
+            .into_response();
+    }
+    progress.select(&id);
+    if store.save_progress(&progress).is_err() {
+        return (StatusCode::INTERNAL_SERVER_ERROR, "could not save selection").into_response();
+    }
+    match current_exercise(&state.store_root) {
+        Some((ex, code)) => Json(current_json(&ex, &code)).into_response(),
+        None => Json(serde_json::json!({ "exercise": id })).into_response(),
+    }
+}
+
 /// `GET /api/exercises` — the full exercise list with per-item status + attempts,
 /// plus done/total for the progress gauge. Read-only; selection stays
 /// server-resolved (the current exercise is set by the CLI/TUI, not the wire).
@@ -612,6 +661,7 @@ fn build_router(state: AppState, gui_dir: &Path) -> Router {
     Router::new()
         .route("/api/run", post(run_handler))
         .route("/api/current", axum::routing::get(current_handler))
+        .route("/api/select", post(select_handler))
         .route("/api/exercises", axum::routing::get(exercises_handler))
         .route("/api/review", axum::routing::get(review_handler))
         .route("/api/hint", axum::routing::get(hint_handler))
@@ -789,6 +839,15 @@ mod tests {
         Request::builder().uri(uri).body(Body::empty()).unwrap()
     }
 
+    fn post_json(uri: &str, body: &str) -> Request<Body> {
+        Request::builder()
+            .method("POST")
+            .uri(uri)
+            .header("content-type", "application/json")
+            .body(Body::from(body.to_string()))
+            .unwrap()
+    }
+
     #[tokio::test]
     async fn current_endpoint_serves_without_leaking_the_answer() {
         let (_d, app) = seeded_app();
@@ -922,5 +981,49 @@ mod tests {
                 "{uri} must not return any /etc/passwd content"
             );
         }
+    }
+
+    #[tokio::test]
+    async fn select_switches_current_and_validates_id() {
+        let (_d, app) = seeded_app();
+        // Pick a second, not-yet-done exercise from the list.
+        let list = body_string(app.clone().oneshot(get("/api/exercises")).await.unwrap()).await;
+        let v: serde_json::Value = serde_json::from_str(&list).unwrap();
+        let target = v["exercises"][1]["id"].as_str().unwrap().to_string();
+        // Selecting it makes it current.
+        let res = app
+            .clone()
+            .oneshot(post_json("/api/select", &format!("{{\"id\":\"{target}\"}}")))
+            .await
+            .unwrap();
+        assert_eq!(res.status(), StatusCode::OK);
+        let cur = body_string(app.clone().oneshot(get("/api/current")).await.unwrap()).await;
+        let cv: serde_json::Value = serde_json::from_str(&cur).unwrap();
+        assert_eq!(cv["exercise"], target, "current now reflects the selection");
+        // An id outside the discovered set is rejected — never used as a path.
+        let bad = app
+            .clone()
+            .oneshot(post_json("/api/select", "{\"id\":\"../../etc/passwd\"}"))
+            .await
+            .unwrap();
+        assert_eq!(bad.status(), StatusCode::BAD_REQUEST);
+    }
+
+    #[tokio::test]
+    async fn select_refuses_a_completed_exercise_with_409() {
+        let (d, app) = seeded_app();
+        // Mark the first exercise Done directly in the store.
+        let store = Store::at(d.path().to_path_buf());
+        let exercises = rpro_runner::discover(&store.root().join("exercises")).unwrap();
+        let done_id = exercises[0].meta.id.clone();
+        let mut p = store.load_progress().unwrap_or_default();
+        p.set_done(&done_id);
+        store.save_progress(&p).unwrap();
+        // Selecting a completed exercise is refused (Reset is the redo path).
+        let res = app
+            .oneshot(post_json("/api/select", &format!("{{\"id\":\"{done_id}\"}}")))
+            .await
+            .unwrap();
+        assert_eq!(res.status(), StatusCode::CONFLICT);
     }
 }

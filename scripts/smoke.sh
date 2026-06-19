@@ -152,6 +152,23 @@ assert d.get("chapter", "MISSING") is None, "did not miss the map"
   fi
 done
 
+# 11. POST /api/select switches the current exercise (validated against the
+# DISCOVERED ids — an unknown id is rejected 400, never used as a path). Run last
+# so it doesn't disturb the current-exercise the earlier assertions rely on.
+second="$(curl -s "$BASE/api/exercises" | python3 -c 'import sys,json; print(json.load(sys.stdin)["exercises"][1]["id"])')"
+sel_code="$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE/api/select" \
+  -H 'Content-Type: application/json' -d "{\"id\":\"$second\"}")"
+now="$(curl -s "$BASE/api/current" | python3 -c 'import sys,json; print(json.load(sys.stdin).get("exercise",""))')"
+if [ "$sel_code" = "200" ] && [ "$now" = "$second" ]; then
+  ok "POST /api/select switched current -> $second"
+else
+  fail "select: code=$sel_code current=$now (expected $second)"
+fi
+bad_code="$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE/api/select" \
+  -H 'Content-Type: application/json' -d '{"id":"../../etc/passwd"}')"
+[ "$bad_code" = "400" ] && ok "select rejects unknown id (400)" \
+  || fail "select unknown id: expected 400, got $bad_code"
+
 echo
 if [ "$fails" -eq 0 ]; then
   echo "SMOKE PASS ✓"
