@@ -1,0 +1,13 @@
+{
+  "name": "tempered-studio-e2e",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Playwright E2E + axe-core a11y audit of the rpro-serve web surface (task #12)",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.11.3",
+    "@playwright/test": "^1.61.0"
+  }
+}

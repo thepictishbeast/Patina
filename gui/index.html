@@ -119,7 +119,10 @@
   .ex .t { font-size:13px; flex:1; }
   .ex .t small { display:block; color:var(--fg-dim); font-size:11px; }
   .done .chip{color:var(--done)} .current .chip{color:var(--current)}
-  .locked{opacity:.6} .locked .chip{color:var(--locked)} .skipped .chip{color:var(--skipped)}
+  /* Dim "locked" rows with an explicit muted colour, not opacity: opacity
+     composites the text toward the background and drops it below the 4.5:1
+     contrast floor (~3.5:1). --fg-dim holds ~6-7.8:1 on every panel shade. */
+  .locked .t{color:var(--fg-dim)} .locked .chip{color:var(--locked)} .skipped .chip{color:var(--skipped)}
 
   /* Recall: the spaced-repetition queue (codes the learner met, to refresh). */
   .recall { margin:6px 8px 12px; border-top:1px solid var(--line); padding-top:9px; }
@@ -181,6 +184,12 @@
   .bref:hover{background:var(--bg-2)} .bref .c{font-family:var(--mono);color:var(--note)} .bref small{display:block;color:var(--fg-dim);margin-top:2px}
 
   @keyframes fadein{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  /* Respect a reduced-motion preference: collapse animations/transitions so
+     nothing fades or slides for users who opt out (and so the rendered state
+     is the settled state — no transient mid-fade opacity). */
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}
+  }
   .footer{position:fixed;bottom:0;left:0;right:0;display:flex;gap:18px;justify-content:center;
     padding:6px;background:var(--bg-2);border-top:1px solid var(--line);font-family:var(--mono);font-size:11px;color:var(--fg-dim)}
   .footer b{color:var(--fg)}
@@ -261,7 +270,7 @@
           <span style="flex:1"></span>
           <span id="editstate" style="color:var(--fg-dim)">read &amp; edit, then Run</span>
           <span id="resetbtn" title="Restore the original starter code" style="cursor:pointer;color:var(--accent-soft);margin-left:12px">↺ reset</span></div>
-        <textarea id="editorCode" class="scroll" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off">// loading the current exercise…</textarea>
+        <textarea id="editorCode" class="scroll" aria-label="Source code editor for the current exercise" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off">// loading the current exercise…</textarea>
       </div>
       <div class="runrow">
         <button class="run" id="runbtn">▷ Run</button>
@@ -315,7 +324,13 @@
 
     // ANSI helpers
     const g=s=>`\x1b[32m${s}\x1b[0m`, r=s=>`\x1b[31m${s}\x1b[0m`,
-          b=s=>`\x1b[34m${s}\x1b[0m`, d=s=>`\x1b[2m${s}\x1b[0m`;
+          b=s=>`\x1b[34m${s}\x1b[0m`,
+          // "dim" secondary text: emit C.dim as a truecolor foreground rather
+          // than the ANSI dim attribute (SGR 2). xterm bakes SGR-2 into the
+          // glyph's alpha (~0.5), which drops below the 4.5:1 contrast floor;
+          // C.dim is ~7.9:1 on the terminal background and is the same muted
+          // grey used across the rest of the UI.
+          d=s=>`\x1b[38;2;${[1,3,5].map(i=>parseInt(C.dim.slice(i,i+2),16)).join(';')}m${s}\x1b[0m`;
 
     // Static preview shown only when there is no server (opened via file://).
     function showDemo() {
@@ -396,7 +411,7 @@
         const st = e.status || 'locked';
         const sel = st === 'current' ? ' sel' : '';
         const tries = e.attempts ? ` · ${e.attempts} ${e.attempts === 1 ? 'try' : 'tries'}` : '';
-        return `<div class="ex ${st}${sel}" data-id="${esc(e.id)}" role="button" tabindex="0" aria-label="Switch to ${esc(e.id)}"><span class="chip">${CHIP[st] || '•'}</span>`
+        return `<div class="ex ${st}${sel}" data-id="${esc(e.id)}" role="button" tabindex="0" aria-label="Switch to ${esc(e.id)}. Status: ${st}${tries}"><span class="chip" aria-hidden="true">${CHIP[st] || '•'}</span>`
              + `<span class="t">${esc(e.id)}<small>[${st}]${tries}</small></span></div>`;
       }).join('') : '<div class="ex"><span class="t" style="color:var(--fg-dim)">no exercises</span></div>';
       // The list items LOOK clickable (pointer cursor) — make them switch the
