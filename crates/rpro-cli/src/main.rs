@@ -201,7 +201,10 @@ fn cmd_init() -> Result<()> {
     }
     // Ensure a Current exercise so the first run isn't an empty screen.
     let mut progress = store.load_progress().unwrap_or_default();
-    let has_current = progress.entries.values().any(|e| e.status == ExerciseStatus::Current);
+    let has_current = progress
+        .entries
+        .values()
+        .any(|e| e.status == ExerciseStatus::Current);
     if !has_current {
         if let Ok(mut exs) = rpro_runner::discover(&exercises_dir) {
             exs.sort_by(|a, b| a.source.cmp(&b.source)); // path order = learning order
@@ -344,19 +347,29 @@ fn cmd_exercise_skip() -> Result<()> {
     progress.set_skipped(&current_id);
     // Advance to the next unfinished exercise (discovery is in learning order).
     let next = exercises.iter().find(|ex| {
-        let s = progress.entries.get(&ex.meta.id).map_or(ExerciseStatus::Locked, |e| e.status);
+        let s = progress
+            .entries
+            .get(&ex.meta.id)
+            .map_or(ExerciseStatus::Locked, |e| e.status);
         !matches!(s, ExerciseStatus::Done | ExerciseStatus::Skipped)
     });
     if let Some(ex) = next {
         progress.set_current(&ex.meta.id);
     }
     store.save_progress(&progress)?;
-    println!("{} skipped {}", style("»").red().bold(), style(&current_id).bold());
+    println!(
+        "{} skipped {}",
+        style("»").red().bold(),
+        style(&current_id).bold()
+    );
     if let Some(ex) = next {
         println!("{} {}", style("→").cyan().bold(), style(&ex.meta.id).bold());
         println!("  {}", ex.meta.title);
     } else {
-        println!("  {}", style("nothing left unfinished — you've reached the end.").green());
+        println!(
+            "  {}",
+            style("nothing left unfinished — you've reached the end.").green()
+        );
     }
     Ok(())
 }
@@ -416,9 +429,12 @@ fn cmd_exercise_hint(level: u8, show_solution: bool) -> Result<()> {
         println!("     {}", r.why);
         println!(
             "     {}",
-            style(rpro_lang::Language::book_ref_url(&rpro_lang_rust::RustLanguage, r))
-                .dim()
-                .underlined()
+            style(rpro_lang::Language::book_ref_url(
+                &rpro_lang_rust::RustLanguage,
+                r
+            ))
+            .dim()
+            .underlined()
         );
         println!();
     }
@@ -602,13 +618,20 @@ fn cmd_exec(id: Option<&str>, op: &RunOp) -> Result<()> {
     let run_base = store.root().join("run");
     let name = rpro_runner::slug(&ex.meta.id);
     if name.is_empty() {
-        return Err(anyhow!("exercise id '{}' has no usable characters", ex.meta.id));
+        return Err(anyhow!(
+            "exercise id '{}' has no usable characters",
+            ex.meta.id
+        ));
     }
     let run_dir = run_base.join(&name);
     debug_assert_eq!(run_dir.parent(), Some(run_base.as_path()));
     prepare_scratch_project(&run_dir, &code)?;
 
-    let core = Core::new(Box::new(RustLanguage), Box::new(LocalProcess), Box::new(Store::user()?));
+    let core = Core::new(
+        Box::new(RustLanguage),
+        Box::new(LocalProcess),
+        Box::new(Store::user()?),
+    );
     let src = ExerciseSource {
         id: ExerciseId(ex.meta.id.clone()),
         dir: run_dir.display().to_string(),
@@ -616,8 +639,16 @@ fn cmd_exec(id: Option<&str>, op: &RunOp) -> Result<()> {
     };
 
     // CLI-first contract: show the exact line, then the raw output verbatim.
-    println!("{} {}", style(&ex.meta.id).bold().cyan(), style(&ex.meta.title).dim());
-    println!("{} {}", style("$").dim(), style(&core.plan(&src, op).display).dim());
+    println!(
+        "{} {}",
+        style(&ex.meta.id).bold().cyan(),
+        style(&ex.meta.title).dim()
+    );
+    println!(
+        "{} {}",
+        style("$").dim(),
+        style(&core.plan(&src, op).display).dim()
+    );
     println!();
     let outcome = pollster::block_on(core.run(&src, op)).context("running the toolchain")?;
     if !outcome.raw_stdout.is_empty() {
@@ -630,7 +661,11 @@ fn cmd_exec(id: Option<&str>, op: &RunOp) -> Result<()> {
     // Additive verdict + a by-hand diagnostic summary (raw is always above).
     println!();
     if outcome.status == Some(0) {
-        println!("{} in {}ms", style("✓ passed").green().bold(), outcome.duration_ms);
+        println!(
+            "{} in {}ms",
+            style("✓ passed").green().bold(),
+            outcome.duration_ms
+        );
     } else {
         println!(
             "{} · {} diagnostic(s) · {}ms",
@@ -640,7 +675,12 @@ fn cmd_exec(id: Option<&str>, op: &RunOp) -> Result<()> {
         );
         for d in &outcome.diagnostics {
             let code = d.code.clone().unwrap_or_default();
-            println!("  {} {}  {}", style("•").red(), style(code).bold(), d.message);
+            println!(
+                "  {} {}  {}",
+                style("•").red(),
+                style(code).bold(),
+                d.message
+            );
         }
     }
     Ok(())
@@ -649,11 +689,23 @@ fn cmd_exec(id: Option<&str>, op: &RunOp) -> Result<()> {
 /// Explain a diagnostic code in full, via the language's explain plan
 /// (e.g. `rustc --explain E0382`), routed through the Core.
 fn cmd_explain(code: &str) -> Result<()> {
-    let core = Core::new(Box::new(RustLanguage), Box::new(LocalProcess), Box::new(Store::user()?));
+    let core = Core::new(
+        Box::new(RustLanguage),
+        Box::new(LocalProcess),
+        Box::new(Store::user()?),
+    );
     // `Explain` ignores the exercise source; a placeholder satisfies the API.
-    let ex = ExerciseSource { id: ExerciseId(String::new()), dir: ".".into(), entry: String::new() };
+    let ex = ExerciseSource {
+        id: ExerciseId(String::new()),
+        dir: ".".into(),
+        entry: String::new(),
+    };
     let op = RunOp::Explain(code.to_string());
-    println!("{} {}", style("$").dim(), style(&core.plan(&ex, &op).display).dim());
+    println!(
+        "{} {}",
+        style("$").dim(),
+        style(&core.plan(&ex, &op).display).dim()
+    );
     println!();
     let outcome = pollster::block_on(core.run(&ex, &op)).context("running the explainer")?;
     if !outcome.raw_stdout.is_empty() {
@@ -689,7 +741,9 @@ fn resolve_exercise<'a>(
             return Ok(e);
         }
     }
-    exercises.first().ok_or_else(|| anyhow!("no exercises found"))
+    exercises
+        .first()
+        .ok_or_else(|| anyhow!("no exercises found"))
 }
 
 /// Create a minimal scratch project at `dir` from the language's scaffold, so
@@ -767,7 +821,11 @@ mod tests {
     #[test]
     fn current_exercise_id_finds_only_the_current() {
         let mut p = Progress::default();
-        assert_eq!(current_exercise_id(&p), None, "empty progress has no current");
+        assert_eq!(
+            current_exercise_id(&p),
+            None,
+            "empty progress has no current"
+        );
         p.set_done("a/1");
         assert_eq!(current_exercise_id(&p), None, "a Done entry is not current");
         p.set_current("a/2");
@@ -780,7 +838,10 @@ mod tests {
         let store = Store::at(dir.path().to_path_buf());
         let exs = vec![ex("a/1"), ex("a/2"), ex("a/3")];
         // An explicit id wins.
-        assert_eq!(resolve_exercise(&store, &exs, Some("a/2")).unwrap().meta.id, "a/2");
+        assert_eq!(
+            resolve_exercise(&store, &exs, Some("a/2")).unwrap().meta.id,
+            "a/2"
+        );
         // An unknown explicit id is an error (never silently falls back).
         assert!(resolve_exercise(&store, &exs, Some("missing")).is_err());
         // No id + no progress → the first exercise (learning order).
@@ -798,7 +859,11 @@ mod tests {
         let f = dir.path().join("f.txt");
         write_if_missing(&f, "first").unwrap();
         write_if_missing(&f, "second").unwrap();
-        assert_eq!(std::fs::read_to_string(&f).unwrap(), "first", "existing file is kept");
+        assert_eq!(
+            std::fs::read_to_string(&f).unwrap(),
+            "first",
+            "existing file is kept"
+        );
     }
 
     #[test]
@@ -811,7 +876,10 @@ mod tests {
         let to = dst.path().join("out");
         copy_tree(src.path(), &to).unwrap();
         assert_eq!(std::fs::read_to_string(to.join("top.txt")).unwrap(), "t");
-        assert_eq!(std::fs::read_to_string(to.join("sub").join("inner.txt")).unwrap(), "i");
+        assert_eq!(
+            std::fs::read_to_string(to.join("sub").join("inner.txt")).unwrap(),
+            "i"
+        );
     }
 
     /// Data invariant behind the in-app Book jump links: every exercise's
@@ -824,7 +892,10 @@ mod tests {
         let exercises = rpro_runner::discover(&manifest.join("../../exercises"))
             .expect("discover workspace exercises");
         let book = rpro_book::Book::load(&manifest.join("../../book")).expect("load bundled book");
-        assert!(!exercises.is_empty() && !book.is_empty(), "fixtures present");
+        assert!(
+            !exercises.is_empty() && !book.is_empty(),
+            "fixtures present"
+        );
         let mut broken = Vec::new();
         for ex in &exercises {
             for r in &ex.meta.book_refs {

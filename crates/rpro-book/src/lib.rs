@@ -272,7 +272,10 @@ fn first_match_snippet(markdown: &str, needle_lower: &str) -> String {
         .lines()
         .find(|l| l.to_lowercase().contains(needle_lower))
         .map(|l| {
-            let t = l.trim().trim_start_matches(['#', '>', '-', '*', ' ']).trim();
+            let t = l
+                .trim()
+                .trim_start_matches(['#', '>', '-', '*', ' '])
+                .trim();
             if t.chars().count() > 140 {
                 let head: String = t.chars().take(140).collect();
                 format!("{head}…")
@@ -329,19 +332,27 @@ mod tests {
 
     #[test]
     fn lone_include_block_becomes_a_link() {
-        let src = "Intro.\n\n```rust\n{{#rustdoc_include ../listings/x/src/main.rs:here}}\n```\n\nMore.";
+        let src =
+            "Intro.\n\n```rust\n{{#rustdoc_include ../listings/x/src/main.rs:here}}\n```\n\nMore.";
         let out = clean_mdbook_source(src, URL);
         assert!(!out.contains("{{#"), "raw directive must be gone: {out}");
         assert!(!out.contains("```"), "empty code fence dropped: {out}");
         assert!(out.contains(URL), "links to the live listing: {out}");
-        assert!(out.contains("Intro.") && out.contains("More."), "prose preserved");
+        assert!(
+            out.contains("Intro.") && out.contains("More."),
+            "prose preserved"
+        );
     }
 
     #[test]
     fn adjacent_includes_collapse_to_one_link() {
         let src = "```rust\n{{#rustdoc_include a:here}}\n```\n```rust\n{{#rustdoc_include b:here}}\n```\n";
         let out = clean_mdbook_source(src, URL);
-        assert_eq!(out.matches(URL).count(), 1, "collapsed to a single callout: {out}");
+        assert_eq!(
+            out.matches(URL).count(),
+            1,
+            "collapsed to a single callout: {out}"
+        );
     }
 
     #[test]
@@ -360,7 +371,10 @@ mod tests {
     fn fence_info_string_normalized_and_real_code_kept() {
         let src = "```rust,ignore,does_not_compile\nlet x = 5;\n```\n";
         let out = clean_mdbook_source(src, URL);
-        assert!(out.contains("```rust\n"), "info string normalized to bare lang: {out}");
+        assert!(
+            out.contains("```rust\n"),
+            "info string normalized to bare lang: {out}"
+        );
         assert!(!out.contains("does_not_compile"), "annotations stripped");
         assert!(out.contains("let x = 5;"), "code body kept");
     }
@@ -370,26 +384,48 @@ mod tests {
         // A console block's `#` lines are NOT mdBook hidden lines — keep them.
         let src = "```console\n$ run-it\n# a comment in output\n```\n";
         let out = clean_mdbook_source(src, URL);
-        assert!(out.contains("# a comment in output"), "non-rust hash kept: {out}");
+        assert!(
+            out.contains("# a comment in output"),
+            "non-rust hash kept: {out}"
+        );
     }
 
     fn chap(id: &str, md: &str) -> Chapter {
-        Chapter { id: id.into(), path: PathBuf::from(format!("{id}.md")), markdown: md.into() }
+        Chapter {
+            id: id.into(),
+            path: PathBuf::from(format!("{id}.md")),
+            markdown: md.into(),
+        }
     }
     fn book(chs: &[(&str, &str)]) -> Book {
-        Book { chapters: chs.iter().map(|(id, md)| ((*id).to_string(), chap(id, md))).collect() }
+        Book {
+            chapters: chs
+                .iter()
+                .map(|(id, md)| ((*id).to_string(), chap(id, md)))
+                .collect(),
+        }
     }
 
     #[test]
     fn title_is_first_heading_or_id() {
-        assert_eq!(chap("ch04-01", "## What Is Ownership?\n\nbody").title(), "What Is Ownership?");
-        assert_eq!(chap("ch00", "no heading here").title(), "ch00", "falls back to id");
+        assert_eq!(
+            chap("ch04-01", "## What Is Ownership?\n\nbody").title(),
+            "What Is Ownership?"
+        );
+        assert_eq!(
+            chap("ch00", "no heading here").title(),
+            "ch00",
+            "falls back to id"
+        );
     }
 
     #[test]
     fn search_finds_counts_and_orders_by_frequency() {
         let b = book(&[
-            ("ch04-01-what-is-ownership", "# Ownership\n\nownership ownership ownership"),
+            (
+                "ch04-01-what-is-ownership",
+                "# Ownership\n\nownership ownership ownership",
+            ),
             ("ch01-intro", "# Intro\n\none mention of ownership here"),
             ("ch99-empty", "# Misc\n\nnothing relevant"),
         ]);
@@ -400,13 +436,21 @@ mod tests {
         assert_eq!(hits[0].count, 4);
         assert_eq!(hits[0].title, "Ownership");
         assert_eq!(hits[1].chapter, "ch01-intro");
-        assert!(hits[1].snippet.contains("one mention of ownership"), "snippet: {:?}", hits[1].snippet);
+        assert!(
+            hits[1].snippet.contains("one mention of ownership"),
+            "snippet: {:?}",
+            hits[1].snippet
+        );
     }
 
     #[test]
     fn search_is_case_insensitive_and_blank_term_is_empty() {
         let b = book(&[("ch", "# H\n\nThe Borrow Checker enforces rules")]);
-        assert_eq!(b.search("borrow checker").len(), 1, "case-insensitive match");
+        assert_eq!(
+            b.search("borrow checker").len(),
+            1,
+            "case-insensitive match"
+        );
         assert!(b.search("   ").is_empty(), "blank term → no hits");
         assert!(b.search("absent-term").is_empty(), "no match → no hits");
     }
@@ -415,8 +459,15 @@ mod tests {
     fn snippet_strips_markers_and_is_truncated() {
         let long = format!("# T\n\n> {}", "ownership ".repeat(40));
         let hits = book(&[("ch", &long)]).search("ownership");
-        assert!(!hits[0].snippet.starts_with('>'), "blockquote marker trimmed: {:?}", hits[0].snippet);
-        assert!(hits[0].snippet.chars().count() <= 141, "truncated (≤140 + ellipsis)");
+        assert!(
+            !hits[0].snippet.starts_with('>'),
+            "blockquote marker trimmed: {:?}",
+            hits[0].snippet
+        );
+        assert!(
+            hits[0].snippet.chars().count() <= 141,
+            "truncated (≤140 + ellipsis)"
+        );
         assert!(hits[0].snippet.ends_with('…'), "ellipsis on truncation");
     }
 }

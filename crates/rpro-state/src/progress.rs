@@ -210,7 +210,11 @@ mod tests {
             .filter(|(_, e)| e.status == ExerciseStatus::Current)
             .map(|(id, _)| id.clone())
             .collect();
-        assert_eq!(currents, vec!["a/3".to_string()], "single Current = selection");
+        assert_eq!(
+            currents,
+            vec!["a/3".to_string()],
+            "single Current = selection"
+        );
         // The previous Current was demoted to Locked, NOT lost (attempts kept).
         assert_eq!(p.entries["a/2"].status, ExerciseStatus::Locked);
         assert_eq!(p.entries["a/2"].attempts, 1, "demote preserves attempts");
@@ -260,6 +264,9 @@ mod tests {
         assert_eq!(e.status, ExerciseStatus::Current);
         assert_eq!(e.attempts, 0);
         assert!(e.completed_at.is_none());
-        assert_eq!(e.started_at, started, "first-touch time is preserved across reset");
+        assert_eq!(
+            e.started_at, started,
+            "first-touch time is preserved across reset"
+        );
     }
 }

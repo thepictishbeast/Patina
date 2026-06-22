@@ -44,12 +44,20 @@ fn tab_bar(app: &App) -> Tabs<'static> {
         .collect();
     Tabs::new(titles)
         .select(app.tab.index())
-        .highlight_style(Style::new().fg(app.theme.accent).add_modifier(Modifier::BOLD))
+        .highlight_style(
+            Style::new()
+                .fg(app.theme.accent)
+                .add_modifier(Modifier::BOLD),
+        )
         .divider(Span::raw("│"))
-        .block(Block::bordered().title(Span::styled(
-            " ◆ Tempered Studio ",
-            Style::new().fg(app.theme.accent).add_modifier(Modifier::BOLD),
-        )))
+        .block(
+            Block::bordered().title(Span::styled(
+                " ◆ Tempered Studio ",
+                Style::new()
+                    .fg(app.theme.accent)
+                    .add_modifier(Modifier::BOLD),
+            )),
+        )
 }
 
 /// Render the dashboard: tab bar, a progress gauge, the current exercise, and
@@ -93,7 +101,12 @@ pub fn render_dashboard(f: &mut Frame, app: &App, data: &DashboardData) {
     // Current exercise.
     let current = match (&data.current_id, &data.current_title) {
         (Some(id), Some(title)) => Line::from(vec![
-            Span::styled("▸ ", Style::new().fg(app.theme.current).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                "▸ ",
+                Style::new()
+                    .fg(app.theme.current)
+                    .add_modifier(Modifier::BOLD),
+            ),
             Span::styled(format!("{id}  "), Style::new().add_modifier(Modifier::BOLD)),
             Span::styled(title.clone(), Style::new().fg(app.theme.muted)),
         ]),
@@ -109,9 +122,17 @@ pub fn render_dashboard(f: &mut Frame, app: &App, data: &DashboardData) {
 
     // Recall — the spaced-repetition queue, mirroring the web's "↻ Recall".
     if show_recall {
-        let title = if app.ascii { " Recall " } else { " ↻ Recall " };
+        let title = if app.ascii {
+            " Recall "
+        } else {
+            " ↻ Recall "
+        };
         let line = if data.due.is_empty() {
-            let check = if app.ascii { "(all mastered)" } else { "all mastered ✓" };
+            let check = if app.ascii {
+                "(all mastered)"
+            } else {
+                "all mastered ✓"
+            };
             Line::from(Span::styled(
                 format!(
                     "{} concept{} {check}",
@@ -128,7 +149,9 @@ pub fn render_dashboard(f: &mut Frame, app: &App, data: &DashboardData) {
                 .map(|c| {
                     Span::styled(
                         format!("{c} "),
-                        Style::new().fg(app.theme.error).add_modifier(Modifier::BOLD),
+                        Style::new()
+                            .fg(app.theme.error)
+                            .add_modifier(Modifier::BOLD),
                     )
                 })
                 .collect();
@@ -224,7 +247,9 @@ pub fn render_exercise(f: &mut Frame, app: &App, data: &ExerciseViewData) {
     let title_line = Line::from(vec![
         Span::styled(
             format!(" {} ", data.id),
-            Style::new().fg(app.theme.accent).add_modifier(Modifier::BOLD),
+            Style::new()
+                .fg(app.theme.accent)
+                .add_modifier(Modifier::BOLD),
         ),
         Span::raw("  "),
         Span::styled(data.title.clone(), Style::new().fg(app.theme.muted)),
@@ -235,9 +260,15 @@ pub fn render_exercise(f: &mut Frame, app: &App, data: &ExerciseViewData) {
             Style::new().fg(app.theme.current),
         ))
     } else if let Some((passed, ms)) = data.verdict {
-        let (label, col) =
-            if passed { ("✓ passed", app.theme.done) } else { ("✗ failed", app.theme.error) };
-        Line::from(Span::styled(format!("{label} in {ms}ms"), Style::new().fg(col)))
+        let (label, col) = if passed {
+            ("✓ passed", app.theme.done)
+        } else {
+            ("✗ failed", app.theme.error)
+        };
+        Line::from(Span::styled(
+            format!("{label} in {ms}ms"),
+            Style::new().fg(col),
+        ))
     } else {
         Line::from(Span::styled(
             "press r to run · h for a hint — read the real output by hand",
@@ -278,7 +309,10 @@ pub fn render_exercise(f: &mut Frame, app: &App, data: &ExerciseViewData) {
     );
 
     let diag_items: Vec<ListItem> = if data.diagnostics.is_empty() {
-        vec![ListItem::new(Span::styled("  (none)", Style::new().fg(app.theme.muted)))]
+        vec![ListItem::new(Span::styled(
+            "  (none)",
+            Style::new().fg(app.theme.muted),
+        ))]
     } else {
         data.diagnostics
             .iter()
@@ -289,7 +323,10 @@ pub fn render_exercise(f: &mut Frame, app: &App, data: &ExerciseViewData) {
                     .as_ref()
                     .map_or_else(String::new, |s| format!(" L{}:{}", s.line, s.col));
                 ListItem::new(Line::from(vec![
-                    Span::styled(status::diag_token(d.level), status::diag_style(d.level, &app.theme)),
+                    Span::styled(
+                        status::diag_token(d.level),
+                        status::diag_style(d.level, &app.theme),
+                    ),
                     Span::raw(" "),
                     Span::styled(code, status::diag_style(d.level, &app.theme)),
                     Span::styled(loc, Style::new().fg(app.theme.muted)),
@@ -314,7 +351,11 @@ pub fn render_exercise(f: &mut Frame, app: &App, data: &ExerciseViewData) {
         } else {
             format!(" Hint {level}/{max}  (h for more) ")
         };
-        let col = if last { app.theme.error } else { app.theme.note };
+        let col = if last {
+            app.theme.error
+        } else {
+            app.theme.note
+        };
         f.render_widget(
             Paragraph::new(Line::from(Span::styled(text.clone(), Style::new().fg(col))))
                 .wrap(Wrap { trim: true })
@@ -325,7 +366,10 @@ pub fn render_exercise(f: &mut Frame, app: &App, data: &ExerciseViewData) {
 
     // footer: book refs
     let refs: Vec<Span> = if data.book_refs.is_empty() {
-        vec![Span::styled("no book refs for this exercise", Style::new().fg(app.theme.muted))]
+        vec![Span::styled(
+            "no book refs for this exercise",
+            Style::new().fg(app.theme.muted),
+        )]
     } else {
         data.book_refs
             .iter()
@@ -376,7 +420,10 @@ fn inline_spans(text: &str, theme: &Theme) -> Vec<Span<'static>> {
                 .find(|&j| chars[j] == '*' && chars[j + 1] == '*')
             {
                 flush_plain(&mut plain, &mut spans);
-                spans.push(Span::styled(take(i + 2, end), Style::new().add_modifier(Modifier::BOLD)));
+                spans.push(Span::styled(
+                    take(i + 2, end),
+                    Style::new().add_modifier(Modifier::BOLD),
+                ));
                 i = end + 2;
                 continue;
             }
@@ -386,7 +433,10 @@ fn inline_spans(text: &str, theme: &Theme) -> Vec<Span<'static>> {
             if let Some(end) = find(i + 1, '*') {
                 if end > i + 1 {
                     flush_plain(&mut plain, &mut spans);
-                    spans.push(Span::styled(take(i + 1, end), Style::new().add_modifier(Modifier::ITALIC)));
+                    spans.push(Span::styled(
+                        take(i + 1, end),
+                        Style::new().add_modifier(Modifier::ITALIC),
+                    ));
                     i = end + 1;
                     continue;
                 }
@@ -394,12 +444,15 @@ fn inline_spans(text: &str, theme: &Theme) -> Vec<Span<'static>> {
         }
         // emphasis _..._ — only at a word boundary (GFM intraword rule).
         if c == '_' && i.checked_sub(1).is_none_or(|p| !chars[p].is_alphanumeric()) {
-            if let Some(end) = (i + 1..chars.len()).find(|&j| {
-                chars[j] == '_' && chars.get(j + 1).is_none_or(|n| !n.is_alphanumeric())
-            }) {
+            if let Some(end) = (i + 1..chars.len())
+                .find(|&j| chars[j] == '_' && chars.get(j + 1).is_none_or(|n| !n.is_alphanumeric()))
+            {
                 if end > i + 1 {
                     flush_plain(&mut plain, &mut spans);
-                    spans.push(Span::styled(take(i + 1, end), Style::new().add_modifier(Modifier::ITALIC)));
+                    spans.push(Span::styled(
+                        take(i + 1, end),
+                        Style::new().add_modifier(Modifier::ITALIC),
+                    ));
                     i = end + 1;
                     continue;
                 }
@@ -413,7 +466,9 @@ fn inline_spans(text: &str, theme: &Theme) -> Vec<Span<'static>> {
                         flush_plain(&mut plain, &mut spans);
                         spans.push(Span::styled(
                             take(i + 1, close),
-                            Style::new().fg(theme.note).add_modifier(Modifier::UNDERLINED),
+                            Style::new()
+                                .fg(theme.note)
+                                .add_modifier(Modifier::UNDERLINED),
                         ));
                         i = paren + 1;
                         continue;
@@ -448,8 +503,10 @@ pub fn render_book(f: &mut Frame, app: &App, book: &Book) {
     let ids: Vec<&String> = book.chapters.keys().collect();
     if ids.is_empty() {
         f.render_widget(
-            Paragraph::new("\n  No book content yet — run `rpro init` to seed the bundled chapters.")
-                .block(Block::bordered().title(" Book ")),
+            Paragraph::new(
+                "\n  No book content yet — run `rpro init` to seed the bundled chapters.",
+            )
+            .block(Block::bordered().title(" Book ")),
             rows[1],
         );
         return;
@@ -466,7 +523,11 @@ pub fn render_book(f: &mut Frame, app: &App, book: &Book) {
     let items: Vec<ListItem> = ids.iter().map(|id| ListItem::new((*id).clone())).collect();
     let list = List::new(items)
         .block(Block::bordered().title(format!(" Chapters ({}) ", ids.len())))
-        .highlight_style(Style::new().fg(app.theme.accent).add_modifier(Modifier::BOLD))
+        .highlight_style(
+            Style::new()
+                .fg(app.theme.accent)
+                .add_modifier(Modifier::BOLD),
+        )
         .highlight_symbol("▸ ");
     let mut state = ListState::default();
     state.select(Some(sel));
@@ -500,7 +561,9 @@ pub fn render_book(f: &mut Frame, app: &App, book: &Book) {
             if let Some(h) = t.strip_prefix('#') {
                 Some(Line::from(Span::styled(
                     h.trim_start_matches('#').trim().to_string(),
-                    Style::new().fg(app.theme.accent).add_modifier(Modifier::BOLD),
+                    Style::new()
+                        .fg(app.theme.accent)
+                        .add_modifier(Modifier::BOLD),
                 )))
             } else if let Some(b) = t.strip_prefix("> ").or_else(|| (t == ">").then_some("")) {
                 // Blockquote (the Book's many Note/Warning callouts): a muted,
@@ -508,7 +571,9 @@ pub fn render_book(f: &mut Frame, app: &App, book: &Book) {
                 let rail = if app.ascii { "| " } else { "▏ " };
                 Some(Line::from(Span::styled(
                     format!("{rail}{b}"),
-                    Style::new().fg(app.theme.muted).add_modifier(Modifier::ITALIC),
+                    Style::new()
+                        .fg(app.theme.muted)
+                        .add_modifier(Modifier::ITALIC),
                 )))
             } else {
                 // Prose line: render inline markdown as styled spans (no raw
@@ -561,7 +626,11 @@ pub fn render_roadmap(f: &mut Frame, app: &App, content: &str) {
             } else if let Some(r) = s.strip_prefix("- [x]") {
                 task("✓", r.trim_start(), Style::new().fg(t.done))
             } else if let Some(r) = s.strip_prefix("- [>]") {
-                task("▸", r.trim_start(), Style::new().fg(t.current).add_modifier(Modifier::BOLD))
+                task(
+                    "▸",
+                    r.trim_start(),
+                    Style::new().fg(t.current).add_modifier(Modifier::BOLD),
+                )
             } else if let Some(r) = s.strip_prefix("- [ ]") {
                 task("▢", r.trim_start(), Style::new().fg(t.locked))
             } else {
@@ -605,8 +674,8 @@ fn truncate(s: &str, max: usize) -> String {
 mod tests {
     use super::*;
     use crate::theme::Theme;
-    use ratatui::backend::TestBackend;
     use ratatui::Terminal;
+    use ratatui::backend::TestBackend;
 
     fn screen_text(width: u16, height: u16, data: &DashboardData) -> String {
         let app = App::new(Theme::dark(), true);
@@ -634,8 +703,14 @@ mod tests {
             ..Default::default()
         };
         let text = screen_text(80, 20, &data);
-        assert!(text.contains("Tempered Studio"), "brand title missing:\n{text}");
-        assert!(text.contains("Dashboard") && text.contains("Roadmap"), "tabs missing");
+        assert!(
+            text.contains("Tempered Studio"),
+            "brand title missing:\n{text}"
+        );
+        assert!(
+            text.contains("Dashboard") && text.contains("Roadmap"),
+            "tabs missing"
+        );
         assert!(text.contains("12/40"), "gauge counts missing");
         assert!(text.contains("30%"), "gauge pct missing:\n{text}");
         assert!(text.contains("ownership/01_move"), "current id missing");
@@ -666,16 +741,29 @@ mod tests {
         };
         let text = screen_text(80, 24, &data);
         assert!(text.contains("Recall"), "recall panel missing:\n{text}");
-        assert!(text.contains("E4321") && text.contains("E4399"), "due codes missing:\n{text}");
-        assert!(text.contains("1/3 mastered"), "mastery count missing:\n{text}");
+        assert!(
+            text.contains("E4321") && text.contains("E4399"),
+            "due codes missing:\n{text}"
+        );
+        assert!(
+            text.contains("1/3 mastered"),
+            "mastery count missing:\n{text}"
+        );
     }
 
     #[test]
     fn dashboard_recall_hidden_until_tracked() {
         // tracked == 0 → no Recall panel (a fresh learner sees absence).
-        let data = DashboardData { total: 10, up_next: vec!["a/1".into()], ..Default::default() };
+        let data = DashboardData {
+            total: 10,
+            up_next: vec!["a/1".into()],
+            ..Default::default()
+        };
         let text = screen_text(80, 24, &data);
-        assert!(!text.contains("Recall"), "recall must hide at tracked=0:\n{text}");
+        assert!(
+            !text.contains("Recall"),
+            "recall must hide at tracked=0:\n{text}"
+        );
     }
 
     #[test]
@@ -690,7 +778,10 @@ mod tests {
         };
         let text = screen_text(80, 24, &data);
         assert!(text.contains("Recall"), "recall panel missing:\n{text}");
-        assert!(text.contains("4 concepts") && text.contains("mastered"), "all-mastered msg missing:\n{text}");
+        assert!(
+            text.contains("4 concepts") && text.contains("mastered"),
+            "all-mastered msg missing:\n{text}"
+        );
     }
 
     fn screen_text_ex(width: u16, height: u16, data: &ExerciseViewData) -> String {
@@ -720,7 +811,11 @@ mod tests {
                 code: Some("E4321".into()),
                 level: DiagLevel::Error,
                 message: "borrow of moved value".into(),
-                span: Some(DiagSpan { file: "main.rs".into(), line: 7, col: 5 }),
+                span: Some(DiagSpan {
+                    file: "main.rs".into(),
+                    line: 7,
+                    col: 5,
+                }),
             }],
             assists: EditorAssists::default(), // all on = Free
             ..Default::default()
@@ -737,7 +832,11 @@ mod tests {
         let text = screen_text_ex(
             90,
             24,
-            &ExerciseViewData { id: "x/1".into(), assists: EditorAssists::default(), ..Default::default() },
+            &ExerciseViewData {
+                id: "x/1".into(),
+                assists: EditorAssists::default(),
+                ..Default::default()
+            },
         );
         assert!(text.contains("no output yet"));
         assert!(text.contains("[FREE]"));
@@ -755,15 +854,24 @@ mod tests {
         };
         let text = screen_text_ex(90, 24, &data);
         assert!(text.contains("Hint 2/3"), "hint title missing:\n{text}");
-        assert!(text.contains("Expect error EXXXX"), "hint text missing:\n{text}");
+        assert!(
+            text.contains("Expect error EXXXX"),
+            "hint text missing:\n{text}"
+        );
     }
 
     #[test]
     fn exercise_hint_hidden_until_climbed() {
-        let data =
-            ExerciseViewData { id: "x/1".into(), assists: EditorAssists::default(), ..Default::default() };
+        let data = ExerciseViewData {
+            id: "x/1".into(),
+            assists: EditorAssists::default(),
+            ..Default::default()
+        };
         let text = screen_text_ex(90, 24, &data);
-        assert!(!text.contains("Hint "), "no hint row until the learner climbs:\n{text}");
+        assert!(
+            !text.contains("Hint "),
+            "no hint row until the learner climbs:\n{text}"
+        );
     }
 
     #[test]
@@ -799,7 +907,10 @@ mod tests {
                 s.push_str(buf[(x, y)].symbol());
             }
         }
-        assert!(s.contains("ch03-01-variables"), "chapter list missing:\n{s}");
+        assert!(
+            s.contains("ch03-01-variables"),
+            "chapter list missing:\n{s}"
+        );
         assert!(s.contains("ch04-01-ownership"), "second chapter missing");
         assert!(s.contains("Variables"), "selected heading missing");
         assert!(s.contains("immutable"), "selected content missing");
@@ -830,12 +941,24 @@ mod tests {
                 s.push_str(buf[(x, y)].symbol());
             }
         }
-        assert!(!s.contains("{{#"), "raw mdBook directive leaked into the TUI:\n{s}");
+        assert!(
+            !s.contains("{{#"),
+            "raw mdBook directive leaked into the TUI:\n{s}"
+        );
         assert!(!s.contains("```"), "code fence line not hidden:\n{s}");
-        assert!(s.contains("Read this code listing"), "missing link-out callout:\n{s}");
+        assert!(
+            s.contains("Read this code listing"),
+            "missing link-out callout:\n{s}"
+        );
         // Blockquote rendered as a marked rail, not a literal `>` (ascii mode → `|`).
-        assert!(s.contains("| Note: borrows"), "blockquote not styled as a rail:\n{s}");
-        assert!(!s.contains("> Note:"), "literal blockquote marker leaked:\n{s}");
+        assert!(
+            s.contains("| Note: borrows"),
+            "blockquote not styled as a rail:\n{s}"
+        );
+        assert!(
+            !s.contains("> Note:"),
+            "literal blockquote marker leaked:\n{s}"
+        );
     }
 
     #[test]
@@ -861,11 +984,18 @@ mod tests {
         use rpro_book::{Book, Chapter};
         use std::collections::BTreeMap;
         use std::path::PathBuf;
-        let md = (0..20).map(|i| format!("line-{i:02}")).collect::<Vec<_>>().join("\n");
+        let md = (0..20)
+            .map(|i| format!("line-{i:02}"))
+            .collect::<Vec<_>>()
+            .join("\n");
         let mut chapters = BTreeMap::new();
         chapters.insert(
             "ch".to_string(),
-            Chapter { id: "ch".into(), path: PathBuf::from("a"), markdown: md },
+            Chapter {
+                id: "ch".into(),
+                path: PathBuf::from("a"),
+                markdown: md,
+            },
         );
         let book = Book { chapters };
         let render = |scroll: u16| {
@@ -885,23 +1015,51 @@ mod tests {
         assert!(render(0).contains("line-00"), "top line shows at scroll 0");
         let scrolled = render(8);
         assert!(!scrolled.contains("line-00"), "line-00 should scroll off");
-        assert!(scrolled.contains("line-08"), "later lines show when scrolled");
+        assert!(
+            scrolled.contains("line-08"),
+            "later lines show when scrolled"
+        );
     }
 
     #[test]
     fn inline_renders_markdown_as_spans_without_raw_markers() {
         let th = Theme::dark();
-        let sp = inline_spans("the _rules_ of `String`, see **this** and [docs](http://x.io)", &th);
+        let sp = inline_spans(
+            "the _rules_ of `String`, see **this** and [docs](http://x.io)",
+            &th,
+        );
         let joined: String = sp.iter().map(|s| s.content.as_ref()).collect();
         // The styled content survives; the raw markers do not.
-        assert!(joined.contains("rules") && joined.contains("String") && joined.contains("this") && joined.contains("docs"));
-        assert!(!joined.contains('_') && !joined.contains('`') && !joined.contains('*') && !joined.contains('['),
-            "raw markers leaked: {joined:?}");
-        assert!(!joined.contains("http://x.io"), "link url dropped, text kept: {joined:?}");
+        assert!(
+            joined.contains("rules")
+                && joined.contains("String")
+                && joined.contains("this")
+                && joined.contains("docs")
+        );
+        assert!(
+            !joined.contains('_')
+                && !joined.contains('`')
+                && !joined.contains('*')
+                && !joined.contains('['),
+            "raw markers leaked: {joined:?}"
+        );
+        assert!(
+            !joined.contains("http://x.io"),
+            "link url dropped, text kept: {joined:?}"
+        );
         // The right spans carry the right styles.
-        assert!(sp.iter().any(|s| s.content == "rules" && s.style.add_modifier.contains(Modifier::ITALIC)));
-        assert!(sp.iter().any(|s| s.content == "this" && s.style.add_modifier.contains(Modifier::BOLD)));
-        assert!(sp.iter().any(|s| s.content == "String" && s.style.fg == Some(th.note)));
+        assert!(
+            sp.iter()
+                .any(|s| s.content == "rules" && s.style.add_modifier.contains(Modifier::ITALIC))
+        );
+        assert!(
+            sp.iter()
+                .any(|s| s.content == "this" && s.style.add_modifier.contains(Modifier::BOLD))
+        );
+        assert!(
+            sp.iter()
+                .any(|s| s.content == "String" && s.style.fg == Some(th.note))
+        );
         assert!(sp.iter().any(|s| s.content == "docs" && s.style.add_modifier.contains(Modifier::UNDERLINED)));
     }
 
@@ -910,8 +1068,15 @@ mod tests {
         let th = Theme::dark();
         let sp = inline_spans("call to_string and a * b here", &th);
         let joined: String = sp.iter().map(|s| s.content.as_ref()).collect();
-        assert_eq!(joined, "call to_string and a * b here", "intraword _ and lone * stay literal");
-        assert!(sp.iter().all(|s| !s.style.add_modifier.contains(Modifier::ITALIC)), "nothing italicised");
+        assert_eq!(
+            joined, "call to_string and a * b here",
+            "intraword _ and lone * stay literal"
+        );
+        assert!(
+            sp.iter()
+                .all(|s| !s.style.add_modifier.contains(Modifier::ITALIC)),
+            "nothing italicised"
+        );
     }
 
     #[test]
@@ -939,8 +1104,17 @@ mod tests {
                 s.push_str(buf[(x, y)].symbol());
             }
         }
-        assert!(s.contains("immutable") && s.contains("mut"), "inline content present:\n{s}");
-        assert!(!s.contains("_immutable_"), "literal underscore markers leaked:\n{s}");
-        assert!(!s.contains("`mut`"), "literal backtick markers leaked:\n{s}");
+        assert!(
+            s.contains("immutable") && s.contains("mut"),
+            "inline content present:\n{s}"
+        );
+        assert!(
+            !s.contains("_immutable_"),
+            "literal underscore markers leaked:\n{s}"
+        );
+        assert!(
+            !s.contains("`mut`"),
+            "literal backtick markers leaked:\n{s}"
+        );
     }
 }

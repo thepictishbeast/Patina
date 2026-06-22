@@ -177,7 +177,10 @@ mod tests {
         let free = EditorAssists::default();
         assert!(is_free(free));
         assert_eq!(mode_badge(free), "[FREE]");
-        let learning = EditorAssists { inline_diagnostics: false, ..EditorAssists::default() };
+        let learning = EditorAssists {
+            inline_diagnostics: false,
+            ..EditorAssists::default()
+        };
         assert!(!is_free(learning));
         assert_eq!(mode_badge(learning), "[LEARN]");
     }

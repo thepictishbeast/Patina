@@ -124,7 +124,11 @@ impl ExerciseMetadata {
     /// The tutor guides; it never auto-types the fix (see `docs/EDUCATION.md`).
     #[must_use]
     pub fn hint(&self, requested: u8) -> (u8, u8, String) {
-        let max_level: u8 = if self.solution_outline.is_some() { 3 } else { 2 };
+        let max_level: u8 = if self.solution_outline.is_some() {
+            3
+        } else {
+            2
+        };
         let level = requested.clamp(1, max_level);
         let text = match level {
             1 => format!(
@@ -134,9 +138,11 @@ impl ExerciseMetadata {
                 self.concept
             ),
             2 => self.expected_error_code.as_ref().map_or_else(
-                || "Read the first error top-to-bottom: the `-->` line is the \
+                || {
+                    "Read the first error top-to-bottom: the `-->` line is the \
                     location, the `help:` line is usually the fix."
-                    .to_string(),
+                        .to_string()
+                },
                 |c| {
                     format!(
                         "Expect error {c}. Ask for its full explanation, then look at \
@@ -221,6 +227,10 @@ mod tests {
         let mut m = fx();
         m.solution_outline = None;
         assert_eq!(m.hint(1).1, 2, "max_level is 2 with no outline");
-        assert_eq!(m.hint(9).0, 2, "over-request clamps to 2 (never a solution rung)");
+        assert_eq!(
+            m.hint(9).0,
+            2,
+            "over-request clamps to 2 (never a solution rung)"
+        );
     }
 }

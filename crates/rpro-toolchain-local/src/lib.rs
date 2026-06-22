@@ -70,7 +70,10 @@ impl LocalProcess {
 
         let mut timed_out = false;
         let status = loop {
-            match child.try_wait().map_err(|e| ToolError::Spawn(e.to_string()))? {
+            match child
+                .try_wait()
+                .map_err(|e| ToolError::Spawn(e.to_string()))?
+            {
                 Some(s) => break s,
                 None => {
                     if started.elapsed() >= limit {
@@ -116,7 +119,12 @@ fn drain(pipe: Option<&mut impl Read>) -> String {
 }
 
 /// Build an [`Outcome`] (diagnostics stay empty — the `Language` layer fills them).
-fn outcome(status: Option<i32>, raw_stdout: String, raw_stderr: String, started: Instant) -> Outcome {
+fn outcome(
+    status: Option<i32>,
+    raw_stdout: String,
+    raw_stderr: String,
+    started: Instant,
+) -> Outcome {
     Outcome {
         status,
         raw_stdout,
@@ -175,14 +183,18 @@ mod tests {
     #[test]
     fn missing_program_is_not_found() {
         let p = plan("definitely-not-a-real-binary-xyz", &[]);
-        assert!(matches!(LocalProcess::exec(&p), Err(ToolError::NotFound(_))));
+        assert!(matches!(
+            LocalProcess::exec(&p),
+            Err(ToolError::NotFound(_))
+        ));
     }
 
     #[test]
     fn timeout_path_still_captures_a_fast_command() {
         // A generous cap takes the piped+threaded path; output must round-trip.
-        let out = LocalProcess::exec_inner(&plan("echo", &["hi-timed"]), Some(Duration::from_secs(10)))
-            .expect("echo should run");
+        let out =
+            LocalProcess::exec_inner(&plan("echo", &["hi-timed"]), Some(Duration::from_secs(10)))
+                .expect("echo should run");
         assert_eq!(out.status, Some(0));
         assert!(out.raw_stdout.contains("hi-timed"));
     }
@@ -190,12 +202,23 @@ mod tests {
     #[test]
     fn timeout_kills_a_runaway_command() {
         let started = Instant::now();
-        let out = LocalProcess::exec_inner(&plan("sleep", &["10"]), Some(Duration::from_millis(200)))
-            .expect("spawn should succeed");
+        let out =
+            LocalProcess::exec_inner(&plan("sleep", &["10"]), Some(Duration::from_millis(200)))
+                .expect("spawn should succeed");
         // Killed well before its 10s — not waited out.
-        assert!(started.elapsed() < Duration::from_secs(3), "should be killed promptly");
-        assert!(out.status.is_none(), "a signal-killed child has no exit code");
-        assert!(out.raw_stderr.contains("timeout"), "the stop reason is surfaced: {}", out.raw_stderr);
+        assert!(
+            started.elapsed() < Duration::from_secs(3),
+            "should be killed promptly"
+        );
+        assert!(
+            out.status.is_none(),
+            "a signal-killed child has no exit code"
+        );
+        assert!(
+            out.raw_stderr.contains("timeout"),
+            "the stop reason is surfaced: {}",
+            out.raw_stderr
+        );
     }
 
     #[test]
@@ -206,8 +229,14 @@ mod tests {
         let started = Instant::now();
         let out = LocalProcess::exec_inner(&plan("yes", &[]), Some(Duration::from_millis(300)))
             .expect("spawn should succeed");
-        assert!(started.elapsed() < Duration::from_secs(3), "must not deadlock on full pipe");
+        assert!(
+            started.elapsed() < Duration::from_secs(3),
+            "must not deadlock on full pipe"
+        );
         assert!(out.raw_stderr.contains("timeout"));
-        assert!(!out.raw_stdout.is_empty(), "drained at least some flooded output");
+        assert!(
+            !out.raw_stdout.is_empty(),
+            "drained at least some flooded output"
+        );
     }
 }

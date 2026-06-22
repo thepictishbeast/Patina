@@ -159,7 +159,10 @@ fn resolve_current(store_root: &Path) -> Option<(String, String, PathBuf)> {
         .map(|(id, _)| id.clone())?;
     let ex = exercises.into_iter().find(|e| e.meta.id == current_id)?;
     let code = std::fs::read_to_string(&ex.source).ok()?;
-    let run_dir = store.root().join("run").join(rpro_runner::slug(&current_id));
+    let run_dir = store
+        .root()
+        .join("run")
+        .join(rpro_runner::slug(&current_id));
     Some((current_id, code, run_dir))
 }
 
@@ -396,7 +399,11 @@ async fn select_handler(
     }
     progress.select(&id);
     if store.save_progress(&progress).is_err() {
-        return (StatusCode::INTERNAL_SERVER_ERROR, "could not save selection").into_response();
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "could not save selection",
+        )
+            .into_response();
     }
     match current_exercise(&state.store_root) {
         Some((ex, code)) => Json(current_json(&ex, &code)).into_response(),
@@ -537,9 +544,7 @@ async fn book_handler(
             let chapters: Vec<serde_json::Value> = book
                 .chapters
                 .values()
-                .map(|c| {
-                    serde_json::json!({ "id": c.id, "title": c.title() })
-                })
+                .map(|c| serde_json::json!({ "id": c.id, "title": c.title() }))
                 .collect();
             Json(serde_json::json!({ "chapters": chapters })).into_response()
         }
@@ -649,8 +654,14 @@ async fn security_headers(mut res: Response) -> Response {
              connect-src 'self'; base-uri 'none'; frame-ancestors 'none'",
         ),
     );
-    h.insert(header::X_CONTENT_TYPE_OPTIONS, HeaderValue::from_static("nosniff"));
-    h.insert(header::REFERRER_POLICY, HeaderValue::from_static("no-referrer"));
+    h.insert(
+        header::X_CONTENT_TYPE_OPTIONS,
+        HeaderValue::from_static("nosniff"),
+    );
+    h.insert(
+        header::REFERRER_POLICY,
+        HeaderValue::from_static("no-referrer"),
+    );
     h.insert(header::X_FRAME_OPTIONS, HeaderValue::from_static("DENY"));
     res
 }
@@ -689,21 +700,30 @@ async fn main() {
     // git tree, never /tmp). Overridable via TS_SERVE_ROOT for the operator.
     let store_root = std::env::var_os("TS_SERVE_ROOT").map_or_else(
         || {
-            std::env::var_os("HOME").map_or_else(|| PathBuf::from("/home/paul"), PathBuf::from)
+            std::env::var_os("HOME")
+                .map_or_else(|| PathBuf::from("/home/paul"), PathBuf::from)
                 .join(".cache/ts-serve")
         },
         PathBuf::from,
     );
 
     if let Err(e) = std::fs::create_dir_all(&store_root) {
-        eprintln!("fatal: cannot create state root {}: {e}", store_root.display());
+        eprintln!(
+            "fatal: cannot create state root {}: {e}",
+            store_root.display()
+        );
         std::process::exit(1);
     }
     if let Err(e) = ensure_seeded(&store_root, &workspace_exercises, &workspace_book) {
-        eprintln!("warning: could not seed exercises into {}: {e}", store_root.display());
+        eprintln!(
+            "warning: could not seed exercises into {}: {e}",
+            store_root.display()
+        );
     }
 
-    let state = AppState { store_root: store_root.clone() };
+    let state = AppState {
+        store_root: store_root.clone(),
+    };
     let app = build_router(state, &gui_dir);
 
     // Loopback ONLY — never 0.0.0.0. Port is fixed (8787) or PORT, clamped.
@@ -800,9 +820,18 @@ mod tests {
         let v = current_json(&ex, "fn main() {}");
         assert_eq!(v["exercise"], "ownership/01_move");
         assert_eq!(v["code"], "fn main() {}");
-        assert!(v.get("solution_outline").is_none(), "must not leak the solution");
-        assert!(v.get("expected_error_code").is_none(), "must not leak the expected error");
-        assert!(!v.to_string().contains("clone"), "the answer must appear nowhere in the payload");
+        assert!(
+            v.get("solution_outline").is_none(),
+            "must not leak the solution"
+        );
+        assert!(
+            v.get("expected_error_code").is_none(),
+            "must not leak the expected error"
+        );
+        assert!(
+            !v.to_string().contains("clone"),
+            "the answer must appear nowhere in the payload"
+        );
     }
     // Spaced-repetition logic now lives in its shared home: ReviewState::fold_run
     // (rpro-state) and primary_error_code / record_run (rpro-runner), each tested
@@ -826,13 +855,17 @@ mod tests {
             &manifest.join("../../book"),
         )
         .unwrap();
-        let state = AppState { store_root: dir.path().to_path_buf() };
+        let state = AppState {
+            store_root: dir.path().to_path_buf(),
+        };
         let app = build_router(state, &manifest.join("../../gui"));
         (dir, app)
     }
 
     async fn body_string(res: axum::response::Response) -> String {
-        let bytes = axum::body::to_bytes(res.into_body(), 1 << 20).await.unwrap();
+        let bytes = axum::body::to_bytes(res.into_body(), 1 << 20)
+            .await
+            .unwrap();
         String::from_utf8_lossy(&bytes).into_owned()
     }
 
@@ -855,7 +888,10 @@ mod tests {
         let res = app.oneshot(get("/api/current")).await.unwrap();
         assert_eq!(res.status(), StatusCode::OK);
         let s = body_string(res).await;
-        assert!(s.contains("\"exercise\""), "renders the current exercise: {s}");
+        assert!(
+            s.contains("\"exercise\""),
+            "renders the current exercise: {s}"
+        );
         assert!(!s.contains("solution_outline"), "no solution leak");
         assert!(!s.contains("expected_error_code"), "no expected-error leak");
     }
@@ -869,7 +905,10 @@ mod tests {
             .header("content-type", "application/json")
             .body(Body::from("{\"op\":\"fmt\"}"))
             .unwrap();
-        assert_eq!(app.oneshot(req).await.unwrap().status(), StatusCode::BAD_REQUEST);
+        assert_eq!(
+            app.oneshot(req).await.unwrap().status(),
+            StatusCode::BAD_REQUEST
+        );
     }
 
     #[tokio::test]
@@ -881,7 +920,10 @@ mod tests {
             .header("content-type", "application/json")
             .body(Body::from(vec![b'x'; MAX_BODY_BYTES + 1024]))
             .unwrap();
-        assert_eq!(app.oneshot(req).await.unwrap().status(), StatusCode::PAYLOAD_TOO_LARGE);
+        assert_eq!(
+            app.oneshot(req).await.unwrap().status(),
+            StatusCode::PAYLOAD_TOO_LARGE
+        );
     }
 
     #[tokio::test]
@@ -890,7 +932,9 @@ mod tests {
         let res = app.oneshot(get("/api/review")).await.unwrap();
         assert_eq!(res.status(), StatusCode::OK);
         let v: serde_json::Value = serde_json::from_str(&body_string(res).await).unwrap();
-        assert!(v.get("due").is_some() && v.get("mastered").is_some() && v.get("tracked").is_some());
+        assert!(
+            v.get("due").is_some() && v.get("mastered").is_some() && v.get("tracked").is_some()
+        );
     }
 
     #[tokio::test]
@@ -911,7 +955,11 @@ mod tests {
         let v: serde_json::Value = serde_json::from_str(&body_string(res).await).unwrap();
         assert_eq!(v["level"], 1);
         assert!(
-            !v["text"].as_str().unwrap_or("").to_lowercase().contains("solution outline"),
+            !v["text"]
+                .as_str()
+                .unwrap_or("")
+                .to_lowercase()
+                .contains("solution outline"),
             "L1 must not reveal the solution outline"
         );
     }
@@ -951,11 +999,23 @@ mod tests {
             .iter()
             .find(|h| h["chapter"] == "ch04-01-what-is-ownership")
             .expect("ownership chapter is a hit");
-        assert!(own["count"].as_u64().unwrap_or(0) > 0, "match count is reported");
-        assert!(own["title"].as_str().is_some_and(|s| !s.is_empty()), "title present");
+        assert!(
+            own["count"].as_u64().unwrap_or(0) > 0,
+            "match count is reported"
+        );
+        assert!(
+            own["title"].as_str().is_some_and(|s| !s.is_empty()),
+            "title present"
+        );
         // Hits are ordered by descending match count.
-        let counts: Vec<u64> = hits.iter().map(|h| h["count"].as_u64().unwrap_or(0)).collect();
-        assert!(counts.windows(2).all(|w| w[0] >= w[1]), "hits sorted by count desc: {counts:?}");
+        let counts: Vec<u64> = hits
+            .iter()
+            .map(|h| h["count"].as_u64().unwrap_or(0))
+            .collect();
+        assert!(
+            counts.windows(2).all(|w| w[0] >= w[1]),
+            "hits sorted by count desc: {counts:?}"
+        );
     }
 
     #[tokio::test]
@@ -964,7 +1024,11 @@ mod tests {
         let res = app.oneshot(get("/api/book?q=%20%20")).await.unwrap();
         assert_eq!(res.status(), StatusCode::OK);
         let v: serde_json::Value = serde_json::from_str(&body_string(res).await).unwrap();
-        assert_eq!(v["hits"].as_array().map(Vec::len), Some(0), "blank term → empty hits");
+        assert_eq!(
+            v["hits"].as_array().map(Vec::len),
+            Some(0),
+            "blank term → empty hits"
+        );
     }
 
     #[tokio::test]
@@ -978,10 +1042,16 @@ mod tests {
         let v: serde_json::Value = serde_json::from_str(&body_string(res).await).unwrap();
         assert_eq!(v["id"], "ch04-01-what-is-ownership");
         let md = v["markdown"].as_str().unwrap_or("");
-        assert!(md.contains("Ownership"), "returns the chapter's real markdown body");
+        assert!(
+            md.contains("Ownership"),
+            "returns the chapter's real markdown body"
+        );
         // Cleaned for display: no raw mdBook include directives leak through, and
         // the un-bundled code listings link out to the live chapter.
-        assert!(!md.contains("{{#"), "raw mdBook directives must be stripped");
+        assert!(
+            !md.contains("{{#"),
+            "raw mdBook directives must be stripped"
+        );
         assert!(
             md.contains("book/ch04-01-what-is-ownership.html"),
             "un-bundled listings link out to the live chapter"
@@ -1002,10 +1072,17 @@ mod tests {
             "/api/book?chapter=%2Fetc%2Fpasswd",
         ] {
             let res = app.clone().oneshot(get(uri)).await.unwrap();
-            assert_eq!(res.status(), StatusCode::OK, "{uri} still resolves on the map");
+            assert_eq!(
+                res.status(),
+                StatusCode::OK,
+                "{uri} still resolves on the map"
+            );
             let body = body_string(res).await;
             let v: serde_json::Value = serde_json::from_str(&body).unwrap();
-            assert!(v["chapter"].is_null(), "{uri} must miss the map, got: {body}");
+            assert!(
+                v["chapter"].is_null(),
+                "{uri} must miss the map, got: {body}"
+            );
             assert!(
                 !body.contains("root:") && !body.contains("/bin/"),
                 "{uri} must not return any /etc/passwd content"
@@ -1023,7 +1100,10 @@ mod tests {
         // Selecting it makes it current.
         let res = app
             .clone()
-            .oneshot(post_json("/api/select", &format!("{{\"id\":\"{target}\"}}")))
+            .oneshot(post_json(
+                "/api/select",
+                &format!("{{\"id\":\"{target}\"}}"),
+            ))
             .await
             .unwrap();
         assert_eq!(res.status(), StatusCode::OK);
@@ -1051,7 +1131,10 @@ mod tests {
         store.save_progress(&p).unwrap();
         // Selecting a completed exercise is refused (Reset is the redo path).
         let res = app
-            .oneshot(post_json("/api/select", &format!("{{\"id\":\"{done_id}\"}}")))
+            .oneshot(post_json(
+                "/api/select",
+                &format!("{{\"id\":\"{done_id}\"}}"),
+            ))
             .await
             .unwrap();
         assert_eq!(res.status(), StatusCode::CONFLICT);

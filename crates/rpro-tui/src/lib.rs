@@ -37,7 +37,10 @@ use ratatui::backend::CrosstermBackend;
 type RunResult = Result<Outcome, ToolError>;
 
 /// The project roadmap, baked into the binary so the Roadmap tab always has it.
-const ROADMAP_MD: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../docs/ROADMAP.md"));
+const ROADMAP_MD: &str = include_str!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../../docs/ROADMAP.md"
+));
 
 /// Open the dashboard — progress, the current exercise, and what's up next.
 ///
@@ -65,7 +68,9 @@ pub fn run_book_reader(store: &Store, book: &Book, start_chapter: Option<&str>) 
 /// thread** (so a compile never freezes the UI); the result streams back over a
 /// channel and fills the raw-output pane — the live by-hand-error loop.
 fn run_tui(store: &Store, book: &Book, start_tab: Tab, start_selected: usize) -> Result<()> {
-    let theme_name = store.load_config().map_or_else(|_| "dark".to_string(), |c| c.theme);
+    let theme_name = store
+        .load_config()
+        .map_or_else(|_| "dark".to_string(), |c| c.theme);
     let mut app = App::new(theme::Theme::from_env(&theme_name), status::ascii_only());
     app.tab = start_tab;
     app.selected = start_selected;
@@ -99,8 +104,13 @@ fn run_tui(store: &Store, book: &Book, start_tab: Tab, start_selected: usize) ->
                     // advance) via the one helper the web surface also uses, then
                     // refresh the dashboard so the gauge + Recall reflect it.
                     let passed = ex.verdict.is_some_and(|(p, _)| p);
-                    let advanced =
-                        rpro_runner::record_run(store, &ex.id, &ex.diagnostics, passed, run_advances && passed);
+                    let advanced = rpro_runner::record_run(
+                        store,
+                        &ex.id,
+                        &ex.diagnostics,
+                        passed,
+                        run_advances && passed,
+                    );
                     dash = dashboard_data(store);
                     if advanced.is_some() {
                         // Promote the next exercise into the view so r/c target it,
@@ -182,7 +192,10 @@ fn dashboard_data(store: &Store) -> render::DashboardData {
     let exercises = rpro_runner::discover(&store.root().join("exercises")).unwrap_or_default();
 
     let status_of = |id: &str| {
-        progress.entries.get(id).map_or(ExerciseStatus::Locked, |e| e.status)
+        progress
+            .entries
+            .get(id)
+            .map_or(ExerciseStatus::Locked, |e| e.status)
     };
 
     let current_id = progress
@@ -191,12 +204,20 @@ fn dashboard_data(store: &Store) -> render::DashboardData {
         .find(|(_, e)| e.status == ExerciseStatus::Current)
         .map(|(id, _)| id.clone());
     let current_title = current_id.as_ref().and_then(|id| {
-        exercises.iter().find(|e| &e.meta.id == id).map(|e| e.meta.title.clone())
+        exercises
+            .iter()
+            .find(|e| &e.meta.id == id)
+            .map(|e| e.meta.title.clone())
     });
 
     let up_next = exercises
         .iter()
-        .filter(|e| !matches!(status_of(&e.meta.id), ExerciseStatus::Done | ExerciseStatus::Current))
+        .filter(|e| {
+            !matches!(
+                status_of(&e.meta.id),
+                ExerciseStatus::Done | ExerciseStatus::Current
+            )
+        })
         .map(|e| e.meta.id.clone())
         .take(8)
         .collect();
@@ -236,7 +257,12 @@ fn exercise_view_data(store: &Store) -> render::ExerciseViewData {
         |e| render::ExerciseViewData {
             id: e.meta.id.clone(),
             title: e.meta.title.clone(),
-            book_refs: e.meta.book_refs.iter().map(|r| (r.chapter.clone(), r.why.clone())).collect(),
+            book_refs: e
+                .meta
+                .book_refs
+                .iter()
+                .map(|r| (r.chapter.clone(), r.why.clone()))
+                .collect(),
             assists: EditorAssists::default(),
             meta: Some(e.meta.clone()),
             ..Default::default()
@@ -278,12 +304,17 @@ fn spawn_run(store_root: &Path, op: RunOp) -> Option<Receiver<RunResult>> {
     let (tx, rx) = std::sync::mpsc::channel();
     std::thread::spawn(move || {
         if write_scaffold(&run_dir, &code).is_err() {
-            let _ = tx.send(Err(ToolError::Spawn("could not write scratch project".into())));
+            let _ = tx.send(Err(ToolError::Spawn(
+                "could not write scratch project".into(),
+            )));
             return;
         }
         // Core is !Send → construct it here, never move it across the boundary.
-        let core =
-            Core::new(Box::new(RustLanguage), Box::new(LocalProcess), Box::new(Store::at(root)));
+        let core = Core::new(
+            Box::new(RustLanguage),
+            Box::new(LocalProcess),
+            Box::new(Store::at(root)),
+        );
         let src = ExerciseSource {
             id: ExerciseId(id),
             dir: run_dir.display().to_string(),

@@ -23,9 +23,10 @@ impl RustLanguage {
     /// language crate, where the seam permits language tokens.
     #[must_use]
     pub fn scaffold(code: &str) -> Vec<(&'static str, String)> {
-        let manifest = "[package]\nname = \"exercise\"\nversion = \"0.1.0\"\nedition = \"2024\"\n\n\
+        let manifest =
+            "[package]\nname = \"exercise\"\nversion = \"0.1.0\"\nedition = \"2024\"\n\n\
                         [[bin]]\nname = \"exercise\"\npath = \"src/main.rs\"\n"
-            .to_string();
+                .to_string();
         vec![("Cargo.toml", manifest), ("src/main.rs", code.to_string())]
     }
 
@@ -90,13 +91,20 @@ impl Language for RustLanguage {
             } else {
                 continue;
             };
-            let (code, after) = rest.strip_prefix('[').and_then(|b| b.find(']').map(|i| (b, i))).map_or(
-                (None, rest),
-                |(b, i)| (Some(b[..i].to_string()), &b[i + 1..]),
-            );
+            let (code, after) = rest
+                .strip_prefix('[')
+                .and_then(|b| b.find(']').map(|i| (b, i)))
+                .map_or((None, rest), |(b, i)| {
+                    (Some(b[..i].to_string()), &b[i + 1..])
+                });
             let message = after.trim_start_matches(':').trim().to_string();
             if !message.is_empty() {
-                out.push(Diagnostic { code, level, message, span: None });
+                out.push(Diagnostic {
+                    code,
+                    level,
+                    message,
+                    span: None,
+                });
             }
         }
         out
@@ -169,14 +177,21 @@ impl Language for RustLanguage {
             .lines()
             .find(|l| l.trim_start().starts_with("rustc "))
             .or_else(|| raw.lines().find(|l| l.trim_start().starts_with("name:")))
-            .or_else(|| raw.lines().find(|l| l.contains("(active") || l.contains("(default)")))
+            .or_else(|| {
+                raw.lines()
+                    .find(|l| l.contains("(active") || l.contains("(default)"))
+            })
             .map(|l| l.trim().trim_start_matches("name:").trim().to_string());
         let components = ["clippy", "rustfmt", "rust-src", "rust-analyzer"]
             .iter()
             .filter(|c| raw.contains(**c))
             .map(|c| (*c).to_string())
             .collect();
-        ToolchainStatus { present, version, components }
+        ToolchainStatus {
+            present,
+            version,
+            components,
+        }
     }
 
     fn tools(&self) -> Vec<LangTool> {
@@ -185,7 +200,12 @@ impl Language for RustLanguage {
             Self::tool("rustfmt", ToolKind::Format, "cargo", &["fmt"]),
             Self::tool("bacon", ToolKind::Watch, "bacon", &[]),
             Self::tool("evcxr", ToolKind::Repl, "evcxr", &[]),
-            Self::tool("miri", ToolKind::Sanitize, "cargo", &["+nightly", "miri", "run"]),
+            Self::tool(
+                "miri",
+                ToolKind::Sanitize,
+                "cargo",
+                &["+nightly", "miri", "run"],
+            ),
             Self::tool("cargo-expand", ToolKind::Expand, "cargo", &["expand"]),
         ]
     }
@@ -197,13 +217,20 @@ mod tests {
     use rpro_lang::{BookRef, DiagLevel, Language};
 
     fn ref_for(chapter: &str, anchor: Option<&str>) -> BookRef {
-        BookRef { chapter: chapter.into(), anchor: anchor.map(Into::into), why: String::new() }
+        BookRef {
+            chapter: chapter.into(),
+            anchor: anchor.map(Into::into),
+            why: String::new(),
+        }
     }
 
     #[test]
     fn book_ref_url_with_anchor() {
         assert_eq!(
-            RustLanguage.book_ref_url(&ref_for("ch04-01-what-is-ownership", Some("ownership-rules"))),
+            RustLanguage.book_ref_url(&ref_for(
+                "ch04-01-what-is-ownership",
+                Some("ownership-rules")
+            )),
             "https://doc.rust-lang.org/book/ch04-01-what-is-ownership.html#ownership-rules"
         );
     }
@@ -235,7 +262,10 @@ mod tests {
                    active because: it's the default toolchain\n";
         let st = RustLanguage.parse_detect(raw);
         assert!(st.present);
-        assert_eq!(st.version.as_deref(), Some("stable-x86_64-unknown-linux-gnu"));
+        assert_eq!(
+            st.version.as_deref(),
+            Some("stable-x86_64-unknown-linux-gnu")
+        );
     }
 
     #[test]
@@ -246,7 +276,10 @@ mod tests {
                    rustc 1.94.1 (abc123 2026-01-01)\n";
         let st = RustLanguage.parse_detect(raw);
         assert!(st.present);
-        assert_eq!(st.version.as_deref(), Some("rustc 1.94.1 (abc123 2026-01-01)"));
+        assert_eq!(
+            st.version.as_deref(),
+            Some("rustc 1.94.1 (abc123 2026-01-01)")
+        );
     }
 
     #[test]

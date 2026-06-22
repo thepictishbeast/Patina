@@ -337,7 +337,11 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let s = Store::at(dir.path());
         let mut b = Bookmarks::default();
-        b.add("ch04-01", Some("rules".into()), Some("ownership rules".into()));
+        b.add(
+            "ch04-01",
+            Some("rules".into()),
+            Some("ownership rules".into()),
+        );
         s.save_bookmarks(&b).unwrap();
         assert_eq!(s.load_bookmarks().unwrap().items.len(), 1);
     }
@@ -346,7 +350,11 @@ mod tests {
     fn config_round_trip() {
         let dir = tempfile::tempdir().unwrap();
         let s = Store::at(dir.path());
-        let c = Config { theme: "light".into(), editor: "helix".into(), ..Config::default() };
+        let c = Config {
+            theme: "light".into(),
+            editor: "helix".into(),
+            ..Config::default()
+        };
         s.save_config(&c).unwrap();
         let loaded = s.load_config().unwrap();
         assert_eq!(loaded.theme, "light");

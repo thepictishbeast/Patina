@@ -133,7 +133,12 @@ pub struct EditorAssists {
 impl Default for EditorAssists {
     /// Free mode — every assist on. (Absent `[editor]` block ⇒ this.)
     fn default() -> Self {
-        Self { syntax_highlight: true, autocomplete: true, inline_diagnostics: true, format_on_save: true }
+        Self {
+            syntax_highlight: true,
+            autocomplete: true,
+            inline_diagnostics: true,
+            format_on_save: true,
+        }
     }
 }
 

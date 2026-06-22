@@ -68,8 +68,11 @@ impl ReviewState {
     /// (lowest box, then code order) — what to resurface next.
     #[must_use]
     pub fn due(&self) -> Vec<String> {
-        let mut v: Vec<(&String, &u8)> =
-            self.boxes.iter().filter(|&(_, &b)| b < MASTERED_BOX).collect();
+        let mut v: Vec<(&String, &u8)> = self
+            .boxes
+            .iter()
+            .filter(|&(_, &b)| b < MASTERED_BOX)
+            .collect();
         v.sort_by(|a, b| a.1.cmp(b.1).then_with(|| a.0.cmp(b.0)));
         v.into_iter().map(|(c, _)| c.clone()).collect()
     }

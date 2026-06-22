@@ -169,7 +169,12 @@ impl HintRung {
     /// All four rungs, lowest first.
     #[must_use]
     pub const fn all() -> [Self; 4] {
-        [Self::Nudge, Self::ProbingQuestion, Self::ConceptPointer, Self::PartialWorkedAnalogy]
+        [
+            Self::Nudge,
+            Self::ProbingQuestion,
+            Self::ConceptPointer,
+            Self::PartialWorkedAnalogy,
+        ]
     }
 
     /// Rung number (1-based, lowest = 1).
@@ -284,7 +289,11 @@ mod tests {
     use super::*;
 
     fn ctx() -> TutorContext<'static> {
-        TutorContext { concept: "mutability", observed_code: Some("E4321"), attempts: 1 }
+        TutorContext {
+            concept: "mutability",
+            observed_code: Some("E4321"),
+            attempts: 1,
+        }
     }
 
     #[test]
@@ -319,10 +328,22 @@ mod tests {
     #[test]
     fn guardrails_carry_the_load_bearing_rules() {
         let joined = GUARDRAILS.join(" ").to_lowercase();
-        assert!(joined.contains("never post corrected code"), "no-corrected-code rule missing");
-        assert!(joined.contains("no cross-language analog"), "no-analogy rule missing");
-        assert!(joined.contains("one nudge per turn"), "phone-concise rule missing");
-        assert!(joined.contains("confirm"), "confirm-then-nudge rule missing");
+        assert!(
+            joined.contains("never post corrected code"),
+            "no-corrected-code rule missing"
+        );
+        assert!(
+            joined.contains("no cross-language analog"),
+            "no-analogy rule missing"
+        );
+        assert!(
+            joined.contains("one nudge per turn"),
+            "phone-concise rule missing"
+        );
+        assert!(
+            joined.contains("confirm"),
+            "confirm-then-nudge rule missing"
+        );
     }
 
     #[test]
@@ -338,7 +359,10 @@ mod tests {
         assert!(nudge.contains("reveal nothing"));
         let top = guide_rung(HintRung::PartialWorkedAnalogy, &ctx());
         assert!(top.contains("DIFFERENT") && top.contains("Never touch their exercise"));
-        assert!(top.contains("GENERATE"), "the worked example is generated, not a stored fix");
+        assert!(
+            top.contains("GENERATE"),
+            "the worked example is generated, not a stored fix"
+        );
     }
 
     #[test]

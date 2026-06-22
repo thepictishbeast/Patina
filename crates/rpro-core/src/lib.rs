@@ -18,8 +18,8 @@
 #![doc(html_no_source)]
 
 use rpro_lang::{
-    CommandPlan, EditorAssists, ExerciseId, ExerciseSource, Language, Outcome, RunOp, StoreError,
-    Storage, ToolError, Toolchain, ToolchainStatus,
+    CommandPlan, EditorAssists, ExerciseId, ExerciseSource, Language, Outcome, RunOp, Storage,
+    StoreError, ToolError, Toolchain, ToolchainStatus,
 };
 
 /// A wired learning session: one language, one toolchain, one store.
@@ -40,7 +40,11 @@ impl Core {
         toolchain: Box<dyn Toolchain>,
         storage: Box<dyn Storage>,
     ) -> Self {
-        Self { lang, toolchain, storage }
+        Self {
+            lang,
+            toolchain,
+            storage,
+        }
     }
 
     /// The active language's stable id (selects `content/languages/<id>/`).
@@ -133,9 +137,7 @@ impl Core {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rpro_lang::{
-        DiagLevel, Diagnostic, ExerciseTemplate, LangTool, LspSpec,
-    };
+    use rpro_lang::{DiagLevel, Diagnostic, ExerciseTemplate, LangTool, LspSpec};
 
     /// A deliberately language-neutral fake: no real-compiler tokens, so the
     /// seam-grep gate stays green even though this lives outside `languages/`.
@@ -150,7 +152,10 @@ mod tests {
             "txt"
         }
         fn exercise_template(&self, concept: &str) -> ExerciseTemplate {
-            ExerciseTemplate { filename: "main.txt".into(), contents: format!("// {concept}\n") }
+            ExerciseTemplate {
+                filename: "main.txt".into(),
+                contents: format!("// {concept}\n"),
+            }
         }
         fn parse_diagnostics(&self, raw: &str) -> Vec<Diagnostic> {
             // Marker-driven so a test can assert the parse path fired. The code
@@ -280,7 +285,10 @@ mod tests {
     fn plan_is_pure_and_shows_the_cli_line() {
         let core = Core::new(
             Box::new(EchoLang),
-            Box::new(CannedToolchain { stdout: String::new(), stderr: String::new() }),
+            Box::new(CannedToolchain {
+                stdout: String::new(),
+                stderr: String::new(),
+            }),
             Box::new(NullStore),
         );
         let plan = core.plan(&ex(), &RunOp::Run);
@@ -327,7 +335,10 @@ mod tests {
     fn detect_interprets_the_probe_output() {
         let core = Core::new(
             Box::new(EchoLang),
-            Box::new(CannedToolchain { stdout: "v1.0\n".into(), stderr: String::new() }),
+            Box::new(CannedToolchain {
+                stdout: "v1.0\n".into(),
+                stderr: String::new(),
+            }),
             Box::new(NullStore),
         );
         let status = pollster::block_on(core.detect()).unwrap();
@@ -339,7 +350,10 @@ mod tests {
     fn editor_assists_defaults_to_free_mode() {
         let core = Core::new(
             Box::new(EchoLang),
-            Box::new(CannedToolchain { stdout: String::new(), stderr: String::new() }),
+            Box::new(CannedToolchain {
+                stdout: String::new(),
+                stderr: String::new(),
+            }),
             Box::new(NullStore),
         );
         let free = core.editor_assists(None);
@@ -359,7 +373,10 @@ mod tests {
     fn storage_delegates_to_the_backend() {
         let core = Core::new(
             Box::new(EchoLang),
-            Box::new(CannedToolchain { stdout: String::new(), stderr: String::new() }),
+            Box::new(CannedToolchain {
+                stdout: String::new(),
+                stderr: String::new(),
+            }),
             Box::new(NullStore),
         );
         let id = ExerciseId("control/01_loop".into());

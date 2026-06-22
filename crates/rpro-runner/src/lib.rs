@@ -65,7 +65,13 @@ pub struct Exercise {
 #[must_use]
 pub fn slug(id: &str) -> String {
     id.chars()
-        .map(|c| if c.is_ascii_alphanumeric() || c == '-' || c == '_' { c } else { '_' })
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '-' || c == '_' {
+                c
+            } else {
+                '_'
+            }
+        })
         .collect()
 }
 
@@ -242,17 +248,33 @@ book_refs = []
     // Diagnostic codes below are fake non-E0 tokens on purpose: the seam gate
     // forbids the literal `E0xxx` outside crates/languages, and this is a runner.
     fn diag(code: &str) -> Diagnostic {
-        Diagnostic { code: Some(code.into()), level: DiagLevel::Error, message: "m".into(), span: None }
+        Diagnostic {
+            code: Some(code.into()),
+            level: DiagLevel::Error,
+            message: "m".into(),
+            span: None,
+        }
     }
 
     #[test]
     fn primary_error_code_picks_first_error_with_a_code() {
-        let note = Diagnostic { code: Some("E4001".into()), level: DiagLevel::Note, ..diag("x") };
-        let warn = Diagnostic { code: None, level: DiagLevel::Warning, ..diag("x") };
+        let note = Diagnostic {
+            code: Some("E4001".into()),
+            level: DiagLevel::Note,
+            ..diag("x")
+        };
+        let warn = Diagnostic {
+            code: None,
+            level: DiagLevel::Warning,
+            ..diag("x")
+        };
         let diags = vec![warn, note, diag("E4321"), diag("E4399")];
         assert_eq!(primary_error_code(&diags), Some("E4321"));
         assert_eq!(primary_error_code(&[]), None);
-        let codeless = Diagnostic { code: None, ..diag("x") };
+        let codeless = Diagnostic {
+            code: None,
+            ..diag("x")
+        };
         assert_eq!(primary_error_code(&[codeless]), None);
     }
 
@@ -288,8 +310,14 @@ book_refs = []
         let advanced = record_run(&store, "basics/01_first", &[], true, true);
         assert_eq!(advanced.as_deref(), Some("basics/02_second"));
         let p = store.load_progress().unwrap();
-        assert_eq!(p.entries["basics/01_first"].status, rpro_state::ExerciseStatus::Done);
-        assert_eq!(p.entries["basics/02_second"].status, rpro_state::ExerciseStatus::Current);
+        assert_eq!(
+            p.entries["basics/01_first"].status,
+            rpro_state::ExerciseStatus::Done
+        );
+        assert_eq!(
+            p.entries["basics/02_second"].status,
+            rpro_state::ExerciseStatus::Current
+        );
         assert_eq!(p.entries["basics/01_first"].attempts, 1);
         assert_eq!(p.reviews.due(), vec!["E4321".to_string()]); // box 1, still due
     }
@@ -303,6 +331,9 @@ book_refs = []
         assert_eq!(store.load_progress().unwrap().reviews.tracked_count(), 0);
         // FAIL with an UNEXPECTED error → a fresh miss enters the review queue.
         record_run(&store, "basics/01_first", &[diag("E4399")], false, false);
-        assert_eq!(store.load_progress().unwrap().reviews.due(), vec!["E4399".to_string()]);
+        assert_eq!(
+            store.load_progress().unwrap().reviews.due(),
+            vec!["E4399".to_string()]
+        );
     }
 }
