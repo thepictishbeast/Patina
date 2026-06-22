@@ -3,8 +3,10 @@ name: release
 # Build the installable desktop packages and attach them to a GitHub Release.
 # Triggered by a version tag (e.g. `v0.1.0`). See docs/DISTRIBUTION.md for the
 # full plan; this workflow covers the Linux desktop artifacts that are buildable
-# today (the `rpro` CLI/TUI). AppImage joins once the GUI lands; APK lives in the
-# mobile repo; the web bundle deploys from its own workflow.
+# today (the `rpro` CLI/TUI): .deb, .rpm, and a no-root AppImage. The *GUI*
+# AppImage (bundling rpro-serve) waits on rpro-serve becoming relocatable — see
+# docs/BACKLOG.md. APK lives in the mobile repo; the web bundle deploys from its
+# own workflow.
 
 on:
   push:
@@ -68,3 +70,36 @@ jobs:
           gh release view "$TAG" >/dev/null 2>&1 \
             || gh release create "$TAG" --title "$TAG" --generate-notes
           gh release upload "$TAG" dist/*.deb dist/*.rpm dist/SHA256SUMS --clobber
+
+  appimage:
+    name: AppImage (x86_64)
+    runs-on: [self-hosted, linux, x64, plausiden]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      # Builds the release `rpro`, assembles the AppDir from packaging/appimage/,
+      # fetches appimagetool, and packs (FUSE, or extract-and-run fallback).
+      # UPDATE_INFO embeds AppImageUpdate/zsync delta self-update info + emits the
+      # .zsync sidecar that lives next to the release asset (DISTRIBUTION.md).
+      - name: build AppImage (+ .zsync update metadata)
+        env:
+          ARCH: x86_64
+          UPDATE_INFO: "gh-releases-zsync|thepictishbeast|Tempered-Studio|latest|Tempered_Studio-x86_64.AppImage.zsync"
+        run: bash scripts/build-appimage.sh dist
+
+      - name: checksum
+        run: ( cd dist && sha256sum Tempered_Studio-*.AppImage > SHA256SUMS.appimage && cat SHA256SUMS.appimage )
+
+      - name: upload to the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.inputs.tag || github.ref_name }}
+        run: |
+          gh release view "$TAG" >/dev/null 2>&1 \
+            || gh release create "$TAG" --title "$TAG" --generate-notes
+          # The .zsync (if produced) is what AppImageUpdate polls for delta updates.
+          gh release upload "$TAG" dist/Tempered_Studio-*.AppImage dist/SHA256SUMS.appimage --clobber
+          [ -f dist/Tempered_Studio-x86_64.AppImage.zsync ] \
+            && gh release upload "$TAG" dist/Tempered_Studio-x86_64.AppImage.zsync --clobber || true

@@ -21,11 +21,19 @@ under Termux for the CLI/TUI path.
 
 Built from the same `rpro` (CLI/TUI) and future GUI binaries.
 
-- **AppImage** — the "just works", no-root, single-file option.
-  - Build: `cargo build --release` → `linuxdeploy` + `appimagetool`.
+- **AppImage** — the "just works", no-root, single-file option. **Built today**
+  for the `rpro` CLI/TUI (the `release.yml` `appimage` job + `scripts/build-appimage.sh`).
+  - Build: `scripts/build-appimage.sh` — `cargo build --release -p rpro-cli` →
+    assemble the AppDir (`packaging/appimage/`) → `appimagetool` (FUSE, with an
+    `--appimage-extract-and-run` fallback for minimal containers).
   - **Auto-update: AppImageUpdate / `--appimage-update`** via embedded update
-    info + a `.zsync` file published next to the release asset. Delta updates,
-    no repo signing, no root. This is the recommended default updater.
+    info + a `.zsync` file published next to the release asset (the workflow
+    passes `UPDATE_INFO=gh-releases-zsync|…`). Delta updates, no repo signing,
+    no root. This is the recommended default updater.
+  - **GUI AppImage (pending):** a single-file that launches the GUI server is
+    blocked until `rpro-serve` is relocatable — today it resolves `gui/`,
+    `exercises/`, `book/` via `CARGO_MANIFEST_DIR` (compile-time), so a shipped
+    binary can't find its assets. Tracked in `docs/BACKLOG.md`.
 - **.deb** — system-integrated, the user's stated preference for regular updates.
   - Build: `cargo-deb`.
   - **Auto-update: a signed APT repository** hosted on GH Pages
@@ -69,6 +77,7 @@ cargo install cargo-deb cargo-generate-rpm        # one-time (tools)
 cargo build --release --locked -p rpro-cli        # → target/release/rpro
 cargo deb -p rpro-cli --no-build                  # → target/debian/*.deb
 cargo generate-rpm -p crates/rpro-cli             # → target/generate-rpm/*.rpm
+scripts/build-appimage.sh dist                    # → dist/Tempered_Studio-x86_64.AppImage
 # integrity, exactly as the workflow's collect step does it:
 ( cd target && sha256sum debian/*.deb generate-rpm/*.rpm )
 ```

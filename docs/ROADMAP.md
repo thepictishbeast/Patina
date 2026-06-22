@@ -45,6 +45,7 @@ so the learner (and Paul) can see what's done and what's next. Status:
 
 ## Phase 4 — Distribution & sync
 - [x] Packaging plan + .deb/.rpm + release CI (docs/DISTRIBUTION.md)
-- [ ] AppImage + auto-update (zsync); signed APT/dnf repos
+- [x] AppImage of the `rpro` CLI/TUI + zsync auto-update (`scripts/build-appimage.sh`, release.yml `appimage` job; built + run-verified locally)
+- [ ] GUI AppImage (needs `rpro-serve` relocatable — see BACKLOG §F); signed APT/dnf repos
 - [ ] APK + F-Droid (mobile repo)
 - [ ] Cross-device sync/backup of progress + code
