@@ -176,3 +176,14 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
 Re-run the educational-fidelity audit + CI gate set after each batch of pedagogy
 changes. **Throttle agent fan-out** — concurrent heavy workflows hit the rate limit
 (2026-06-23); run audits sequentially / small.
+
+### Audits run
+- ✅ **Educational-fidelity audit 2026-06-23** → `docs/audits/EDU-FIDELITY-2026-06-23.md`.
+  Live-driven (web gui via Playwright + screenshots; CLI/TUI parity from prior ticks).
+  **Verdict: the core pedagogy is faithfully implemented and works live** (predict-gate,
+  by-hand real errors, guide-only Tutor, gated+escalating hint ladder, book-pointers,
+  soft-gating, reads→writes). Top gaps: **G1 built-in term defs / glossary ABSENT**
+  (Paul's explicit ask — highest-value *unblocked* content feature, task #24); G2 Learn/
+  Assist/Dev under-differentiated (#18); G3 lessons Phases 2-9 (blocked, #16/#17); G4
+  content interactivity exercise-only (#17/#24); G5 functional/advanced exercises thin
+  (blocked, #14/#15); G6 editor pane clips framing comments (#25).
