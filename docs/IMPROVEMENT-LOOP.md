@@ -111,12 +111,21 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   Both rewritten to exercise the REAL shipped flow — and they now also cover two previously-untested gate
   paths: hint level-0 "run it first" with no attempt, and select 423-locked → force jump-ahead → current.
   Suite now 18/18 green (was 16/2). Test-only; no production change.
-- ☐ **CLI hint skips the force-attempt gate** (found 2026-06-23): `cmd_exercise_hint` prints
-  book_refs + `ex.meta.hint()` immediately — a learner can `rpro exercise hint --solution` with 0
-  attempts, while rpro-serve forces a real try first. Not a leak (rung 3 = book review), but a
-  charter-fidelity gap. BLOCKED on a prerequisite: the CLI tracks NO attempts at all (`rpro run`/`check`
-  never call `record_attempt`), so gating now would lock CLI hints forever. Two-part fix for a later tick:
-  (1) wire attempt-tracking into the CLI run/check path, (2) then gate hint on `attempts == 0`.
+- ✅ **CLI run/check/test now update progress (broken core loop fixed)** (`<pending>`): `cmd_exec`
+  touched progress NOT AT ALL — no `record_attempt` and (the bigger gap) no `set_done`/advance on a pass,
+  so a CLI-only learner could never complete anything (`rpro progress` stuck at 0%, `rpro exercise next`
+  walking a never-finished list). Ported the web's logic by calling the SAME shared helper
+  `rpro_runner::record_run` from a small `finalize_run_progress` fn: always logs an attempt; on a passing
+  Run/Test of the CURRENT exercise marks it Done + advances; Check never advances; failures only log the
+  attempt; `set_done` never regresses. **Only the current exercise drives progress** — an ad-hoc
+  `rpro run <id>` side-run is left untouched (recording an attempt there would create a phantom 2nd
+  `Current`, since `record_attempt` defaults new entries to Current — caught + fixed via live testing).
+  Verified live (RPRO_STORE temp): fail→attempt-only, pass→Done+advance+`rpro progress` reflects it,
+  side-run→current untouched. Extracted to a helper to stay under clippy `too_many_lines` (no new warning).
+- ☐ **CLI force-attempt hint gate** (now UNBLOCKED — attempts are tracked as of this tick): gate
+  `cmd_exercise_hint`'s ladder on `attempts == 0` for the current exercise (mirror rpro-serve), but keep
+  book_refs always visible (like the web's always-open Book tab) and apply the gate even to `--solution`
+  (force a try before the top rung too). Pure follow-up; small.
 
 ### Platform / distribution
 - ☐ Web deploy (GH Pages / server) · online Run for Android (remote rpro-serve) ·

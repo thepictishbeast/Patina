@@ -686,7 +686,57 @@ fn cmd_exec(id: Option<&str>, op: &RunOp) -> Result<()> {
             );
         }
     }
+
+    // Update shared on-disk progress (attempt; Done + advance on a passing
+    // Run/Test of the current exercise) and tell the learner if they moved on.
+    finalize_run_progress(
+        &store,
+        ex,
+        op,
+        outcome.status == Some(0),
+        &outcome.diagnostics,
+    );
     Ok(())
+}
+
+/// After an exec run, record it into shared progress and announce an advance.
+///
+/// Uses the SAME helper every surface shares ([`rpro_runner::record_run`]): it
+/// always logs an attempt (so the force-attempt hint gate has something to read)
+/// and, when `advance` holds, marks the exercise Done and moves to the next.
+///
+/// Only the **current** exercise drives progress. An ad-hoc `rpro run <id>`
+/// side-run of a *different* exercise is left completely untouched: recording an
+/// attempt there would create a phantom second `Current` (`record_attempt`
+/// defaults a new entry to `Current`), breaking the single-`Current` invariant —
+/// and the gate only ever reads the current exercise's attempts. Check never
+/// advances; a failing run only logs the attempt; `set_done` never regresses.
+fn finalize_run_progress(
+    store: &Store,
+    ex: &rpro_runner::Exercise,
+    op: &RunOp,
+    passed: bool,
+    diagnostics: &[rpro_lang::Diagnostic],
+) {
+    let current = current_exercise_id(&store.load_progress().unwrap_or_default());
+    if current.as_deref() != Some(ex.meta.id.as_str()) {
+        return; // side-run of a non-current exercise: don't touch progress
+    }
+    let advance = passed && matches!(op, RunOp::Run | RunOp::Test);
+    if let Some(next) = rpro_runner::record_run(store, &ex.meta.id, diagnostics, passed, advance) {
+        println!();
+        println!(
+            "  {} {} complete → now on {}",
+            style("✓").green().bold(),
+            style(&ex.meta.id).dim(),
+            style(&next).bold().cyan()
+        );
+        println!(
+            "  {} `{}` for the next exercise's book sections.",
+            style("Tip:").yellow(),
+            style("rpro exercise hint").bold()
+        );
+    }
 }
 
 /// Explain a diagnostic code in full, via the language's explain plan
