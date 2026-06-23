@@ -362,6 +362,9 @@ async fn current_handler(State(state): State<AppState>) -> impl IntoResponse {
 #[derive(Debug, Deserialize)]
 struct SelectBody {
     id: String,
+    /// Explicit "jump ahead" — bypass the soft prerequisite gate.
+    #[serde(default)]
+    force: bool,
 }
 
 /// `POST /api/select` — make a chosen exercise the current one (phone-first: tap
@@ -378,7 +381,7 @@ async fn select_handler(
     State(state): State<AppState>,
     body: Result<Json<SelectBody>, axum::extract::rejection::JsonRejection>,
 ) -> impl IntoResponse {
-    let Json(SelectBody { id }) = match body {
+    let Json(SelectBody { id, force }) = match body {
         Ok(j) => j,
         Err(rej) => return rej.into_response(),
     };
@@ -394,6 +397,17 @@ async fn select_handler(
         return (
             StatusCode::CONFLICT,
             "exercise already completed — reset it to practise again",
+        )
+            .into_response();
+    }
+    // Soft prerequisite gate (baby-steps): a not-yet-reached exercise opens once
+    // the previous one is Done — unless the learner explicitly jumps ahead.
+    // 423 LOCKED tells the GUI to offer "jump ahead anyway" (re-POST with force).
+    let ordered: Vec<String> = exercises.iter().map(|e| e.meta.id.clone()).collect();
+    if !force && !progress.is_unlocked(&ordered, &id) {
+        return (
+            StatusCode::LOCKED,
+            "locked — finish the earlier exercise first (or jump ahead)",
         )
             .into_response();
     }

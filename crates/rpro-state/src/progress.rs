@@ -85,6 +85,32 @@ impl Progress {
         entry.completed_at = Some(now);
     }
 
+    /// Soft-gate: is `id` reachable yet, given the curriculum order `ordered`?
+    /// The first exercise is always open; an already-touched exercise
+    /// (Current/Done/Skipped — anything but the untouched `Locked` default) stays
+    /// open; otherwise `id` unlocks once the exercise immediately before it is
+    /// Done. Unknown id → false. "Soft" because the server allows an explicit
+    /// `force` override (the learner can always jump ahead) — this just makes the
+    /// default path gradual baby-steps instead of a free-for-all.
+    #[must_use]
+    pub fn is_unlocked(&self, ordered: &[String], id: &str) -> bool {
+        let Some(pos) = ordered.iter().position(|e| e.as_str() == id) else {
+            return false;
+        };
+        if pos == 0 {
+            return true;
+        }
+        if let Some(e) = self.entries.get(id) {
+            if e.status != ExerciseStatus::Locked {
+                return true; // already started/done/skipped — stays reachable
+            }
+        }
+        self.entries
+            .get(ordered[pos - 1].as_str())
+            .map(|e| e.status)
+            == Some(ExerciseStatus::Done)
+    }
+
     /// Increment the attempt counter for `id`.
     pub fn record_attempt(&mut self, id: &str) {
         let entry = self
@@ -192,6 +218,30 @@ mod tests {
         p.record_attempt("a/b");
         p.record_attempt("a/b");
         assert_eq!(p.entries["a/b"].attempts, 3);
+    }
+
+    #[test]
+    fn soft_gate_unlocks_sequentially() {
+        let ord: Vec<String> = ["a/1", "a/2", "a/3"]
+            .iter()
+            .map(|s| (*s).to_string())
+            .collect();
+        let mut p = Progress::default();
+        assert!(p.is_unlocked(&ord, "a/1"), "first exercise is always open");
+        assert!(!p.is_unlocked(&ord, "a/2"), "a/2 locked until a/1 is Done");
+        assert!(!p.is_unlocked(&ord, "a/9"), "unknown id is locked");
+        p.set_done("a/1");
+        assert!(p.is_unlocked(&ord, "a/2"), "a/2 unlocks once a/1 is Done");
+        assert!(
+            !p.is_unlocked(&ord, "a/3"),
+            "a/3 still locked (a/2 not Done)"
+        );
+        // an already-touched exercise stays reachable even if its predecessor isn't Done
+        p.set_current("a/3");
+        assert!(
+            p.is_unlocked(&ord, "a/3"),
+            "already-current stays reachable"
+        );
     }
 
     #[test]

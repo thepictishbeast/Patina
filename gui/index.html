@@ -467,6 +467,15 @@
             });
             if (res.ok) { statusEl().textContent = 'switched'; await loadState(false); }
             else if (res.status === 409) { statusEl().textContent = '“' + el.dataset.id + '” is done — press ↺ Reset to redo it'; }
+            else if (res.status === 423) {
+              // Soft gate: locked until earlier exercises are done — offer to jump ahead.
+              if (confirm('“' + el.dataset.id + '” is locked — the earlier exercises build up to it.\nJump ahead anyway?')) {
+                const r2 = await fetch('api/select', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ id: el.dataset.id, force: true }) });
+                if (r2.ok) { statusEl().textContent = 'jumped ahead'; await loadState(false); }
+                else { statusEl().textContent = 'could not switch exercise'; }
+              } else { statusEl().textContent = 'good call — finish the earlier one first'; }
+            }
             else { statusEl().textContent = 'could not switch exercise'; }
           } catch (_) { statusEl().textContent = 'offline — could not switch'; }
         };

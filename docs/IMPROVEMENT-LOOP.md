@@ -34,8 +34,8 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
 - ✅ **Hint ladder never hands the solution; force a real attempt first** (`af5d6fb`).
 - ✅ **Predict-then-run gate (Learn mode)** (`158c997`): Run/Check reveal nothing until a
   compiles/fails guess is locked; re-arms each run (re-predict on retry). Verified live.
-- ☐ **Soft exercise gating:** enforce prereq lock in `Progress::select`/`select_handler`
-  + make the 🔒 real + an explicit "jump ahead"; today locked rows are clickable.
+- ✅ **Soft exercise gating** (`<pending>`): `Progress::is_unlocked` (sequential, +test) +
+  select_handler 423 LOCKED unless `force` + gui "jump ahead?" prompt. Verified live.
 - ✅ **Runaway-run timeout** (`9434c8c`): default-on 30s cap on every surface (`0` opts
   out). Verified live — `loop {}` returns in ~timeout with a "stopped" note; UI unfreezes.
 - ☐ **Monochrome compiler output:** pass `--color=always` / `CARGO_TERM_COLOR` so the
