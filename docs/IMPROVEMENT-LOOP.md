@@ -68,8 +68,14 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   Next: adapt a few early Rustlings exercises into exercises/ (re-verified + attributed).
 
 ### Robustness / audit
-- ☐ **Golden test:** recompile every exercise starter, assert it still emits its
-  `expected_error_code` (prevent .rs↔.toml↔lesson drift on toolchain bumps).
+- ✅ **Golden-corpus test** (`<pending>`): `crates/rpro-runner/tests/golden_corpus.rs` — a
+  fast, toolchain-free `cargo test` over the *real* `exercises/` dir asserting the corpus-wide
+  invariants `validate()` can't see (it inspects one .toml in isolation): unique ids, present
+  concept, `E####`-shaped error codes, and — via an explicit per-phase golden map of allowed
+  `id` area-prefixes **and** `difficulty` tiers — that every exercise sits in the right phase.
+  Verified to BITE: perturbing difficulty (`beginner`→`advanced` in ownership) and the id area
+  both fail with clear messages; it would have caught both relocated-exercise bugs. Compilation +
+  error-code *emission* stay in `verify-exercises.sh`; anchors stay in `verify-book-anchors.mjs`.
 - ✅ **Offline-Android Run UX** (`<pending>`): a failed run with an exercise loaded now shows
   a guiding "can't run here — no toolchain; predict/read/study offline" message, not the demo.
 - ☐ Clippy hygiene: pre-existing `future not Send` (`?Send` toolchain) + `struct_excessive_bools`.
