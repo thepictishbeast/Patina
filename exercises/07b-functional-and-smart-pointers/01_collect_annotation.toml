@@ -1,4 +1,4 @@
-id = "advanced/02_collect_annotation"
+id = "iterators/01_collect_annotation"
 title = "collect() can build many collections — you have to pick one"
 difficulty = "advanced"
 estimated_minutes = 10
