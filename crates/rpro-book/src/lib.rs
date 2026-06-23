@@ -85,9 +85,11 @@ impl Chapter {
     }
 }
 
-/// Pure transform behind [`Chapter::display_markdown`]; `url` is the live-chapter
-/// link substituted for un-bundled code listings. Kept free-standing (and
-/// URL-agnostic) so it is unit-testable without constructing a [`Chapter`].
+/// Pure transform behind [`Chapter::display_markdown`].
+///
+/// `url` is the live-chapter link substituted for un-bundled code listings. Kept
+/// free-standing (and URL-agnostic) so it is unit-testable without constructing a
+/// [`Chapter`].
 #[must_use]
 pub fn clean_mdbook_source(source: &str, url: &str) -> String {
     let callout = format!("📖 Read this code listing in the Rust Book: {url}");
@@ -99,7 +101,7 @@ pub fn clean_mdbook_source(source: &str, url: &str) -> String {
             out.push('\n');
         }
     };
-    let mut lines = source.lines().peekable();
+    let mut lines = source.lines();
     while let Some(line) = lines.next() {
         let trimmed = line.trim_start();
         // A fenced code block: collect its body up to the closing fence, then
@@ -243,8 +245,9 @@ impl Book {
                 })
             })
             .collect();
-        // Stable sort keeps reading order within equal match counts.
-        hits.sort_by(|a, b| b.count.cmp(&a.count));
+        // Stable sort keeps reading order within equal match counts (descending
+        // by count, so the strongest matches lead).
+        hits.sort_by_key(|h| std::cmp::Reverse(h.count));
         hits
     }
 }

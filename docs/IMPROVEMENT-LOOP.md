@@ -86,7 +86,13 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   error-code *emission* stay in `verify-exercises.sh`; anchors stay in `verify-book-anchors.mjs`.
 - ✅ **Offline-Android Run UX** (`<pending>`): a failed run with an exercise loaded now shows
   a guiding "can't run here — no toolchain; predict/read/study offline" message, not the demo.
-- ☐ Clippy hygiene: pre-existing `future not Send` (`?Send` toolchain) + `struct_excessive_bools`.
+- ◐ **Clippy hygiene (per-crate)**: `rpro-book` now clippy-clean (`<pending>`) via 3 genuine fixes —
+  split an over-long first doc paragraph, dropped an unused `.peekable()`, `sort_by`→`sort_by_key(Reverse)`
+  (kept the stable descending-by-count sort); 12 tests confirm behavior unchanged. Remaining crates carry
+  mostly genuine lints (over-long doc paragraphs, `format!`-from-iterator, `match`→`if let`, redundant
+  clone, str-lifetime) — clean those crate by crate — plus two that need a justified `#[allow]` decision:
+  the `?Send`-toolchain `future cannot be sent` (×6, rpro-core/serve) and `struct_excessive_bools`
+  (`EditorAssists`/config flag structs).
 - ✅ **e2e a11y regression fixed** (`<pending>`): the serious `color-contrast` violation was the
   *selected* mode-switcher button — white `#fff` on `--accent` `#f74c00` = **3.5:1** at 11px (needs
   4.5:1); regressed when the switcher landed (`158c997`). Deepened just that button's bg to
