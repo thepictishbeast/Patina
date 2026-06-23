@@ -479,11 +479,14 @@ struct HintQuery {
     level: Option<u8>,
 }
 
-/// `GET /api/hint?level=N` — the hint ladder. Escalates: 1 = concept + a "read the
-/// `-->` / `help:` line" nudge; 2 = the expected error code (use Explain); 3 = the
-/// solution OUTLINE, last resort. Levels above what the exercise carries are
-/// clamped. The outline is returned ONLY when the learner explicitly climbs to it
-/// — the tutor guides, it never auto-types the fix.
+/// `GET /api/hint?level=N` — the hint ladder. A genuine attempt is forced first:
+/// with 0 attempts it returns a "run it first" nudge and unlocks nothing; after
+/// that the rung escalates one step per attempt (capped at 3). The rungs climb
+/// toward the SOURCE, never the answer: 1 = concept + a "read the `-->` / `help:`
+/// line" nudge; 2 = the expected error code (use Explain); 3 = back to the book
+/// sections + concept, with the compiler's `help:` line left for the learner to
+/// apply. The stored `solution_outline` is NEVER returned at any rung — not even
+/// the top one, not even if asked (Hard Rule #1; see `ExerciseMetadata::hint`).
 async fn hint_handler(
     State(state): State<AppState>,
     Query(q): Query<HintQuery>,

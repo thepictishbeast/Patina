@@ -156,8 +156,8 @@ fn run_tui(store: &Store, book: &Book, start_tab: Tab, start_selected: usize) ->
                                 }
                             }
                             // Climb the hint ladder one rung (concept → expected
-                            // error → solution outline, last resort). Pure +
-                            // shared with the web via ExerciseMetadata::hint.
+                            // error → book/source review, last resort; never the
+                            // solution). Shared with the web via ExerciseMetadata::hint.
                             KeyCode::Char('h') if app.tab == Tab::Exercise => {
                                 if let Some(m) = &ex.meta {
                                     let (level, max, text) = m.hint(app.hint_level + 1);

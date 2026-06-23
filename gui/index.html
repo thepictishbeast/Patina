@@ -570,7 +570,8 @@
     const lsKey = id => 'ts-edit:' + id;
 
     // The hint ladder: each press climbs one rung (concept → expected error →
-    // solution outline, last resort). Server clamps to what the exercise carries.
+    // book/source review, last resort; never the solution). Server clamps to what
+    // the exercise carries.
     async function runHint() {
       try {
         const h = await fetch('api/hint?level=' + (hintLevel + 1)).then(r => r.json());

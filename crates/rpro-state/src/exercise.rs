@@ -60,9 +60,10 @@ pub struct ExerciseMetadata {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub expected_error_code: Option<String>,
 
-    /// Hidden by default. Surfaced only when the user explicitly
-    /// asks via `rpro exercise hint --solution`. One sentence
-    /// pointing at the fix shape, never the full diff.
+    /// Authoring reference only — a one-sentence pointer at the fix shape, kept
+    /// server-side so authors can sanity-check exercises. NEVER served to any
+    /// surface: [`ExerciseMetadata::hint`] deliberately omits it at every rung,
+    /// including the top one (Hard Rule #1: never hand the answer).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub solution_outline: Option<String>,
 }

@@ -88,10 +88,13 @@ enum ExerciseCmd {
     /// to read (and think) when stuck.
     Hint {
         /// Climb the shared hint ladder to this rung: 1 = concept nudge,
-        /// 2 = the expected error code, 3 = the solution outline.
+        /// 2 = the expected error code, 3 = back to the book + concept (the
+        /// source review — the literal fix is never shown).
         #[arg(long, default_value_t = 1)]
         level: u8,
-        /// Shortcut for the top rung — surface the one-line solution outline.
+        /// Shortcut for the top (last-resort) rung — the book + concept review.
+        /// The literal solution is never printed; this only jumps to the end of
+        /// the ladder.
         #[arg(long)]
         solution: bool,
     },
@@ -458,7 +461,7 @@ fn cmd_exercise_hint(level: u8, show_solution: bool) -> Result<()> {
         println!();
         let mut tip = format!("rpro exercise hint --level {}", lvl + 1);
         if max >= 3 {
-            tip.push_str("  (or --solution for the outline)");
+            tip.push_str("  (or --solution to jump to the last rung)");
         }
         println!("  {} {}", style("Tip:").yellow(), style(tip).bold());
     }

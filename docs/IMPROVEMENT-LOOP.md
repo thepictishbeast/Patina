@@ -95,10 +95,24 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   predict→Run→diagnostics path. Full e2e suite green (4/4); toolchain round-trip confirmed
   server-side (`/api/run` → E0384). NOTE: the gate's *block* behavior (Run refused with no
   prediction) still has no spec — a coverage gap worth a dedicated test later.
-- ☐ **Stale doc comment in `hint_handler`** (found 2026-06-23): `crates/rpro-serve/src/main.rs`
-  ~L482 still says level 3 returns "the solution OUTLINE" — but `ExerciseMetadata::hint` was
-  rebuilt (`af5d6fb`) to return book-pointers and NEVER the outline (Hard Rule #1). Doc bug, not a
-  real leak, but it describes the forbidden behavior; correct the comment.
+- ✅ **Hint level-3 "solution outline" doc drift fixed across all surfaces** (`<pending>`): the
+  rung-3 docs/help everywhere said the ladder shows "the solution outline", but `ExerciseMetadata::hint`
+  returns the book/source review and NEVER the stored outline (Hard Rule #1, `af5d6fb`). Corrected 9
+  spots in 6 files: rpro-serve handler doc, rpro-cli `--level`/`--solution` `--help` + post-hint tip,
+  rpro-tui (render + lib comments), gui comment, the `solution_outline` field doc (rpro-state), and the
+  ARCHITECTURE.md example ("Shown only on `rpro hint --solution`" → authoring-ref-never-shown). Behavior
+  unchanged; verified live (CLI `--help` + `--solution` run shows the book review, "no shortcut to the
+  answer") + rpro-state hint tests (never-leak) + gui node-check. `--solution` confirmed safe (clamps to
+  rung 3 = book review).
+- ☐ **Stale unit test `hint_level1_serves_without_the_solution`** (found 2026-06-23): in
+  `rpro-serve/src/main.rs` ~L1060 — expects `level == 1` from a 0-attempt `seeded_app`, but the
+  force-attempt gate (`af5d6fb`) returns `level: 0` ("run it first"). FAILS on pristine HEAD (proven);
+  same stale-test-vs-gate class as the web.spec fix. Fix: record an attempt before requesting the hint
+  (or assert the level-0 "run it first" path).
+- ☐ **CLI hint skips the force-attempt gate** (found 2026-06-23): `cmd_exercise_hint` prints
+  book_refs + `ex.meta.hint()` immediately — a learner can `rpro exercise hint --solution` with 0
+  attempts, while rpro-serve forces a real try first. Not a leak (rung 3 = book review), but a
+  charter-fidelity gap across surfaces. Gate the CLI the same way (needs the attempt count from progress).
 
 ### Platform / distribution
 - ☐ Web deploy (GH Pages / server) · online Run for Android (remote rpro-serve) ·
@@ -114,6 +128,11 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   no Book `src/*.md`. **To unblock in one step:** drop the needed `src/*.md` from `rust-lang/book`
   into `rust-textbook/sources/rust-book-src/` (or grant fetch access to raw.githubusercontent.com).
   Until then the loop works other un-blocked items.
+- **Rename the CLI `--solution` flag?** (2026-06-23). The flag is now honestly documented (it jumps to
+  the top hint rung = the book/source review; the literal answer is never printed), but its *name* still
+  implies "give me the solution" — arguably at odds with the never-hand-the-answer charter. Options: keep
+  (with the honest help), or rename to e.g. `--stuck` / `--last-resort` (a small CLI API change + update
+  the 3 exercise-starter comments that reference it). Left as-is this tick (behavior/UX unchanged).
 
 ## Audit cadence
 Re-run the educational-fidelity audit + CI gate set after each batch of pedagogy

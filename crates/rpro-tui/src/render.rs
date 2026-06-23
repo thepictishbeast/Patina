@@ -342,8 +342,8 @@ pub fn render_exercise(f: &mut Frame, app: &App, data: &ExerciseViewData) {
     );
 
     // hint ladder (only when the learner has climbed it). The last rung — the
-    // solution outline — is flagged "last resort" and coloured as a warning so it
-    // reads as the deliberate end of the ladder, not the default.
+    // book/source review (never the solution) — is flagged "last resort" and
+    // coloured as a warning so it reads as the deliberate end of the ladder.
     if let Some((level, max, text)) = &data.hint {
         let last = *level >= *max;
         let title = if last {

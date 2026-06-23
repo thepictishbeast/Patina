@@ -55,7 +55,8 @@ why = "The diagrams here show what's happening to s1 and s2 in the failing line.
 # changed too much" warning.
 expected_error_code = "E0382"
 
-# Hidden by default. Shown only on `rpro hint --solution`.
+# Authoring reference only — stored server-side, NEVER shown to the learner.
+# The hint ladder stops at the book/source review; the literal fix is never served.
 solution_outline = "Use `s1.clone()` to keep both variables valid, or restructure to pass ownership instead of borrowing."
 ```
 
