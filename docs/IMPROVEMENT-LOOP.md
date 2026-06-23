@@ -32,8 +32,8 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
 
 ### Critical pedagogy
 - ✅ **Hint ladder never hands the solution; force a real attempt first** (`af5d6fb`).
-- ☐ **Predict-then-run gate (Learn mode):** Run output hidden until a compiles/fails
-  guess is locked. Re-predict on retry. (EDUCATION.md contract; currently opt-in.)
+- ✅ **Predict-then-run gate (Learn mode)** (`158c997`): Run/Check reveal nothing until a
+  compiles/fails guess is locked; re-arms each run (re-predict on retry). Verified live.
 - ☐ **Soft exercise gating:** enforce prereq lock in `Progress::select`/`select_handler`
   + make the 🔒 real + an explicit "jump ahead"; today locked rows are clickable.
 - ✅ **Runaway-run timeout** (`9434c8c`): default-on 30s cap on every surface (`0` opts
@@ -42,9 +42,12 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   GUI's promised ANSI colors actually appear.
 
 ### Editor / IDE
-- ☐ **Implement the 3 modes** (Learn/Assist/Dev) end-to-end + a GUI switcher; today the
-  `EditorAssists` model exists but the editable pane implements none of it.
-- ☐ **Editable-pane syntax highlighting** (quick win; it's a plain `<textarea>` now).
+- ◐ **3 modes (Learn/Assist/Dev)** — switcher + persistence + Learn predict-gate DONE
+  (`158c997`). Remaining: Learn must BLOCK autocomplete/auto-fix; Assist/Dev get inline
+  diagnostics; reconcile the legacy header `FREE` badge with the new switcher.
+- ☐ **Editable-pane syntax highlighting** (quick win; it's a plain `<textarea>` now) —
+  overlay a highlighted `<pre>` (reuse `highlightRust`) behind a transparent textarea.
+  Always-on (all modes).
 - ☐ **Full IDE via rust-analyzer** (`LspSpec` defined, unconsumed) — big; Rust FOSS.
 
 ### Content / corpus
