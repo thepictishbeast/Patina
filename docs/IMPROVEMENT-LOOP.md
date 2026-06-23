@@ -89,10 +89,12 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   only clears AA for *large* white text — the `.run` button passes solely on size. Any NEW small
   white-on-accent element will silently fail contrast; reuse the deepened `#c44000` (or a token) and
   let `a11y.spec.js` catch it.
-- ☐ **e2e web.spec stale vs predict-gate** (found 2026-06-23): `web.spec.js` "Run → error code in
-  Diagnostics" clicks `#runbtn` without locking a prediction, so the Learn-mode predict-gate
-  (`158c997`) blocks the run and it times out. Update the test to lock a prediction first (or run in
-  a non-Learn mode), matching the shipped gate.
+- ✅ **e2e web.spec fixed vs predict-gate** (`<pending>`): the "Run → error code" test clicked
+  `#runbtn` cold, so the Learn-mode predict-gate (`158c997`) blocked the run → timeout (perma-red,
+  masking real regressions). Now locks the honest `fails` prediction first, exercising the real
+  predict→Run→diagnostics path. Full e2e suite green (4/4); toolchain round-trip confirmed
+  server-side (`/api/run` → E0384). NOTE: the gate's *block* behavior (Run refused with no
+  prediction) still has no spec — a coverage gap worth a dedicated test later.
 - ☐ **Stale doc comment in `hint_handler`** (found 2026-06-23): `crates/rpro-serve/src/main.rs`
   ~L482 still says level 3 returns "the solution OUTLINE" — but `ExerciseMetadata::hint` was
   rebuilt (`af5d6fb`) to return book-pointers and NEVER the outline (Hard Rule #1). Doc bug, not a
