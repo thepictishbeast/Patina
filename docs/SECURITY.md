@@ -52,19 +52,22 @@ transport encryption (loopback only), secret management (none are handled).
 
 ## 3. Findings
 
-### F1 — Run execution timeout *(Low; availability — resolved as an opt-in knob)*
+### F1 — Run execution timeout *(Low; availability — resolved, default-on)*
 Previously `LocalProcess::exec` called `cmd.output()` with no deadline, so a
 runaway exercise (`fn main(){ loop{} }`) submitted via `/api/run` hung the
 `spawn_blocking` worker until the server was killed. (Not a security issue under
-the threat model — no privilege boundary, self-DoS only — but a robustness gap.)
-- **Resolved:** the executor now honours `RPRO_RUN_TIMEOUT_SECS`. Unset / `0` /
-  invalid = no cap (the default — CLI/TUI keep today's behaviour). A positive
-  value caps each run: the executor spawns with piped output, **drains
-  stdout/stderr on separate threads** (so a child that floods a pipe can't
-  deadlock the poller — covered by a `yes`-flood test), kills the child past the
-  deadline, and appends a `[rpro: run exceeded the Ns timeout…]` note to the raw
-  output. Operators of the loopback server should set it (see `RUN.md`); a
-  generous value (e.g. 60) avoids killing a cold compile.
+the threat model — no privilege boundary, self-DoS only — but a robustness gap;
+it also froze the web UI, since the never-resolving fetch left the buttons
+disabled — flagged by the educational-fidelity audit.)
+- **Resolved (default-on):** the executor now applies a **safe 30s cap on every
+  surface by default**, so a learner freely experimenting can never hang the
+  CLI/TUI or freeze the web UI — the run is killed and a result still returns.
+  `RPRO_RUN_TIMEOUT_SECS` overrides: a positive value sets the limit; **`0` opts
+  OUT** (uncapped, for operators who want it). The capped path spawns with piped
+  output, **drains stdout/stderr on separate threads** (so a child that floods a
+  pipe can't deadlock the poller — covered by a `yes`-flood test), kills the
+  child past the deadline, and appends a `[rpro: run exceeded the Ns timeout…]`
+  note to the raw output the learner reads.
 
 ### F2 — CSP allows `'unsafe-inline'` for script + style *(Low; informational)*
 The whole GUI is a single self-contained `index.html` with an inline `<script>`

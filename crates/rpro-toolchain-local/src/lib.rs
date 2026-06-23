@@ -11,10 +11,11 @@ use std::time::{Duration, Instant};
 
 use rpro_lang::{CommandPlan, Outcome, ToolError, Toolchain};
 
-/// Env knob: cap a single run at N seconds (`0`/unset/invalid = no cap, the
-/// default — so the CLI/TUI keep their current behaviour and only an operator who
-/// opts in, e.g. the loopback web server, gets the cap). See `docs/SECURITY.md`
-/// F1: a runaway exercise (`loop{}`) otherwise hangs the worker until killed.
+/// Env knob to override the per-run cap (seconds): `0` opts OUT (uncapped); a
+/// positive value sets it; unset = a safe **30s default on every surface**, so a
+/// learner's runaway exercise (`loop{}`) is always killed with a message instead
+/// of hanging the CLI/TUI or freezing the web UI (the learner keeps Ctrl-C on the
+/// CLI for an earlier stop). See `docs/SECURITY.md` F1.
 const RUN_TIMEOUT_ENV: &str = "RPRO_RUN_TIMEOUT_SECS";
 
 /// Executes commands locally through `std::process`.
@@ -100,13 +101,22 @@ impl LocalProcess {
     }
 }
 
-/// Parse [`RUN_TIMEOUT_ENV`]: a positive integer of seconds, else no cap.
+/// The per-run wall-clock cap. `RPRO_RUN_TIMEOUT_SECS` overrides: a positive
+/// integer sets the limit; `0` opts out (uncapped — for operators who want it).
+/// When unset, a safe default applies so a learner freely experimenting (the
+/// classic `fn main() { loop {} }` or a blocking read) can never hang the server
+/// or freeze the UI — the run is killed and a result still returns.
 fn run_timeout_from_env() -> Option<Duration> {
-    std::env::var(RUN_TIMEOUT_ENV)
+    /// Generous enough for a debug build + run of a learner-sized program.
+    const DEFAULT_SECS: u64 = 30;
+    match std::env::var(RUN_TIMEOUT_ENV)
         .ok()
         .and_then(|v| v.trim().parse::<u64>().ok())
-        .filter(|&n| n > 0)
-        .map(Duration::from_secs)
+    {
+        Some(0) => None, // explicit operator opt-out
+        Some(n) => Some(Duration::from_secs(n)),
+        None => Some(Duration::from_secs(DEFAULT_SECS)), // safe default
+    }
 }
 
 /// Read a child pipe to EOF, lossily as UTF-8. `None` (pipe absent) → empty.
