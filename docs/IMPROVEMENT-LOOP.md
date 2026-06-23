@@ -36,8 +36,8 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   guess is locked. Re-predict on retry. (EDUCATION.md contract; currently opt-in.)
 - ☐ **Soft exercise gating:** enforce prereq lock in `Progress::select`/`select_handler`
   + make the 🔒 real + an explicit "jump ahead"; today locked rows are clickable.
-- ▶ **Runaway-run timeout:** `rpro-toolchain-local` has no default cap → `loop {}` hangs
-  the UI forever. Set a sane default timeout (no env required).
+- ✅ **Runaway-run timeout** (`9434c8c`): default-on 30s cap on every surface (`0` opts
+  out). Verified live — `loop {}` returns in ~timeout with a "stopped" note; UI unfreezes.
 - ☐ **Monochrome compiler output:** pass `--color=always` / `CARGO_TERM_COLOR` so the
   GUI's promised ANSI colors actually appear.
 
