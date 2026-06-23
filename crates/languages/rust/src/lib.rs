@@ -34,7 +34,11 @@ impl RustLanguage {
     fn cargo(ex: &ExerciseSource, sub: &str, extra: &[&str]) -> CommandPlan {
         let mut args = vec![sub.to_string()];
         args.extend(extra.iter().map(|s| (*s).to_string()));
-        let tail: String = extra.iter().map(|s| format!(" {s}")).collect();
+        let tail = extra.iter().fold(String::new(), |mut acc, s| {
+            acc.push(' ');
+            acc.push_str(s);
+            acc
+        });
         CommandPlan {
             program: "cargo".into(),
             args,
@@ -46,7 +50,11 @@ impl RustLanguage {
 
     /// Build a [`LangTool`] entry.
     fn tool(name: &str, kind: ToolKind, program: &str, args: &[&str]) -> LangTool {
-        let tail: String = args.iter().map(|a| format!(" {a}")).collect();
+        let tail = args.iter().fold(String::new(), |mut acc, a| {
+            acc.push(' ');
+            acc.push_str(a);
+            acc
+        });
         LangTool {
             name: name.into(),
             kind,

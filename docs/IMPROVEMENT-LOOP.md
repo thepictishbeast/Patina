@@ -88,13 +88,16 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   error-code *emission* stay in `verify-exercises.sh`; anchors stay in `verify-book-anchors.mjs`.
 - ✅ **Offline-Android Run UX** (`<pending>`): a failed run with an exercise loaded now shows
   a guiding "can't run here — no toolchain; predict/read/study offline" message, not the demo.
-- ◐ **Clippy hygiene (per-crate)**: `rpro-book` now clippy-clean (`<pending>`) via 3 genuine fixes —
-  split an over-long first doc paragraph, dropped an unused `.peekable()`, `sort_by`→`sort_by_key(Reverse)`
-  (kept the stable descending-by-count sort); 12 tests confirm behavior unchanged. Remaining crates carry
-  mostly genuine lints (over-long doc paragraphs, `format!`-from-iterator, `match`→`if let`, redundant
-  clone, str-lifetime) — clean those crate by crate — plus two that need a justified `#[allow]` decision:
-  the `?Send`-toolchain `future cannot be sent` (×6, rpro-core/serve) and `struct_excessive_bools`
-  (`EditorAssists`/config flag structs).
+- ◐ **Clippy hygiene (per-crate)**: **5 crates now clippy-clean** — `rpro-book` (`<pending>`: doc-paragraph
+  split, unused `.peekable()` dropped, `sort_by`→`sort_by_key(Reverse)`), plus `rpro-lang` + `rpro-lang-rust`
+  (`<pending>`: `format_collect` ×2 → `fold`+`push`, identical `display` output confirmed by 7 tests; and the
+  cross-cutting `struct_excessive_bools` resolved with a justified `#[allow]` on `EditorAssists` — four
+  INDEPENDENT serialized editor-tier flags, where a bitfield/enum would be strictly worse), and the already-clean
+  `rpro-storage-fs`/`rpro-runner`. Remaining (6 crates, all genuine fixes except one allow): `rpro-tui` (8),
+  `rpro-core` (6), `rpro-serve` (4), `rpro-state` (4 over-long doc paragraphs), `rpro-toolchain-local` (3:
+  `match`→`if let`, pass-by-value), `rpro-cli` (2) — mostly doc-paragraphs/redundant-clone/str-lifetime, plus
+  the `?Send`-toolchain `future cannot be sent` (×6, rpro-core/serve) which needs the same kind of justified
+  `#[allow]`. Once all clean, add a clippy gate to CI (SECURITY.md §4).
 - ✅ **e2e a11y regression fixed** (`<pending>`): the serious `color-contrast` violation was the
   *selected* mode-switcher button — white `#fff` on `--accent` `#f74c00` = **3.5:1** at 11px (needs
   4.5:1); regressed when the switcher landed (`158c997`). Deepened just that button's bg to
