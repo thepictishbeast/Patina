@@ -45,8 +45,9 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
 
 ### Editor / IDE
 - ◐ **3 modes (Learn/Assist/Dev)** — switcher + persistence + Learn predict-gate DONE
-  (`158c997`). Remaining: Learn must BLOCK autocomplete/auto-fix; Assist/Dev get inline
-  diagnostics; reconcile the legacy header `FREE` badge with the new switcher.
+  (`158c997`); legacy header `FREE` badge **removed** (`<pending>`) so the switcher is the sole
+  mode authority (verified live: header renders, badge gone, no a11y/contrast change). Remaining:
+  Learn must BLOCK autocomplete/auto-fix; Assist/Dev get inline diagnostics.
 - ✅ **Editable-pane syntax highlighting** (`<pending>`): colored `<pre>` overlay behind a
   transparent textarea, reusing highlightRust; always-on. Verified live.
 - ☐ **Full IDE via rust-analyzer** (`LspSpec` defined, unconsumed) — big; Rust FOSS.
@@ -79,10 +80,33 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
 - ✅ **Offline-Android Run UX** (`<pending>`): a failed run with an exercise loaded now shows
   a guiding "can't run here — no toolchain; predict/read/study offline" message, not the demo.
 - ☐ Clippy hygiene: pre-existing `future not Send` (`?Send` toolchain) + `struct_excessive_bools`.
+- ☐ **e2e a11y regressed** (found 2026-06-23): `a11y.spec.js` reports a `color-contrast`
+  (WCAG AA, serious) violation on the main view — fails on pristine HEAD too, so it pre-dates the
+  FREE-badge removal; task #12 had this green, so something regressed contrast since. Identify the
+  low-contrast element (axe lists it) and fix the token.
+- ☐ **e2e web.spec stale vs predict-gate** (found 2026-06-23): `web.spec.js` "Run → error code in
+  Diagnostics" clicks `#runbtn` without locking a prediction, so the Learn-mode predict-gate
+  (`158c997`) blocks the run and it times out. Update the test to lock a prediction first (or run in
+  a non-Learn mode), matching the shipped gate.
+- ☐ **Stale doc comment in `hint_handler`** (found 2026-06-23): `crates/rpro-serve/src/main.rs`
+  ~L482 still says level 3 returns "the solution OUTLINE" — but `ExerciseMetadata::hint` was
+  rebuilt (`af5d6fb`) to return book-pointers and NEVER the outline (Hard Rule #1). Doc bug, not a
+  real leak, but it describes the forbidden behavior; correct the comment.
 
 ### Platform / distribution
 - ☐ Web deploy (GH Pages / server) · online Run for Android (remote rpro-serve) ·
   F-Droid + Obtainium · signed APT/dnf repos.
+
+## Open questions for Paul
+- **Bundle 3 more Book chapters to unblock functional/advanced exercises** (2026-06-23). The
+  functional phase (`07b`) and async are blocked: authoring a **closures** exercise needs
+  `book/ch13-01-closures.md`, **smart-pointers** needs `ch15-*`, **async** needs `ch17-*` — none are
+  bundled. `NOTICE.txt` already establishes the pattern (vendor chapters from `rust-lang/book` as
+  exercises need them, dual MIT/Apache), so the *policy* is settled; the blocker is purely
+  mechanical — the authoring env is **offline** and has only rendered PDFs (`rust-textbook/sources/`),
+  no Book `src/*.md`. **To unblock in one step:** drop the needed `src/*.md` from `rust-lang/book`
+  into `rust-textbook/sources/rust-book-src/` (or grant fetch access to raw.githubusercontent.com).
+  Until then the loop works other un-blocked items.
 
 ## Audit cadence
 Re-run the educational-fidelity audit + CI gate set after each batch of pedagogy
