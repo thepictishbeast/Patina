@@ -38,8 +38,10 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   select_handler 423 LOCKED unless `force` + gui "jump ahead?" prompt. Verified live.
 - ✅ **Runaway-run timeout** (`9434c8c`): default-on 30s cap on every surface (`0` opts
   out). Verified live — `loop {}` returns in ~timeout with a "stopped" note; UI unfreezes.
-- ☐ **Monochrome compiler output:** pass `--color=always` / `CARGO_TERM_COLOR` so the
-  GUI's promised ANSI colors actually appear.
+- ⊘ **Monochrome compiler output** — DEFERRED (not a quick win): forcing color at the seam
+  GARBLES the TUI (it renders raw stdout/stderr with no ANSI parser), and rpro-serve runs
+  via core.run with no env hook while the workspace forbids unsafe env-mutation. Needs a
+  per-surface color flag plumbed through Core/command_plan (web on, TUI off).
 
 ### Editor / IDE
 - ◐ **3 modes (Learn/Assist/Dev)** — switcher + persistence + Learn predict-gate DONE
@@ -59,8 +61,8 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
 ### Robustness / audit
 - ☐ **Golden test:** recompile every exercise starter, assert it still emits its
   `expected_error_code` (prevent .rs↔.toml↔lesson drift on toolchain bumps).
-- ☐ **Offline-Android Run UX:** tapping Run offline shows a confusing static demo →
-  show a guiding "Run needs the desktop app / a connection" message instead.
+- ✅ **Offline-Android Run UX** (`<pending>`): a failed run with an exercise loaded now shows
+  a guiding "can't run here — no toolchain; predict/read/study offline" message, not the demo.
 - ☐ Clippy hygiene: pre-existing `future not Send` (`?Send` toolchain) + `struct_excessive_bools`.
 
 ### Platform / distribution

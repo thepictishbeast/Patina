@@ -431,9 +431,22 @@
           statusEl().textContent = 'advanced ✓';
         }
       } catch (e) {
-        // No server reachable → fall back to the static preview.
-        showDemo();
-        statusEl().textContent = 'offline';
+        // The run fetch failed. Two cases:
+        //  (a) an exercise IS loaded — the seam served it, but this surface can't
+        //      compile (e.g. the offline Android app: no on-device Rust toolchain).
+        //      Guide the learner; don't dump an unrelated static demo over their work.
+        //  (b) nothing loaded (opened via file://, no server at all) → layout preview.
+        if (curExercise) {
+          term.clear();
+          term.writeln(r("can't run here") + d(' — this build has no Rust toolchain.'));
+          term.writeln(d('You can still predict the outcome, read the lesson + book, and check'));
+          term.writeln(d('your error-code guess. Compiling needs the desktop app or a connection.'));
+          term.writeln(d('(Your edits are saved.)'));
+          statusEl().textContent = 'run needs the desktop app / a connection';
+        } else {
+          showDemo();
+          statusEl().textContent = 'offline';
+        }
       } finally {
         btns.forEach(x=>x && (x.disabled=false));
         refit();
