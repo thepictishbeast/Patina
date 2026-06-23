@@ -140,6 +140,11 @@
   .lesson p { line-height:1.6; font-size:14px; color:var(--fg); }
   .predict { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:10px; font-size:13px; }
   .predict .pl { color:var(--fg-dim); }
+  /* Learn / Assist / Dev mode switcher — Learn is strict (you do the work). */
+  .modesw { display:inline-flex; border:1px solid var(--line); border-radius:7px; overflow:hidden; margin-left:10px; vertical-align:middle; }
+  .modesw button { font:600 11px var(--ui); padding:2px 9px; background:var(--bg-2); color:var(--fg-dim); border:0; border-right:1px solid var(--line); cursor:pointer; }
+  .modesw button:last-child { border-right:0; }
+  .modesw button.sel { background:var(--accent); color:#fff; }
   .pbtn { background:var(--bg-2); color:var(--fg); border:1px solid var(--line); border-radius:8px;
     padding:5px 10px; cursor:pointer; font-size:12.5px; transition:.12s; }
   .pbtn:hover { border-color:var(--accent); }
@@ -267,6 +272,11 @@
           <span class="dot" style="background:var(--warn)"></span>
           <span class="dot" style="background:var(--done)"></span>
           &nbsp; <span id="editorBar">main.rs</span>
+          <span class="modesw" id="modesw" role="group" aria-label="Editor mode">
+            <button data-mode="learn" title="Learn: you do the work — predict before Run, no autocomplete/auto-fix">Learn</button>
+            <button data-mode="assist" title="Assist: + inline diagnostics and hints on demand">Assist</button>
+            <button data-mode="dev" title="Dev: full editor assists">Dev</button>
+          </span>
           <span style="flex:1"></span>
           <span id="editstate" style="color:var(--fg-dim)">read &amp; edit, then Run</span>
           <span id="resetbtn" title="Restore the original starter code" style="cursor:pointer;color:var(--accent-soft);margin-left:12px">↺ reset</span></div>
@@ -348,6 +358,18 @@
     // Live path: POST a whitelisted op to the local server and stream the raw
     // output (already ANSI-colored by the toolchain) into the xterm terminal.
     async function runOp(op, extra) {
+      // Learn mode = active-recall gate: you must LOCK a compiles/fails prediction
+      // before Run/Check will reveal the real output. (Assist/Dev: no gate.)
+      if (mode === 'learn' && (op === 'run' || op === 'check') && predict.compiles === null) {
+        const pb = document.getElementById('predictbar');
+        if (pb) { pb.style.outline = '2px solid var(--accent)'; setTimeout(() => pb.style.outline = '', 1200); }
+        statusEl().textContent = '🔒 predict first';
+        term.clear();
+        term.writeln(d('Learn mode: lock your prediction first — will it compile, or fail? '));
+        term.writeln(d('Pick compiles ✓ / fails ✗ (and an error-code guess), THEN press Run.'));
+        term.writeln(d('Predicting before you run is the active-recall step — that\'s the point.'));
+        return;
+      }
       const btns = ['runbtn','checkbtn','explainbtn'].map(id=>document.getElementById(id));
       btns.forEach(x=>x && (x.disabled=true));
       statusEl().textContent = op + '…';
@@ -379,6 +401,13 @@
         term.writeln(''); term.writeln(verdict);
         renderDiag(out);
         if (op !== 'explain') showPrediction(out);
+        if (mode === 'learn' && op !== 'explain') {
+          // Re-arm the gate: each Learn-mode run needs a fresh prediction
+          // (re-predict on retry — the verdict above stays visible as feedback).
+          predict = { compiles: null, code: '' };
+          document.querySelectorAll('.pbtn').forEach(x => x.classList.remove('sel'));
+          const pc = document.getElementById('predcode'); if (pc) pc.value = '';
+        }
         statusEl().textContent = out.passed ? 'passed' : 'failed';
         // Refresh the list/gauge/attempts after every run; if a pass advanced
         // the learner, load the next exercise into the editor.
@@ -459,6 +488,26 @@
     let predict = { compiles: null, code: '' };
     let curBookRefs = [];
     const editorEl = () => document.getElementById('editorCode');
+
+    // Editor mode: Learn (strict — predict-before-Run, learner does the work) /
+    // Assist / Dev. Persisted; defaults to Learn (pedagogy-first).
+    let mode = (() => { try { return localStorage.getItem('ts-mode') || 'learn'; } catch (_) { return 'learn'; } })();
+    const EDITSTATE = {
+      learn: 'Learn · predict, then Run — read the error by hand',
+      assist: 'Assist · inline help on demand',
+      dev: 'Dev · full editor',
+    };
+    function setMode(m) {
+      mode = m;
+      try { localStorage.setItem('ts-mode', m); } catch (_) {}
+      document.querySelectorAll('#modesw button').forEach(b =>
+        b.classList.toggle('sel', b.dataset.mode === m));
+      const es = document.getElementById('editstate');
+      if (es) es.textContent = EDITSTATE[m] || '';
+      // The predict bar is the active-recall gate; it only binds in Learn mode.
+      const pb = document.getElementById('predictbar');
+      if (pb) pb.style.opacity = m === 'learn' ? '1' : '.55';
+    }
 
     // Compare the learner's locked prediction against the real result.
     function showPrediction(out) {
@@ -875,6 +924,9 @@
       predict.compiles = b.dataset.pred === 'compiles';
     });
     document.getElementById('predcode').addEventListener('input', e => { predict.code = e.target.value; });
+    // Mode switcher (Learn / Assist / Dev) + restore the saved mode.
+    document.querySelectorAll('#modesw button').forEach(b => b.onclick = () => setMode(b.dataset.mode));
+    setMode(mode);
     document.getElementById('explainbtn').onclick = () => {
       const code = (prompt('Diagnostic code to explain (letters/digits only):', lastCode) || '').trim();
       if (code) runOp('explain', { code });
