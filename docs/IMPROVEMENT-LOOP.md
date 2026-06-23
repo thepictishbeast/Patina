@@ -167,15 +167,12 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   F-Droid + Obtainium · signed APT/dnf repos.
 
 ## Open questions for Paul
-- **Bundle 3 more Book chapters to unblock functional/advanced exercises** (2026-06-23). The
-  functional phase (`07b`) and async are blocked: authoring a **closures** exercise needs
-  `book/ch13-01-closures.md`, **smart-pointers** needs `ch15-*`, **async** needs `ch17-*` — none are
-  bundled. `NOTICE.txt` already establishes the pattern (vendor chapters from `rust-lang/book` as
-  exercises need them, dual MIT/Apache), so the *policy* is settled; the blocker is purely
-  mechanical — the authoring env is **offline** and has only rendered PDFs (`rust-textbook/sources/`),
-  no Book `src/*.md`. **To unblock in one step:** drop the needed `src/*.md` from `rust-lang/book`
-  into `rust-textbook/sources/rust-book-src/` (or grant fetch access to raw.githubusercontent.com).
-  Until then the loop works other un-blocked items.
+- ✅ **RESOLVED — Book chapter sources** (2026-06-23). The chapter-bundling blocker is gone: `curl` to
+  `raw.githubusercontent.com/rust-lang/book/main/src/*.md` works in this env, so authentic chapter
+  markdown can be vendored the right way (Paul: "do what's best — authentic sources"). NOT WebFetch —
+  that's a question-answering fetch that can't return verbatim source. **Vendored `ch13-01-closures.md`**
+  (verified: loads, in TOC, serves cleaned via `display_markdown`, renders live). `ch15-*` (smart-pointers)
+  and `ch17-*` (async) follow the same proven path as those exercises are authored. Tasks #14/#15 unblocked.
 - **Rename the CLI `--solution` flag?** (2026-06-23). The flag is now honestly documented (it jumps to
   the top hint rung = the book/source review; the literal answer is never printed), but its *name* still
   implies "give me the solution" — arguably at odds with the never-hand-the-answer charter. Options: keep
