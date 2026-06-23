@@ -120,7 +120,7 @@ pub struct LspSpec {
 /// Per-exercise editor assists (the two-mode contract). All-on is Free mode.
 // Four INDEPENDENT, serialized editor-tier toggles, not a hidden state machine —
 // a bitfield/enum would obscure the named flags and break the clean serde field
-// mapping, so clippy's >3-bools heuristic is a false positive here.
+// mapping, so the >3-bools lint is a false positive here.
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct EditorAssists {

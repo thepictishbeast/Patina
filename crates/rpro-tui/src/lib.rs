@@ -405,7 +405,7 @@ mod tests {
                 anchor: None,
                 why: "ownership basics".into(),
             }],
-            expected_error_code: Some("E0382".into()),
+            expected_error_code: Some("EXXXX".into()),
             solution_outline: Some("clone it".into()),
         }
     }
