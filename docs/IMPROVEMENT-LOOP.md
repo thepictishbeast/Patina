@@ -104,15 +104,19 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   unchanged; verified live (CLI `--help` + `--solution` run shows the book review, "no shortcut to the
   answer") + rpro-state hint tests (never-leak) + gui node-check. `--solution` confirmed safe (clamps to
   rung 3 = book review).
-- ☐ **Stale unit test `hint_level1_serves_without_the_solution`** (found 2026-06-23): in
-  `rpro-serve/src/main.rs` ~L1060 — expects `level == 1` from a 0-attempt `seeded_app`, but the
-  force-attempt gate (`af5d6fb`) returns `level: 0` ("run it first"). FAILS on pristine HEAD (proven);
-  same stale-test-vs-gate class as the web.spec fix. Fix: record an attempt before requesting the hint
-  (or assert the level-0 "run it first" path).
+- ✅ **rpro-serve unit suite un-staled vs its gates** (`<pending>`): two tests were red (and had been
+  since the gates shipped — a perma-red suite masking regressions). `hint_level1_serves_without_the_solution`
+  expected `level 1` from a 0-attempt store (the force-attempt gate returns `level 0`); `select_switches_
+  current_and_validates_id` selected a later exercise without `force` (the soft-gate now returns `423`).
+  Both rewritten to exercise the REAL shipped flow — and they now also cover two previously-untested gate
+  paths: hint level-0 "run it first" with no attempt, and select 423-locked → force jump-ahead → current.
+  Suite now 18/18 green (was 16/2). Test-only; no production change.
 - ☐ **CLI hint skips the force-attempt gate** (found 2026-06-23): `cmd_exercise_hint` prints
   book_refs + `ex.meta.hint()` immediately — a learner can `rpro exercise hint --solution` with 0
   attempts, while rpro-serve forces a real try first. Not a leak (rung 3 = book review), but a
-  charter-fidelity gap across surfaces. Gate the CLI the same way (needs the attempt count from progress).
+  charter-fidelity gap. BLOCKED on a prerequisite: the CLI tracks NO attempts at all (`rpro run`/`check`
+  never call `record_attempt`), so gating now would lock CLI hints forever. Two-part fix for a later tick:
+  (1) wire attempt-tracking into the CLI run/check path, (2) then gate hint on `attempts == 0`.
 
 ### Platform / distribution
 - ☐ Web deploy (GH Pages / server) · online Run for Android (remote rpro-serve) ·

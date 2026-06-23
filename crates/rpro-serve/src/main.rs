@@ -1058,7 +1058,21 @@ mod tests {
 
     #[tokio::test]
     async fn hint_level1_serves_without_the_solution() {
-        let (_d, app) = seeded_app();
+        let (d, app) = seeded_app();
+        // Force-attempt gate: with 0 attempts, NO hint unlocks — the ladder returns
+        // level 0 with a "run it first" nudge.
+        let pre = app.clone().oneshot(get("/api/hint?level=1")).await.unwrap();
+        let pv: serde_json::Value = serde_json::from_str(&body_string(pre).await).unwrap();
+        assert_eq!(pv["level"], 0, "no hint until a genuine attempt is made");
+
+        // Record one attempt (the server-side analog of pressing Run once), then
+        // rung 1 unlocks.
+        let store = Store::at(d.path().to_path_buf());
+        let exercises = rpro_runner::discover(&store.root().join("exercises")).unwrap();
+        let mut p = store.load_progress().unwrap_or_default();
+        p.record_attempt(&exercises[0].meta.id);
+        store.save_progress(&p).unwrap();
+
         let res = app.oneshot(get("/api/hint?level=1")).await.unwrap();
         assert_eq!(res.status(), StatusCode::OK);
         let v: serde_json::Value = serde_json::from_str(&body_string(res).await).unwrap();
@@ -1206,12 +1220,28 @@ mod tests {
         let list = body_string(app.clone().oneshot(get("/api/exercises")).await.unwrap()).await;
         let v: serde_json::Value = serde_json::from_str(&list).unwrap();
         let target = v["exercises"][1]["id"].as_str().unwrap().to_string();
-        // Selecting it makes it current.
-        let res = app
+        // The soft prerequisite gate locks a later exercise until its predecessor
+        // is Done — without `force`, selecting exercises[1] is refused 423 LOCKED.
+        let locked = app
             .clone()
             .oneshot(post_json(
                 "/api/select",
                 &format!("{{\"id\":\"{target}\"}}"),
+            ))
+            .await
+            .unwrap();
+        assert_eq!(
+            locked.status(),
+            StatusCode::LOCKED,
+            "a not-yet-reached exercise is gated until the prereq is Done (or force)"
+        );
+        // With `force` (the explicit "jump ahead anyway"), the selection goes
+        // through and becomes current.
+        let res = app
+            .clone()
+            .oneshot(post_json(
+                "/api/select",
+                &format!("{{\"id\":\"{target}\",\"force\":true}}"),
             ))
             .await
             .unwrap();
