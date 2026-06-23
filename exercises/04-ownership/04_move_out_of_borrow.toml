@@ -1,6 +1,6 @@
-id = "advanced/03_move_out_of_borrow"
+id = "ownership/04_move_out_of_borrow"
 title = "You can't move something out of a value you only borrowed"
-difficulty = "advanced"
+difficulty = "beginner"
 estimated_minutes = 12
 concept = "move-out-of-borrow"
 expected_error_code = "E0507"
