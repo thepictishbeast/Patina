@@ -80,10 +80,15 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
 - ✅ **Offline-Android Run UX** (`<pending>`): a failed run with an exercise loaded now shows
   a guiding "can't run here — no toolchain; predict/read/study offline" message, not the demo.
 - ☐ Clippy hygiene: pre-existing `future not Send` (`?Send` toolchain) + `struct_excessive_bools`.
-- ☐ **e2e a11y regressed** (found 2026-06-23): `a11y.spec.js` reports a `color-contrast`
-  (WCAG AA, serious) violation on the main view — fails on pristine HEAD too, so it pre-dates the
-  FREE-badge removal; task #12 had this green, so something regressed contrast since. Identify the
-  low-contrast element (axe lists it) and fix the token.
+- ✅ **e2e a11y regression fixed** (`<pending>`): the serious `color-contrast` violation was the
+  *selected* mode-switcher button — white `#fff` on `--accent` `#f74c00` = **3.5:1** at 11px (needs
+  4.5:1); regressed when the switcher landed (`158c997`). Deepened just that button's bg to
+  `#c44000` (white = ~5.1:1, self-contained so passes in both themes), preserving the filled-orange
+  "selected" affordance. `a11y.spec.js` gate green again; verified live (axe probe + screenshot).
+- ☐ **White-on-`--accent` is fragile at small sizes** (note, 2026-06-23): the bright `#f74c00`
+  only clears AA for *large* white text — the `.run` button passes solely on size. Any NEW small
+  white-on-accent element will silently fail contrast; reuse the deepened `#c44000` (or a token) and
+  let `a11y.spec.js` catch it.
 - ☐ **e2e web.spec stale vs predict-gate** (found 2026-06-23): `web.spec.js` "Run → error code in
   Diagnostics" clicks `#runbtn` without locking a prediction, so the Learn-mode predict-gate
   (`158c997`) blocks the run and it times out. Update the test to lock a prediction first (or run in

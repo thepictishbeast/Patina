@@ -143,7 +143,10 @@
   .modesw { display:inline-flex; border:1px solid var(--line); border-radius:7px; overflow:hidden; margin-left:10px; vertical-align:middle; }
   .modesw button { font:600 11px var(--ui); padding:2px 9px; background:var(--bg-2); color:var(--fg-dim); border:0; border-right:1px solid var(--line); cursor:pointer; }
   .modesw button:last-child { border-right:0; }
-  .modesw button.sel { background:var(--accent); color:#fff; }
+  /* Selected: a deepened orange (not --accent) so white text clears WCAG-AA 4.5:1
+     at this 11px size — the bright --accent (#f74c00) only manages 3.5:1. Self-
+     contained fg/bg, so it passes in both themes. */
+  .modesw button.sel { background:#c44000; color:#fff; }
   .pbtn { background:var(--bg-2); color:var(--fg); border:1px solid var(--line); border-radius:8px;
     padding:5px 10px; cursor:pointer; font-size:12.5px; transition:.12s; }
   .pbtn:hover { border-color:var(--accent); }
