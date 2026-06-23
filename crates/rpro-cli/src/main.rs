@@ -441,6 +441,26 @@ fn cmd_exercise_hint(level: u8, show_solution: bool) -> Result<()> {
         );
         println!();
     }
+    // Force-attempt gate (parity with rpro-serve `hint_handler`): the book
+    // references above stay ALWAYS visible — like the web's always-open Book tab —
+    // but the laddered hint is locked until a genuine attempt is recorded, even
+    // for `--solution`. `rpro run`/`check`/`test` record the attempt (see
+    // `finalize_run_progress`), so this unlocks once the learner has truly tried.
+    let attempts = progress.entries.get(&current_id).map_or(0, |e| e.attempts);
+    if attempts == 0 {
+        println!(
+            "{}",
+            style("Run it first — hints unlock once you've genuinely tried.")
+                .yellow()
+                .bold()
+        );
+        println!(
+            "  Predict the outcome, then `{}` and read the real compiler error by hand.",
+            style("rpro run").bold()
+        );
+        return Ok(());
+    }
+
     // Laddered hint text — the SAME shared ladder the web + TUI show
     // (`ExerciseMetadata::hint`), so guidance never drifts across surfaces.
     // `--solution` jumps to the top rung; otherwise climb to `--level`.

@@ -122,10 +122,17 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   `Current`, since `record_attempt` defaults new entries to Current — caught + fixed via live testing).
   Verified live (RPRO_STORE temp): fail→attempt-only, pass→Done+advance+`rpro progress` reflects it,
   side-run→current untouched. Extracted to a helper to stay under clippy `too_many_lines` (no new warning).
-- ☐ **CLI force-attempt hint gate** (now UNBLOCKED — attempts are tracked as of this tick): gate
-  `cmd_exercise_hint`'s ladder on `attempts == 0` for the current exercise (mirror rpro-serve), but keep
-  book_refs always visible (like the web's always-open Book tab) and apply the gate even to `--solution`
-  (force a try before the top rung too). Pure follow-up; small.
+- ✅ **CLI force-attempt hint gate** (`<pending>`): `cmd_exercise_hint` now locks the laddered hint until
+  the current exercise has ≥1 recorded attempt (parity with rpro-serve `hint_handler`). Book references
+  stay ALWAYS visible (like the web's always-open Book tab); only the ladder is gated, and the gate applies
+  even to `--solution` (no jumping to the top rung without trying). Verified live: 0 attempts → book_refs +
+  "Run it first" (no ladder), `--solution` likewise gated, then `rpro run` → hint unlocks (Hint 1/3).
+- ☐ **CLI hint escalation parity** (found 2026-06-23): rpro-serve `hint_handler` also escalates ONE rung
+  per attempt (`earned = attempts.min(3)`, requested clamped to earned) — so after 1 try you only get rung 1,
+  the charter's "earn more help by proving you're stuck". The CLI still lets `--level`/`--solution` pick any
+  rung once unlocked. Mirror the per-attempt cap (clamp requested to `attempts.min(3)`); update the
+  `--level`/`--solution` help to say rungs unlock per attempt. Small; the existing "never drifts across
+  surfaces" comment will then be fully true for the escalation policy, not just the hint text.
 
 ### Platform / distribution
 - ☐ Web deploy (GH Pages / server) · online Run for Android (remote rpro-serve) ·
