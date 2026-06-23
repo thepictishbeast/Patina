@@ -56,7 +56,10 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
 - ☐ **Matrix: re-review rows 51–62** (rate-limited), add the missing back-references the
   DECIDED rows use, fix the `&amp;amp;` double-escape in row 58, decide Lesson# assignment.
 - ☐ **More exercises** — only ~31; iterators/smart-pointers/async thin or absent.
-- ☐ **Integrate Rust by Example / Rustlings / Cookbook / Exercism** (+ licensing).
+- ◐ **Integrate Rust by Example / Rustlings / Cookbook / Exercism** — licenses verified via gh
+  (RBE Apache-2.0, Rustlings MIT, Cookbook CC0-1.0, Exercism MIT) + cataloged in
+  rust-textbook/catalog/EXTERNAL-MATERIALS.md with an integration plan (Rustlings first).
+  Next: adapt a few early Rustlings exercises into exercises/ (re-verified + attributed).
 
 ### Robustness / audit
 - ☐ **Golden test:** recompile every exercise starter, assert it still emits its
