@@ -45,9 +45,8 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
 - ◐ **3 modes (Learn/Assist/Dev)** — switcher + persistence + Learn predict-gate DONE
   (`158c997`). Remaining: Learn must BLOCK autocomplete/auto-fix; Assist/Dev get inline
   diagnostics; reconcile the legacy header `FREE` badge with the new switcher.
-- ☐ **Editable-pane syntax highlighting** (quick win; it's a plain `<textarea>` now) —
-  overlay a highlighted `<pre>` (reuse `highlightRust`) behind a transparent textarea.
-  Always-on (all modes).
+- ✅ **Editable-pane syntax highlighting** (`<pending>`): colored `<pre>` overlay behind a
+  transparent textarea, reusing highlightRust; always-on. Verified live.
 - ☐ **Full IDE via rust-analyzer** (`LspSpec` defined, unconsumed) — big; Rust FOSS.
 
 ### Content / corpus

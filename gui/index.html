@@ -157,11 +157,20 @@
   .editor .bar { display:flex; align-items:center; gap:8px; padding:8px 12px; border-bottom:1px solid var(--line);
     font-size:12px; color:var(--fg-dim); font-family:var(--mono); }
   .editor .dot{width:10px;height:10px;border-radius:50%}
-  .editor pre { margin:0; padding:14px 16px; font-family:var(--mono); font-size:13px; line-height:1.6; overflow:auto; }
-  .editor textarea { display:block; width:100%; margin:0; padding:14px 16px; border:none; outline:none;
-    background:var(--bg-2); color:var(--fg); font-family:var(--mono); font-size:13px; line-height:1.6;
-    resize:vertical; min-height:180px; max-height:46vh; tab-size:4; -moz-tab-size:4; }
-  .editor textarea:focus { box-shadow:inset 0 0 0 2px rgba(247,76,0,.25); }
+  .editor .editwrap { position:relative; }
+  /* Syntax-highlight overlay: a colored <pre> behind a transparent-text textarea,
+     sharing one identical box so glyphs line up. The textarea owns input/caret/
+     selection/scroll; the <pre> just paints colour and mirrors the scroll. */
+  .editor .editwrap pre, .editor .editwrap textarea {
+    margin:0; padding:14px 16px; box-sizing:border-box; border:0;
+    font-family:var(--mono); font-size:13px; line-height:1.6; tab-size:4; -moz-tab-size:4;
+    white-space:pre-wrap; overflow-wrap:break-word; word-break:break-word; }
+  .editor #editorHL { position:absolute; inset:0; overflow:hidden;
+    color:var(--fg); background:var(--bg-2); pointer-events:none; z-index:0; }
+  .editor .editwrap textarea { display:block; width:100%; position:relative; z-index:1; outline:none;
+    background:transparent; color:transparent; caret-color:var(--fg); -webkit-text-fill-color:transparent;
+    resize:vertical; min-height:180px; max-height:46vh; }
+  .editor .editwrap textarea:focus { box-shadow:inset 0 0 0 2px rgba(247,76,0,.25); }
   .kw{color:var(--accent-soft)} .fn{color:var(--note)} .str{color:var(--done)} .cm{color:var(--fg-dim);font-style:italic}
   .runrow{display:flex;gap:10px;align-items:center;margin:0 20px 12px}
   .run{background:linear-gradient(135deg,var(--accent),var(--accent-soft));color:#fff;border:none;
@@ -280,7 +289,10 @@
           <span style="flex:1"></span>
           <span id="editstate" style="color:var(--fg-dim)">read &amp; edit, then Run</span>
           <span id="resetbtn" title="Restore the original starter code" style="cursor:pointer;color:var(--accent-soft);margin-left:12px">↺ reset</span></div>
-        <textarea id="editorCode" class="scroll" aria-label="Source code editor for the current exercise" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off">// loading the current exercise…</textarea>
+        <div class="editwrap">
+          <pre id="editorHL" aria-hidden="true"></pre>
+          <textarea id="editorCode" class="scroll" aria-label="Source code editor for the current exercise" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off">// loading the current exercise…</textarea>
+        </div>
       </div>
       <div class="runrow">
         <button class="run" id="runbtn">▷ Run</button>
@@ -488,23 +500,27 @@
     let predict = { compiles: null, code: '' };
     let curBookRefs = [];
     const editorEl = () => document.getElementById('editorCode');
+    const editorHL = () => document.getElementById('editorHL');
+    // Paint the syntax-highlight overlay from the editor buffer (esc-first, so the
+    // XSS-safe highlightRust only adds fixed-class spans) and mirror the scroll.
+    function syncHL() {
+      const ed = editorEl(), hl = editorHL();
+      if (!hl) return;
+      hl.innerHTML = highlightRust(esc(ed.value)) + '\n'; // trailing \n: last line + caret align
+      hl.scrollTop = ed.scrollTop;
+      hl.scrollLeft = ed.scrollLeft;
+    }
 
     // Editor mode: Learn (strict — predict-before-Run, learner does the work) /
     // Assist / Dev. Persisted; defaults to Learn (pedagogy-first).
     let mode = (() => { try { return localStorage.getItem('ts-mode') || 'learn'; } catch (_) { return 'learn'; } })();
-    const EDITSTATE = {
-      learn: 'Learn · predict, then Run — read the error by hand',
-      assist: 'Assist · inline help on demand',
-      dev: 'Dev · full editor',
-    };
     function setMode(m) {
       mode = m;
       try { localStorage.setItem('ts-mode', m); } catch (_) {}
       document.querySelectorAll('#modesw button').forEach(b =>
         b.classList.toggle('sel', b.dataset.mode === m));
-      const es = document.getElementById('editstate');
-      if (es) es.textContent = EDITSTATE[m] || '';
-      // The predict bar is the active-recall gate; it only binds in Learn mode.
+      // The predict bar is the active-recall gate; it's prominent in Learn mode,
+      // dimmed (optional) in Assist/Dev. The switcher highlight shows the mode.
       const pb = document.getElementById('predictbar');
       if (pb) pb.style.opacity = m === 'learn' ? '1' : '.55';
     }
@@ -551,6 +567,7 @@
       const ed = editorEl(), st = document.getElementById('editstate');
       if (st) st.textContent = (ed.value !== curOriginal) ? 'edited ✏️ (Run to test your fix)' : 'read & edit, then Run';
       if (curExercise) { try { localStorage.setItem(lsKey(curExercise), ed.value); } catch (_) {} }
+      syncHL();
     }
 
     function renderCurrent(j) {
@@ -915,6 +932,7 @@
     document.getElementById('checkbtn').onclick = () => runOp('check');
     // editable code: persist on input, reset restores the original starter.
     editorEl().addEventListener('input', markEdited);
+    editorEl().addEventListener('scroll', () => { const hl = editorHL(), ed = editorEl(); if (hl) { hl.scrollTop = ed.scrollTop; hl.scrollLeft = ed.scrollLeft; } });
     document.getElementById('resetbtn').onclick = () => { editorEl().value = curOriginal; markEdited(); editorEl().focus(); };
     document.getElementById('hintbtn').onclick = runHint;
     // predict-first: lock a compiles/fails guess (+ optional error code) before Run
