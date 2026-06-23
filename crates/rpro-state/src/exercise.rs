@@ -117,18 +117,22 @@ impl ExerciseMetadata {
     ///   `help:` lines (the by-hand-error habit).
     /// * **2** — the expected error code, when known, so the learner can look it
     ///   up — never the fix itself.
-    /// * **3** — the solution OUTLINE, last resort, returned ONLY at the top rung.
-    ///   `max_level` is 3 when an outline exists, else 2, so levels 1–2 can never
-    ///   contain it.
+    /// * **3** — last rung: sends the learner back to the SOURCE (the exercise's
+    ///   book sections + concept) and tells them to apply the compiler's `help:`
+    ///   line themselves. It NEVER returns `solution_outline` — that stored field
+    ///   is an authoring reference only (Hard Rule #1: never hand a solution, not
+    ///   even at the top rung, not even if asked directly).
     ///
-    /// The tutor guides; it never auto-types the fix (see `docs/EDUCATION.md`).
+    /// The tutor guides; it never auto-types or reveals the fix (see
+    /// `docs/EDUCATION.md`). Forcing a real attempt before hints unlock, and
+    /// escalating the rung as a learner proves they're stuck, is the server's job
+    /// (it knows the attempt count); this method just produces each rung's text.
     #[must_use]
     pub fn hint(&self, requested: u8) -> (u8, u8, String) {
-        let max_level: u8 = if self.solution_outline.is_some() {
-            3
-        } else {
-            2
-        };
+        // Three guiding rungs that escalate toward the SOURCE, never the answer.
+        // `solution_outline` is an authoring reference and is DELIBERATELY never
+        // returned here — not even at the top rung (Hard Rule #1).
+        let max_level: u8 = 3;
         let level = requested.clamp(1, max_level);
         let text = match level {
             1 => format!(
@@ -150,10 +154,31 @@ impl ExerciseMetadata {
                     )
                 },
             ),
-            _ => self.solution_outline.as_ref().map_or_else(
-                || "No solution outline recorded — work from the error's `help:` line.".to_string(),
-                |s| format!("Solution outline (last resort): {s}"),
-            ),
+            // Last rung: back to the SOURCE, never the code. The compiler's own
+            // `help:` line names the change; the learner applies it themselves.
+            _ => {
+                let refs = self
+                    .book_refs
+                    .iter()
+                    .map(|r| r.chapter.as_str())
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                if refs.is_empty() {
+                    format!(
+                        "Still stuck? Go back to the book on {} and re-read it, then \
+                         apply the compiler's `help:` line yourself — it names the exact \
+                         change. Writing the fix is the lesson.",
+                        self.concept
+                    )
+                } else {
+                    format!(
+                        "Still stuck? Re-read these book sections on {}: {}. Then apply \
+                         the compiler's `help:` line yourself — it names the exact change. \
+                         There's no shortcut to the answer; writing the fix is the lesson.",
+                        self.concept, refs
+                    )
+                }
+            }
         };
         (level, max_level, text)
     }
@@ -208,29 +233,40 @@ mod tests {
     }
 
     #[test]
-    fn hint_ladder_escalates_and_gates_solution() {
-        let m = fx(); // has a solution outline + expected code "EXXXX"
-        let (l1, max, t1) = m.hint(1);
-        assert_eq!((l1, max), (1, 3));
-        assert!(!t1.contains("clone"), "L1 must not leak the solution");
-        let (_, _, t2) = m.hint(2);
-        assert!(t2.contains("EXXXX"), "L2 names the expected error");
-        assert!(!t2.contains("clone"), "L2 must not leak the solution");
-        let (l3, _, t3) = m.hint(3);
-        assert_eq!(l3, 3);
-        assert!(t3.contains("clone"), "L3 reveals the outline (last resort)");
+    fn hint_ladder_escalates_and_never_leaks_solution() {
+        let m = fx(); // has a solution outline ("...clone()...") + code "EXXXX"
+        // NO rung may ever contain the stored solution outline.
+        for lvl in 1..=3 {
+            let (got, max, t) = m.hint(lvl);
+            assert_eq!((got, max), (lvl, 3));
+            assert!(
+                !t.to_lowercase().contains("clone"),
+                "level {lvl} must NEVER leak the solution outline"
+            );
+        }
+        assert!(m.hint(2).2.contains("EXXXX"), "L2 names the expected error");
+        // Top rung sends them back to the book, not to the code.
+        let t3 = m.hint(3).2;
+        assert!(
+            t3.contains("ch04-01-what-is-ownership"),
+            "L3 points at the book section, not the answer"
+        );
         assert_eq!(m.hint(9).0, 3, "over-request clamps to max");
     }
 
     #[test]
-    fn hint_without_solution_caps_at_level_2() {
+    fn hint_top_rung_independent_of_solution_outline() {
+        // The top rung is the book/concept review, so it exists (and is safe)
+        // whether or not an outline is stored. Removing the outline changes
+        // nothing the learner can see.
         let mut m = fx();
         m.solution_outline = None;
-        assert_eq!(m.hint(1).1, 2, "max_level is 2 with no outline");
-        assert_eq!(
-            m.hint(9).0,
-            2,
-            "over-request clamps to 2 (never a solution rung)"
+        assert_eq!(m.hint(1).1, 3, "max_level stays 3 with no outline");
+        let t3 = m.hint(3).2;
+        assert!(
+            t3.contains("ch04-01-what-is-ownership") || t3.contains("move-semantics"),
+            "L3 is the source/concept review regardless of outline"
         );
+        assert!(!t3.to_lowercase().contains("clone"), "still no solution");
     }
 }

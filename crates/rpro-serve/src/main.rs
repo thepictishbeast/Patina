@@ -478,9 +478,32 @@ async fn hint_handler(
         return Json(serde_json::json!({ "level": 0, "max_level": 0, "text": null }))
             .into_response();
     };
-    let (level, max_level, text) = ex.meta.hint(q.level.unwrap_or(1));
-    Json(serde_json::json!({ "level": level, "max_level": max_level, "text": text }))
-        .into_response()
+    // Force a genuine attempt before ANY hint unlocks, then escalate the rung only
+    // as the learner proves they're stuck (one rung earned per attempt). The fix
+    // itself is never served at any rung (see `ExerciseMetadata::hint`).
+    let attempts = Store::at(state.store_root.clone())
+        .load_progress()
+        .unwrap_or_default()
+        .entries
+        .get(&ex.meta.id)
+        .map_or(0, |e| e.attempts);
+    if attempts == 0 {
+        return Json(serde_json::json!({
+            "level": 0,
+            "max_level": 3,
+            "text": "Run it first — predict the outcome, then run and read the real \
+                     compiler error by hand. Hints unlock once you've genuinely tried.",
+            "attempts": 0
+        }))
+        .into_response();
+    }
+    let earned = u8::try_from(attempts).unwrap_or(u8::MAX).min(3); // 1 rung per attempt, capped at 3
+    let requested = q.level.unwrap_or(1).clamp(1, earned);
+    let (level, max_level, text) = ex.meta.hint(requested);
+    Json(serde_json::json!({
+        "level": level, "max_level": max_level, "text": text, "attempts": attempts
+    }))
+    .into_response()
 }
 
 /// `GET /api/roadmap` — the project roadmap (docs/ROADMAP.md) as markdown, so the
