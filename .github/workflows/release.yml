@@ -2,11 +2,11 @@ name: release
 
 # Build the installable desktop packages and attach them to a GitHub Release.
 # Triggered by a version tag (e.g. `v0.1.0`). See docs/DISTRIBUTION.md for the
-# full plan; this workflow covers the Linux desktop artifacts that are buildable
-# today (the `rpro` CLI/TUI): .deb, .rpm, and a no-root AppImage. The *GUI*
-# AppImage (bundling rpro-serve) waits on rpro-serve becoming relocatable — see
-# docs/BACKLOG.md. APK lives in the mobile repo; the web bundle deploys from its
-# own workflow.
+# full plan; this workflow covers the buildable Linux desktop artifacts: .deb +
+# .rpm (the `rpro` CLI/TUI) and two AppImages — `rpro` (CLI/TUI) and the GUI
+# desktop app (rpro-serve + bundled gui/exercises/book, now that rpro-serve is
+# relocatable). APK lives in the mobile repo; the web bundle deploys from its own
+# workflow.
 
 on:
   push:
@@ -79,18 +79,22 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
 
-      # Builds the release `rpro`, assembles the AppDir from packaging/appimage/,
-      # fetches appimagetool, and packs (FUSE, or extract-and-run fallback).
-      # UPDATE_INFO embeds AppImageUpdate/zsync delta self-update info + emits the
-      # .zsync sidecar that lives next to the release asset (DISTRIBUTION.md).
-      - name: build AppImage (+ .zsync update metadata)
+      # Builds both AppImage editions (cli = the `rpro` CLI/TUI; gui = the
+      # rpro-serve desktop app bundling gui/exercises/book), assembles each AppDir
+      # from packaging/appimage/, fetches appimagetool, and packs (FUSE, or
+      # extract-and-run fallback). UPDATE_INFO embeds AppImageUpdate/zsync delta
+      # self-update info + emits the .zsync sidecar next to each release asset.
+      - name: build AppImages (CLI + GUI, + .zsync update metadata)
         env:
           ARCH: x86_64
-          UPDATE_INFO: "gh-releases-zsync|thepictishbeast|Tempered-Studio|latest|Tempered_Studio-x86_64.AppImage.zsync"
-        run: bash scripts/build-appimage.sh dist
+        run: |
+          EDITION=cli UPDATE_INFO="gh-releases-zsync|thepictishbeast|Tempered-Studio|latest|Tempered_Studio-x86_64.AppImage.zsync" \
+            bash scripts/build-appimage.sh dist
+          EDITION=gui UPDATE_INFO="gh-releases-zsync|thepictishbeast|Tempered-Studio|latest|Tempered_Studio_GUI-x86_64.AppImage.zsync" \
+            bash scripts/build-appimage.sh dist
 
       - name: checksum
-        run: ( cd dist && sha256sum Tempered_Studio-*.AppImage > SHA256SUMS.appimage && cat SHA256SUMS.appimage )
+        run: ( cd dist && sha256sum *.AppImage > SHA256SUMS.appimage && cat SHA256SUMS.appimage )
 
       - name: upload to the GitHub Release
         env:
@@ -99,7 +103,8 @@ jobs:
         run: |
           gh release view "$TAG" >/dev/null 2>&1 \
             || gh release create "$TAG" --title "$TAG" --generate-notes
-          # The .zsync (if produced) is what AppImageUpdate polls for delta updates.
-          gh release upload "$TAG" dist/Tempered_Studio-*.AppImage dist/SHA256SUMS.appimage --clobber
-          [ -f dist/Tempered_Studio-x86_64.AppImage.zsync ] \
-            && gh release upload "$TAG" dist/Tempered_Studio-x86_64.AppImage.zsync --clobber || true
+          # The .zsync sidecars are what AppImageUpdate polls for delta updates.
+          gh release upload "$TAG" dist/*.AppImage dist/SHA256SUMS.appimage --clobber
+          for z in dist/*.AppImage.zsync; do
+            [ -f "$z" ] && gh release upload "$TAG" "$z" --clobber || true
+          done

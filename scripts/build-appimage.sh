@@ -1,51 +1,71 @@
 #!/usr/bin/env bash
-# Build a single-file, no-root AppImage of the `rpro` CLI/TUI — the locked
-# Linux-desktop "just works" artifact from docs/DISTRIBUTION.md, parallel to the
-# .deb/.rpm produced by release.yml. Bundles only the self-contained `rpro`
-# binary. (The GUI server `rpro-serve` is NOT yet relocatable — it resolves its
-# assets via CARGO_MANIFEST_DIR — so the *GUI* AppImage waits on that fix; see
-# docs/BACKLOG.md.)
+# Build a single-file, no-root AppImage — the locked Linux-desktop artifact from
+# docs/DISTRIBUTION.md, parallel to the .deb/.rpm produced by release.yml.
+#
+# Two editions (EDITION env, default `cli`):
+#   cli  — the `rpro` CLI/TUI; AppRun execs it, forwarding args. No bundled assets.
+#   gui  — the GUI desktop app: bundles `rpro-serve` + gui/exercises/book under
+#          usr/share/tempered-studio; AppRun launches the server (which finds the
+#          assets via <exe>/../share/tempered-studio — resolve_asset_root) and
+#          opens the browser.
 #
 # Usage:  scripts/build-appimage.sh [OUTDIR]            (default: dist/)
-# Env:    ARCH=x86_64                                   target arch tag
-#         RPRO_BIN=path/to/rpro                         use a prebuilt binary (skip cargo)
-#         UPDATE_INFO="gh-releases-zsync|owner|repo|latest|Tempered_Studio-*.AppImage.zsync"
-#                                                       embed AppImage auto-update info (+ .zsync)
+# Env:    EDITION=cli|gui                               which artifact (default cli)
+#         ARCH=x86_64                                   target arch tag
+#         BIN_OVERRIDE=path/to/binary                   use a prebuilt binary (skip cargo)
+#         UPDATE_INFO="gh-releases-zsync|owner|repo|latest|<name>.AppImage.zsync"
+#                                                       embed AppImageUpdate/zsync info (+ .zsync)
 #         APPIMAGETOOL=path                             use a local appimagetool
 #
-# Locally reproducible: run from anywhere, no root. FUSE is preferred for the
-# final pack; the script falls back to --appimage-extract-and-run where FUSE is
-# unavailable (e.g. minimal CI containers).
+# Locally reproducible, no root. FUSE is preferred for the pack; falls back to
+# --appimage-extract-and-run where FUSE is unavailable.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 OUTDIR="${1:-dist}"
 ARCH="${ARCH:-x86_64}"
+EDITION="${EDITION:-cli}"
 BUILD="$ROOT/target/appimage"            # exec-ok work dir (off any noexec /tmp)
-APPDIR="$BUILD/Tempered_Studio.AppDir"
 SCAFFOLD="$ROOT/packaging/appimage"
 
+case "$EDITION" in
+  cli)
+    PKG=rpro-cli;   BIN=rpro;        APPRUN=AppRun
+    DESKTOP=tempered-studio.desktop; OUTNAME="Tempered_Studio-$ARCH.AppImage" ;;
+  gui)
+    PKG=rpro-serve; BIN=rpro-serve;  APPRUN=AppRun.gui
+    DESKTOP=tempered-studio-gui.desktop; OUTNAME="Tempered_Studio_GUI-$ARCH.AppImage" ;;
+  *) echo "fatal: unknown EDITION '$EDITION' (use cli|gui)" >&2; exit 2 ;;
+esac
+
+APPDIR="$BUILD/$EDITION.AppDir"
 mkdir -p "$OUTDIR" "$BUILD"
 rm -rf "$APPDIR"
 
-# 1. The binary — build the release `rpro` unless a prebuilt one was supplied.
-if [ -n "${RPRO_BIN:-}" ]; then
-  BIN="$RPRO_BIN"
+# 1. The binary — build the release target unless a prebuilt one was supplied.
+if [ -n "${BIN_OVERRIDE:-}" ]; then
+  SRCBIN="$BIN_OVERRIDE"
 else
-  cargo build --release --locked -p rpro-cli
-  BIN="${CARGO_TARGET_DIR:-$ROOT/target}/release/rpro"
+  cargo build --release --locked -p "$PKG"
+  SRCBIN="${CARGO_TARGET_DIR:-$ROOT/target}/release/$BIN"
 fi
-[ -x "$BIN" ] || { echo "fatal: rpro binary not found at $BIN" >&2; exit 1; }
+[ -x "$SRCBIN" ] || { echo "fatal: $BIN binary not found at $SRCBIN" >&2; exit 1; }
 
-# 2. Assemble the AppDir (binary in usr/bin; top-level AppRun + .desktop + icon,
-#    plus the icon in the hicolor theme path for desktop integration).
-install -Dm755 "$BIN"                              "$APPDIR/usr/bin/rpro"
-install -Dm755 "$SCAFFOLD/AppRun"                  "$APPDIR/AppRun"
-install -Dm644 "$SCAFFOLD/tempered-studio.desktop" "$APPDIR/tempered-studio.desktop"
-install -Dm644 "$SCAFFOLD/tempered-studio.png"     "$APPDIR/tempered-studio.png"
+# 2. Assemble the AppDir (binary in usr/bin; top-level AppRun + .desktop + icon).
+install -Dm755 "$SRCBIN"                       "$APPDIR/usr/bin/$BIN"
+install -Dm755 "$SCAFFOLD/$APPRUN"             "$APPDIR/AppRun"
+install -Dm644 "$SCAFFOLD/$DESKTOP"            "$APPDIR/tempered-studio.desktop"
+install -Dm644 "$SCAFFOLD/tempered-studio.png" "$APPDIR/tempered-studio.png"
 install -Dm644 "$SCAFFOLD/tempered-studio.png" \
   "$APPDIR/usr/share/icons/hicolor/256x256/apps/tempered-studio.png"
+
+# The GUI edition bundles the served assets under the FHS path rpro-serve probes.
+if [ "$EDITION" = gui ]; then
+  SHARE="$APPDIR/usr/share/tempered-studio"
+  mkdir -p "$SHARE"
+  cp -r "$ROOT/gui" "$ROOT/exercises" "$ROOT/book" "$SHARE/"
+fi
 
 # 3. appimagetool (cached under target/; it is itself an AppImage).
 TOOL="${APPIMAGETOOL:-$BUILD/appimagetool-$ARCH.AppImage}"
@@ -57,7 +77,7 @@ if [ -z "${APPIMAGETOOL:-}" ] && [ ! -x "$TOOL" ]; then
 fi
 
 # 4. Pack. Prefer the FUSE path; retry via extract-and-run if FUSE is absent.
-OUT="$OUTDIR/Tempered_Studio-$ARCH.AppImage"
+OUT="$OUTDIR/$OUTNAME"
 ARGS=()
 [ -n "${UPDATE_INFO:-}" ] && ARGS+=(-u "$UPDATE_INFO")
 ARGS+=("$APPDIR" "$OUT")
@@ -69,5 +89,5 @@ if ! "$TOOL" "${ARGS[@]}" 2>"$BUILD/appimagetool.log"; then
 fi
 
 chmod +x "$OUT"
-echo "built: $OUT"
+echo "built ($EDITION): $OUT"
 ( cd "$OUTDIR" && sha256sum "$(basename "$OUT")" )

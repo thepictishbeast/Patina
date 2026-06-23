@@ -1,0 +1,22 @@
+#!/bin/sh
+# AppImage entrypoint for the Tempered Studio GUI desktop app. Launches the
+# bundled rpro-serve (which finds its assets via <exe>/../share/tempered-studio
+# — see resolve_asset_root), waits for it to bind loopback, then opens the
+# default browser at the local URL. Closing the window / Ctrl-C stops the server.
+HERE="$(dirname "$(readlink -f "${0}")")"
+PORT="${PORT:-8787}"
+URL="http://127.0.0.1:${PORT}/"
+
+"${HERE}/usr/bin/rpro-serve" &
+SRV=$!
+trap 'kill "$SRV" 2>/dev/null' EXIT INT TERM
+
+# Give the server a moment to bind, then hand off to the browser.
+sleep 1
+if command -v xdg-open >/dev/null 2>&1; then
+  xdg-open "$URL" >/dev/null 2>&1 || printf 'Tempered Studio is running — open %s\n' "$URL"
+else
+  printf 'Tempered Studio is running — open %s in your browser.\n' "$URL"
+fi
+
+wait "$SRV"

@@ -30,10 +30,13 @@ Built from the same `rpro` (CLI/TUI) and future GUI binaries.
     info + a `.zsync` file published next to the release asset (the workflow
     passes `UPDATE_INFO=gh-releases-zsync|…`). Delta updates, no repo signing,
     no root. This is the recommended default updater.
-  - **GUI AppImage (pending):** a single-file that launches the GUI server is
-    blocked until `rpro-serve` is relocatable — today it resolves `gui/`,
-    `exercises/`, `book/` via `CARGO_MANIFEST_DIR` (compile-time), so a shipped
-    binary can't find its assets. Tracked in `docs/BACKLOG.md`.
+  - **GUI AppImage — shipped.** `EDITION=gui scripts/build-appimage.sh` bundles
+    `rpro-serve` + `gui/`/`exercises/`/`book/` under `usr/share/tempered-studio`;
+    its AppRun launches the server and opens the browser. This works because
+    `rpro-serve` is now **relocatable** — `resolve_asset_root()` finds its assets
+    relative to the executable (`<exe>/../share/tempered-studio`, `$TS_ASSET_ROOT`
+    override, source-tree fallback), not via the compile-time `CARGO_MANIFEST_DIR`.
+    Both editions (`cli`, `gui`) build in the release.yml `appimage` job.
 - **.deb** — system-integrated, the user's stated preference for regular updates.
   - Build: `cargo-deb`.
   - **Auto-update: a signed APT repository** hosted on GH Pages
@@ -77,7 +80,8 @@ cargo install cargo-deb cargo-generate-rpm        # one-time (tools)
 cargo build --release --locked -p rpro-cli        # → target/release/rpro
 cargo deb -p rpro-cli --no-build                  # → target/debian/*.deb
 cargo generate-rpm -p crates/rpro-cli             # → target/generate-rpm/*.rpm
-scripts/build-appimage.sh dist                    # → dist/Tempered_Studio-x86_64.AppImage
+scripts/build-appimage.sh dist                    # → dist/Tempered_Studio-x86_64.AppImage (CLI/TUI)
+EDITION=gui scripts/build-appimage.sh dist        # → dist/Tempered_Studio_GUI-x86_64.AppImage (GUI app)
 # integrity, exactly as the workflow's collect step does it:
 ( cd target && sha256sum debian/*.deb generate-rpm/*.rpm )
 ```

@@ -687,14 +687,60 @@ fn build_router(state: AppState, gui_dir: &Path) -> Router {
         .with_state(state)
 }
 
+/// Ordered candidate roots that may hold the bundled assets (`gui/`,
+/// `exercises/`, `book/`). Pure (no filesystem) so the precedence is unit-tested;
+/// [`resolve_asset_root`] picks the first that actually exists. First match wins:
+///   1. `$TS_ASSET_ROOT`                  — explicit operator/packager override.
+///   2. `<exe>/../share/tempered-studio`  — FHS install (.deb) / AppDir mirror.
+///   3. `<exe>/`                          — assets sitting beside the binary.
+///   4. `<CARGO_MANIFEST_DIR>/../..`       — the source tree (dev runs + tests).
+fn asset_root_candidates(
+    env_override: Option<PathBuf>,
+    exe_dir: Option<&Path>,
+    manifest_dir: &Path,
+) -> Vec<PathBuf> {
+    let mut c = Vec::new();
+    if let Some(o) = env_override {
+        c.push(o);
+    }
+    if let Some(d) = exe_dir {
+        c.push(d.join("../share/tempered-studio"));
+        c.push(d.to_path_buf());
+    }
+    c.push(manifest_dir.join("../..")); // source-tree fallback (workspace root)
+    c
+}
+
+/// Resolve the directory holding the bundled assets, relative to the running
+/// executable — so a *packaged* binary (.deb / AppImage) finds `gui/` etc. on a
+/// user's machine, not only from the source tree it was built in. Returns the
+/// first candidate whose `gui/index.html` is present; if none match, the last
+/// (source-tree) candidate is returned unconditionally, preserving the prior
+/// build-anchored behaviour for dev runs and tests.
+fn resolve_asset_root() -> PathBuf {
+    let manifest = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let env_override = std::env::var_os("TS_ASSET_ROOT").map(PathBuf::from);
+    let exe = std::env::current_exe().ok();
+    let exe_dir = exe.as_deref().and_then(Path::parent);
+    let candidates = asset_root_candidates(env_override, exe_dir, manifest);
+    let last = candidates.len().saturating_sub(1);
+    for (i, cand) in candidates.into_iter().enumerate() {
+        if i == last || cand.join("gui/index.html").exists() {
+            return cand;
+        }
+    }
+    manifest.join("../..") // unreachable: the loop always returns at `i == last`
+}
+
 #[tokio::main]
 async fn main() {
-    // Resolve paths relative to this crate so a plain build-tool run works
-    // from anywhere (paths are anchored to CARGO_MANIFEST_DIR).
-    let manifest = Path::new(env!("CARGO_MANIFEST_DIR"));
-    let gui_dir = manifest.join("../../gui");
-    let workspace_exercises = manifest.join("../../exercises");
-    let workspace_book = manifest.join("../../book");
+    // Resolve bundled assets relative to the executable so a *packaged* binary
+    // (.deb / AppImage) finds them on a user's machine — not only from the source
+    // tree it was built in. See `resolve_asset_root`.
+    let asset_root = resolve_asset_root();
+    let gui_dir = asset_root.join("gui");
+    let workspace_exercises = asset_root.join("exercises");
+    let workspace_book = asset_root.join("book");
 
     // Writable state/run root: a fixed cache dir under $HOME (exec-ok, off the
     // git tree, never /tmp). Overridable via TS_SERVE_ROOT for the operator.
@@ -792,6 +838,29 @@ mod tests {
         assert_eq!(status_str(ExerciseStatus::Current), "current");
         assert_eq!(status_str(ExerciseStatus::Done), "done");
         assert_eq!(status_str(ExerciseStatus::Skipped), "skipped");
+    }
+
+    #[test]
+    fn asset_root_candidate_precedence() {
+        let manifest = Path::new("/ws/crates/rpro-serve");
+        let exe_dir = Path::new("/opt/app/usr/bin");
+        // env override first, then FHS-share, then beside-the-exe, then dev tree.
+        let c = asset_root_candidates(Some(PathBuf::from("/custom")), Some(exe_dir), manifest);
+        assert_eq!(
+            c,
+            vec![
+                PathBuf::from("/custom"),
+                PathBuf::from("/opt/app/usr/bin/../share/tempered-studio"),
+                PathBuf::from("/opt/app/usr/bin"),
+                PathBuf::from("/ws/crates/rpro-serve/../.."),
+            ]
+        );
+        // No override, no resolvable exe → only the source-tree fallback remains,
+        // so a packaged binary that can't locate itself still behaves as before.
+        assert_eq!(
+            asset_root_candidates(None, None, manifest),
+            vec![PathBuf::from("/ws/crates/rpro-serve/../..")]
+        );
     }
 
     #[test]

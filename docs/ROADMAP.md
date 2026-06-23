@@ -45,7 +45,7 @@ so the learner (and Paul) can see what's done and what's next. Status:
 
 ## Phase 4 — Distribution & sync
 - [x] Packaging plan + .deb/.rpm + release CI (docs/DISTRIBUTION.md)
-- [x] AppImage of the `rpro` CLI/TUI + zsync auto-update (`scripts/build-appimage.sh`, release.yml `appimage` job; built + run-verified locally)
-- [ ] GUI AppImage (needs `rpro-serve` relocatable — see BACKLOG §F); signed APT/dnf repos
+- [x] AppImage — both editions: `rpro` CLI/TUI **and** the GUI desktop app (rpro-serve made relocatable via `resolve_asset_root`, bundles gui/exercises/book) + zsync auto-update (`scripts/build-appimage.sh`, release.yml `appimage` job; built + run-verified locally)
+- [ ] Signed APT/dnf repos (GH Pages) for `apt`/`dnf` auto-update
 - [ ] APK + F-Droid (mobile repo)
 - [ ] Cross-device sync/backup of progress + code

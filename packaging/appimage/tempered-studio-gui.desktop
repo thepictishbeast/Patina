@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Tempered Studio
+GenericName=Rust Learning Studio
+Comment=Learn Rust by reading and fixing real compiler errors — local GUI
+Exec=AppRun
+Icon=tempered-studio
+Terminal=false
+Categories=Development;Education;
+Keywords=rust;learn;programming;tutorial;compiler;
