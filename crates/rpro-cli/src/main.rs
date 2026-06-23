@@ -76,6 +76,11 @@ enum Cmd {
         /// The diagnostic code to explain.
         code: String,
     },
+    /// Look up a Rust term in the built-in offline glossary, or list every term.
+    Glossary {
+        /// Term to define (name or alias). Omit to list all terms.
+        term: Option<String>,
+    },
 }
 
 #[derive(Subcommand, Debug)]
@@ -135,7 +140,61 @@ fn main() -> Result<()> {
         Some(Cmd::Check { exercise }) => cmd_exec(exercise.as_deref(), &RunOp::Check),
         Some(Cmd::Test { exercise }) => cmd_exec(exercise.as_deref(), &RunOp::Test),
         Some(Cmd::Explain { code }) => cmd_explain(&code),
+        Some(Cmd::Glossary { term }) => cmd_glossary(term.as_deref()),
     }
+}
+
+/// `rpro glossary [term]` — look up a Rust term in the built-in offline glossary,
+/// or list every term when no argument is given. Definitions are plain-language,
+/// conceptual (never an exercise's fix), and attributed to the bundled Rust Book.
+fn cmd_glossary(term: Option<&str>) -> Result<()> {
+    let store = Store::user()?;
+    let path = store.root().join("glossary").join("glossary.toml");
+    let glossary = rpro_glossary::Glossary::load(&path)
+        .with_context(|| format!("loading the glossary from {}", path.display()))?;
+    if glossary.is_empty() {
+        println!(
+            "{}",
+            style("No glossary yet — run `rpro init` to seed it.").yellow()
+        );
+        return Ok(());
+    }
+    match term {
+        None => {
+            println!("{}", style("Glossary terms:").bold().cyan());
+            for t in glossary.all() {
+                println!("  {}", style(&t.name).bold());
+            }
+            println!();
+            println!(
+                "  {} `{}`",
+                style("Define one:").dim(),
+                style("rpro glossary <term>").bold()
+            );
+        }
+        Some(q) => match glossary.get(q) {
+            None => {
+                println!("{} no glossary entry for {:?}.", style("·").dim(), q);
+                println!(
+                    "  {} `{}`",
+                    style("Browse all:").dim(),
+                    style("rpro glossary").bold()
+                );
+            }
+            Some(t) => {
+                println!("{}", style(&t.name).bold().cyan());
+                println!("  {}", t.definition);
+                println!();
+                println!("  {}", style(&t.source).dim().italic());
+                println!(
+                    "  {} `{}`",
+                    style("Read more:").dim(),
+                    style(format!("rpro book search {}", t.book_chapter)).bold()
+                );
+            }
+        },
+    }
+    Ok(())
 }
 
 // ---------------------------------------------------------------------------
@@ -199,6 +258,17 @@ fn cmd_init() -> Result<()> {
             .with_context(|| format!("seeding book from {}", bundled_book.display()))?;
         if let Ok(b) = rpro_book::Book::load(&book_dir) {
             println!("  + seeded {} Rust Book chapter(s)", b.chapters.len());
+        }
+    }
+    // Seed the built-in glossary the same way, so `rpro glossary` works offline
+    // (parity with the web seed).
+    let gloss_dir = store.root().join("glossary");
+    let bundled_gloss = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../glossary");
+    if !gloss_dir.join("glossary.toml").exists() && bundled_gloss.is_dir() {
+        copy_tree(&bundled_gloss, &gloss_dir)
+            .with_context(|| format!("seeding glossary from {}", bundled_gloss.display()))?;
+        if let Ok(g) = rpro_glossary::Glossary::load(&gloss_dir.join("glossary.toml")) {
+            println!("  + seeded {} glossary term(s)", g.all().len());
         }
     }
     // Ensure a Current exercise so the first run isn't an empty screen.

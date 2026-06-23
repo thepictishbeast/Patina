@@ -20,6 +20,7 @@ rpro-core = { path = "../rpro-core" }
 rpro-toolchain-local = { path = "../rpro-toolchain-local" }
 rpro-runner = { path = "../rpro-runner" }
 rpro-book = { path = "../rpro-book" }
+rpro-glossary = { path = "../rpro-glossary" }
 rpro-tui = { path = "../rpro-tui" }
 clap.workspace = true
 anyhow.workspace = true
