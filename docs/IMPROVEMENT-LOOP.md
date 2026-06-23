@@ -127,12 +127,12 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   stay ALWAYS visible (like the web's always-open Book tab); only the ladder is gated, and the gate applies
   even to `--solution` (no jumping to the top rung without trying). Verified live: 0 attempts → book_refs +
   "Run it first" (no ladder), `--solution` likewise gated, then `rpro run` → hint unlocks (Hint 1/3).
-- ☐ **CLI hint escalation parity** (found 2026-06-23): rpro-serve `hint_handler` also escalates ONE rung
-  per attempt (`earned = attempts.min(3)`, requested clamped to earned) — so after 1 try you only get rung 1,
-  the charter's "earn more help by proving you're stuck". The CLI still lets `--level`/`--solution` pick any
-  rung once unlocked. Mirror the per-attempt cap (clamp requested to `attempts.min(3)`); update the
-  `--level`/`--solution` help to say rungs unlock per attempt. Small; the existing "never drifts across
-  surfaces" comment will then be fully true for the escalation policy, not just the hint text.
+- ✅ **CLI hint escalation parity** (`<pending>`): `cmd_exercise_hint` now earns ONE rung per attempt
+  (`earned = attempts.min(3)`), exactly like rpro-serve — `--level` is clamped to earned, `--solution` jumps
+  to the highest EARNED rung (never past it), and the tip honestly says to run again to earn the next rung
+  (deeper help comes from trying, not bumping a flag). `--level`/`--solution` help updated to match. The
+  cross-surface hint behavior (text + gate + escalation) is now fully consistent across web/CLI. Verified
+  live: 1 attempt → `--solution`/`--level 3` both give rung 1/3; 2 attempts → rung 2; 3 → rung 3 last-resort.
 
 ### Platform / distribution
 - ☐ Web deploy (GH Pages / server) · online Run for Android (remote rpro-serve) ·

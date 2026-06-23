@@ -87,14 +87,13 @@ enum ExerciseCmd {
     /// Book references + a laddered hint for the current exercise — what
     /// to read (and think) when stuck.
     Hint {
-        /// Climb the shared hint ladder to this rung: 1 = concept nudge,
-        /// 2 = the expected error code, 3 = back to the book + concept (the
-        /// source review — the literal fix is never shown).
+        /// Climb the hint ladder to this rung: 1 = concept nudge, 2 = the expected
+        /// error code, 3 = back to the book + concept (the literal fix is never
+        /// shown). Capped at the rungs you've earned — one unlocks per attempt.
         #[arg(long, default_value_t = 1)]
         level: u8,
-        /// Shortcut for the top (last-resort) rung — the book + concept review.
-        /// The literal solution is never printed; this only jumps to the end of
-        /// the ladder.
+        /// Jump to the highest hint rung you've EARNED (one unlocks per attempt;
+        /// you must try first). The literal solution is never printed.
         #[arg(long)]
         solution: bool,
     },
@@ -462,9 +461,16 @@ fn cmd_exercise_hint(level: u8, show_solution: bool) -> Result<()> {
     }
 
     // Laddered hint text — the SAME shared ladder the web + TUI show
-    // (`ExerciseMetadata::hint`), so guidance never drifts across surfaces.
-    // `--solution` jumps to the top rung; otherwise climb to `--level`.
-    let requested = if show_solution { u8::MAX } else { level.max(1) };
+    // (`ExerciseMetadata::hint`). Escalation also matches rpro-serve `hint_handler`:
+    // ONE rung is earned per attempt (capped at 3), so the learner proves they're
+    // stuck (more genuine tries) to unlock deeper help. `--level` is clamped to
+    // what's earned; `--solution` jumps to the highest EARNED rung, never past it.
+    let earned = u8::try_from(attempts).unwrap_or(u8::MAX).min(3);
+    let requested = if show_solution {
+        earned
+    } else {
+        level.max(1).min(earned)
+    };
     let (lvl, max, text) = ex.meta.hint(requested);
     let last = lvl >= max;
     println!(
@@ -479,10 +485,14 @@ fn cmd_exercise_hint(level: u8, show_solution: bool) -> Result<()> {
     println!("  {text}");
     if !last {
         println!();
-        let mut tip = format!("rpro exercise hint --level {}", lvl + 1);
-        if max >= 3 {
-            tip.push_str("  (or --solution to jump to the last rung)");
-        }
+        // Deeper rungs are earned by trying again, not by bumping a flag: only
+        // point at `--level N+1` when it's ALREADY been earned; otherwise send the
+        // learner back to another genuine attempt.
+        let tip = if lvl < earned {
+            format!("rpro exercise hint --level {}", lvl + 1)
+        } else {
+            "run it again (`rpro run`) to earn the next hint rung".to_string()
+        };
         println!("  {} {}", style("Tip:").yellow(), style(tip).bold());
     }
     Ok(())
