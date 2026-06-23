@@ -61,8 +61,10 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
 
 ### Content / corpus
 - ☐ **Lessons for Phases 2–9** (only Phase 1 / L1–L8 exist; matrix DRAFT rows 49–62 done).
-- ☐ **Matrix: re-review rows 51–62** (rate-limited), add the missing back-references the
-  DECIDED rows use, fix the `&amp;amp;` double-escape in row 58, decide Lesson# assignment.
+- ◐ **Matrix: re-review rows 51–62** (rate-limited). ✅ Fixed the HTML-entity in row 58 title
+  (`Advanced patterns &amp; matching` → literal `&`, matching every sibling row; it was the only
+  entity left in the matrix — verified). REMAINING (Paul's review domain): add the missing
+  back-references the DECIDED rows use, decide Lesson# assignment for the DRAFT rows.
 - ◐ **More exercises / functional phase** — created `07b-functional-and-smart-pointers` and
   relocated the misplaced iterators exercise (was in 09-advanced) into it. Also relocated
   `09-advanced/03_move_out_of_borrow` (E0507, core ownership) → `04-ownership/04_move_out_of_borrow`
