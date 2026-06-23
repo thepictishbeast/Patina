@@ -10,8 +10,8 @@
 #  - `aliases` let a lookup match the exercise `concept` tags + common spellings.
 #
 # Seeded into the store next to `book/` and `exercises/`, and served read-only via
-# `/api/glossary`. This is the first batch (the vocabulary the early, reachable
-# exercises use); it grows over time.
+# `/api/glossary`. Covers the vocabulary of the current exercise corpus (every
+# exercise `concept` resolves to a term); grows as new exercises are added.
 
 [[term]]
 name = "binding"
@@ -75,3 +75,175 @@ aliases = ["closures", "anonymous function", "closure-type-inference"]
 definition = "An anonymous function you can save in a binding or pass to another function. Unlike a named function, a closure can capture values from the scope where it is defined and use them later when it runs."
 book_chapter = "ch13-01-closures"
 source = "The Rust Book, ch.13.1 \"Closures: Anonymous Functions That Capture Their Environment\""
+
+# ── batch 2 (2026-06-23): concept coverage for the rest of the corpus ──
+# Drafted from the bundled Book chapters + adversarially verified (grounded,
+# conceptual, no foreign-language analogy, no exercise-fix leak). See glossary-expansion workflow.
+
+[[term]]
+name = "explicit numeric conversion"
+aliases = ["numeric type annotation", "converting between number types", "type annotation when converting"]
+definition = "When a value could end up as several possible number types, Rust will not just pick one for you; you write down the exact number type you want so the compiler knows what kind of number to produce. Stating the type yourself is how you make the choice clear instead of leaving it to a guess."
+book_chapter = "ch03-02-data-types"
+source = "The Rust Book, ch.3.2 \"Data Types\""
+
+[[term]]
+name = "function argument types"
+aliases = ["function-arg-types", "parameter type declaration", "declaring parameter types", "function signature types"]
+definition = "Every special variable a function takes in (its parameters) must have its type written down in the function's opening line. This tells Rust exactly what kind of value each one expects before the function is ever used."
+book_chapter = "ch03-03-how-functions-work"
+source = "The Rust Book, ch.3.3 \"Functions\""
+
+[[term]]
+name = "if as an expression"
+aliases = ["if-as-expression", "if expression", "if produces a value", "if branches same type"]
+definition = "An `if` doesn't just choose which code to run; it also produces a value, so its result can be stored in a variable. Because that one variable can hold only a single kind of value, every branch of the `if` must produce a value of the same type."
+book_chapter = "ch03-05-control-flow"
+source = "The Rust Book, ch.3.5 \"Control Flow\""
+
+[[term]]
+name = "loop break value"
+aliases = ["returning a value from a loop", "break with a value", "loop produces a value"]
+definition = "A `loop` repeats a block of code until you stop it with `break`. You can place a value right after `break`, and that value is then handed back out of the loop so the rest of your program can use it."
+book_chapter = "ch03-05-control-flow"
+source = "The Rust Book, ch.3.5 \"Control Flow\""
+
+[[term]]
+name = "match exhaustiveness"
+aliases = ["exhaustive match", "matches are exhaustive", "match must cover every case"]
+definition = "A `match` compares a value against a list of patterns and must account for every possible case the value could be. If even one possibility is left out, the code is not considered valid, which stops you from silently forgetting a case."
+book_chapter = "ch06-02-match"
+source = "The Rust Book, ch.6.2 \"The match Control Flow Construct\""
+
+[[term]]
+name = "vector element type"
+aliases = ["vec-element-type", "same type vector", "vec holds one type", "vector type"]
+definition = "A vector is a list that stores many values next to each other, but every value in it must be of the same kind. You decide what kind of value a particular vector holds, and from then on it can only hold values of that one kind."
+book_chapter = "ch08-01-vectors"
+source = "The Rust Book, ch.8.1 \"Storing Lists of Values with Vectors\""
+
+[[term]]
+name = "string vs string slice"
+aliases = ["string-vs-str", "String vs &str", "owned string vs string slice", "str", "string slice", "owned string"]
+definition = "A String is a piece of text that your program owns and can grow or change. A string slice (written str, usually seen as &str) is a borrowed view into text stored somewhere else, which you can look at but do not own."
+book_chapter = "ch08-02-strings"
+source = "The Rust Book, ch.8.2 \"Storing UTF-8 Encoded Text with Strings\""
+
+[[term]]
+name = "iterating by reference"
+aliases = ["iterate-by-reference", "borrow while iterating", "iter borrows", "iteration borrows"]
+definition = "When you step through a collection by reference, each step gives you a borrowed look at a value instead of taking the value away. This lets you read the items while the original collection stays intact and usable afterward."
+book_chapter = "ch13-02-iterators"
+source = "The Rust Book, ch.13.2 \"Processing a Series of Items with Iterators\""
+
+[[term]]
+name = "collecting an iterator"
+aliases = ["iterator-collect", "collect", "collect into a collection", "gather iterator results", "iterator-collect-inference"]
+definition = "Stepping through a sequence on its own produces values one at a time without storing them. Collecting takes all those values as you go through them and gathers them into a single collection, such as a list, that you can keep and use."
+book_chapter = "ch13-02-iterators"
+source = "The Rust Book, ch.13.2 \"Processing a Series of Items with Iterators\""
+
+[[term]]
+name = "struct construction"
+aliases = ["struct instance", "instantiating a struct", "building a struct", "creating a struct instance"]
+definition = "A struct is a named bundle of related pieces of data, where each piece (called a field) has its own name. You build a usable value of that struct by giving every field a concrete value, written as name: value pairs."
+book_chapter = "ch05-01-defining-structs"
+source = "The Rust Book, ch.5.1 \"Defining and Instantiating Structs\""
+
+[[term]]
+name = "struct field privacy"
+aliases = ["private field", "public field", "field privacy", "private struct field"]
+definition = "A field of a struct can be kept hidden from code outside it (private) while a method that reads it is made visible (public). This getter pattern lets outside code see the value without being able to change it directly. (The book covers exactly how to mark things public or private in a later chapter.)"
+book_chapter = "ch05-03-method-syntax"
+source = "The Rust Book, ch.5.3 \"Method Syntax\""
+
+[[term]]
+name = "method syntax"
+aliases = ["method", "calling a method", "dot method call", "method call"]
+definition = "A method is a piece of behaviour attached to a particular type, defined alongside it. You run it by writing a value, then a dot, then the method's name with parentheses, so the method works on that specific value."
+book_chapter = "ch05-03-method-syntax"
+source = "The Rust Book, ch.5.3 \"Method Syntax\""
+
+[[term]]
+name = "extracting a value from option"
+aliases = ["option-extract-value", "Option", "Some", "None", "handling Option", "maybe no value"]
+definition = "An Option is a value that is either Some (it holds a real value inside) or None (it holds nothing). Because the two are different types, you cannot use the inner value straight away: you first have to look at which case you have and pull the value out of the Some case, handling the None case too. This forces you to deal with the 'maybe nothing' possibility before relying on the value."
+book_chapter = "ch06-01-defining-an-enum"
+source = "The Rust Book, ch.6.1 \"Defining an Enum\""
+
+[[term]]
+name = "module privacy"
+aliases = ["item-privacy", "private by default", "private items", "public and private"]
+definition = "By default, anything you define inside a module is hidden from the code around and above it: a parent module cannot reach into the private contents of its child modules. Inner (child) modules can still see and use the items of the modules that contain them. So items start out visible only within their own module and its descendants, until you deliberately choose to make them visible more widely."
+book_chapter = "ch07-03-paths-for-referring-to-an-item-in-the-module-tree"
+source = "The Rust Book, ch.7.3 \"Paths for Referring to an Item in the Module Tree\""
+
+[[term]]
+name = "use keyword"
+aliases = ["use-and-paths", "use", "bringing paths into scope", "path shortcut", "import with use"]
+definition = "The `use` keyword makes a shortcut to an item that lives somewhere deeper in your code, so afterward you can refer to it by a short name instead of writing out its full location every time. The shortcut only works inside the area where you wrote the `use` line."
+book_chapter = "ch07-04-bringing-paths-into-scope-with-the-use-keyword"
+source = "The Rust Book, ch.7.4 \"Bringing Paths into Scope with the use Keyword\""
+
+[[term]]
+name = "super path"
+aliases = ["super-paths", "super", "parent module path", "super keyword"]
+definition = "Writing `super` at the start of a path tells Rust to look in the parent module, the module that directly contains the current one. It lets code reach an item it knows lives one level up."
+book_chapter = "ch07-03-paths-for-referring-to-an-item-in-the-module-tree"
+source = "The Rust Book, ch.7.3 \"Paths for Referring to an Item in the Module Tree\""
+
+[[term]]
+name = "generic trait bounds"
+aliases = ["trait bound", "trait bounds", "generics", "generic type parameter", "bound on a generic"]
+definition = "Generics let you write one piece of code that works with many different types instead of repeating it for each type. A trait bound is added to a generic to limit it to only the types that have a certain set of behaviours, so the code is only used where it actually makes sense."
+book_chapter = "ch10-02-traits"
+source = "The Rust Book, ch.10.2 \"Defining Shared Behavior with Traits\""
+
+[[term]]
+name = "trait implementation"
+aliases = ["trait", "implementing a trait", "impl trait for type", "shared behavior"]
+definition = "A trait is a named group of methods that describes a set of behaviours a type can have. When a type implements a trait, it promises to provide its own version of each of those methods, so other code can rely on that behaviour being there."
+book_chapter = "ch10-02-traits"
+source = "The Rust Book, ch.10.2 \"Defining Shared Behavior with Traits\""
+
+[[term]]
+name = "lifetime annotations"
+aliases = ["lifetime", "lifetimes", "lifetime parameter", "generic lifetime parameter"]
+definition = "Every reference has a lifetime: the stretch of the program during which the thing it points to is still valid. A lifetime annotation is a label you add to references to describe how their valid stretches relate to each other, so the compiler can confirm the references stay valid for as long as they are used."
+book_chapter = "ch10-03-lifetime-syntax"
+source = "The Rust Book, ch.10.3 \"Validating References with Lifetimes\""
+
+[[term]]
+name = "no dangling references"
+aliases = ["no-dangling-refs", "dangling reference", "dangling references", "dangling pointer"]
+definition = "A dangling reference is one that still points at a value after that value has gone away, so it ends up referring to data that is no longer there. Rust checks references as it compiles and refuses any program that would leave a reference pointing at data that is gone."
+book_chapter = "ch10-03-lifetime-syntax"
+source = "The Rust Book, ch.10.3 \"Validating References with Lifetimes\""
+
+[[term]]
+name = "move closures with threads"
+aliases = ["thread-move-closures", "move closure", "move keyword with threads", "spawning a thread", "thread spawn closure", "capturing ownership in a thread"]
+definition = "When you start a new thread, you hand it a small block of code to run. Putting the word move in front of that block tells Rust to hand ownership of any outside values the block uses over to the thread, so the thread fully owns them instead of just borrowing them from where they came."
+book_chapter = "ch16-01-threads"
+source = "The Rust Book, ch.16.1 \"Using move Closures with Threads\""
+
+[[term]]
+name = "send"
+aliases = ["send-across-threads", "send trait", "send marker trait", "safe to move to another thread", "transferring ownership between threads"]
+definition = "Send is a label Rust puts on a kind of value to mean it is safe to hand that value over to a different thread. Almost every kind of value carries this label, so Rust can stop you from passing along the few kinds that are not safe to move between threads."
+book_chapter = "ch16-04-extensible-concurrency-sync-and-send"
+source = "The Rust Book, ch.16.4 \"Transferring Ownership Between Threads\""
+
+[[term]]
+name = "shared mutable state"
+aliases = ["mutex", "arc", "lock", "shared data across threads", "mutual exclusion"]
+definition = "Shared mutable state is when several threads need to read and change the same piece of data at the same time. A mutex (short for mutual exclusion) keeps this orderly by letting only one thread touch the data at a time: a thread must take the mutex's lock before reading or changing the data, and others wait their turn until the lock is released."
+book_chapter = "ch16-03-shared-state"
+source = "The Rust Book, ch.16.3 \"Controlling Access with Mutexes\""
+
+[[term]]
+name = "unsafe and raw pointers"
+aliases = ["unsafe-raw-pointers", "unsafe keyword", "raw pointer", "dereference a raw pointer", "unsafe block", "unsafe rust"]
+definition = "The unsafe keyword opens a small section of code where you can do a handful of things the compiler is not able to check for you. One of those things is following a raw pointer, which is a stored memory location that Rust does not promise is valid, so you take on the responsibility of using it correctly."
+book_chapter = "ch20-01-unsafe-rust"
+source = "The Rust Book, ch.20.1 \"Unsafe Rust\""

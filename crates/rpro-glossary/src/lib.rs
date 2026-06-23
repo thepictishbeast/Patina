@@ -180,6 +180,7 @@ source = "The Rust Book, ch.4.1"
         let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../glossary/glossary.toml");
         let g = Glossary::load(&path).expect("the shipped glossary must load");
         assert!(!g.is_empty(), "shipped glossary has terms");
+        // Data-hygiene guards on EVERY shipped definition (the charter rules):
         for t in g.all() {
             assert!(
                 g.get(&t.name).is_some(),
@@ -191,7 +192,26 @@ source = "The Rust Book, ch.4.1"
                 "'{}' has a definition",
                 t.name
             );
+            // No un-decoded HTML entities leaked from the source markdown.
+            let d = &t.definition;
+            for ent in ["&amp;", "&lt;", "&gt;", "&quot;", "&#"] {
+                assert!(
+                    !d.contains(ent),
+                    "'{}' has an un-decoded HTML entity {ent:?} — decode it",
+                    t.name
+                );
+            }
+            // No analogies to other programming languages (Paul's explicit rule).
+            let low = d.to_lowercase();
+            for lang in ["python", "javascript", "java ", " c++", " c#", "golang"] {
+                assert!(
+                    !low.contains(lang),
+                    "'{}' compares to another language ({lang:?}) — explain plainly instead",
+                    t.name
+                );
+            }
         }
+        // The "mutability" entry must never hand over exercise 01's literal fix.
         let m = g.get("mutability").expect("mutability is defined");
         let d = m.definition.to_lowercase();
         assert!(
