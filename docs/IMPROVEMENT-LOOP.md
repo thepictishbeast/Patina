@@ -32,6 +32,13 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
 
 ### Critical pedagogy
 - ✅ **Hint ladder never hands the solution; force a real attempt first** (`af5d6fb`).
+- ✅ **Hint contract uniform across ALL THREE surfaces** (web/CLI/TUI) (`<pending>`): same shared
+  text (`ExerciseMetadata::hint`) + force-attempt gate (no hint until ≥1 recorded attempt) + escalation
+  (one rung earned per attempt, `earned = attempts.min(3)`). Closed in sequence: web always had it; CLI
+  got progress-tracking → gate → escalation; TUI now gates the `h`-key climb and caps it per attempt via
+  a pure, unit-tested `hint_on_keypress` (the loop can't be driven headlessly, so the decision incl. the
+  gate message + `meta.hint` + the no-dead-end "run again" nudge is all under test). Book refs stay
+  always-visible on every surface.
 - ✅ **Predict-then-run gate (Learn mode)** (`158c997`): Run/Check reveal nothing until a
   compiles/fails guess is locked; re-arms each run (re-predict on retry). Verified live.
 - ✅ **Soft exercise gating** (`<pending>`): `Progress::is_unlocked` (sequential, +test) +

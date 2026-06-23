@@ -18,7 +18,7 @@ use rpro_book::Book;
 use rpro_core::Core;
 use rpro_lang::{EditorAssists, ExerciseId, ExerciseSource, Outcome, RunOp, ToolError};
 use rpro_lang_rust::RustLanguage;
-use rpro_state::ExerciseStatus;
+use rpro_state::{ExerciseMetadata, ExerciseStatus};
 use rpro_storage_fs::Store;
 use rpro_toolchain_local::LocalProcess;
 use std::path::Path;
@@ -155,14 +155,23 @@ fn run_tui(store: &Store, book: &Book, start_tab: Tab, start_selected: usize) ->
                                     run_advances = advances;
                                 }
                             }
-                            // Climb the hint ladder one rung (concept → expected
-                            // error → book/source review, last resort; never the
-                            // solution). Shared with the web via ExerciseMetadata::hint.
+                            // Climb the hint ladder (concept → expected error →
+                            // book/source review; never the solution). Parity with
+                            // web/CLI lives in `hint_on_keypress`: force a genuine
+                            // attempt first, then earn one rung per attempt. Attempts
+                            // live in shared progress (record_run on each run), so read
+                            // them fresh — `ex` is only refreshed on advance.
                             KeyCode::Char('h') if app.tab == Tab::Exercise => {
                                 if let Some(m) = &ex.meta {
-                                    let (level, max, text) = m.hint(app.hint_level + 1);
+                                    let attempts = store
+                                        .load_progress()
+                                        .ok()
+                                        .and_then(|p| p.entries.get(&ex.id).map(|e| e.attempts))
+                                        .unwrap_or(0);
+                                    let (level, hint) =
+                                        hint_on_keypress(m, app.hint_level, attempts);
                                     app.hint_level = level;
-                                    ex.hint = Some((level, max, text));
+                                    ex.hint = Some(hint);
                                 }
                             }
                             _ => {}
@@ -341,5 +350,98 @@ fn apply_run_result(ex: &mut render::ExerciseViewData, result: RunResult) {
             ex.raw_stdout = String::new();
             ex.diagnostics = Vec::new();
         }
+    }
+}
+
+/// Decide what pressing `h` shows next — kept pure (the TUI event loop can't be
+/// driven headlessly, so the logic is unit-tested instead of the loop). Returns
+/// the new `hint_level` to store and the `(level, max, text)` tuple to display.
+///
+/// Parity with rpro-serve / the CLI: a genuine attempt is forced first (0 attempts
+/// → a level-0 "run it first" gate, the laddered hint stays locked), then ONE rung
+/// is earned per attempt (`earned = attempts.min(3)`) and the climb is clamped to
+/// it. When the learner is parked at the earned cap with deeper rungs still to
+/// come, the text tells them to run again — so `h` is never a dead-end that
+/// promises "more" it can't give (mirrors the honest CLI tip).
+fn hint_on_keypress(
+    meta: &ExerciseMetadata,
+    current_level: u8,
+    attempts: u32,
+) -> (u8, (u8, u8, String)) {
+    let earned = u8::try_from(attempts).unwrap_or(u8::MAX).min(3);
+    if earned == 0 {
+        return (
+            0,
+            (
+                0,
+                3,
+                "Run it first — predict the outcome, then press r and read the real \
+                 compiler error by hand. Hints unlock once you've genuinely tried."
+                    .to_string(),
+            ),
+        );
+    }
+    let requested = (current_level + 1).min(earned);
+    let (level, max, mut text) = meta.hint(requested);
+    if requested == earned && earned < 3 {
+        text.push_str("  —  run it again (press r) to earn the next rung.");
+    }
+    (level, (level, max, text))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn meta() -> ExerciseMetadata {
+        ExerciseMetadata {
+            id: "ownership/01_move".into(),
+            title: "Move semantics".into(),
+            difficulty: rpro_state::Difficulty::Beginner,
+            estimated_minutes: 5,
+            concept: "move-semantics".into(),
+            book_refs: vec![rpro_lang::BookRef {
+                chapter: "ch04-01-what-is-ownership".into(),
+                anchor: None,
+                why: "ownership basics".into(),
+            }],
+            expected_error_code: Some("E0382".into()),
+            solution_outline: Some("clone it".into()),
+        }
+    }
+
+    #[test]
+    fn zero_attempts_gates_with_run_it_first() {
+        let (lvl, (level, max, text)) = hint_on_keypress(&meta(), 0, 0);
+        assert_eq!(lvl, 0, "hint_level stays 0 while gated");
+        assert_eq!((level, max), (0, 3));
+        assert!(text.starts_with("Run it first"), "gate message shown");
+        assert!(
+            !text.to_lowercase().contains("clone it"),
+            "the gate never leaks the solution outline"
+        );
+    }
+
+    #[test]
+    fn one_attempt_earns_only_rung_one_even_when_climbing() {
+        // First press after one attempt → rung 1.
+        let (lvl, (level, ..)) = hint_on_keypress(&meta(), 0, 1);
+        assert_eq!((lvl, level), (1, 1));
+        // Pressing h again at the cap re-shows rung 1 and says to try again.
+        let (lvl2, (level2, _, text2)) = hint_on_keypress(&meta(), 1, 1);
+        assert_eq!((lvl2, level2), (1, 1), "capped at the one earned rung");
+        assert!(
+            text2.contains("run it again"),
+            "no dead-end: tells the learner to earn the next rung"
+        );
+    }
+
+    #[test]
+    fn rungs_unlock_one_per_attempt() {
+        assert_eq!(hint_on_keypress(&meta(), 1, 2).0, 2, "2 attempts → rung 2");
+        assert_eq!(hint_on_keypress(&meta(), 2, 9).0, 3, "earned caps at 3");
+        // At the top rung there is nothing more to earn, so no "run again" nudge.
+        let (_, (_, _, text)) = hint_on_keypress(&meta(), 2, 9);
+        assert!(!text.contains("run it again"), "rung 3 is the last resort");
     }
 }

@@ -345,16 +345,20 @@ pub fn render_exercise(f: &mut Frame, app: &App, data: &ExerciseViewData) {
     // book/source review (never the solution) — is flagged "last resort" and
     // coloured as a warning so it reads as the deliberate end of the ladder.
     if let Some((level, max, text)) = &data.hint {
-        let last = *level >= *max;
-        let title = if last {
-            format!(" Hint {level}/{max} · last resort  (h to re-show) ")
+        // level 0 is the force-attempt gate (the laddered hint is still locked
+        // until a genuine try); otherwise the top rung is flagged "last resort".
+        let (title, col) = if *level == 0 {
+            (" hint locked — run it first ".to_string(), app.theme.muted)
+        } else if *level >= *max {
+            (
+                format!(" Hint {level}/{max} · last resort  (h to re-show) "),
+                app.theme.error,
+            )
         } else {
-            format!(" Hint {level}/{max}  (h for more) ")
-        };
-        let col = if last {
-            app.theme.error
-        } else {
-            app.theme.note
+            (
+                format!(" Hint {level}/{max}  (h for more) "),
+                app.theme.note,
+            )
         };
         f.render_widget(
             Paragraph::new(Line::from(Span::styled(text.clone(), Style::new().fg(col))))
