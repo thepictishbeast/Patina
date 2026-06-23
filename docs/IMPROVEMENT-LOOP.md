@@ -55,7 +55,11 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
 - ☐ **Lessons for Phases 2–9** (only Phase 1 / L1–L8 exist; matrix DRAFT rows 49–62 done).
 - ☐ **Matrix: re-review rows 51–62** (rate-limited), add the missing back-references the
   DECIDED rows use, fix the `&amp;amp;` double-escape in row 58, decide Lesson# assignment.
-- ☐ **More exercises** — only ~31; iterators/smart-pointers/async thin or absent.
+- ◐ **More exercises / functional phase** — created `07b-functional-and-smart-pointers` and
+  relocated the misplaced iterators exercise (was in 09-advanced) into it, in correct
+  curriculum order. TODO: closures + smart-pointers exercises (smart-pointers needs Book
+  ch15 bundled — not currently in book/); relocate 09-advanced/03_move_out_of_borrow (E0507,
+  core ownership) to 04-ownership; grow async coverage in 08-concurrency.
 - ◐ **Integrate Rust by Example / Rustlings / Cookbook / Exercism** — licenses verified via gh
   (RBE Apache-2.0, Rustlings MIT, Cookbook CC0-1.0, Exercism MIT) + cataloged in
   rust-textbook/catalog/EXTERNAL-MATERIALS.md with an integration plan (Rustlings first).
