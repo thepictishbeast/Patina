@@ -619,6 +619,7 @@ fn ensure_seeded(
     store_root: &Path,
     workspace_exercises: &Path,
     workspace_book: &Path,
+    workspace_glossary: &Path,
 ) -> std::io::Result<()> {
     let store = Store::at(store_root.to_path_buf());
     let ex_dir = store.root().join("exercises");
@@ -635,6 +636,15 @@ fn ensure_seeded(
     let have_book = rpro_book::Book::load(&book_dir).is_ok_and(|b| !b.is_empty());
     if !have_book && workspace_book.is_dir() {
         copy_dir_recursive(workspace_book, &book_dir)?;
+    }
+
+    // Copy the built-in glossary in if absent — the offline term-lookup data
+    // served read-only via `/api/glossary`. Seeded into the store (not read from
+    // a build-time path) so it ships with the portable store the Android seam
+    // copies. Server-fixed dir; nothing here comes from the wire.
+    let gloss_dir = store.root().join("glossary");
+    if !gloss_dir.join("glossary.toml").exists() && workspace_glossary.is_dir() {
+        copy_dir_recursive(workspace_glossary, &gloss_dir)?;
     }
 
     // Make sure progress.json has a Current entry; if not, set the first one.
@@ -706,6 +716,36 @@ async fn security_headers(mut res: Response) -> Response {
     res
 }
 
+/// Query for a glossary lookup. `term` is a map key (name or alias), never a path.
+#[derive(Debug, Deserialize)]
+struct GlossaryQuery {
+    term: Option<String>,
+}
+
+/// `GET /api/glossary` — the built-in offline term glossary. With no query, returns
+/// every term (alphabetical) for a browse list. With `?term=NAME`, returns just that
+/// term's definition (matched by name or alias, case-/separator-insensitive), or
+/// `{ "term": null }` on a miss.
+///
+/// SECURITY: `term` is only ever a lookup key into the in-memory map
+/// ([`rpro_glossary::Glossary::get`]) — it is never joined onto a filesystem path,
+/// so a traversal value simply misses the map. The glossary file is the
+/// server-seeded `glossary/glossary.toml`; no client input chooses a file.
+async fn glossary_handler(
+    State(state): State<AppState>,
+    Query(q): Query<GlossaryQuery>,
+) -> impl IntoResponse {
+    let path = Store::at(state.store_root)
+        .root()
+        .join("glossary")
+        .join("glossary.toml");
+    let glossary = rpro_glossary::Glossary::load(&path).unwrap_or_default();
+    q.term.map_or_else(
+        || Json(serde_json::json!({ "terms": glossary.all() })).into_response(),
+        |t| Json(serde_json::json!({ "term": glossary.get(&t) })).into_response(),
+    )
+}
+
 /// Build the application router. Extracted from [`main`] so the handler contract
 /// (no-leak, op-whitelist, body limit, response headers) is testable end-to-end
 /// via `tower::ServiceExt::oneshot` — no socket bind, no real toolchain run.
@@ -719,6 +759,7 @@ fn build_router(state: AppState, gui_dir: &Path) -> Router {
         .route("/api/hint", axum::routing::get(hint_handler))
         .route("/api/roadmap", axum::routing::get(roadmap_handler))
         .route("/api/book", axum::routing::get(book_handler))
+        .route("/api/glossary", axum::routing::get(glossary_handler))
         // Everything else is the static gui/ shell (index.html + vendored xterm).
         .fallback_service(ServeDir::new(gui_dir))
         .layer(map_response(security_headers))
@@ -781,6 +822,7 @@ async fn main() {
     let gui_dir = asset_root.join("gui");
     let workspace_exercises = asset_root.join("exercises");
     let workspace_book = asset_root.join("book");
+    let workspace_glossary = asset_root.join("glossary");
 
     // Writable state/run root: a fixed cache dir under $HOME (exec-ok, off the
     // git tree, never /tmp). Overridable via TS_SERVE_ROOT for the operator.
@@ -800,7 +842,12 @@ async fn main() {
         );
         std::process::exit(1);
     }
-    if let Err(e) = ensure_seeded(&store_root, &workspace_exercises, &workspace_book) {
+    if let Err(e) = ensure_seeded(
+        &store_root,
+        &workspace_exercises,
+        &workspace_book,
+        &workspace_glossary,
+    ) {
         eprintln!(
             "warning: could not seed exercises into {}: {e}",
             store_root.display()
@@ -962,6 +1009,7 @@ mod tests {
             dir.path(),
             &manifest.join("../../exercises"),
             &manifest.join("../../book"),
+            &manifest.join("../../glossary"),
         )
         .unwrap();
         let state = AppState {

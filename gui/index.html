@@ -136,6 +136,19 @@
   .lesson { padding:16px 20px; overflow:auto; }
   .lesson h1 { font-size:20px; margin:0 0 6px; }
   .lesson .sub { color:var(--fg-dim); font-size:13px; margin-bottom:14px; }
+  /* concept chip → tap for a glossary definition */
+  .gloss { color:var(--accent-soft); border-bottom:1px dotted var(--accent-soft); cursor:pointer; }
+  .gloss:hover, .gloss:focus-visible { color:var(--accent); border-bottom-style:solid; outline:none; }
+  .glossbox { margin:-4px 0 14px; padding:10px 13px; border:1px solid var(--line); border-left:3px solid var(--accent);
+    border-radius:8px; background:var(--bg-2); font-size:13px; line-height:1.5; }
+  .gl-term { font-weight:700; color:var(--fg); text-transform:capitalize; }
+  .gl-def { color:var(--fg); }
+  .gl-foot { margin-top:7px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; font-size:11.5px; color:var(--fg-dim); }
+  .gl-src { font-style:italic; }
+  .gl-more { color:var(--accent-soft); text-decoration:none; }
+  .gl-more:hover { text-decoration:underline; }
+  .gl-x { margin-left:auto; cursor:pointer; color:var(--fg-dim); padding:0 4px; }
+  .gl-x:hover, .gl-x:focus-visible { color:var(--fg); outline:none; }
   .lesson p { line-height:1.6; font-size:14px; color:var(--fg); }
   .predict { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:10px; font-size:13px; }
   .predict .pl { color:var(--fg-dim); }
@@ -265,6 +278,7 @@
       <div class="lesson scroll">
         <h1 id="lessonTitle">Tempered Studio</h1>
         <div class="sub" id="lessonSub">loading the current exercise…</div>
+        <div class="glossbox" id="glossbox" hidden aria-live="polite"></div>
         <p><b>Predict first:</b> will this compile? If not, which <b>error code</b> appears,
         and what one-word <code>help:</code> fix will the compiler suggest? Lock your guess,
         then press <b>Run</b> — you'll read the <i>real</i> compiler output, by hand.</p>
@@ -569,6 +583,35 @@
     }
     const lsKey = id => 'ts-edit:' + id;
 
+    // Built-in glossary: tap the concept chip for a plain-language, OFFLINE
+    // definition (served by the local seam from glossary/glossary.toml, pulled
+    // from the bundled Book). Conceptual only — it never hands the exercise's fix.
+    async function showGloss(term) {
+      const box = document.getElementById('glossbox');
+      if (!box) return;
+      try {
+        const r = await fetch('api/glossary?term=' + encodeURIComponent(term)).then(x => x.json());
+        const t = r && r.term;
+        if (!t) {
+          box.innerHTML = `<span class="gl-term">${esc(term)}</span><span class="gl-def"> — no plain-language definition yet (coming soon).</span>`
+            + ` <span class="gl-x" id="glX" role="button" tabindex="0" title="close">✕</span>`;
+        } else {
+          const more = t.book_chapter
+            ? ` <a class="gl-more" href="#" id="glMore">read more in the Book →</a>` : '';
+          box.innerHTML =
+            `<span class="gl-term">${esc(t.name)}</span><span class="gl-def"> ${esc(t.definition)}</span>`
+            + `<div class="gl-foot"><span class="gl-src">${esc(t.source)}</span>${more}`
+            + ` <span class="gl-x" id="glX" role="button" tabindex="0" title="close">✕</span></div>`;
+          const a = document.getElementById('glMore');
+          if (a) a.onclick = e => { e.preventDefault(); showView('book', t.book_chapter); };
+        }
+        box.hidden = false;
+        const x = document.getElementById('glX');
+        if (x) { x.onclick = () => { box.hidden = true; box.innerHTML = ''; };
+          x.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { box.hidden = true; box.innerHTML = ''; } }; }
+      } catch (_) { /* offline without the local seam — leave the chip inert */ }
+    }
+
     // The hint ladder: each press climbs one rung (concept → expected error →
     // book/source review, last resort; never the solution). Server clamps to what
     // the exercise carries.
@@ -613,8 +656,19 @@
       const pv = document.getElementById('predverdict'); if (pv) pv.textContent = '';
       document.getElementById('lessonTitle').textContent = j.title || j.exercise;
       const mins = j.estimated_minutes ? ` · ~${j.estimated_minutes} min` : '';
-      document.getElementById('lessonSub').textContent =
-        `${j.exercise}${j.concept ? ' · ' + j.concept : ''}${mins} · reads → writes`;
+      // The concept is a tappable glossary chip — tap it for a plain-language,
+      // offline definition pulled from the bundled Book (never the exercise's fix).
+      const chip = j.concept
+        ? ` · <span class="gloss" id="conceptChip" role="button" tabindex="0" data-term="${esc(j.concept)}" title="Tap for a plain-language definition">${esc(j.concept)}</span>`
+        : '';
+      document.getElementById('lessonSub').innerHTML =
+        `${esc(j.exercise)}${chip}${esc(mins)} · reads → writes`;
+      const gb = document.getElementById('glossbox'); if (gb) { gb.hidden = true; gb.innerHTML = ''; }
+      const cc = document.getElementById('conceptChip');
+      if (cc) {
+        cc.onclick = () => showGloss(cc.dataset.term);
+        cc.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showGloss(cc.dataset.term); } };
+      }
       document.getElementById('editorBar').textContent = `${j.exercise} · main.rs`;
       // Restore a saved edit for this exercise if present, else the starter.
       let saved = null;

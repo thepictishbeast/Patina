@@ -1,0 +1,70 @@
+# Built-in glossary — plain-language definitions of core Rust terms for a learner
+# with no programming background, to consult OFFLINE (no internet, no LLM).
+#
+# Rules these entries follow:
+#  - Synthesized from the bundled Rust Book chapters and ATTRIBUTED (`source` +
+#    `book_chapter`, so the learner can read the full treatment).
+#  - CONCEPTUAL: they explain the idea, never the fix to an exercise (Hard Rule #1
+#    — e.g. the "mutability" entry never says "add `mut`").
+#  - Plain language, no analogies to other programming languages.
+#  - `aliases` let a lookup match the exercise `concept` tags + common spellings.
+#
+# Seeded into the store next to `book/` and `exercises/`, and served read-only via
+# `/api/glossary`. This is the first batch (the vocabulary the early, reachable
+# exercises use); it grows over time.
+
+[[term]]
+name = "binding"
+aliases = ["let", "bindings", "variable binding"]
+definition = "A binding is a name attached to a value with `let` (as in `let x = 5`). The name lets you refer to that value later in its scope. By default a binding is immutable — the value it holds cannot be reassigned."
+book_chapter = "ch03-01-variables-and-mutability"
+source = "The Rust Book, ch.3.1 \"Variables and Mutability\""
+
+[[term]]
+name = "mutability"
+aliases = ["immutable", "mutable", "mut"]
+definition = "Whether a binding's value is allowed to change after it is set. In Rust a binding is IMMUTABLE by default — once a value is bound to a name you cannot change it — which is a nudge toward code whose values don't shift unexpectedly. Mutability is something you opt into deliberately, one binding at a time."
+book_chapter = "ch03-01-variables-and-mutability"
+source = "The Rust Book, ch.3.1 \"Variables and Mutability\""
+
+[[term]]
+name = "shadowing"
+aliases = ["shadow", "shadowed"]
+definition = "Declaring a new binding that reuses the name of an earlier one. From that point on, the name refers to the new binding; the earlier value is set aside. This is different from changing a value — you are creating a fresh binding, not mutating the old one (so the new one can even have a different type)."
+book_chapter = "ch03-01-variables-and-mutability"
+source = "The Rust Book, ch.3.1 \"Variables and Mutability\""
+
+[[term]]
+name = "type inference"
+aliases = ["type-inference", "type-inference-limits", "inference", "annotation"]
+definition = "The compiler working out a value's type from how it is written and used, so you don't always have to spell the type out. When the value is ambiguous and the compiler can't tell which type you mean, it stops and asks you to annotate the type explicitly."
+book_chapter = "ch03-02-data-types"
+source = "The Rust Book, ch.3.2 \"Data Types\""
+
+[[term]]
+name = "ownership"
+aliases = ["owner", "owns", "owned"]
+definition = "Rust's system for managing memory without a garbage collector, checked by the compiler so it costs nothing at run time. Its rules: each value has one owner; there is only one owner at a time; and when the owner goes out of scope, the value is dropped (cleaned up automatically)."
+book_chapter = "ch04-01-what-is-ownership"
+source = "The Rust Book, ch.4.1 \"What Is Ownership?\""
+
+[[term]]
+name = "scope"
+aliases = ["in scope", "out of scope", "loop-variable-scope"]
+definition = "The region of a program where a name is valid. A binding is valid from the point it is declared until the end of its enclosing block (the `{ ... }` it lives in); after that it is out of scope and its value is dropped."
+book_chapter = "ch04-01-what-is-ownership"
+source = "The Rust Book, ch.4.1 \"What Is Ownership?\""
+
+[[term]]
+name = "move"
+aliases = ["move-semantics", "moved", "moves"]
+definition = "When ownership of a value transfers from one binding to another — for example on assignment, or when you pass the value to a function. Because there is only ever one owner, the original binding can no longer be used after a move. This is what stops two names from trying to free the same data."
+book_chapter = "ch04-01-what-is-ownership"
+source = "The Rust Book, ch.4.1 \"What Is Ownership?\""
+
+[[term]]
+name = "borrowing"
+aliases = ["borrow", "reference", "references", "borrow-checker-mut-vs-immut", "move-out-of-borrow"]
+definition = "Accessing a value through a reference (written with `&`) instead of taking ownership of it. The owner keeps the value; the reference just points at it for as long as it is needed. Borrowing is how you use a value in more than one place without moving it away."
+book_chapter = "ch04-02-references-and-borrowing"
+source = "The Rust Book, ch.4.2 \"References and Borrowing\""

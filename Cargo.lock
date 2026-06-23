@@ -1162,6 +1162,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "rpro-glossary"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "thiserror 2.0.18",
+ "toml",
+]
+
+[[package]]
 name = "rpro-lang"
 version = "0.1.0"
 dependencies = [
@@ -1200,6 +1209,7 @@ dependencies = [
  "pollster",
  "rpro-book",
  "rpro-core",
+ "rpro-glossary",
  "rpro-lang",
  "rpro-lang-rust",
  "rpro-runner",
