@@ -80,8 +80,13 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   `09-advanced/03_move_out_of_borrow` (E0507, core ownership) → `04-ownership/04_move_out_of_borrow`
   (id `advanced/…`→`ownership/…`, difficulty `advanced`→`beginner` to match the phase); ramp is now
   move → borrow → dangling → move-out-of-borrow. `09-advanced` is down to `01_unsafe_deref`.
-  TODO: closures + smart-pointers exercises (smart-pointers needs Book ch15 bundled — not currently
-  in book/); grow async coverage in 08-concurrency.
+  ✅ Added the first **closures** exercise (`<pending>`): `07b/01_closure_type_lock` (E0308 — a closure's
+  param/return types are inferred from the FIRST call then locked; baby-step intermediate). Renumbered
+  the iterators exercise → `02_collect_annotation` (id unchanged) so the ramp is closures → iterators.
+  book_ref → the freshly-vendored `ch13-01-closures`; its `concept` chip resolves to the "closure"
+  glossary term. Verified: 33 exercises compile+emit codes, 52/52 anchors, golden-corpus + live (run→E0308,
+  chip→def). TODO: more closures (capture/move, FnOnce) + smart-pointers (needs ch15 vendored — same curl
+  path) + async (ch17); grow async in 08-concurrency.
 - ◐ **Integrate Rust by Example / Rustlings / Cookbook / Exercism** — licenses verified via gh
   (RBE Apache-2.0, Rustlings MIT, Cookbook CC0-1.0, Exercism MIT) + cataloged in
   rust-textbook/catalog/EXTERNAL-MATERIALS.md with an integration plan (Rustlings first).

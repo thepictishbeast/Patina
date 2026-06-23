@@ -71,7 +71,7 @@ source = "The Rust Book, ch.4.2 \"References and Borrowing\""
 
 [[term]]
 name = "closure"
-aliases = ["closures", "anonymous function"]
+aliases = ["closures", "anonymous function", "closure-type-inference"]
 definition = "An anonymous function you can save in a binding or pass to another function. Unlike a named function, a closure can capture values from the scope where it is defined and use them later when it runs."
 book_chapter = "ch13-01-closures"
 source = "The Rust Book, ch.13.1 \"Closures: Anonymous Functions That Capture Their Environment\""
