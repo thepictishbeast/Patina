@@ -301,7 +301,7 @@
           <span class="modesw" id="modesw" role="group" aria-label="Editor mode">
             <button data-mode="learn" title="Learn: you do the work — predict before Run, read errors by hand, no autocomplete/auto-fix">Learn</button>
             <button data-mode="assist" title="Assist: parsed diagnostics panel + hints on demand">Assist</button>
-            <button data-mode="dev" title="Dev: editor assists — Tab/Shift+Tab to indent, Enter auto-indents (rust-analyzer later)">Dev</button>
+            <button data-mode="dev" title="Dev: editor assists — Tab/Shift+Tab indent, Enter auto-indents, brackets auto-close (rust-analyzer later)">Dev</button>
           </span>
           <span style="flex:1"></span>
           <span id="editstate" style="color:var(--fg-dim)">read &amp; edit, then Run</span>
@@ -1038,14 +1038,16 @@
     editorEl().addEventListener('scroll', () => { const hl = editorHL(), ed = editorEl(); if (hl) { hl.scrollTop = ed.scrollTop; hl.scrollLeft = ed.scrollLeft; } });
     // Dev-tier editor conveniences (Learn and Assist keep the textarea defaults —
     // the charter has Learn block editor assists, and conveniences are the Dev
-    // tier's differentiator): Tab/Shift+Tab indent, and Enter auto-indents.
+    // tier's differentiator): Tab/Shift+Tab indent, Enter auto-indents, and brackets
+    // auto-close (with type-over + delete-the-empty-pair).
     editorEl().addEventListener('keydown', e => {
-      if (mode !== 'dev' || (e.key !== 'Tab' && e.key !== 'Enter')) return;
-      e.preventDefault();
+      if (mode !== 'dev') return;
       const ed = editorEl(), UNIT = '    ', v = ed.value;
       const s = ed.selectionStart, en = ed.selectionEnd;
-      const lineStart = v.lastIndexOf('\n', s - 1) + 1;
+      const CLOSE = { '(': ')', '[': ']', '{': '}' };
       if (e.key === 'Tab') {
+        e.preventDefault();
+        const lineStart = v.lastIndexOf('\n', s - 1) + 1;
         const spansLines = v.slice(s, en).includes('\n');
         if (!e.shiftKey && !spansLines) {
           // common case: insert 4 spaces at the caret (replacing any one-line selection)
@@ -1063,9 +1065,12 @@
           ed.selectionStart = lineStart;
           ed.selectionEnd = lineStart + out.length;
         }
-      } else {
-        // Enter: start the new line at the current line's indentation, one level
-        // deeper after an opening `{`, and split a `{<caret>}` into a tidy block.
+        markEdited();
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        // start the new line at the current line's indentation, one level deeper
+        // after an opening `{`, and split a `{<caret>}` into a tidy block.
+        const lineStart = v.lastIndexOf('\n', s - 1) + 1;
         const indent = (v.slice(lineStart, s).match(/^[ \t]*/) || [''])[0];
         const opensBlock = v.slice(lineStart, s).trimEnd().endsWith('{');
         const splitBrace = v[s - 1] === '{' && v[en] === '}';
@@ -1075,8 +1080,26 @@
         else { insert = '\n' + indent; caret = insert.length; }
         ed.value = v.slice(0, s) + insert + v.slice(en);
         ed.selectionStart = ed.selectionEnd = s + caret;
+        markEdited();
+      } else if (CLOSE[e.key] && s === en && (s >= v.length || /[\s)\]},;]/.test(v[s]))) {
+        // auto-close: insert the matching bracket and leave the caret between them.
+        // Only when the next char won't be glued onto a word, so typing `(` before
+        // `foo` stays `(foo`, not `()foo`.
+        e.preventDefault();
+        ed.value = v.slice(0, s) + e.key + CLOSE[e.key] + v.slice(s);
+        ed.selectionStart = ed.selectionEnd = s + 1;
+        markEdited();
+      } else if ((e.key === ')' || e.key === ']' || e.key === '}') && s === en && v[s] === e.key) {
+        // type OVER an existing close bracket instead of doubling it
+        e.preventDefault();
+        ed.selectionStart = ed.selectionEnd = s + 1;
+      } else if (e.key === 'Backspace' && s === en && s > 0 && CLOSE[v[s - 1]] === v[s]) {
+        // backspace inside an empty `()`/`[]`/`{}` deletes both brackets at once
+        e.preventDefault();
+        ed.value = v.slice(0, s - 1) + v.slice(s + 1);
+        ed.selectionStart = ed.selectionEnd = s - 1;
+        markEdited();
       }
-      markEdited();
     });
     document.getElementById('resetbtn').onclick = () => { editorEl().value = curOriginal; markEdited(); editorEl().focus(); };
     document.getElementById('hintbtn').onclick = runHint;
