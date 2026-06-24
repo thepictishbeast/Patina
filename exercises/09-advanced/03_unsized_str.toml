@@ -1,0 +1,19 @@
+id = "advanced/03_unsized_str"
+title = "str is dynamically sized: take it by reference, not by value"
+difficulty = "advanced"
+estimated_minutes = 9
+concept = "dynamically-sized-types"
+expected_error_code = "E0277"
+solution_outline = """
+`str` is a dynamically sized type (DST): the string data has no size known at
+compile time, so a function can't take it BY VALUE (E0277), and the call can't match
+that signature (E0308). A reference has a known size, so take the text behind one:
+change `text: str` to `text: &str` (the idiomatic string-slice parameter). Then
+`first_char("ferris")` — `"ferris"` is already a `&str` — compiles and runs. Both
+errors come from the unsized-by-value parameter, and the one `&` fixes both.
+"""
+
+[[book_refs]]
+chapter = "ch20-03-advanced-types"
+anchor = "dynamically-sized-types-and-the-sized-trait"
+why = "Why `str` has no size known at compile time and must be used behind a pointer like `&str` — dynamically sized types and the `Sized` trait."

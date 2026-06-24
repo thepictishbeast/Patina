@@ -192,6 +192,16 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   verify-exercises 44/44 (runtime branch asserts the panic), anchors, golden-corpus, glossary 3/3, live
   (05b order 01→02→03, run passed:false + panic in stderr, no field leak, chip→unwrap). 05b 2→3; corpus 44.
   NEXT in this phase: matching on `Err` / recover-vs-propagate, custom error types, `?` on `Option`.
+  ✅ **Breadth: 3rd advanced exercise (09-advanced 2→3)** (`<pending>`): added `03_unsized_str` (id
+  `advanced/03_unsized_str`, advanced) — `fn first_char(text: str)` takes `str` BY VALUE → **E0277** "the
+  size for values of type `str` cannot be known at compilation time" (the headline; a coherent secondary
+  E0308 from the call, both fixed by `str`→`&str`). Teaches **dynamically sized types / `Sized`** — the
+  "why `&str` not bare `str`" aha, one of the most fundamental advanced concepts. Probed: E0277 is first;
+  the `&str` fix compiles+runs ("first char is f"). Vendored `ch20-03-advanced-types`; book_ref →
+  dynamically-sized-types-and-the-sized-trait. Added a "dynamically sized types (DSTs) and Sized" glossary
+  term (43→44). Verified: verify-exercises 45/45 (E0277), anchors, golden-corpus, glossary 3/3, live
+  (09-advanced 01→02→03, run E0277+E0308, chip→DST). 09-advanced 2→3; corpus 45. Thinnest phases now all
+  ≥3 except 05b(3); NEXT: 2nd lifetimes (07, hardest topic, only 1), custom error types, or more advanced.
 - ✅ **Breadth, not depth: filled the sparsest phase `09-advanced`** (`<pending>`, advisor decision rule —
   once a topic's core is covered, prefer breadth = the thinnest reachable phase over a 3rd variant of the
   one just touched). 09-advanced had only `01_unsafe_deref`; added `02_orphan_rule_newtype` (id

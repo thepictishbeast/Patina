@@ -317,3 +317,10 @@ aliases = ["unwrap", "expect", "unwrap-panics-on-err", "panic on error", "unwrap
 definition = "Two shortcuts for pulling the value out of a `Result` or `Option`. `unwrap()` gives you the inner value when it's `Ok`/`Some`, but PANICS (crashes the program) when it's `Err`/`None`. `expect(\"message\")` does the same but lets you attach your own message to the panic. They are a promise that the value can't be the error case — fine in quick code or tests, but in real programs you usually handle the error instead (with `match`, `unwrap_or`, or `?`) so one bad value doesn't bring everything down."
 book_chapter = "ch09-02-recoverable-errors-with-result"
 source = "The Rust Book, ch.9.2 \"Shortcuts for Panic on Error: unwrap and expect\""
+
+[[term]]
+name = "dynamically sized types (DSTs) and Sized"
+aliases = ["dst", "dynamically sized types", "dynamically-sized-types", "unsized", "sized", "sized trait", "str vs &str"]
+definition = "Most types have a size the compiler knows at compile time (they are `Sized`), so it can place them on the stack and pass them by value. A few types are DYNAMICALLY SIZED — their size isn't known until runtime, like `str` (the string data) or `[T]` (a slice's data). You can't hold or pass a dynamically sized value on its own; you use it behind a POINTER instead — `&str`, `&[T]`, or a `Box` — because the pointer has a known size even when the data behind it doesn't. That is why you see `&str` everywhere and almost never a bare `str`."
+book_chapter = "ch20-03-advanced-types"
+source = "The Rust Book, ch.20.3 \"Advanced Types — Dynamically Sized Types and the Sized Trait\""
