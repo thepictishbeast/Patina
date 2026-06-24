@@ -1,0 +1,26 @@
+id = "smart-pointers/03_refcell_runtime_borrow"
+title = "RefCell checks borrows at runtime — two writers panic"
+difficulty = "advanced"
+estimated_minutes = 9
+concept = "interior-mutability"
+expected_runtime_panic = "already borrowed"
+solution_outline = """
+A `RefCell` enforces the borrowing rules (many readers OR one writer) at RUN time,
+not compile time. `a` and `b` are two `borrow_mut()` guards alive at once — two
+writers — so the second `borrow_mut()` panics ("already borrowed"). The code
+COMPILES; it only fails when run. Don't keep two mutable borrows alive together:
+give each change its own short scope so the first guard is dropped before the next
+(`{ let mut a = tasks.borrow_mut(); a.push("ship"); }` then a second block), or push
+through one borrow per statement (`tasks.borrow_mut().push("ship");` then another).
+A borrow ends when its guard goes out of scope.
+"""
+
+[[book_refs]]
+chapter = "ch15-05-interior-mutability"
+anchor = "enforcing-borrowing-rules-at-runtime"
+why = "RefCell moves the borrow check to runtime — exactly why two borrow_mut() calls compile but panic."
+
+[[book_refs]]
+chapter = "ch15-05-interior-mutability"
+anchor = "tracking-borrows-at-runtime"
+why = "How RefCell counts active borrows and panics ('already borrowed') when the rules are broken while running."

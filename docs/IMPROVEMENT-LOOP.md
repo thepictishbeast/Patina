@@ -129,8 +129,19 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   closures(FnOnce) → iterators → Box → Rc. book_ref → `ch13-01-closures` # moving-captured-values-out-of-closures;
   added an "FnOnce, FnMut, and Fn" glossary term (35→36) aliased to `closure-move-capture`. Verified:
   verify-exercises 36/36 (emits E0382), book anchors, golden-corpus, glossary 3/3, live.
-  TODO: RefCell (ch15-05) — now UNBLOCKED by the runtime-outcome model below; async (ch17); grow
-  async in 08-concurrency.
+  ✅ Added the third **smart-pointers** exercise — the first one on top of the runtime-outcome model:
+  `07b/05_refcell_runtime_borrow` (id `smart-pointers/03_refcell_runtime_borrow`, advanced). Two
+  `borrow_mut()` guards held at once → the second one PANICS ("already borrowed") at RUN time — the code
+  COMPILES (RefCell moves the borrow check to runtime). `expected_runtime_panic = "already borrowed"`;
+  the framing teaches the mechanism but does NOT quote the panic phrase (error *codes* are lookup keys
+  worth naming, a panic *message* is a discovery). Completes the core smart-pointers trio Box → Rc →
+  RefCell. Vendored `ch15-05-interior-mutability`; book_refs → enforcing-borrowing-rules-at-runtime +
+  tracking-borrows-at-runtime; added a "RefCell and interior mutability" glossary term (36→37) aliased to
+  `interior-mutability`. Verified: verify-exercises 38/38 (runtime branch asserts the panic), anchors,
+  golden-corpus, glossary 3/3, live (select 200 → run passed:false + "already borrowed" in stderr → chip
+  resolves). This is the 2nd runtime-outcome exercise, proving the model generalizes beyond unwrap-on-None.
+  TODO: async (ch17, may need its own model work); integer-overflow / index-OOB runtime exercises; more
+  closures; grow async in 08-concurrency.
 - ✅ **Runtime-outcome exercise model** (`<pending>`, do-what's-best — not a Paul fork): the model used
   to assume every failure is a COMPILE error. A whole class of core lessons are RUNTIME panics instead
   (RefCell's `BorrowMutError`, integer overflow, `unwrap()` on `None`, index-OOB) — now supported.
