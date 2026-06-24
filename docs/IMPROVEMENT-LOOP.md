@@ -86,6 +86,16 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   `fn main(){ if true { println!() } }` by Enter alone (4→8-space nesting compounds correctly) + highlight
   tracks (screenshot); gui transforms green; e2e 4/4. Dev tooltip updated. **Dev tier is now a genuinely
   usable editor (Tab/Shift+Tab + Enter auto-indent).**
+  ✅ **Dev bracket auto-close** (`702d63c`): extended the same Dev-only keydown handler — typing `( [ {`
+  inserts the matching close with the caret between them, but ONLY when the next char won't be glued onto a
+  word (so `(` before `foo` stays `(foo`, never `()foo`); typing `) ] }` over an existing close skips it
+  instead of doubling; Backspace inside an empty `()`/`[]`/`{}` deletes both. Composes with the Enter
+  handler (type `{` → `{}` → Enter splits the tidy block). Learn AND Assist keep the bare textarea (charter:
+  Learn blocks autocomplete/auto-fix), so the tiers stay distinct. Verified LIVE (Playwright,
+  `tests/e2e/dev-brackets.spec.js`, 5 cases incl. Learn+Assist untouched) + screenshot (`vec![1, 2, 3]`
+  built via one `[` keystroke); web + a11y e2e unchanged; node --check + GUI transforms green. **Dev code
+  editor is complete (Tab/Shift+Tab + Enter auto-indent + bracket auto-close); next IDE step is
+  rust-analyzer (#19).**
   Remaining (#18, still open): TRUE **inline-in-editor** diagnostics — surface `dg.span.line` as a
   gutter marker / underline on the offending line in the highlight overlay (Assist/Dev only). The
   data (line spans) is already in the run response; only the editor-overlay rendering is left.
