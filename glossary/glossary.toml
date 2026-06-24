@@ -338,3 +338,10 @@ aliases = ["hashmap", "hash map", "hashmap-insert-ownership", "key value store",
 definition = "A collection that stores KEY → VALUE pairs and lets you look a value up quickly by its key — rather than by position, the way a `Vec` uses an index. You create one with `HashMap::new()` and add pairs with `.insert(key, value)`; inserting an owned value (like a `String`) moves it INTO the map, which takes ownership of it. Looking a key up with `.get(&key)` hands back an `Option`, because the key might not be in the map."
 book_chapter = "ch08-03-hash-maps"
 source = "The Rust Book, ch.8.3 \"Storing Keys with Associated Values in Hash Maps\""
+
+[[term]]
+name = "operator overloading"
+aliases = ["operator overloading", "operator-overloading", "impl add", "add trait", "overload operator", "std ops"]
+definition = "In Rust, operators like `+`, `-`, and `*` are not reserved for built-in number types — each one is backed by a TRAIT in `std::ops` (for example `+` is the `Add` trait, and `a + b` really means `a.add(b)`). You can make an operator work on your OWN type by implementing that trait for it: an `impl Add for YourType` with a `type Output` (what the operation returns) and an `add` method. Doing that is called operator overloading."
+book_chapter = "ch20-02-advanced-traits"
+source = "The Rust Book, ch.20.2 \"Advanced Traits — Operator Overloading\""

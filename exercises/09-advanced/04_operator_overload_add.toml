@@ -1,0 +1,19 @@
+id = "advanced/04_operator_overload_add"
+title = "Operator overloading: teach + to your own type"
+difficulty = "advanced"
+estimated_minutes = 10
+concept = "operator-overloading"
+expected_error_code = "E0369"
+solution_outline = """
+`a + b` is `a.add(b)` from the `std::ops::Add` trait, which `Point` doesn't implement
+(E0369). Implement it: `use std::ops::Add; impl Add for Point { type Output = Point;
+fn add(self, other: Point) -> Point { Point { x: self.x + other.x, y: self.y + other.y } } }`.
+`type Output` says what `+` produces (a `Point`); `add` takes the two operands by value
+and returns the sum. Then `a + b` works. (The same pattern with `Sub`, `Mul`, etc.
+overloads those operators for your type.)
+"""
+
+[[book_refs]]
+chapter = "ch20-02-advanced-traits"
+anchor = "using-default-generic-parameters-and-operator-overloading"
+why = "How operators map to traits like `Add`, and how to implement one for your own type — exactly this."
