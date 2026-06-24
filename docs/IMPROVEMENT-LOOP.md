@@ -108,8 +108,20 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   glossary term (33→34) aliased to the concept so the chip resolves. Ramp is now closures → iterators →
   smart-pointers. Verified: verify-exercises 34/34 (emits E0072), book anchors, golden-corpus, glossary 3/3,
   live (run→E0072, chip→"Box"). Commit `950349f`.
-  TODO: more closures (capture/move, FnOnce); more smart-pointers — Rc (ch15-04), RefCell (ch15-05); async
-  (ch17); grow async in 08-concurrency.
+  ✅ Added the second **smart-pointers** exercise: `07b/04_shared_ownership_rc` (id
+  `smart-pointers/02_shared_ownership_rc`, advanced) — two cons-lists `b` and `c` both want the same
+  tail `a`, but a `Box` moves it into `b`, so `c`'s use → **E0382** "use of moved value". Lesson: a
+  `Box` gives ONE owner; sharing needs reference-counted ownership. Reuses the E0382 move error the
+  learner already met (in 04-ownership/01_move) but in a NEW context — last time clone/borrow fixed
+  it; here both lists must OWN the shared tail, which is what `Rc` is for. Framing points at the
+  E0382 message + the "many owners / counts references" concept without naming `Rc`. book_ref →
+  freshly-vendored `ch15-04-rc` # sharing-data; added an "Rc" glossary term (34→35) aliased to
+  `shared-ownership`/`reference-counting`. Ramp: closures → iterators → Box → Rc. Verified:
+  verify-exercises 35/35 (emits E0382), book anchors 54/54, golden-corpus, glossary 3/3 (35 terms),
+  live (select 200 → /api/current concept `shared-ownership` + book_ref ch15-04-rc#sharing-data →
+  run E0382 → chip resolves to "Rc").
+  TODO: more closures (capture/move, FnOnce); RefCell (ch15-05); async (ch17); grow async in
+  08-concurrency.
 - ◐ **Integrate Rust by Example / Rustlings / Cookbook / Exercism** — licenses verified via gh
   (RBE Apache-2.0, Rustlings MIT, Cookbook CC0-1.0, Exercism MIT) + cataloged in
   rust-textbook/catalog/EXTERNAL-MATERIALS.md with an integration plan (Rustlings first).

@@ -1,0 +1,20 @@
+id = "smart-pointers/02_shared_ownership_rc"
+title = "Two owners of the same data need reference counting"
+difficulty = "advanced"
+estimated_minutes = 9
+concept = "shared-ownership"
+expected_error_code = "E0382"
+solution_outline = """
+`b` takes ownership of `a` (a `Box` moves the value in), so `c` can't own it too —
+E0382 "use of moved value". A `Box` allows exactly ONE owner; what you want here is
+SHARED ownership: several holders of the same data, kept alive until the last one is
+done. Use `Rc` (reference counting): add `use std::rc::Rc;`, change the variant to
+`Cons(i32, Rc<List>)`, build the lists with `Rc::new(...)`, and where `b` and `c`
+both need `a`, give each an `Rc::clone(&a)`. `Rc::clone` is cheap — it only bumps the
+reference count, it does NOT deep-copy the list.
+"""
+
+[[book_refs]]
+chapter = "ch15-04-rc"
+anchor = "sharing-data"
+why = "The Book uses exactly this two-lists-share-a-tail example to show why a Box's single ownership fails and how Rc's reference counting fixes it."

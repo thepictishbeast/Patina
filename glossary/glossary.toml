@@ -254,3 +254,10 @@ aliases = ["box", "smart pointer", "smart-pointer", "recursive-type-indirection"
 definition = "A smart pointer that stores its value on the heap; what stays on the stack is just a small, fixed-size pointer to that heap data. Because the handle has a known size, a `Box` lets you give a known size to a value that otherwise wouldn't have one (such as a type that contains itself)."
 book_chapter = "ch15-01-box"
 source = "The Rust Book, ch.15.1 \"Using Box<T> to Point to Data on the Heap\""
+
+[[term]]
+name = "Rc"
+aliases = ["rc", "reference counting", "reference-counting", "reference counted", "shared ownership", "shared-ownership", "reference-counted pointer"]
+definition = "A smart pointer that lets a single value have MULTIPLE owners by keeping a count of how many references to it exist. Calling `Rc::clone` bumps that count and hands out another owner — it does NOT copy the underlying data; each owner that goes out of scope lowers the count, and the value is freed only when the count reaches zero. Reach for it when several parts of a program need to read the same heap data and you can't tell at compile time which one finishes last. (It is for single-threaded use.)"
+book_chapter = "ch15-04-rc"
+source = "The Rust Book, ch.15.4 \"Rc, the Reference Counted Smart Pointer\""
