@@ -213,10 +213,13 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   `let…else`; cashes Phase-2 #19; errors verbatim (E0004 None-not-covered, E0277 Option-as-T). **★ Phase 5
   DECIDED lessons COMPLETE: L18 ✓ L19 ✓.** **R5 Phase-5 quiz** (`quizzes/phase5.md`, rust-textbook/main
   `d6e98b9` — 10 Qs over L18/L19; predict-first + verified answer key incl. E0282 bare-None; every snippet
-  compile-run on 1.95.0). **R5 status: quiz ✓ · `cheatsheets/phase5.md` ☐.** NEXT (un-gated): the Phase-5
-  cheatsheet (closes R5), the deferred **L20 error-handling** (matrix #37, needs its own E/M), then **Phase
-  6 — Organizing & generics** (the last un-gated phase). (Phases 7–9 lessons remain matrix-review-gated.
-  Minor gaps: Phase-1 lacks `quizzes/phase1.md`; phase2 cheatsheet cites 1.94.1.)
+  compile-run on 1.95.0) + **cheatsheet** (`cheatsheets/phase5.md`, `181280e`). **★ R5 done (over L18/L19):
+  quiz ✓ · cheatsheet ✓.** (Textbook: Phases 1–4 fully done; Phase 5 lessons L18/L19 + review done — 19
+  lessons, 5 quizzes [p1 pending], 5 cheatsheets.) NEXT (un-gated): the deferred **L20 error-handling**
+  (Result/`?`/panic/unwrap — matrix #37, needs its own E/M; the TS exercises already cover it so it'd
+  reinforce), then **Phase 6 — Organizing & generics** (modules/generics/traits/lifetimes/tests/cargo — the
+  LAST un-gated phase before the matrix-review-gated DRAFT Phases 7–9). (Minor gaps: Phase-1 lacks
+  `quizzes/phase1.md`; phase2 cheatsheet cites 1.94.1.)
 - ◐ **Matrix: re-review rows 51–62** (rate-limited). ✅ Fixed the HTML-entity in row 58 title
   (`Advanced patterns &amp; matching` → literal `&`, matching every sibling row; it was the only
   entity left in the matrix — verified). REMAINING (Paul's review domain): add the missing
