@@ -6,9 +6,11 @@ code; findings carry an honest severity tied to the threat model.
 
 > Last reviewed on branch `textbook-integration`; Controls table covers the
 > `/api/book` chapter lookup (chapter = map key, never a path), its `?q=` search
-> (in-memory substring match, no path/regex/shell), and `/api/select` (id
-> validated against the discovered set). Re-run when the run path, the wire
-> protocol, the endpoint set, or the served frontend changes.
+> (in-memory substring match, no path/regex/shell), `/api/select` (id validated
+> against the discovered set), and the read-only `/api/glossary` term lookup. The
+> no-leak contract now also covers `expected_runtime_panic` (the runtime-outcome
+> exercise model). Re-run when the run path, the wire protocol, the endpoint set,
+> or the served frontend changes.
 
 ## 1. Scope & threat model
 
@@ -42,11 +44,12 @@ transport encryption (loopback only), secret management (none are handled).
 | Request body | **Explicit `DefaultBodyLimit` of 1 MiB** at the transport layer (defence-in-depth below the 256 KiB source clamp; tightens axum's 2 MiB default) | router in `main`, `MAX_BODY_BYTES` |
 | Run target | Resolved from on-disk **current** exercise, never from client input — there is no wire path to a different file (`resolve_current`); the scratch run dir name is `slug(id)`, which maps anything non-`[A-Za-z0-9_-]` to `_` | `resolve_current`, `rpro_runner::slug` |
 | Command exec | `Command::new(program).args(&args)` — args passed as a **vector, no shell**, so no shell-injection; `program`/`args` come from the `Language` layer, never the wire | `rpro-toolchain-local` `LocalProcess::exec` |
-| Answer leak | `current_json` omits `solution_outline` + `expected_error_code`; the hint ladder gates the outline to the top rung only; `/api/review` surfaces only codes the learner already saw in their own output | `current_json`, `ExerciseMetadata::hint`, tests `current_json_omits_the_answer`, smoke `/api/review` |
+| Answer leak | `current_json` / `exercises_handler` are **field allowlists** that omit `solution_outline`, `expected_error_code`, **and `expected_runtime_panic`** (the runtime-outcome model's server-side panic string) — no answer field reaches the page; the hint ladder gates the outline to the top rung only; `/api/review` surfaces only codes the learner already saw in their own output | `current_json`, `ExerciseMetadata::hint`, test `current_json_omits_the_answer` (asserts all three fields absent), smoke `/api/review` |
 | Static files | `ServeDir` (tower-http) serves `gui/` with built-in path-traversal protection; the roadmap reads a **fixed, compile-time** path (`CARGO_MANIFEST_DIR/../../docs/ROADMAP.md`), no client input | router, `roadmap_handler` |
 | Book lookup | `GET /api/book?chapter=ID` resolves `ID` as a **`BTreeMap` key** (`Book::get`), **never** path-joined — a traversal value (`../../etc/passwd`, percent-encoded) simply misses the map → `{chapter:null}`, never a file read. The book root is the server-seeded `book/` dir | `book_handler`, tests `book_traversal_is_a_miss_not_a_file_read` (3 URIs), smoke book-traversal probes |
 | Book search | `GET /api/book?q=TERM` runs a **case-insensitive substring match over in-memory chapter markdown** (`Book::search`) — no filesystem path is built from `q`, no regex (no ReDoS), no shell. Output (chapter id, title, count, snippet) is derived **only from bundled chapter content**, never echoed user input, and the web client `esc`-es every field before display. A blank term returns no hits | `book_handler` (`?q=` branch), `rpro_book::Book::search`, tests `book_search_returns_hits_with_counts_and_snippets`, `book_search_blank_term_returns_no_hits`, smoke `/api/book?q=` |
 | Select target | `POST /api/select` validates `id` against the **discovered** exercise set (`rpro_runner::discover`) before use — an unknown id is `400` (and is only ever a map key/lookup, never a path); a *completed* exercise is refused `409` (no gauge regression). Mutates only on-disk progress, never a file path from the wire | `select_handler`, tests `select_switches_current_and_validates_id`, `select_refuses_a_completed_exercise_with_409`, smoke select |
+| Glossary lookup | `GET /api/glossary` is **read-only**: with no query it returns all bundled terms (`Glossary::all`); with `?term=T` it resolves `T` by alias-aware **map lookup** (`Glossary::get`), **never** path-joined — a traversal value simply misses → no term. Output is bundled glossary content only (server-seeded `glossary/`), never echoed wire input; no answer field is involved | `glossary_handler`, `rpro_glossary::Glossary::get` |
 | HTTP headers | CSP, `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, `X-Frame-Options: DENY` on every response | `security_headers` |
 | Memory safety | `unsafe_code = "forbid"` workspace-wide; **0** `unsafe` in `rpro-serve` | `Cargo.toml` |
 
@@ -88,18 +91,22 @@ parsing. ✅
 
 ## 4. Dependency audit
 
-- **Offline + pinned.** crates.io is unreachable in the build/run environment; only
-  crates already vendored in the local registry are usable, and the exact versions
-  are pinned in `Cargo.lock`. The runtime makes **no outbound network calls** other
-  than binding the loopback listener.
+- **Pinned.** The exact dependency versions are pinned in `Cargo.lock`, and the
+  runtime makes **no outbound network calls** other than binding the loopback
+  listener (the only network exposure is the loopback port itself).
+- **`cargo audit` — run, clean.** A RustSec advisory scan (`cargo audit`,
+  v0.22) reports **0 vulnerabilities** across the **236** `Cargo.lock` dependencies
+  (checked against 1138 advisories), confirming no known-vulnerable dependency in
+  the tree as reviewed.
 - **Surface.** Network/runtime deps are `axum` / `hyper` / `tower-http` / `tokio`
   (widely used and audited) plus `serde`/`serde_json` for the wire. No crypto,
   no auth, no secret material is handled, so there is no key-management surface.
 - **Memory safety.** `unsafe_code = "forbid"` across the workspace removes the
   `unsafe`-based class of dependency-triggered UB from first-party code.
-- **Recommendation:** run `cargo audit` (RUSTSEC advisories) and `cargo deny`
-  (licenses + bans + advisories) in CI. Neither is installable in this sandbox, so
-  this is a CI task — track alongside the existing `seam-gates.yml`.
+- **Recommendation:** wire `cargo audit` (RustSec advisories) and `cargo deny`
+  (licenses + bans + advisories) into CI so future dependency changes are scanned
+  automatically. `cargo audit` runs locally today; `cargo deny` is not yet
+  installed here — track both alongside the existing `seam-gates.yml`.
 
 ## 5. Conclusion
 

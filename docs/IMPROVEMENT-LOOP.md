@@ -253,14 +253,16 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   `match`→`if let`, pass-by-value), `rpro-cli` (2) — mostly doc-paragraphs/redundant-clone/str-lifetime, plus
   the `?Send`-toolchain `future cannot be sent` (×6, rpro-core/serve) which needs the same kind of justified
   `#[allow]`. Once all clean, add a clippy gate to CI (SECURITY.md §4).
-- ☐ **`SECURITY.md` is MISSING but referenced** (found 2026-06-24): the clippy/audit notes and prior
-  memory cite "SECURITY.md §4", but the file does not exist in the repo. Either CREATE it documenting the
-  posture already built (loopback-only bind, op-whitelist, no-leak DTOs, `DefaultBodyLimit`/413,
-  path-traversal blocks, cargo-audit clean) — a real artifact — or scrub the dangling references. A clean
-  bounded tick on its own. NOTE: security-CI gates (cargo-audit/deny job) were considered and DEFERRED —
-  cargo-audit was already clean (preventive, not corrective), cargo-deny isn't installed, and a CI-only
-  change can't be verified from the loop env (fails the "verified improvement" bar); revisit on a concrete
-  dependency-vuln signal, not preventively.
+- ✅ **`SECURITY.md` CORRECTION + freshen** (`<pending>`): the prior "SECURITY.md is MISSING" claim was
+  WRONG — it lives at **`docs/SECURITY.md`** (the "§4" the notes cite); the earlier check grepped the repo
+  root only. It's a thorough review and was just **re-freshened** to current state (the doc's own rule:
+  "re-run when the endpoint set / wire protocol changes" — and they had): (1) the **Answer-leak** row now
+  lists `expected_runtime_panic` among the omitted server-side fields (runtime-outcome model; the
+  `current_json_omits_the_answer` test asserts all three); (2) added a **`/api/glossary`** Controls row
+  (read-only, term = alias map-key via `Glossary::get`, never path-joined); (3) **§4** updated — `cargo
+  audit` now runs locally and is **CLEAN (0 vulns / 236 deps / 1138 advisories)**, dropped the stale
+  "crates.io unreachable" line. cargo-deny still uninstalled → cargo-audit+deny CI job stays a tracked
+  task (#21), revisit on a concrete dependency-vuln signal not preventively.
 - ✅ **e2e a11y regression fixed** (`<pending>`): the serious `color-contrast` violation was the
   *selected* mode-switcher button — white `#fff` on `--accent` `#f74c00` = **3.5:1** at 11px (needs
   4.5:1); regressed when the switcher landed (`158c997`). Deepened just that button's bg to
