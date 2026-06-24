@@ -291,6 +291,22 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   predict "fails"→failed, Assist→E0308, chip→Trait Object, no leak, screenshot). **07 now pairs static dispatch
   (generic_bound/trait_bound) with dynamic dispatch (trait_object_dyn); CORPUS = 51 exercises / 11 phases.** NEXT:
   match-on-Err / `?` on Option, iterators depth (map/filter/lazy), generic structs, async (ch17).
+  ✅ **Enums carry data — bind it in `match` (02-control-flow; corpus 51→52)** (`41630b6`): the only enum
+  exercise (`02_match_exhaustive`) used a FIELDLESS enum (`Light`), so the corpus never had the learner
+  define a DATA-CARRYING enum and destructure it — the core algebraic-data-type skill behind Option/Result
+  and domain modelling. Added `02b_match_enum_data` (id `control-flow/05_match_enum_data`, beginner; `02b_`
+  sorts right after `02_match_exhaustive` → enums grouped): `Shape::Rectangle` (a tuple variant carrying
+  `(f64, f64)`) matched as a bare unit pattern → **E0532** (NEW code), whose `help:` names the pattern shape
+  `Shape::Rectangle(_, _)`. The `Circle(r)` arm is already correctly bound right above the broken one =
+  worked-example scaffold (reads→writes). Fix `Rectangle(w, h) => w * h` compiles+runs. **NO-LEAK CARE
+  (caught by the live grep):** reworded the 2nd book_ref so the always-visible `why` no longer spells out
+  `Rectangle(w, h)` (the compiler's own help shows `(_, _)`; the pointer mustn't pre-give the names), and the
+  new "enum with data" glossary term (49→50) uses a DIFFERENT example (`Event { Click, KeyPress, Closed }`)
+  so the chip teaches the concept without being this exercise's answer key. book_refs ch06-01#enum-values +
+  ch06-02#patterns-that-bind-to-values (both already vendored). Verified: verify-exercises 52/52 (E0532),
+  anchors 82/82, golden-corpus, glossary 3/3, LIVE (predict fails→failed, Assist→E0532 + L26 jump,
+  chip→Enum With Data, no leak, screenshot). No crates/*.rs. **CORPUS = 52 exercises / 11 phases.** NEXT:
+  match-on-Err / `?` on Option, iterators depth, generic structs, index-OOB runtime panic (collections), async.
   ✅ **Breadth: 3rd advanced exercise (09-advanced 2→3)** (`<pending>`): added `03_unsized_str` (id
   `advanced/03_unsized_str`, advanced) — `fn first_char(text: str)` takes `str` BY VALUE → **E0277** "the
   size for values of type `str` cannot be known at compilation time" (the headline; a coherent secondary
