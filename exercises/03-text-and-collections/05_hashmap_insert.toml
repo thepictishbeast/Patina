@@ -1,0 +1,24 @@
+id = "collections/05_hashmap_insert"
+title = "Inserting into a HashMap moves the value in"
+difficulty = "beginner"
+estimated_minutes = 8
+concept = "hashmap-insert-ownership"
+expected_error_code = "E0382"
+solution_outline = """
+`scores.insert(team, 10)` moves the `String` `team` INTO the map (the map takes
+ownership), so using `team` afterward is E0382 "use of moved value". Either give the
+map its own copy — `scores.insert(team.clone(), 10)`, leaving the local `team` yours
+— or print the name BEFORE inserting it (`println!("...{team}..."); scores.insert(team,
+10);`). It's the same rule as moving a value into another variable: once it's handed
+over, the original binding can't use it.
+"""
+
+[[book_refs]]
+chapter = "ch08-03-hash-maps"
+anchor = "managing-ownership-in-hash-maps"
+why = "Inserting an owned value moves it into the map — exactly this ownership transfer."
+
+[[book_refs]]
+chapter = "ch08-03-hash-maps"
+anchor = "creating-a-new-hash-map"
+why = "How to create a HashMap and add key→value pairs with insert."

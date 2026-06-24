@@ -221,6 +221,18 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   propagate-with-? (E0277) → unwrap-crashes (runtime panic) → custom-error+From (E0277).** Verified:
   verify-exercises 47/47 (E0277), anchors, golden-corpus, glossary 3/3, live (05b 01→02→03→04, run E0277,
   chip→custom-error). 05b 3→4; corpus 47. NEXT in phase: matching on `Err` / recover-vs-propagate, `?` on `Option`.
+  ✅ **Filled a MISSING core collection: HashMap** (`<pending>`): the collections phase (03) had Vec, String,
+  and iterators but NO `HashMap` — a core collection (Book ch8-03), absent from the whole corpus. Added
+  `03-text-and-collections/05_hashmap_insert` (id `collections/05_hashmap_insert`, beginner): `scores.insert(team, 10)`
+  moves the `String` `team` INTO the map → **E0382** "use of moved value" (probed clean single). Teaches
+  HashMap create/insert + that inserting an owned value transfers OWNERSHIP. **Chose insert-move (E0382) over
+  the `.get()`→Option lesson to avoid forward-referencing Option** (taught in phase 05, after collections);
+  E0382/move is already introduced in phase 03 (`04_vec_moved`), so this fits the existing sequencing. Vendored
+  `ch08-03-hash-maps`; book_refs managing-ownership-in-hash-maps + creating-a-new-hash-map. Added a "HashMap"
+  glossary term (45→46; covers insert-ownership AND get-returns-Option as a fuller reference). Verified:
+  verify-exercises 48/48 (E0382), anchors, golden-corpus, glossary 3/3, live (03 order ...→05, run E0382,
+  chip→HashMap). Collections 4→5; corpus 48. NEXT: `.get()`→Option HashMap exercise (once Option is in-context),
+  supertraits, iterators depth, async (ch17).
   ✅ **Breadth: 3rd advanced exercise (09-advanced 2→3)** (`<pending>`): added `03_unsized_str` (id
   `advanced/03_unsized_str`, advanced) — `fn first_char(text: str)` takes `str` BY VALUE → **E0277** "the
   size for values of type `str` cannot be known at compilation time" (the headline; a coherent secondary

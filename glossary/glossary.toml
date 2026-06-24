@@ -331,3 +331,10 @@ aliases = ["custom error", "custom error type", "custom-error-from", "from trait
 definition = "Real programs usually define their OWN error type (often an `enum`) so every way a function can fail comes back as one consistent kind. The `?` operator works smoothly with this: when you apply `?` to a `Result` whose error is some other type, `?` automatically converts that error into your function's error type — but only if you've implemented the `From` trait that says how to build your error from theirs. Writing that `From` impl is what lets `?` do the conversion for you, so a function with one error type can still use `?` on calls that fail in different ways."
 book_chapter = "ch09-02-recoverable-errors-with-result"
 source = "The Rust Book, ch.9.2 \"A Shortcut for Propagating Errors: the ? Operator\""
+
+[[term]]
+name = "HashMap"
+aliases = ["hashmap", "hash map", "hashmap-insert-ownership", "key value store", "map"]
+definition = "A collection that stores KEY → VALUE pairs and lets you look a value up quickly by its key — rather than by position, the way a `Vec` uses an index. You create one with `HashMap::new()` and add pairs with `.insert(key, value)`; inserting an owned value (like a `String`) moves it INTO the map, which takes ownership of it. Looking a key up with `.get(&key)` hands back an `Option`, because the key might not be in the map."
+book_chapter = "ch08-03-hash-maps"
+source = "The Rust Book, ch.8.3 \"Storing Keys with Associated Values in Hash Maps\""
