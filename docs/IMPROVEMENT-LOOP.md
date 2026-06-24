@@ -204,10 +204,13 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   move/E0382, Copy/Clone, borrow, E0499/E0502/E0106, slice-pins; predict-first + verified answer key, every
   snippet compile-run on 1.95.0) + **cheatsheet** (`cheatsheets/phase4.md`, `b974c15`). **★ PHASE 4 FULLY
   COMPLETE: L15 ✓ L16 ✓ L17 ✓ · quiz ✓ · cheatsheet ✓.** (Textbook: **Phases 1–4 fully done** — 17 lessons,
-  4 quizzes [p1 pending], 4 cheatsheets.) NEXT (un-gated): **Phase 5 — Custom types & matching** lessons
-  (DECIDED matrix — structs/enums/`Option`/error-handling; where L11's deferred match-binding + Option land),
-  then Phase 6. (Phases 7–9 lessons remain matrix-review-gated. Minor gaps: Phase-1 lacks `quizzes/phase1.md`;
-  phase2 cheatsheet cites 1.94.1.)
+  4 quizzes [p1 pending], 4 cheatsheets.) **Phase 5 STARTED — L18 structs** (`18-structs.md`, rust-textbook/
+  main `a03a730`; rows 30–32): your own types — define/instantiate/update/tuple/unit + methods/`impl`
+  (`&self`/`&mut self`/`self` tied to Phase-4 borrow intent) + assoc-fns + `derive(Debug)`; errors verbatim
+  (`{:?}`-no-derive E0277 with the compiler's fix, `&str`-field E0106). **Phase 5 lessons: L18 ✓.** NEXT
+  (un-gated): **L19** (enums + matching — `Option`, deep `match`, `if let`/`while let`/`let…else`), then R5;
+  L20 error-handling is a deferred follow-up pass; then Phase 6. (Phases 7–9 lessons remain
+  matrix-review-gated. Minor gaps: Phase-1 lacks `quizzes/phase1.md`; phase2 cheatsheet cites 1.94.1.)
 - ◐ **Matrix: re-review rows 51–62** (rate-limited). ✅ Fixed the HTML-entity in row 58 title
   (`Advanced patterns &amp; matching` → literal `&`, matching every sibling row; it was the only
   entity left in the matrix — verified). REMAINING (Paul's review domain): add the missing
