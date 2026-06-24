@@ -240,7 +240,19 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   in a new frame. No new chapter (ch20-02 vendored); book_ref using-default-generic-parameters-and-operator-overloading.
   Added an "operator overloading" glossary term (46→47). Verified: verify-exercises 49/49 (E0369), anchors,
   golden-corpus, glossary 3/3, live (09 01→02→03→04, run E0369, chip→operator-overloading). 09-advanced 3→4;
-  corpus 49. NEXT: supertraits (ch20-02), `.get()`→Option HashMap, iterators depth, async (ch17), match-on-Err.
+  corpus 49.
+  ✅ **Supertraits (09-advanced 4→5; corpus hits 50)** (`<pending>`): added `05_supertrait_display` (id
+  `advanced/05_supertrait_display`, advanced): `trait Labelled: fmt::Display` requires Display as a SUPERTRAIT,
+  but `Sku` impls `Labelled` without `Display` → **E0277** "`Sku` doesn't implement `Display`" (probed: dual
+  E0277 — the supertrait bound on the impl line + the default method's `{self}` usage — same root cause, both
+  fixed by one `impl Display`; coherent like DST's E0277+E0308). Teaches `trait A: B` (B is the supertrait, so
+  A's methods can rely on B's behaviour). Fix compiles+runs ("[SKU-7]"). No new chapter (ch20-02 vendored);
+  book_ref using-supertraits. Added a "supertrait" glossary term (47→48). Verified: verify-exercises 50/50
+  (E0277), anchors, golden-corpus, glossary 3/3, live (09 01→05, run E0277, chip→supertrait). **09-advanced =
+  unsafe/orphan/DST/operator-overload/supertrait (5); CORPUS = 50 exercises / 11 phases.**
+  CONSIDERED clippy rpro-tui this tick (rotate) but its 8 warnings are judgment-y (3 too_many_lines need
+  `#[allow]`, 2 similar_names, 2 map_or_else) + the CI gate stays deferred = low-ROI; took the clean
+  content pick instead. NEXT: `.get()`→Option HashMap (later phase), iterators depth, match-on-Err, async (ch17).
   ✅ **Breadth: 3rd advanced exercise (09-advanced 2→3)** (`<pending>`): added `03_unsized_str` (id
   `advanced/03_unsized_str`, advanced) — `fn first_char(text: str)` takes `str` BY VALUE → **E0277** "the
   size for values of type `str` cannot be known at compilation time" (the headline; a coherent secondary

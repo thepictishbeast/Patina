@@ -1,0 +1,19 @@
+id = "advanced/05_supertrait_display"
+title = "Supertraits: a trait that requires another trait"
+difficulty = "advanced"
+estimated_minutes = 10
+concept = "supertrait"
+expected_error_code = "E0277"
+solution_outline = """
+`trait Labelled: fmt::Display` makes `Display` a SUPERTRAIT — every `Labelled` type
+must also be `Display`. `Sku` isn't, so `impl Labelled for Sku` breaks that promise
+(E0277), and the default `labelled` can't use `{self}`. Make `Sku` printable:
+`impl fmt::Display for Sku { fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+write!(f, "SKU-{}", self.code) } }`. With `Display` in place, `Sku` satisfies the
+supertrait and `labelled()` works. Leave the `Labelled` trait and `main` unchanged.
+"""
+
+[[book_refs]]
+chapter = "ch20-02-advanced-traits"
+anchor = "using-supertraits"
+why = "How `trait A: B` requires the supertrait B so A's methods can rely on B's behaviour — exactly this Display requirement."
