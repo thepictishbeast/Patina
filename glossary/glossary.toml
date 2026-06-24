@@ -275,3 +275,10 @@ aliases = ["refcell", "interior mutability", "interior-mutability", "refcell-run
 definition = "A type that lets you change the value inside it even when you only hold a shared, immutable-looking handle to it — \"interior mutability\". To stay safe it still enforces the borrowing rules (many readers OR one writer, never both), but it checks them while the program RUNS instead of at compile time: ask for two writers at once and it does not refuse to compile — it PANICS when run. Reach for it (often together with `Rc`) when you need to mutate shared data and the compiler can't prove on its own that the borrows don't overlap."
 book_chapter = "ch15-05-interior-mutability"
 source = "The Rust Book, ch.15.5 \"RefCell and the Interior Mutability Pattern\""
+
+[[term]]
+name = "Result and recoverable errors"
+aliases = ["result", "recoverable errors", "recoverable-errors", "result-extract-value", "ok and err", "error handling"]
+definition = "Rust's way of handling operations that can FAIL without crashing the program. A `Result` is one of two things: `Ok(value)` when the operation succeeded, or `Err(reason)` when it didn't. Because the possible failure is baked into the RETURN TYPE, the compiler makes you deal with both cases before you can use the value inside — you can't accidentally forget that something might have gone wrong. (Its cousin `Option` covers the simpler \"there might be no value at all\" case.)"
+book_chapter = "ch09-02-recoverable-errors-with-result"
+source = "The Rust Book, ch.9.2 \"Recoverable Errors with Result\""

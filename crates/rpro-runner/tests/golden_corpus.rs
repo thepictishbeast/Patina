@@ -44,6 +44,7 @@ fn golden_map() -> Vec<(&'static str, &'static [&'static str], &'static [Difficu
         ("03-text-and-collections", &["collections"], &[Beginner]),
         ("04-ownership", &["ownership"], &[Beginner]),
         ("05-types-and-matching", &["types"], &[Beginner]),
+        ("05b-error-handling", &["error-handling"], &[Beginner, Intermediate]),
         ("06-modules", &["modules"], &[Beginner]),
         (
             "07-generics-traits-lifetimes",

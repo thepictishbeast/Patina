@@ -37,7 +37,7 @@ so the learner (and Paul) can see what's done and what's next. Status:
 
 ## Phase 3 — Learning content
 - [x] Merged corpus: concept matrix Phases 1–6 (compile-verified)
-- [x] 32 rustc-verified exercises across 9 phases (basics → advanced), each with book refs + expected error + solution outline
+- [x] 39 verified exercises across 11 phases (basics → advanced), each with book refs + an expected compiler error OR runtime panic + solution outline
 - [x] 23 embedded Book chapters (bundled + seeded into the store; code listings link out to the live Book — see the vendor-vs-link decision below)
 - [x] Education engine — spec (docs/EDUCATION.md) AND implementation: shared hint ladder, spaced-repetition, tutor guide-not-solve scaffolding
 - [ ] Lesson 1 calibration (needs Paul) → unlocks Lessons 2–8

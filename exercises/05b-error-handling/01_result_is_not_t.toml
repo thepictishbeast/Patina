@@ -1,0 +1,24 @@
+id = "error-handling/01_result_is_not_t"
+title = "Result is not T: handle the error case first"
+difficulty = "beginner"
+estimated_minutes = 8
+concept = "result-extract-value"
+expected_error_code = "E0308"
+solution_outline = """
+A `Result<i32, _>` is a wrapper that is EITHER `Ok(i32)` or `Err(error)` — not an
+`i32` — so binding it straight to `let n: i32` fails (E0308). Open the Result and
+handle BOTH outcomes before using the value: `let n = match to_number("42") { Ok(v)
+=> v, Err(_) => 0 };` (decide a fallback for the failure case). `if let Ok(v) = ...`
+or `.unwrap_or(0)` also work; `unwrap()` works too but PANICS on `Err`, so deciding
+what to do on failure is safer. Deal with the error case — don't ignore it.
+"""
+
+[[book_refs]]
+chapter = "ch09-02-recoverable-errors-with-result"
+anchor = "recoverable-errors-with-result"
+why = "What a `Result` is (Ok or Err) and the `match` that unpacks it — why it isn't the value directly."
+
+[[book_refs]]
+chapter = "ch09-02-recoverable-errors-with-result"
+anchor = "matching-on-different-errors"
+why = "Handling the `Err` side instead of assuming success — the fix this exercise points to."

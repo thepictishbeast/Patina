@@ -161,6 +161,19 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   the tier test to pin a compile-error exercise), no-leak confirmed live, Playwright drove both exercise
   kinds. **DEFERRED (labelled):** the two-axis prediction ("it compiles — but does it panic?") is the
   pedagogically-complete version (a separate tick); the pass/fail relabel is honest, which is the ship bar.
+- ✅ **NEW phase: error handling (`05b-error-handling`)** (`<pending>`): the curriculum had Option
+  (phase 05) but NOTHING on `Result` or the `?` operator — error handling (Book ch9) is a CORE topic
+  that was missing ENTIRELY. Created the phase (byte-sorts between `05-types-and-matching` and
+  `06-modules` via the established sub-letter convention) with its first exercise `01_result_is_not_t`
+  (id `error-handling/01_result_is_not_t`, beginner): `to_number` returns `Result<i32, ParseIntError>`,
+  bound straight to an `i32` → **E0308** — mirrors `05/03_option_value` (transfer the Option shape the
+  learner just saw to Result, "one error many faces"). `golden_map()` gained the
+  `("05b-error-handling", &["error-handling"], &[Beginner, Intermediate])` entry (room to grow); vendored
+  `ch09-02-recoverable-errors-with-result`; added a "Result and recoverable errors" glossary term (37→38)
+  aliased to `result-extract-value`. ROADMAP de-staled (32/9 → 39/11 exercises/phases). Verified:
+  seam-clean, golden-corpus, verify-exercises 39/39 (emits E0308), anchors, glossary 3/3, live (discovery
+  order 05→05b→06, run E0308, chip→Result). NEXT in this phase: the `?` operator (E0277, `?` in a
+  non-Result fn — planned 2nd exercise), matching on `Err`, custom error types, `unwrap`/`expect`.
 - ◐ **Integrate Rust by Example / Rustlings / Cookbook / Exercism** — licenses verified via gh
   (RBE Apache-2.0, Rustlings MIT, Cookbook CC0-1.0, Exercism MIT) + cataloged in
   rust-textbook/catalog/EXTERNAL-MATERIALS.md with an integration plan (Rustlings first).
