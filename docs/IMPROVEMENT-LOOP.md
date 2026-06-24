@@ -332,6 +332,18 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   panic in terminal, chip→Indexing And Bounds Checking, no leak, screenshot). No crates/*.rs.
   **CORPUS = 53 exercises / 11 phases.** NEXT: match-on-Err / `?` on Option, iterators depth (map/filter/lazy),
   generic structs, integer-overflow runtime panic, async (ch17).
+  ✅ **Integer overflow panics in debug (01-basics; corpus 53→54)** (`8145831`): fundamental ch3 gap + first
+  runtime-outcome exercise in 01-basics. `fn area(w: u8, h: u8) -> u8 { w * h }` called with 20*20=400 COMPILES
+  then panics at run time ("attempt to multiply with overflow") AT the learner's `w * h` line. **Design catch:
+  a LITERAL overflow (`200u8 + 100u8`) is a COMPILE error (deny-by-default `arithmetic_overflow` const-eval), so
+  the values flow through fn params rustc can't const-fold → a true runtime panic, kept within basics scope
+  (functions + integers, no loop/array forward-ref).** Teaches the fixed range + the debug overflow check (vs
+  release wrap / C UB) and asks the learner to widen the type WITHOUT naming the fix; solution_outline (server-
+  side) gives u16/u32 + checked_/saturating_/wrapping_. book_ref ch03-02#integer-types (already vendored); new
+  glossary term "integer overflow" (51→52). Verified: verify-exercises 54/54, anchors 84/84, golden-corpus,
+  glossary 3/3, LIVE (predict fails→failed, panic in terminal, chip→Integer Overflow, no leak, screenshot). No
+  crates/*.rs. **CORPUS = 54 exercises / 11 phases.** NEXT: match-on-Err / `?` on Option, iterators depth,
+  generic structs, async (ch17).
   ✅ **Breadth: 3rd advanced exercise (09-advanced 2→3)** (`<pending>`): added `03_unsized_str` (id
   `advanced/03_unsized_str`, advanced) — `fn first_char(text: str)` takes `str` BY VALUE → **E0277** "the
   size for values of type `str` cannot be known at compilation time" (the headline; a coherent secondary
@@ -416,6 +428,18 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   `future cannot be sent` (×6) which needs a justified `#[allow]`. **Adding the clippy `-D warnings` CI gate is
   a SEPARATE, LATER task and stays DEFERRED — it's preventive + CI-only (unverifiable from the loop env), same
   bar that defers cargo-audit's CI job.** This tick only reduced existing debt.
+  **GROUND-TRUTH UPDATE (2026-06-24, tick 29): the remaining ~24 warnings are dominated by aggressive
+  `clippy::nursery` lints** — the workspace `Cargo.toml` sets BOTH `pedantic = warn` AND `nursery = warn`
+  (priority −1). nursery is officially unstable/false-positive-prone, and that's what these are: `future_not_send`
+  (×6, on `Core`'s async methods that await through `Box<dyn Toolchain/Storage>` — but the crate is explicitly
+  wasm-safe/single-threaded/loopback, so the futures are never sent across threads = false positive),
+  `option_if_let_else` (style churn — the `if let/else` is often clearer than a nested `map_or_else` closure),
+  `redundant_clone` (on `state.store_root.clone()` — you can't move out of `&state`, so the clone may be
+  required). Only a few are clean corrections (`doc_markdown` missing-backticks ×2, the `too_long_first_doc`
+  reflows). **So the real decision is a LINT-POLICY one, not per-warning churn: either (a) keep nursery and
+  scatter justified `#[allow]`s, or (b) relax `nursery` to `allow`/remove it (pedantic alone is the usual bar).
+  That's a project-wide quality-bar call → flagged for Paul, LOW priority, deferred alongside the `-D` gate.**
+  Did NOT churn the debatable ones this tick.
 - ✅ **`SECURITY.md` CORRECTION + freshen** (`<pending>`): the prior "SECURITY.md is MISSING" claim was
   WRONG — it lives at **`docs/SECURITY.md`** (the "§4" the notes cite); the earlier check grepped the repo
   root only. It's a thorough review and was just **re-freshened** to current state (the doc's own rule:
