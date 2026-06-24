@@ -307,6 +307,21 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   anchors 82/82, golden-corpus, glossary 3/3, LIVE (predict fails→failed, Assist→E0532 + L26 jump,
   chip→Enum With Data, no leak, screenshot). No crates/*.rs. **CORPUS = 52 exercises / 11 phases.** NEXT:
   match-on-Err / `?` on Option, iterators depth, generic structs, index-OOB runtime panic (collections), async.
+  ✅ **Index-out-of-bounds RUNTIME panic (03-text-and-collections; corpus 52→53)** (`6b6f797`): filled TWO
+  gaps — the collections phase had NO runtime-outcome exercise, and index-OOB is THE canonical Vec panic (a
+  core memory-safety lesson: Rust bounds-checks at run time and panics rather than reading garbage like C).
+  Added `06_index_out_of_bounds` (id `collections/06_index_out_of_bounds`, beginner): `scores[3]` on a
+  3-element Vec COMPILES, then panics at run time. `expected_runtime_panic = "index out of bounds"` (robust
+  substring) — the 4th runtime-outcome exercise (after unwrap-None, unwrap-Err, RefCell) and the FIRST in
+  collections. Framing teaches zero-based indexing + the run-time bounds check and asks the learner to land
+  the lookup in bounds WITHOUT naming the fix; solution_outline (server-side) gives a valid index AND the
+  `.get()`→Option safe path, but per the phase-sequencing rule `.get()`/Option is only OFFERED, not required
+  (Option is taught in phase 05). book_ref ch08-01#reading-elements-of-vectors (already vendored); new
+  glossary term "indexing and bounds checking" (50→51). Verified: verify-exercises 53/53 (runtime branch
+  compiles-clean→runs→asserts panic), anchors 83/83, golden-corpus, glossary 3/3, LIVE (predict fails→failed,
+  panic in terminal, chip→Indexing And Bounds Checking, no leak, screenshot). No crates/*.rs.
+  **CORPUS = 53 exercises / 11 phases.** NEXT: match-on-Err / `?` on Option, iterators depth (map/filter/lazy),
+  generic structs, integer-overflow runtime panic, async (ch17).
   ✅ **Breadth: 3rd advanced exercise (09-advanced 2→3)** (`<pending>`): added `03_unsized_str` (id
   `advanced/03_unsized_str`, advanced) — `fn first_char(text: str)` takes `str` BY VALUE → **E0277** "the
   size for values of type `str` cannot be known at compilation time" (the headline; a coherent secondary
