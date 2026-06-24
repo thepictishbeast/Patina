@@ -167,8 +167,14 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   value-returning, exhaustiveness (matrix row 19); CR intro + BLOG's E0004 non-exhaustive demo + BOOK's
   coin-sorting-machine metaphor; deep patterns deferred to Phase 5. Snippets compile-run on 1.95.0/ed2024;
   E0004 "`2_u8..=u8::MAX` not covered" reproduced verbatim. **Phase 2 lessons COMPLETE: L9 ✓ L10 ✓ L11 ✓.**
-  NEXT (un-gated): **R2** (Phase 2 review quiz + cheatsheet + the `likes` kata capstone), then Phases 3–6
-  lessons (DECIDED matrix). (Phases 7–9 lessons remain matrix-review-gated.)
+  **R2 capstone — `likes` kata SPEC** (`katas/likes.md`, rust-textbook/main `f78ac02`): the BLUEPRINT-named
+  Phase-2 capstone (count→branch→build string; ties L11 match + L8 format!). Authored as a SPEC not a
+  solution (CLAUDE.md rule 1 — kata is the learner's): task + `fn likes(names: &[&str]) -> String` signature
+  + 5 count rules + verified answer-key table (reference solution compiled privately on 1.95.0, kept OUT of
+  the repo) + a hint ladder (structure only, never the arm bodies) + a `main` test harness. R2 now:
+  cheatsheet (pre-existing) ✓ · `likes` kata spec ✓ · **quiz ☐** (remaining). NEXT (un-gated): R2 quiz, then
+  Phases 3–6 lessons (DECIDED matrix; Phase 3 = Text & collections). (Phases 7–9 lessons remain
+  matrix-review-gated.)
 - ◐ **Matrix: re-review rows 51–62** (rate-limited). ✅ Fixed the HTML-entity in row 58 title
   (`Advanced patterns &amp; matching` → literal `&`, matching every sibling row; it was the only
   entity left in the matrix — verified). REMAINING (Paul's review domain): add the missing
