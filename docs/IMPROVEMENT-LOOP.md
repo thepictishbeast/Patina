@@ -252,8 +252,13 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   nested→`Less`, self→`hi via Write`, glob→`1 1`); error verbatim **E0433** scope-locality (+ the orphaned
   root `use`'s unused-import warning). Metaphor = `use` ≈ symbolic link. No analogies/leak. **Phase 6
   Organizing lessons: L21 ✓ L22 ✓ L23 ✓; remaining R6 (quiz + `cheatsheets/phase6.md` over L21–L23).**
-  Generics/traits/lifetimes/tests/cargo stay DRAFT rows 49+ / Paul-gated. (Minor gaps: Phase-1 lacks
-  `quizzes/phase1.md`; phase2 cheatsheet cites 1.94.1.)
+  **★ R6 part 1: Phase-6 quiz authored** (`quizzes/phase6.md`, rust-textbook/main `a05a4c0`): 14 Qs over
+  L21–L23 (crate roots, foo/bar, E0583, tree vocab, abs+rel paths, E0603, `super`, E0616, `pub enum`, `use`
+  scope-locality E0433, `as`, `pub use`, `{self, Write}`, fill-ins). Predict-first + separate verified
+  Answers; every snippet compile-checked on 1.95.0; 14/14 balanced, no leak. **R6: quiz ✓ · cheatsheet ☐
+  (next tick).** After the cheatsheet, Phase-6 Organizing is fully done → **un-gated lesson lane exhausted**
+  (generics/traits/lifetimes/tests/cargo + Phases 7–9 = DRAFT matrix rows 49–62, Paul-gated). Generics+ stay
+  DRAFT rows 49+ / Paul-gated. (Minor gaps: Phase-1 lacks `quizzes/phase1.md`; phase2 cheatsheet cites 1.94.1.)
 - ◐ **Matrix: re-review rows 51–62** (rate-limited). ✅ Fixed the HTML-entity in row 58 title
   (`Advanced patterns &amp; matching` → literal `&`, matching every sibling row; it was the only
   entity left in the matrix — verified). REMAINING (Paul's review domain): add the missing
