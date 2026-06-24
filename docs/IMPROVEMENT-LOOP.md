@@ -84,8 +84,17 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   the iterators exercise → `02_collect_annotation` (id unchanged) so the ramp is closures → iterators.
   book_ref → the freshly-vendored `ch13-01-closures`; its `concept` chip resolves to the "closure"
   glossary term. Verified: 33 exercises compile+emit codes, 52/52 anchors, golden-corpus + live (run→E0308,
-  chip→def). TODO: more closures (capture/move, FnOnce) + smart-pointers (needs ch15 vendored — same curl
-  path) + async (ch17); grow async in 08-concurrency.
+  chip→def).
+  ✅ Added the first **smart-pointers** exercise: `07b/03_recursive_box` (id `smart-pointers/01_recursive_box`,
+  advanced) — a recursive cons-list `enum List { Cons(i32, List), Nil }` the compiler can't size → **E0072**
+  ("recursive type has infinite size"; E0391 is the real secondary drop-cycle). Lesson: a self-containing
+  type needs a fixed-size heap handle; framing comment points at the E0072 `help:` line without naming the
+  fix. book_ref → freshly-vendored `ch15-01-box` # enabling-recursive-types-with-boxes; added a "Box"
+  glossary term (33→34) aliased to the concept so the chip resolves. Ramp is now closures → iterators →
+  smart-pointers. Verified: verify-exercises 34/34 (emits E0072), book anchors, golden-corpus, glossary 3/3,
+  live (run→E0072, chip→"Box"). Commit `950349f`.
+  TODO: more closures (capture/move, FnOnce); more smart-pointers — Rc (ch15-04), RefCell (ch15-05); async
+  (ch17); grow async in 08-concurrency.
 - ◐ **Integrate Rust by Example / Rustlings / Cookbook / Exercism** — licenses verified via gh
   (RBE Apache-2.0, Rustlings MIT, Cookbook CC0-1.0, Exercism MIT) + cataloged in
   rust-textbook/catalog/EXTERNAL-MATERIALS.md with an integration plan (Rustlings first).
