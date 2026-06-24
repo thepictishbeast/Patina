@@ -263,6 +263,20 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   CONSIDERED clippy rpro-tui this tick (rotate) but its 8 warnings are judgment-y (3 too_many_lines need
   `#[allow]`, 2 similar_names, 2 map_or_else) + the CI gate stays deferred = low-ROI; took the clean
   content pick instead. NEXT: `.get()`→Option HashMap (later phase), iterators depth, match-on-Err, async (ch17).
+  ✅ **Trait objects / dynamic dispatch (07-generics-traits-lifetimes; corpus 50→51)** (`c7f6ae8`): the corpus
+  taught STATIC dispatch (generic bounds, trait bounds) but had NOTHING on `dyn Trait` — a core gap. Added
+  `02c_trait_object_dyn` (id `traits/03_trait_object_dyn`, intermediate; `02c_` sorts with the traits group):
+  `vec![Circle {..}, Square {..}]` where both impl `Shape` → **E0308** "mismatched types — expected `Circle`,
+  found `Square`" (the first element fixes the Vec's element type; the `Square` is rejected). Teaches WHY trait
+  objects exist (a homogeneous `Vec<T>` can't hold a mix); the fix is `Vec<Box<dyn Shape>>` and calling `area()`
+  through the box is dynamic dispatch. Framing guides via the symptom + Book pointer WITHOUT writing
+  `Box<dyn Shape>` (that's in the server-side solution_outline; verified absent from /api/current). Vendored
+  `book/ch18-02-trait-objects.md`; two book_refs (using-trait-objects-... + performing-dynamic-dispatch), both
+  resolve. Added a "trait object" glossary term (48→49; aliases incl. dyn / dynamic dispatch / trait-objects).
+  Verified: verify-exercises 51/51 (E0308), anchors 80/80, golden-corpus, glossary 3/3, LIVE (selected exercise,
+  predict "fails"→failed, Assist→E0308, chip→Trait Object, no leak, screenshot). **07 now pairs static dispatch
+  (generic_bound/trait_bound) with dynamic dispatch (trait_object_dyn); CORPUS = 51 exercises / 11 phases.** NEXT:
+  match-on-Err / `?` on Option, iterators depth (map/filter/lazy), generic structs, async (ch17).
   ✅ **Breadth: 3rd advanced exercise (09-advanced 2→3)** (`<pending>`): added `03_unsized_str` (id
   `advanced/03_unsized_str`, advanced) — `fn first_char(text: str)` takes `str` BY VALUE → **E0277** "the
   size for values of type `str` cannot be known at compilation time" (the headline; a coherent secondary
