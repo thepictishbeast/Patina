@@ -324,3 +324,10 @@ aliases = ["dst", "dynamically sized types", "dynamically-sized-types", "unsized
 definition = "Most types have a size the compiler knows at compile time (they are `Sized`), so it can place them on the stack and pass them by value. A few types are DYNAMICALLY SIZED — their size isn't known until runtime, like `str` (the string data) or `[T]` (a slice's data). You can't hold or pass a dynamically sized value on its own; you use it behind a POINTER instead — `&str`, `&[T]`, or a `Box` — because the pointer has a known size even when the data behind it doesn't. That is why you see `&str` everywhere and almost never a bare `str`."
 book_chapter = "ch20-03-advanced-types"
 source = "The Rust Book, ch.20.3 \"Advanced Types — Dynamically Sized Types and the Sized Trait\""
+
+[[term]]
+name = "custom error types and From"
+aliases = ["custom error", "custom error type", "custom-error-from", "from trait error", "error conversion", "from conversion"]
+definition = "Real programs usually define their OWN error type (often an `enum`) so every way a function can fail comes back as one consistent kind. The `?` operator works smoothly with this: when you apply `?` to a `Result` whose error is some other type, `?` automatically converts that error into your function's error type — but only if you've implemented the `From` trait that says how to build your error from theirs. Writing that `From` impl is what lets `?` do the conversion for you, so a function with one error type can still use `?` on calls that fail in different ways."
+book_chapter = "ch09-02-recoverable-errors-with-result"
+source = "The Rust Book, ch.9.2 \"A Shortcut for Propagating Errors: the ? Operator\""

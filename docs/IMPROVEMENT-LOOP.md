@@ -210,7 +210,17 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   + recoverable-errors-with-result. Added an "unwrap and expect" glossary term (42→43). Verified:
   verify-exercises 44/44 (runtime branch asserts the panic), anchors, golden-corpus, glossary 3/3, live
   (05b order 01→02→03, run passed:false + panic in stderr, no field leak, chip→unwrap). 05b 2→3; corpus 44.
-  NEXT in this phase: matching on `Err` / recover-vs-propagate, custom error types, `?` on `Option`.
+  ✅ Added the 4th error-handling exercise `04_custom_error_from` (id `error-handling/04_custom_error_from`,
+  intermediate): `parse_count` returns `Result<i32, AppError>` (a custom error enum), but `s.parse()` fails
+  with a `ParseIntError` and there's no `From<ParseIntError> for AppError`, so `?` can't convert →
+  **E0277** "`?` couldn't convert the error to `AppError`" (probed clean single; starter has an incidental
+  unused-variant warning the fix removes). Teaches how REAL Rust error handling works: define your own error
+  type, `impl From<TheirError>` so `?` auto-converts. Fix compiles+runs clean ("count is 42"). No new chapter
+  (ch09-02 vendored); book_refs the-operator-shortcut + propagating-errors. Added a "custom error types and
+  From" glossary term (44→45). **Error-handling phase ARC now complete & real-world: unpack (E0308) →
+  propagate-with-? (E0277) → unwrap-crashes (runtime panic) → custom-error+From (E0277).** Verified:
+  verify-exercises 47/47 (E0277), anchors, golden-corpus, glossary 3/3, live (05b 01→02→03→04, run E0277,
+  chip→custom-error). 05b 3→4; corpus 47. NEXT in phase: matching on `Err` / recover-vs-propagate, `?` on `Option`.
   ✅ **Breadth: 3rd advanced exercise (09-advanced 2→3)** (`<pending>`): added `03_unsized_str` (id
   `advanced/03_unsized_str`, advanced) — `fn first_char(text: str)` takes `str` BY VALUE → **E0277** "the
   size for values of type `str` cannot be known at compilation time" (the headline; a coherent secondary

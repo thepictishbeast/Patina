@@ -1,0 +1,26 @@
+id = "error-handling/04_custom_error_from"
+title = "Custom error types: ? converts the error via From"
+difficulty = "intermediate"
+estimated_minutes = 11
+concept = "custom-error-from"
+expected_error_code = "E0277"
+solution_outline = """
+`?` converts the error into the current function's error type using the `From`
+trait — but there's no conversion from `ParseIntError` into `AppError`, so it can't
+(E0277). Teach Rust the conversion: `impl From<ParseIntError> for AppError { fn
+from(_: ParseIntError) -> Self { AppError::BadInput } }`. Now `?` on `s.parse()`
+turns a `ParseIntError` into an `AppError` automatically, and the program compiles
+and runs (`count is 42`). Real error types usually KEEP the original error (e.g. a
+variant `BadInput(ParseIntError)`) so no detail is lost, but a plain variant is
+enough here. Don't change the function signatures.
+"""
+
+[[book_refs]]
+chapter = "ch09-02-recoverable-errors-with-result"
+anchor = "the-operator-shortcut"
+why = "`?` converts the error into the function's return error type via From — exactly the conversion that's missing here."
+
+[[book_refs]]
+chapter = "ch09-02-recoverable-errors-with-result"
+anchor = "propagating-errors"
+why = "How errors propagate up with `?`, and why the error types have to line up (through From)."
