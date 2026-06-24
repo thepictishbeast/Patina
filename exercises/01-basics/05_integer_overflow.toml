@@ -1,0 +1,21 @@
+id = "basics/05_integer_overflow"
+title = "Integer types have a fixed range — overflow panics in debug"
+difficulty = "beginner"
+estimated_minutes = 7
+concept = "integer-overflow"
+expected_runtime_panic = "attempt to multiply with overflow"
+solution_outline = """
+A `u8` holds only 0–255, but `20 * 20` is 400, so the multiplication can't fit. In a
+debug build Rust checks arithmetic and PANICS ("attempt to multiply with overflow")
+rather than silently wrapping to a wrong answer (a release build would wrap, which is
+nastier to debug). The values are fine — the TYPE is too small. Use an integer type
+wide enough for the result: make `width`, `height`, and the return type `u16` (or
+`u32`), and `20 * 20 = 400` fits. If wrapping or clamping is what you actually want,
+ask for it explicitly with `width.checked_mul(height)` (returns an `Option`),
+`saturating_mul`, or `wrapping_mul` — but here, a bigger type is the fix.
+"""
+
+[[book_refs]]
+chapter = "ch03-02-data-types"
+anchor = "integer-types"
+why = "The Book's integer-types section gives each type's fixed range and explains what integer overflow does in a debug build versus a release build — the exact behaviour this exercise triggers."
