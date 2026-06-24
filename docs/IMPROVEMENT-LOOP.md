@@ -244,9 +244,16 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   → needs a public constructor; enum publishes all variants; "privacy is module-based not type-based"). 7-part,
   write-first, baby-steps (continues L21; `use` deferred to L23). Snippets compile-checked on 1.95.0 (abs+rel,
   `super`, outer/inner runs, `Breakfast`, `pub enum`, `pub(crate)`); two errors verbatim **E0603** (private fn —
-  the two-strike) + **E0616** (private field). No analogies/leak. **Phase 6 Organizing lessons: L21 ✓ L22 ✓;
-  remaining L23 (`use`, #47–48), then R6 over L21–L23.** (Minor
-  gaps: Phase-1 lacks `quizzes/phase1.md`; phase2 cheatsheet cites 1.94.1.)
+  the two-strike) + **E0616** (private field). No analogies/leak. **★ L23 authored → PHASE 6 ORGANIZING
+  LESSONS COMPLETE** (`23-the-use-keyword.md`, rust-textbook/main `4be44bc`; rows 47–48): `use` shortcut +
+  function-vs-type idiom · scope-locality (root `use` doesn't reach a child) · name clashes (parent-qualify or
+  `as`) · `pub use` re-export (simpler public API) · nested `{b,c}` / `{self, …}` / glob `*` (sparingly).
+  7-part, write-first, baby-steps. Snippets compile-checked on 1.95.0 (`as`→`two Results, no clash`,
+  nested→`Less`, self→`hi via Write`, glob→`1 1`); error verbatim **E0433** scope-locality (+ the orphaned
+  root `use`'s unused-import warning). Metaphor = `use` ≈ symbolic link. No analogies/leak. **Phase 6
+  Organizing lessons: L21 ✓ L22 ✓ L23 ✓; remaining R6 (quiz + `cheatsheets/phase6.md` over L21–L23).**
+  Generics/traits/lifetimes/tests/cargo stay DRAFT rows 49+ / Paul-gated. (Minor gaps: Phase-1 lacks
+  `quizzes/phase1.md`; phase2 cheatsheet cites 1.94.1.)
 - ◐ **Matrix: re-review rows 51–62** (rate-limited). ✅ Fixed the HTML-entity in row 58 title
   (`Advanced patterns &amp; matching` → literal `&`, matching every sibling row; it was the only
   entity left in the matrix — verified). REMAINING (Paul's review domain): add the missing
