@@ -1,0 +1,26 @@
+id = "error-handling/02_question_mark_propagates"
+title = "The ? operator propagates errors — the function must return a Result"
+difficulty = "intermediate"
+estimated_minutes = 9
+concept = "error-propagation"
+expected_error_code = "E0277"
+solution_outline = """
+`?` after a `Result` means "on `Err`, return that error from THIS function; on `Ok`,
+give me the value." It needs the current function to return a `Result` (or `Option`)
+so the error has somewhere to go — `first_number` returns a plain `i32`, so E0277.
+Make the function return a Result: `fn first_number(text: &str) -> Result<i32,
+std::num::ParseIntError>`, then `let n = text.parse()?;` and return `Ok(n)` (or just
+`text.parse()` directly). At the call site, handle the Result — e.g. `match
+first_number("42") { Ok(n) => ..., Err(e) => ... }`. Keep the `?`; the fix is giving
+the error a place to propagate TO.
+"""
+
+[[book_refs]]
+chapter = "ch09-02-recoverable-errors-with-result"
+anchor = "the-operator-shortcut"
+why = "What `?` does — the shortcut that returns the Err early and unwraps the Ok, so you don't write a match each time."
+
+[[book_refs]]
+chapter = "ch09-02-recoverable-errors-with-result"
+anchor = "propagating-errors"
+why = "Why `?` needs the enclosing function to return a Result — that's where the propagated error goes."

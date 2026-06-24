@@ -282,3 +282,10 @@ aliases = ["result", "recoverable errors", "recoverable-errors", "result-extract
 definition = "Rust's way of handling operations that can FAIL without crashing the program. A `Result` is one of two things: `Ok(value)` when the operation succeeded, or `Err(reason)` when it didn't. Because the possible failure is baked into the RETURN TYPE, the compiler makes you deal with both cases before you can use the value inside — you can't accidentally forget that something might have gone wrong. (Its cousin `Option` covers the simpler \"there might be no value at all\" case.)"
 book_chapter = "ch09-02-recoverable-errors-with-result"
 source = "The Rust Book, ch.9.2 \"Recoverable Errors with Result\""
+
+[[term]]
+name = "the ? operator"
+aliases = ["question mark operator", "question-mark", "error-propagation", "error propagation", "propagating errors", "try operator"]
+definition = "A shortcut for passing errors upward. Written right after an expression that produces a `Result` (or `Option`), `?` means: if the value is `Err` (or `None`), stop the current function and return that error to whoever called it; otherwise, take the `Ok` value out and carry on. It replaces a whole `match` that would check for the error case by hand. It only works inside a function that itself returns a `Result` or `Option`, because that return type is where the error gets sent."
+book_chapter = "ch09-02-recoverable-errors-with-result"
+source = "The Rust Book, ch.9.2 \"A Shortcut for Propagating Errors: the ? Operator\""

@@ -172,8 +172,18 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   `ch09-02-recoverable-errors-with-result`; added a "Result and recoverable errors" glossary term (37→38)
   aliased to `result-extract-value`. ROADMAP de-staled (32/9 → 39/11 exercises/phases). Verified:
   seam-clean, golden-corpus, verify-exercises 39/39 (emits E0308), anchors, glossary 3/3, live (discovery
-  order 05→05b→06, run E0308, chip→Result). NEXT in this phase: the `?` operator (E0277, `?` in a
-  non-Result fn — planned 2nd exercise), matching on `Err`, custom error types, `unwrap`/`expect`.
+  order 05→05b→06, run E0308, chip→Result).
+  ✅ Added the 2nd error-handling exercise `02_question_mark_propagates` (id
+  `error-handling/02_question_mark_propagates`, intermediate): `?` used in `first_number` which returns a
+  plain `i32` → **E0277** "the `?` operator can only be used in a function that returns `Result` or
+  `Option`". This is the error-*propagation* half that pairs with 01's error-*unpacking* — together they
+  form the error-handling core (handle it here, or send it up). book_refs → `the-operator-shortcut` +
+  `propagating-errors` (the slug for "The `?` Operator Shortcut" collapses the removed-`?` double-space to
+  one hyphen). Added a "the ? operator" glossary term (38→39) aliased to `error-propagation`. The phase now
+  spans beginner(01)→intermediate(02), exercising the `[Beginner, Intermediate]` golden_map tier. Verified:
+  verify-exercises 40/40 (emits E0277), anchors, golden-corpus, glossary 3/3, live (run E0277, chip→? op).
+  NEXT in this phase: matching on `Err` / recover-vs-propagate, custom error types, `unwrap`/`expect` (could
+  be a runtime-panic exercise), `?` on `Option`.
 - ◐ **Integrate Rust by Example / Rustlings / Cookbook / Exercism** — licenses verified via gh
   (RBE Apache-2.0, Rustlings MIT, Cookbook CC0-1.0, Exercism MIT) + cataloged in
   rust-textbook/catalog/EXTERNAL-MATERIALS.md with an integration plan (Rustlings first).
