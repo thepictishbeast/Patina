@@ -380,3 +380,30 @@ aliases = ["integer overflow", "overflow", "integer-overflow", "arithmetic overf
 definition = "Every integer type has a fixed size, and so a fixed range — a `u8` holds 0 to 255, an `i32` roughly plus or minus two billion. When a calculation produces a value outside that range it OVERFLOWS. Rust does not leave that as a silent wrong answer: a debug build checks every arithmetic operation and PANICS on overflow, so the bug surfaces immediately; a release build wraps around for speed. When you genuinely want a defined result, ask for it explicitly with `checked_*` (returns an `Option`), `saturating_*` (clamps to the type's min or max), or `wrapping_*` (wraps on purpose). The everyday fix is to pick a type wide enough for the values."
 book_chapter = "ch03-02-data-types"
 source = "The Rust Book, ch.3.2 \"Data Types — Integer Types\""
+[[term]]
+name = "crate"
+aliases = ["crates", "binary crate", "library crate", "crate root"]
+definition = "A crate is the unit of code the Rust compiler builds at one time — under the surface it is a tree of modules. There are two kinds: a BINARY crate has a `main` function and compiles to a program you can run, while a LIBRARY crate has no `main` and holds code meant to be shared and reused. The file the compiler starts from is the crate root (`src/main.rs` for a binary, `src/lib.rs` for a library). A package — what `cargo new` produces — bundles one or more crates together with a `Cargo.toml`."
+book_chapter = "ch07-01-packages-and-crates"
+source = "The Rust Book, ch.7.1 \"Packages and Crates\""
+
+[[term]]
+name = "panic"
+aliases = ["panic!", "panics", "panicking", "panicked", "unrecoverable error"]
+definition = "A panic is Rust's response to an unrecoverable error: the program prints a message and stops the current thread instead of carrying on in a broken state. You can trigger one on purpose with the `panic!` macro, and some operations panic for you — for example asking for a value that turned out to be missing or erroneous. Panics are meant for bugs and situations that should be impossible; an error you expect and want to handle should travel as a `Result` instead, so the caller can decide what to do."
+book_chapter = "ch09-01-unrecoverable-errors-with-panic"
+source = "The Rust Book, ch.9.1 \"Unrecoverable Errors with panic!\""
+
+[[term]]
+name = "if let"
+aliases = ["if-let", "while let", "let else"]
+definition = "`if let` is a shorter way to act on just ONE pattern instead of writing a full `match`. Written `if let Some(x) = maybe { ... }`, the block runs only when the value matches that pattern, binding the inner data (here `x`) for use inside; an optional `else` covers every other case. The trade-off is that you give up the exhaustiveness checking `match` gives you, so reach for it when you genuinely care about only one case. Its relatives `while let` (keep looping while a pattern matches) and `let ... else` (bind on success or else diverge) follow the same idea."
+book_chapter = "ch06-03-if-let"
+source = "The Rust Book, ch.6.3 \"Concise Control Flow with if let\""
+
+[[term]]
+name = "tuple"
+aliases = ["tuples", "tuple type", "unit value", "unit type"]
+definition = "A tuple groups a FIXED number of values — which may be of different types — into one compound value, written with parentheses like `(1, \"hi\", true)`. You reach the parts by position (`t.0`, `t.1`, and so on) or by destructuring into separate names (`let (a, b, c) = t`). A tuple's length is fixed once it is written. The empty tuple `()` is called the unit value, and it is what an expression or function produces when it has no other meaningful value to return."
+book_chapter = "ch03-02-data-types"
+source = "The Rust Book, ch.3.2 \"Data Types — The Tuple Type\""

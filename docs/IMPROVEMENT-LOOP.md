@@ -286,6 +286,13 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   6/6 quizzes, 6/6 cheatsheets, 1/1 kata).** **#20 clippy reframed:** the TS workspace's default `clippy::all` is
   CLEAN (0 warnings) — the 30 warnings are all opt-in pedantic (20) + nursery (10); nursery is the Paul-gated
   lint-policy question → corrective clippy debt is effectively DONE, the aspirational/gated tail awaits Paul.
+  **★ Glossary expanded 52 → 56 terms** (`glossary/glossary.toml`): added the four head-terms a learner of the
+  shipped lessons would look up and not find — **crate** (L21/ch7.1), **panic** (L20/ch9.1), **if let**
+  (L19/ch6.3), **tuple** (L13/ch3.2). Conceptual, no analogies, no exercise-answer leak, attributed (source +
+  book_chapter) — house style. **Verified:** `cargo test -p rpro-glossary` 3/3 (shipped TOML loads + leak-guard
+  + alphabetical-stable); re-seeded the store and confirmed all 4 resolve via `rpro glossary <term>` lookup.
+  Seam-guard N/A (scopes `crates/**/*.rs`; this is a data file). Glossary task (#24) was "complete" — this is
+  additive vocabulary coverage for the now-23-lesson corpus.
 - ◐ **Matrix: re-review rows 51–62** (rate-limited). ✅ Fixed the HTML-entity in row 58 title
   (`Advanced patterns &amp; matching` → literal `&`, matching every sibling row; it was the only
   entity left in the matrix — verified). REMAINING (Paul's review domain): add the missing
