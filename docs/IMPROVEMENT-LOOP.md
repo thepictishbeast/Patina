@@ -120,8 +120,27 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   verify-exercises 35/35 (emits E0382), book anchors 54/54, golden-corpus, glossary 3/3 (35 terms),
   live (select 200 → /api/current concept `shared-ownership` + book_ref ch15-04-rc#sharing-data →
   run E0382 → chip resolves to "Rc").
-  TODO: more closures (capture/move, FnOnce); RefCell (ch15-05); async (ch17); grow async in
+  ✅ Added the second **closures** exercise: `07b/01b_fn_once_move` (id `closures/02_fn_once_move`,
+  intermediate) — a `move` closure `award` hands its captured `prize` to announce(), giving the value
+  away, so it is `FnOnce`; calling `award()` twice → **E0382** "use of moved value: `award`". Lesson:
+  a closure that moves a capture OUT can run only once. Reuses E0382 yet again in a NEW frame (the
+  *closure* is consumed, not a plain value). Filename `01b_` sorts 2nd in the phase (path-order =
+  learning-order via `source.cmp`) with NO renames, so the ramp is closures(type-lock) →
+  closures(FnOnce) → iterators → Box → Rc. book_ref → `ch13-01-closures` # moving-captured-values-out-of-closures;
+  added an "FnOnce, FnMut, and Fn" glossary term (35→36) aliased to `closure-move-capture`. Verified:
+  verify-exercises 36/36 (emits E0382), book anchors, golden-corpus, glossary 3/3, live.
+  TODO: RefCell (ch15-05) — BLOCKED on the runtime-outcome model below; async (ch17); grow async in
   08-concurrency.
+- ☐ **Runtime-outcome exercise model** (2026-06-24, do-what's-best — NOT a Paul fork): the exercise
+  model assumes the failure is a COMPILE error (`expected_error_code` = E####, `verify-exercises.sh`
+  asserts it). A whole class of core lessons are RUNTIME outcomes instead: RefCell's double-borrow
+  `BorrowMutError` panic, integer-overflow panic, `unwrap()` on `None`, index-out-of-bounds. Extend
+  predict-then-run to "predict: compiles? → if yes, does it PANIC, and with what?" + an
+  `expected_runtime_panic` field + a compile-then-run-and-assert-panic verification branch. Unlocks
+  RefCell + overflow + unwrap/index exercises at once. Higher-leverage than any single exercise;
+  warrants its own tick. RefCell lands properly on top of this (its defining lesson IS the runtime
+  panic; the compile-error-only framing would teach "interior mutability exists" while hiding the
+  gotcha that is RefCell — "easiest not best").
 - ◐ **Integrate Rust by Example / Rustlings / Cookbook / Exercism** — licenses verified via gh
   (RBE Apache-2.0, Rustlings MIT, Cookbook CC0-1.0, Exercism MIT) + cataloged in
   rust-textbook/catalog/EXTERNAL-MATERIALS.md with an integration plan (Rustlings first).

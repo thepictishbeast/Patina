@@ -261,3 +261,10 @@ aliases = ["rc", "reference counting", "reference-counting", "reference counted"
 definition = "A smart pointer that lets a single value have MULTIPLE owners by keeping a count of how many references to it exist. Calling `Rc::clone` bumps that count and hands out another owner — it does NOT copy the underlying data; each owner that goes out of scope lowers the count, and the value is freed only when the count reaches zero. Reach for it when several parts of a program need to read the same heap data and you can't tell at compile time which one finishes last. (It is for single-threaded use.)"
 book_chapter = "ch15-04-rc"
 source = "The Rust Book, ch.15.4 \"Rc, the Reference Counted Smart Pointer\""
+
+[[term]]
+name = "FnOnce, FnMut, and Fn"
+aliases = ["fnonce", "fn once", "fn-once", "fnmut", "fn mut", "fn traits", "closure-move-capture", "moving captured values"]
+definition = "The three traits that describe HOW a closure uses what it captured, and so how many times you can call it. A closure that only READS its captures is `Fn` and can be called again and again; one that CHANGES a capture is `FnMut`; one that MOVES a capture OUT — gives it away — is `FnOnce` and can be called only once, because after that first call the value it handed off is gone. The compiler gives a closure the most permissive of these it qualifies for."
+book_chapter = "ch13-01-closures"
+source = "The Rust Book, ch.13.1 \"Moving Captured Values Out of Closures\""

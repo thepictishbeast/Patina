@@ -1,0 +1,21 @@
+id = "closures/02_fn_once_move"
+title = "A closure that gives away its capture can run only once"
+difficulty = "intermediate"
+estimated_minutes = 8
+concept = "closure-move-capture"
+expected_error_code = "E0382"
+solution_outline = """
+`award` is a `move` closure that hands its captured `prize` to announce(), moving
+the value out of the closure. A closure that moves a capture out is `FnOnce` — it
+can be called only once, so the second `award()` fails with E0382 "use of moved
+value: `award`". To call it twice, stop giving the prize away: make `announce` take
+a borrow (`fn announce(prize: &str)`) and call `announce(&prize)` so the closure
+only LENDS `prize` (it stays captured, the closure becomes `Fn`). A `prize.clone()`
+each call also works but copies the string every time. Either way the printout is
+unchanged; remove the duplicate call only if you truly meant to award once.
+"""
+
+[[book_refs]]
+chapter = "ch13-01-closures"
+anchor = "moving-captured-values-out-of-closures"
+why = "The Book's \"Moving Captured Values Out of Closures\" section is exactly this: a move-closure that gives a capture away becomes FnOnce and can be called only once."
