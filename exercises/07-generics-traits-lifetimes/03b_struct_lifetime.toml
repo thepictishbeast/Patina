@@ -1,0 +1,20 @@
+id = "lifetimes/02_struct_lifetime"
+title = "A struct that holds a reference needs a lifetime"
+difficulty = "intermediate"
+estimated_minutes = 9
+concept = "struct-lifetime"
+expected_error_code = "E0106"
+solution_outline = """
+A struct that stores a reference must declare a lifetime so the compiler can check
+the reference doesn't outlive the data it borrows — without one, E0106 "missing
+lifetime specifier". Add a lifetime parameter to the struct and tie the field to it:
+`struct Excerpt<'a> { part: &'a str }`. (`'a` is just a name connecting "the struct"
+to "the borrow it holds.") The body in `main` is fine as-is — `first_sentence`
+borrows from `novel`, which lives long enough. The compiler's `help:` line shows the
+exact shape.
+"""
+
+[[book_refs]]
+chapter = "ch10-03-lifetime-syntax"
+anchor = "in-struct-definitions"
+why = "How to give a struct a lifetime parameter so it can hold a reference — exactly the missing annotation here."

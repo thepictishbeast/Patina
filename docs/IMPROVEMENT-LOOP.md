@@ -202,6 +202,18 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   term (43→44). Verified: verify-exercises 45/45 (E0277), anchors, golden-corpus, glossary 3/3, live
   (09-advanced 01→02→03, run E0277+E0308, chip→DST). 09-advanced 2→3; corpus 45. Thinnest phases now all
   ≥3 except 05b(3); NEXT: 2nd lifetimes (07, hardest topic, only 1), custom error types, or more advanced.
+  ✅ **2nd LIFETIMES exercise (07 lifetimes 1→2)** (`<pending>`): lifetimes is the hardest topic but 07 had
+  only `01_longest` (function lifetimes). Added `03b_struct_lifetime` (id `lifetimes/02_struct_lifetime`,
+  intermediate; `03b_` sorts after `03_lifetime_longest` → lifetimes grouped): a struct `Excerpt { part: &str }`
+  holds a reference with no lifetime → **E0106** "missing lifetime specifier" (probed clean single). Teaches
+  **lifetimes in struct definitions** (Book ch10-03 §"In Struct Definitions") — the `struct Excerpt<'a> { part:
+  &'a str }` fix (compiles+runs after). Distinct from `01_longest` (function vs struct lifetimes; reuses E0106
+  in a new context). No new chapter (ch10-03 vendored); book_ref → in-struct-definitions. **Reused the
+  existing "lifetime annotations" glossary term** — just added `struct-lifetime` as an alias (no new term).
+  Verified: verify-exercises 46/46 (E0106), anchors, golden-corpus, glossary 3/3, live (07 lifetimes 01→02,
+  run E0106, chip→lifetime-annotations via alias). 07 lifetimes 1→2; corpus 46. Checked first that
+  `ownership/03_dangling` already covers E0515 (no dup). NEXT: custom error types, supertraits/operator-
+  overloading (ch20-02 vendored), 3rd lifetimes (method definitions), or async (ch17).
 - ✅ **Breadth, not depth: filled the sparsest phase `09-advanced`** (`<pending>`, advisor decision rule —
   once a topic's core is covered, prefer breadth = the thinnest reachable phase over a 3rd variant of the
   one just touched). 09-advanced had only `01_unsafe_deref`; added `02_orphan_rule_newtype` (id

@@ -208,7 +208,7 @@ source = "The Rust Book, ch.10.2 \"Defining Shared Behavior with Traits\""
 
 [[term]]
 name = "lifetime annotations"
-aliases = ["lifetime", "lifetimes", "lifetime parameter", "generic lifetime parameter"]
+aliases = ["lifetime", "lifetimes", "lifetime parameter", "generic lifetime parameter", "struct-lifetime", "struct lifetime", "lifetime in struct"]
 definition = "Every reference has a lifetime: the stretch of the program during which the thing it points to is still valid. A lifetime annotation is a label you add to references to describe how their valid stretches relate to each other, so the compiler can confirm the references stay valid for as long as they are used."
 book_chapter = "ch10-03-lifetime-syntax"
 source = "The Rust Book, ch.10.3 \"Validating References with Lifetimes\""
