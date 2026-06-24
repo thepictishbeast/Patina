@@ -1271,6 +1271,7 @@ dependencies = [
  "ratatui",
  "rpro-book",
  "rpro-core",
+ "rpro-glossary",
  "rpro-lang",
  "rpro-lang-rust",
  "rpro-runner",

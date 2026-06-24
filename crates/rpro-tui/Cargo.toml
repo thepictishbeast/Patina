@@ -15,6 +15,7 @@ rpro-lang-rust = { path = "../languages/rust" }
 rpro-core = { path = "../rpro-core" }
 rpro-toolchain-local = { path = "../rpro-toolchain-local" }
 rpro-book = { path = "../rpro-book" }
+rpro-glossary = { path = "../rpro-glossary" }
 rpro-runner = { path = "../rpro-runner" }
 ratatui.workspace = true
 crossterm.workspace = true

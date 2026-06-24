@@ -172,6 +172,17 @@ fn run_tui(store: &Store, book: &Book, start_tab: Tab, start_selected: usize) ->
                                         hint_on_keypress(m, app.hint_level, attempts);
                                     app.hint_level = level;
                                     ex.hint = Some(hint);
+                                    ex.gloss = None; // the hint takes the shared help slot
+                                }
+                            }
+                            // Look up the exercise's concept in the built-in glossary
+                            // (offline, no LLM) and show its plain-language definition in
+                            // the shared help slot — never a hint or the answer.
+                            KeyCode::Char('g') if app.tab == Tab::Exercise => {
+                                if let Some(m) = &ex.meta {
+                                    ex.gloss = Some(glossary_for(&store_root, &m.concept));
+                                    ex.hint = None;
+                                    app.hint_level = 0;
                                 }
                             }
                             _ => {}
@@ -389,6 +400,30 @@ fn hint_on_keypress(
     (level, (level, max, text))
 }
 
+/// Load the seeded glossary from the store and look up `concept`, returning
+/// `(term, definition, source)` for the shared help slot.
+fn glossary_for(store_root: &Path, concept: &str) -> (String, String, String) {
+    let path = store_root.join("glossary").join("glossary.toml");
+    let glossary = rpro_glossary::Glossary::load(&path).unwrap_or_default();
+    glossary_lookup(&glossary, concept)
+}
+
+/// Pure lookup (so it is unit-testable): a term's `(name, definition, source)`,
+/// or a plain "no definition yet" fallback keyed on the concept — so pressing `g`
+/// always shows something rather than nothing.
+fn glossary_lookup(glossary: &rpro_glossary::Glossary, concept: &str) -> (String, String, String) {
+    glossary.get(concept).map_or_else(
+        || {
+            (
+                concept.to_string(),
+                "No plain-language definition for this term yet.".to_string(),
+                String::new(),
+            )
+        },
+        |t| (t.name.clone(), t.definition.clone(), t.source.clone()),
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -443,5 +478,25 @@ mod tests {
         // At the top rung there is nothing more to earn, so no "run again" nudge.
         let (_, (_, _, text)) = hint_on_keypress(&meta(), 2, 9);
         assert!(!text.contains("run it again"), "rung 3 is the last resort");
+    }
+
+    #[test]
+    fn glossary_lookup_resolves_by_alias_and_falls_back() {
+        let g = rpro_glossary::Glossary::parse(
+            "[[term]]\nname = \"ownership\"\naliases = [\"owns\", \"move-semantics\"]\n\
+             definition = \"each value has one owner.\"\nbook_chapter = \"ch04-01\"\n\
+             source = \"The Rust Book, ch.4.1\"\n",
+        )
+        .unwrap();
+        // resolves by the canonical name and by an alias (the exercise concept tag)
+        let (name, def, src) = glossary_lookup(&g, "move-semantics");
+        assert_eq!(name, "ownership");
+        assert!(def.contains("one owner"));
+        assert_eq!(src, "The Rust Book, ch.4.1");
+        // unknown concept → a plain fallback (so pressing g always shows something)
+        let (n2, d2, s2) = glossary_lookup(&g, "no-such-concept");
+        assert_eq!(n2, "no-such-concept");
+        assert!(d2.starts_with("No plain-language definition"));
+        assert!(s2.is_empty());
     }
 }

@@ -218,6 +218,11 @@ pub struct ExerciseViewData {
     /// The currently-revealed hint rung `(level, max_level, text)`. `None` until
     /// the learner presses `h`.
     pub hint: Option<(u8, u8, String)>,
+    /// A glossary definition `(term, definition, source)` for the exercise's
+    /// concept. `None` until the learner presses `g`. Shares the one "help" slot
+    /// with [`Self::hint`] (showing a definition replaces a shown hint and vice
+    /// versa) so the layout stays simple.
+    pub gloss: Option<(String, String, String)>,
 }
 
 /// Render the exercise view: tab bar, a title/verdict header, the **raw output**
@@ -226,19 +231,22 @@ pub struct ExerciseViewData {
 pub fn render_exercise(f: &mut Frame, app: &App, data: &ExerciseViewData) {
     let area = f.area();
     // A hint row only appears once the learner has climbed the ladder (pressed h).
-    let show_hint = data.hint.is_some();
+    // The hint and the glossary share ONE "help" row: pressing `g` shows a
+    // definition, `h` shows a hint, and each replaces the other. One slot keeps
+    // the layout indices stable.
+    let show_help = data.hint.is_some() || data.gloss.is_some();
     let mut constraints = vec![
         Constraint::Length(3), // tabs
         Constraint::Length(4), // header (id/title + status)
         Constraint::Min(0),    // raw + diagnostics
     ];
-    if show_hint {
-        constraints.push(Constraint::Length(5)); // hint
+    if show_help {
+        constraints.push(Constraint::Length(6)); // hint OR glossary definition
     }
     constraints.push(Constraint::Length(3)); // book refs
     let rows = Layout::vertical(constraints).split(area);
-    let hint_idx = 3;
-    let book_idx = if show_hint { 4 } else { 3 };
+    let help_idx = 3;
+    let book_idx = if show_help { 4 } else { 3 };
 
     f.render_widget(tab_bar(app), rows[0]);
 
@@ -271,7 +279,7 @@ pub fn render_exercise(f: &mut Frame, app: &App, data: &ExerciseViewData) {
         ))
     } else {
         Line::from(Span::styled(
-            "press r to run · h for a hint — read the real output by hand",
+            "press r to run · h for a hint · g to define the concept — read the real output by hand",
             Style::new().fg(app.theme.muted),
         ))
     };
@@ -341,10 +349,28 @@ pub fn render_exercise(f: &mut Frame, app: &App, data: &ExerciseViewData) {
         body[1],
     );
 
-    // hint ladder (only when the learner has climbed it). The last rung — the
-    // book/source review (never the solution) — is flagged "last resort" and
-    // coloured as a warning so it reads as the deliberate end of the ladder.
-    if let Some((level, max, text)) = &data.hint {
+    // The shared help slot. A glossary definition (pressed `g`) takes precedence
+    // over a hint (pressed `h`); only one is ever set, but render defensively.
+    if let Some((term, def, source)) = &data.gloss {
+        let text = if source.is_empty() {
+            def.clone()
+        } else {
+            format!("{def}\n\n— {source}")
+        };
+        f.render_widget(
+            Paragraph::new(text).wrap(Wrap { trim: true }).block(
+                Block::bordered()
+                    .title(format!(
+                        " Glossary · {term}  (g to re-show, b to read more) "
+                    ))
+                    .border_style(Style::new().fg(app.theme.note)),
+            ),
+            rows[help_idx],
+        );
+    } else if let Some((level, max, text)) = &data.hint {
+        // hint ladder (only when the learner has climbed it). The last rung — the
+        // book/source review (never the solution) — is flagged "last resort" and
+        // coloured as a warning so it reads as the deliberate end of the ladder.
         // level 0 is the force-attempt gate (the laddered hint is still locked
         // until a genuine try); otherwise the top rung is flagged "last resort".
         let (title, col) = if *level == 0 {
@@ -364,7 +390,7 @@ pub fn render_exercise(f: &mut Frame, app: &App, data: &ExerciseViewData) {
             Paragraph::new(Line::from(Span::styled(text.clone(), Style::new().fg(col))))
                 .wrap(Wrap { trim: true })
                 .block(Block::bordered().title(title)),
-            rows[hint_idx],
+            rows[help_idx],
         );
     }
 
@@ -861,6 +887,53 @@ mod tests {
         assert!(
             text.contains("Expect error EXXXX"),
             "hint text missing:\n{text}"
+        );
+    }
+
+    #[test]
+    fn exercise_shows_glossary_definition_when_g_pressed() {
+        let data = ExerciseViewData {
+            id: "x/1".into(),
+            title: "T".into(),
+            assists: EditorAssists::default(),
+            gloss: Some((
+                "ownership".into(),
+                "Each value has one owner; when the owner goes out of scope it is dropped.".into(),
+                "The Rust Book, ch.4.1".into(),
+            )),
+            ..Default::default()
+        };
+        let text = screen_text_ex(90, 24, &data);
+        assert!(
+            text.contains("Glossary"),
+            "glossary box title missing:\n{text}"
+        );
+        assert!(text.contains("owner"), "definition body missing:\n{text}");
+    }
+
+    #[test]
+    fn exercise_glossary_takes_the_shared_help_slot_over_a_hint() {
+        // Both set (defensive): the glossary definition wins the one help slot.
+        let data = ExerciseViewData {
+            id: "x/1".into(),
+            title: "T".into(),
+            assists: EditorAssists::default(),
+            hint: Some((1, 3, "ZZHINTBODYZZ".into())),
+            gloss: Some((
+                "scope".into(),
+                "the region of a program where a name is valid.".into(),
+                String::new(),
+            )),
+            ..Default::default()
+        };
+        let text = screen_text_ex(90, 24, &data);
+        assert!(
+            text.contains("Glossary"),
+            "glossary should win the slot:\n{text}"
+        );
+        assert!(
+            !text.contains("ZZHINTBODYZZ"),
+            "the hint body must be hidden when the glossary shows:\n{text}"
         );
     }
 
