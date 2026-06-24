@@ -1,0 +1,29 @@
+id = "traits/03_trait_object_dyn"
+title = "A Vec holds one type — use a trait object to mix types that share a trait"
+difficulty = "intermediate"
+estimated_minutes = 9
+concept = "trait-objects"
+expected_error_code = "E0308"
+solution_outline = """
+A `Vec<T>` is homogeneous: every element must be the same type `T`. `Circle` and
+`Square` are different types, so `vec![Circle { .. }, Square { .. }]` fails with
+E0308 — the first element fixes `T` to `Circle`, and the `Square` is not a `Circle`.
+To hold a MIX of types that all implement `Shape`, store TRAIT OBJECTS: box each
+value and type the collection as the trait rather than the concrete type —
+`let shapes: Vec<Box<dyn Shape>> = vec![Box::new(Circle { radius: 1.0 }),
+Box::new(Square { side: 2.0 })];`. `dyn Shape` means "some type that implements
+Shape, chosen at run time" (dynamic dispatch). The `.iter().map(|s| s.area())`
+loop is unchanged: calling `area()` through the box dispatches to each concrete
+type's own impl. (`&dyn Shape` works too when you only borrow; `Box<dyn Shape>`
+lets the `Vec` own the values.)
+"""
+
+[[book_refs]]
+chapter = "ch18-02-trait-objects"
+anchor = "using-trait-objects-to-abstract-over-shared-behavior"
+why = "Introduces trait objects (`Box<dyn Trait>`) as the way to store and operate on values of different concrete types that share a trait — exactly the 'list of shapes' problem this exercise hits."
+
+[[book_refs]]
+chapter = "ch18-02-trait-objects"
+anchor = "performing-dynamic-dispatch"
+why = "Explains that calling a method through `dyn Trait` uses dynamic dispatch, so `s.area()` reaches each shape's own impl at run time."

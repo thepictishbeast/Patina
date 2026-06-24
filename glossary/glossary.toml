@@ -352,3 +352,10 @@ aliases = ["supertrait", "supertraits", "trait requires another trait", "trait b
 definition = "A trait that another trait depends on. Writing `trait Child: Parent` means \"any type that implements `Child` must also implement `Parent`\" — `Parent` is the supertrait. Requiring it lets the child trait's own methods use the parent's behaviour, because every implementer is guaranteed to have it. A type that implements the child trait without the supertrait is rejected until it implements the parent too."
 book_chapter = "ch20-02-advanced-traits"
 source = "The Rust Book, ch.20.2 \"Advanced Traits — Using Supertraits\""
+
+[[term]]
+name = "trait object"
+aliases = ["trait object", "trait objects", "trait-objects", "dyn", "dyn trait", "dynamic dispatch", "box dyn"]
+definition = "A value used through a shared trait instead of through its concrete type, written `dyn Trait` and usually held behind a pointer such as `Box<dyn Trait>` or `&dyn Trait`. It lets one collection or function work with a MIX of types that all implement the same trait — for example a `Vec<Box<dyn Shape>>` holding both a `Circle` and a `Square`. Calling a method on a trait object uses DYNAMIC DISPATCH: the concrete type is not known at compile time, so the right impl is looked up at run time. That trades a little speed for flexibility — the run-time counterpart to the compile-time dispatch you get from generics and trait bounds."
+book_chapter = "ch18-02-trait-objects"
+source = "The Rust Book, ch.18.2 \"Using Trait Objects to Abstract over Shared Behavior\""
