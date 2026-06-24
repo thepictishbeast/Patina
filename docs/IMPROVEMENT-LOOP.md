@@ -196,10 +196,13 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   cashes in the Phase-3 foreshadows. **L16 — references & borrowing** (`16-references-and-borrowing.md`,
   rust-textbook/main `71bde5d`; row 28): the clean fix to L15's move — `&T` shared / `&mut T` exclusive, the
   two rules verbatim + "shared xor mutable" + NLL; the three errors verbatim (E0499 two-`&mut`, E0502 `&mut`-
-  while-`&`, E0106 dangling). **Phase 4 lessons: L15 ✓ L16 ✓.** NEXT (un-gated): **L17** (slices in depth —
-  the `first_word`+`s.clear()` E0502 payoff that cashes the Phase-3 row-23 forward-ref), then R4; then Phases
-  5–6. (Phases 7–9 lessons remain matrix-review-gated. Minor gaps: Phase-1 lacks `quizzes/phase1.md`; phase2
-  cheatsheet cites 1.94.1.)
+  while-`&`, E0106 dangling). **L17 — slices in depth** (`17-slices-in-depth.md`, rust-textbook/main
+  `6e7d241`; row 29): a slice is a borrow → it pins the collection → mutating-while-borrowed is a compile
+  error; the `first_word`+`s.clear()` E0502 payoff (cashes the Phase-3 row-23 forward-ref) + the usize-index
+  compiles-silently-wrong contrast + the Vec push-while-borrowed E0502. **★ PHASE 4 LESSONS COMPLETE: L15 ✓
+  L16 ✓ L17 ✓.** NEXT (un-gated): **R4** (Phase-4 quiz + `cheatsheets/phase4.md`), then **Phase 5 — Custom
+  types & matching** lessons (DECIDED matrix). (Phases 7–9 lessons remain matrix-review-gated. Minor gaps:
+  Phase-1 lacks `quizzes/phase1.md`; phase2 cheatsheet cites 1.94.1.)
 - ◐ **Matrix: re-review rows 51–62** (rate-limited). ✅ Fixed the HTML-entity in row 58 title
   (`Advanced patterns &amp; matching` → literal `&`, matching every sibling row; it was the only
   entity left in the matrix — verified). REMAINING (Paul's review domain): add the missing
