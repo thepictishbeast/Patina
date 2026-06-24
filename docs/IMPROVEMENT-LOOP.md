@@ -123,6 +123,19 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   title advertises it. Verified LIVE (`tests/e2e/editor-run-shortcut.spec.js`, 3 cases: Assist runs, Learn
   gated-then-runs, Dev no-newline) + web/a11y/brackets/jump 12/12 unchanged + screenshot (keyboard-only run,
   sidebar "3 tries"). gui-only + spec, no crates/*.rs.
+- ✅ **RECALL chips → active-recall prompts** (`9ee4b10`): the spaced-repetition (Leitner) RECALL sidebar
+  listed each due error code as a DEAD `<span>` titled "a compiler error to refresh" — clicking did nothing.
+  Completed the half-built feature: each due code is now a button (click or Enter/Space) that reveals its
+  explanation via the existing Explain op. Framed as active recall (charter-aligned): the chip shows the code
+  (recall what it means), activating it reveals the answer = the self-check — same predict-then-reveal shape
+  as predict-first Run, applied to review. Reuses the diagnostics `explainFromEl` helper; delegated handler on
+  `#recallCodes` matches only `.rc[data-code]` (the "all mastered"/meta spans stay inert). Due codes are real
+  rustc error codes (`record_run` folds `primary_error_code` into the queue on a passing/overcome run), so
+  `--explain` applies. **First, ground-truthed two non-gaps (dry audits = successful): all 54 exercise
+  concepts resolve to glossary terms; the review model is sound — then found the RECALL UI was the actual
+  dead-end.** gui-only + spec, no crates/*.rs. Verified LIVE: pass `01_immutable_assign` → RECALL shows an
+  E0384 button → keyboard-activate sends an Explain request for E0384 → rustc explanation renders. New
+  `tests/e2e/recall-chip.spec.js` green; full e2e 16/16; node --check + transforms green; screenshots.
 - ✅ **Editable-pane syntax highlighting** (`<pending>`): colored `<pre>` overlay behind a
   transparent textarea, reusing highlightRust; always-on. Verified live.
 - ☐ **Full IDE via rust-analyzer** (`LspSpec` defined, unconsumed) — big; Rust FOSS.
