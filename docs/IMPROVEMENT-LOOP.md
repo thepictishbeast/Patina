@@ -577,6 +577,14 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   (RBE Apache-2.0, Rustlings MIT, Cookbook CC0-1.0, Exercism MIT) + cataloged in
   rust-textbook/catalog/EXTERNAL-MATERIALS.md with an integration plan (Rustlings first).
   Next: adapt a few early Rustlings exercises into exercises/ (re-verified + attributed).
+  **VERDICT (2026-06-24, examined at convergence):** actionable but **deliberately DEFERRED while
+  Paul-gated.** The next slice (adapt Rustlings exercises) *grows the unmerged review pile*, and the
+  `exercises/` corpus is already saturated against the shipped lessons (54 exercises, all 11 phase
+  dirs) — so adapting more now is low-marginal-value + pile-growing, the quadrant to avoid mid-review.
+  Better to land it **after** Paul reviews the batch, so adapted exercises align with his merge/scope
+  decisions (and don't enlarge what's blocking him). Not blocked-blocked; just correctly low-priority
+  until review. (Examined per advisor's "is #22 actionable or just unpicked?" — answer: actionable,
+  parked-by-choice. Loop should not re-examine each tick.)
 
 ### Robustness / audit
 - ✅ **Golden-corpus test** (`<pending>`): `crates/rpro-runner/tests/golden_corpus.rs` — a
