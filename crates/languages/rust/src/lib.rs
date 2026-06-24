@@ -8,7 +8,7 @@
 
 use rpro_lang::{
     BookRef, CommandPlan, DiagLevel, Diagnostic, ExerciseSource, ExerciseTemplate, LangTool,
-    Language, LspSpec, RunOp, ToolKind, ToolchainStatus,
+    Language, LspSpec, RunOp, Span, ToolKind, ToolchainStatus,
 };
 
 /// The Rust language plug-in for Tempered Studio.
@@ -69,6 +69,26 @@ impl RustLanguage {
     }
 }
 
+/// Parse a rustc `  --> file:line:col` location line into a [`Span`]. Returns
+/// `None` for any line that isn't a well-formed arrow location. The file path is
+/// whatever precedes the trailing `:line:col` (so paths are taken verbatim).
+fn parse_arrow_location(line: &str) -> Option<Span> {
+    let rest = line.trim_start().strip_prefix("-->")?.trim();
+    // rsplit twice: trailing `col`, then `line`, leaving the file path.
+    let mut parts = rest.rsplitn(3, ':');
+    let col = parts.next()?.trim().parse::<u32>().ok()?;
+    let line_no = parts.next()?.trim().parse::<u32>().ok()?;
+    let file = parts.next()?.trim();
+    if file.is_empty() {
+        return None;
+    }
+    Some(Span {
+        file: file.to_string(),
+        line: line_no,
+        col,
+    })
+}
+
 impl Language for RustLanguage {
     fn id(&self) -> &'static str {
         "rust"
@@ -87,10 +107,12 @@ impl Language for RustLanguage {
         }
     }
 
-    /// Additive scrape of `error[E0xxx]:` / `warning:` headers from raw output.
+    /// Additive scrape of `error[E0xxx]:` / `warning:` headers from raw output,
+    /// attaching the primary span from the following `--> file:line:col` line.
     fn parse_diagnostics(&self, raw: &str) -> Vec<Diagnostic> {
+        let lines: Vec<&str> = raw.lines().collect();
         let mut out = Vec::new();
-        for line in raw.lines() {
+        for (i, line) in lines.iter().enumerate() {
             let trimmed = line.trim_start();
             let (level, rest) = if let Some(r) = trimmed.strip_prefix("error") {
                 (DiagLevel::Error, r)
@@ -106,14 +128,24 @@ impl Language for RustLanguage {
                     (Some(b[..i].to_string()), &b[i + 1..])
                 });
             let message = after.trim_start_matches(':').trim().to_string();
-            if !message.is_empty() {
-                out.push(Diagnostic {
-                    code,
-                    level,
-                    message,
-                    span: None,
-                });
+            if message.is_empty() {
+                continue;
             }
+            // The location sits on a following `--> file:line:col` line, before the
+            // next header. Take the FIRST such line = this diagnostic's primary span.
+            let span = lines[i + 1..]
+                .iter()
+                .take_while(|l| {
+                    let t = l.trim_start();
+                    !t.starts_with("error") && !t.starts_with("warning")
+                })
+                .find_map(|l| parse_arrow_location(l));
+            out.push(Diagnostic {
+                code,
+                level,
+                message,
+                span,
+            });
         }
         out
     }
@@ -221,7 +253,7 @@ impl Language for RustLanguage {
 
 #[cfg(test)]
 mod tests {
-    use super::RustLanguage;
+    use super::{RustLanguage, parse_arrow_location};
     use rpro_lang::{BookRef, DiagLevel, Language};
 
     fn ref_for(chapter: &str, anchor: Option<&str>) -> BookRef {
@@ -257,6 +289,30 @@ mod tests {
         assert_eq!(diags.len(), 1);
         assert_eq!(diags[0].code.as_deref(), Some("E0382"));
         assert_eq!(diags[0].level, DiagLevel::Error);
+        // No `-->` line in this fragment → no span (the jump target stays absent).
+        assert!(diags[0].span.is_none());
+    }
+
+    #[test]
+    fn parse_diagnostics_attaches_the_primary_span() {
+        let raw = "error[E0308]: mismatched types\n  \
+                   --> src/main.rs:47:9\n   |\n47 |     let x = y;\n   |         ^ bad\n\n\
+                   error: aborting due to 1 previous error";
+        let diags = RustLanguage.parse_diagnostics(raw);
+        assert_eq!(diags[0].code.as_deref(), Some("E0308"));
+        let span = diags[0].span.as_ref().expect("primary span is attached");
+        assert_eq!(span.file, "src/main.rs");
+        assert_eq!((span.line, span.col), (47, 9));
+        // the trailing "aborting" header carries no `-->` of its own → no span
+        assert!(diags.last().unwrap().span.is_none());
+    }
+
+    #[test]
+    fn parse_arrow_location_only_accepts_well_formed_locations() {
+        assert!(parse_arrow_location("   | some source code").is_none());
+        assert!(parse_arrow_location("  --> src/main.rs").is_none()); // missing line:col
+        let s = parse_arrow_location("  --> src/main.rs:3:9").expect("valid location");
+        assert_eq!((s.file.as_str(), s.line, s.col), ("src/main.rs", 3, 9));
     }
 
     #[test]
