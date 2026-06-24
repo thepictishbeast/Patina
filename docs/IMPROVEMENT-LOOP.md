@@ -159,8 +159,12 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   (`lessons/09-if-else-expressions.md`, rust-textbook/main) — Phase 2 = control flow is the learner's stated
   CURRENT GAP per CLAUDE.md. 7-part format + write-first + baby-steps (builds on L6 semicolon/expression);
   every snippet compile-run on rustc 1.95.0/ed2024; both E0308 failure demos verbatim; no Python/foreign
-  analogies; no answer-leak; BOOK/CR/BLOG attributed. NEXT (un-gated): L10 loops, L11 match-intro, R2 +
-  `likes` kata; then Phases 3–6. (Phases 7–9 lessons remain matrix-review-gated.)
+  analogies; no answer-leak; BOOK/CR/BLOG attributed. **L10 — loops** (`10-loops.md`, rust-textbook/main
+  `dc7bb05`): `loop`+break-value+labels · `while` · `for`+ranges (matrix rows 16–18); same format/rules;
+  every snippet compile-run on 1.95.0/ed2024 (loop→20, while→LIFTOFF, ranges→1 2 3/1 2 3 4/3 2 1, label→2);
+  off-by-one `while index <= len` panic reproduced verbatim ("index out of bounds…") with `for` as the fix.
+  **Phase 2 lessons: L9 ✓ L10 ✓.** NEXT (un-gated): L11 (`match` intro, row 19), R2 + `likes` kata; then
+  Phases 3–6. (Phases 7–9 lessons remain matrix-review-gated.)
 - ◐ **Matrix: re-review rows 51–62** (rate-limited). ✅ Fixed the HTML-entity in row 58 title
   (`Advanced patterns &amp; matching` → literal `&`, matching every sibling row; it was the only
   entity left in the matrix — verified). REMAINING (Paul's review domain): add the missing
