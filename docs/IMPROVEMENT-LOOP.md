@@ -229,8 +229,17 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   Result `match`, `unwrap_or`, `?`-non-Result-fn E0277, `?`-returns-`Ok`, unwrap-on-`Err` compile-vs-runtime
   panic; every new snippet compile-run on 1.95.0 this tick) and `cheatsheets/phase5.md` +Error-handling
   section; both "not covered yet" notes removed. **Phase 5 = lessons L18–L20 ✓ · quiz (15 Qs) ✓ · cheatsheet
-  ✓.** NEXT (un-gated): **Phase 6 — Organizing & generics** (read the Phase-6 matrix section + lesson grouping
-  first; likely L21 = modules). (Minor gaps: Phase-1 lacks `quizzes/phase1.md`; phase2 cheatsheet cites 1.94.1.)
+  ✓.** **★ PHASE 6 STARTS — L21 authored** (`21-packages-crates-modules.md`, rust-textbook/main `654e8e0`):
+  ground-truthed the Phase-6 matrix → only the **Organizing slice (modules, rows 41–48) is DECIDED/un-gated**;
+  **generics/traits/lifetimes/tests/cargo = DRAFT rows 49+, Paul-gated, SKIPPED**. L21 folds rows 41–43:
+  packages & crates (bin vs lib crate, crate roots, cardinality) · modules + the `crate`-rooted tree
+  (sibling/child/parent, private-by-default) · modules-in-files (`mod garden;` → `src/garden.rs`; "mod is not
+  include"). 7-part, write-first, baby-steps (`pub`/paths introduced minimally, full privacy deferred to L22).
+  Snippets compile-run on 1.95.0 (`foo`/`bar`→`In the foo module`/`In the bar module`; nested tree builds
+  clean); failing demo verbatim **E0583** "file not found for module `garden`" + the help line naming
+  `garden.rs`/`garden/mod.rs`. No analogies/leak. Metaphor = filesystem dir-tree (BOOK's own). **Phase 6
+  Organizing lessons: L21 ✓; remaining L22 (paths & `pub`, #44–46), L23 (`use`, #47–48), then R6.** (Minor
+  gaps: Phase-1 lacks `quizzes/phase1.md`; phase2 cheatsheet cites 1.94.1.)
 - ◐ **Matrix: re-review rows 51–62** (rate-limited). ✅ Fixed the HTML-entity in row 58 title
   (`Advanced patterns &amp; matching` → literal `&`, matching every sibling row; it was the only
   entity left in the matrix — verified). REMAINING (Paul's review domain): add the missing
