@@ -1,0 +1,21 @@
+id = "collections/06_index_out_of_bounds"
+title = "Indexing past the end of a Vec panics at run time"
+difficulty = "beginner"
+estimated_minutes = 6
+concept = "vec-index-bounds"
+expected_runtime_panic = "index out of bounds"
+solution_outline = """
+The `Vec` holds three elements, at indexes 0, 1, and 2 — there is no index 3.
+Indexing with `[3]` COMPILES (the type system doesn't track a Vec's length), but at
+run time Rust checks the bound and PANICS ("index out of bounds: the len is 3 but the
+index is 3") rather than reading past the end. Two ways to fix it: use a valid index
+(the last score is `scores[2]`, or compute it with `scores[scores.len() - 1]`); or, to
+ask WITHOUT risking a panic, use `scores.get(3)`, which returns an `Option` — `None`
+when the index is out of range, `Some(&value)` when it's in range — so you handle the
+missing case instead of crashing. Keep the lookup; just make it land in bounds.
+"""
+
+[[book_refs]]
+chapter = "ch08-01-vectors"
+anchor = "reading-elements-of-vectors"
+why = "The Book section on reading a vector's elements — it contrasts indexing (which panics when the index is past the end) with the safe lookup that hands back an Option instead."

@@ -366,3 +366,10 @@ aliases = ["enum with data", "enums with data", "enum data", "enum-data", "tuple
 definition = "An `enum` lists the possible forms a value can take, and each variant may CARRY its own data: `enum Event { Click(i32, i32), KeyPress(char), Closed }` says an `Event` is either a click at some coordinates, a key press of some character, or a plain close with no data. To read that data back out you `match` the value and BIND it in the pattern — `Event::KeyPress(c)` names the character `c` so the arm can use it. A variant that carries data must be matched with a pattern of the same shape, e.g. `Click(x, y)`; writing the bare name `Click` is rejected, because that is the pattern for a variant that carries nothing."
 book_chapter = "ch06-01-defining-an-enum"
 source = "The Rust Book, ch.6.1 \"Defining an Enum\" + ch.6.2 \"Patterns That Bind to Values\""
+
+[[term]]
+name = "indexing and bounds checking"
+aliases = ["indexing and bounds checking", "index out of bounds", "bounds checking", "bounds check", "vec-index-bounds", "vec indexing", "out of bounds"]
+definition = "Reading an element by position, like `v[2]`, where positions are ZERO-BASED (the first element is `v[0]`). Rust guarantees you can never read past the end into unrelated memory: it checks the index against the length at run time, and if the index is out of range the program PANICS instead of returning garbage. That safety check is why an out-of-range index is a run-time crash, not a silent bug. To look something up without risking a panic, `v.get(i)` returns an `Option` — `None` when that position doesn't exist, `Some(&value)` when it does."
+book_chapter = "ch08-01-vectors"
+source = "The Rust Book, ch.8.1 \"Reading Elements of Vectors\""
