@@ -65,8 +65,18 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   Verified: gui transforms green; live e2e rewritten to a tier-diff test (Learn `#diag` has no
   E-code → switch to Assist → `E0384` appears without re-running) — **3/3 e2e pass**; Playwright
   read + screenshot confirm. **Autocomplete/auto-fix:** already satisfied — the textarea sets
-  `autocomplete/autocorrect/autocapitalize/spellcheck` off for all modes and has NO Tab/auto-close/
-  auto-indent assists to gate.
+  `autocomplete/autocorrect/autocapitalize/spellcheck` off for all modes.
+  ✅ **Dev tier was HOLLOW — gave it a real editor assist** (`<pending>`): `setMode` only branched on
+  `'learn'`, so **Assist ≡ Dev** (Dev did nothing extra) while the switcher advertised "Dev: full editor
+  assists" — a falsely-advertised tier. Added a **Dev-only Tab→indent / Shift+Tab→dedent** keydown handler
+  on the editor textarea (`mode === 'dev'` gate): single-caret Tab inserts 4 spaces; a multi-line selection
+  indents every touched line; Shift+Tab strips up to 4 leading spaces; `markEdited()` re-highlights + tracks
+  edited-state. **Learn AND Assist keep the default Tab (move focus = no assist)** — per the charter, Learn
+  blocks editor assists, and editor conveniences are the Dev differentiator, so all three tiers are now
+  distinct. Dev tooltip made honest ("Tab/Shift+Tab to indent (rust-analyzer later)"). Verified LIVE via
+  Playwright: Dev Tab → 4 spaces at caret; Dev multi-line → all lines indented; Dev Shift+Tab → dedented;
+  Learn Tab → no-op; `fn main(){...}` body indented cleanly + highlight overlay tracks it (screenshot);
+  gui transforms green; e2e 4/4 (no regression).
   Remaining (#18, still open): TRUE **inline-in-editor** diagnostics — surface `dg.span.line` as a
   gutter marker / underline on the offending line in the highlight overlay (Assist/Dev only). The
   data (line spans) is already in the run response; only the editor-overlay rendering is left.

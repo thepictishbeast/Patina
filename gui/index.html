@@ -301,7 +301,7 @@
           <span class="modesw" id="modesw" role="group" aria-label="Editor mode">
             <button data-mode="learn" title="Learn: you do the work — predict before Run, read errors by hand, no autocomplete/auto-fix">Learn</button>
             <button data-mode="assist" title="Assist: parsed diagnostics panel + hints on demand">Assist</button>
-            <button data-mode="dev" title="Dev: full editor assists">Dev</button>
+            <button data-mode="dev" title="Dev: editor assists — Tab/Shift+Tab to indent (rust-analyzer later)">Dev</button>
           </span>
           <span style="flex:1"></span>
           <span id="editstate" style="color:var(--fg-dim)">read &amp; edit, then Run</span>
@@ -1036,6 +1036,34 @@
     // editable code: persist on input, reset restores the original starter.
     editorEl().addEventListener('input', markEdited);
     editorEl().addEventListener('scroll', () => { const hl = editorHL(), ed = editorEl(); if (hl) { hl.scrollTop = ed.scrollTop; hl.scrollLeft = ed.scrollLeft; } });
+    // Dev-tier editor convenience: Tab indents, Shift+Tab dedents. Learn and Assist
+    // keep the textarea's default Tab (move focus) — the charter has Learn block
+    // editor assists, and editor conveniences are the Dev tier's differentiator.
+    editorEl().addEventListener('keydown', e => {
+      if (e.key !== 'Tab' || mode !== 'dev') return;
+      e.preventDefault();
+      const ed = editorEl(), UNIT = '    ', v = ed.value;
+      const s = ed.selectionStart, en = ed.selectionEnd;
+      const lineStart = v.lastIndexOf('\n', s - 1) + 1;
+      const spansLines = v.slice(s, en).includes('\n');
+      if (!e.shiftKey && !spansLines) {
+        // common case: insert 4 spaces at the caret (replacing any one-line selection)
+        ed.value = v.slice(0, s) + UNIT + v.slice(en);
+        ed.selectionStart = ed.selectionEnd = s + UNIT.length;
+      } else {
+        // indent / dedent every line the selection touches (or the caret's line)
+        let selEnd = en;
+        if (selEnd > s && v[selEnd - 1] === '\n') selEnd -= 1; // a trailing newline doesn't pull in the next line
+        const nl = v.indexOf('\n', selEnd);
+        const blockEnd = nl === -1 ? v.length : nl;
+        const out = v.slice(lineStart, blockEnd).split('\n')
+          .map(ln => (e.shiftKey ? ln.replace(/^ {1,4}/, '') : UNIT + ln)).join('\n');
+        ed.value = v.slice(0, lineStart) + out + v.slice(blockEnd);
+        ed.selectionStart = lineStart;
+        ed.selectionEnd = lineStart + out.length;
+      }
+      markEdited();
+    });
     document.getElementById('resetbtn').onclick = () => { editorEl().value = curOriginal; markEdited(); editorEl().focus(); };
     document.getElementById('hintbtn').onclick = runHint;
     // predict-first: lock a compiles/fails guess (+ optional error code) before Run
