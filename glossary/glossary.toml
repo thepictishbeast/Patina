@@ -303,3 +303,10 @@ aliases = ["channel", "channels", "mpsc", "message passing", "message-passing", 
 definition = "A way for threads to communicate by SENDING values to each other instead of sharing memory. A channel has two ends: a transmitter (`tx`) you send values down, and a receiver (`rx`) another thread reads them from. Sending a value MOVES it — ownership travels down the channel to the receiver, so once you've sent something you can no longer use it on the sending side. This message-passing style is an alternative to sharing state between threads and locking it with a `Mutex`."
 book_chapter = "ch16-02-message-passing"
 source = "The Rust Book, ch.16.2 \"Using Message Passing to Transfer Data Between Threads\""
+
+[[term]]
+name = "trait methods must be in scope"
+aliases = ["trait in scope", "trait-in-scope", "import a trait", "use a trait", "method not found trait", "items from traits"]
+definition = "A trait's methods are only callable where the trait itself is in scope — that is, where it has been brought in with a `use`. A type can implement a trait in one place, but if the code calling `.method()` has not imported the trait, the compiler reports the method as not found (even though the impl really exists) and suggests the `use` line you need. Bringing the trait into scope is what makes its methods available to call."
+book_chapter = "ch10-02-traits"
+source = "The Rust Book, ch.10.2 \"Traits: Defining Shared Behavior — Implementing a Trait on a Type\""

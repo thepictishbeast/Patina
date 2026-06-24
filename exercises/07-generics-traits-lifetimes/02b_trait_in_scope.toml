@@ -1,0 +1,19 @@
+id = "traits/02_trait_in_scope"
+title = "A trait's methods need the trait in scope (imported)"
+difficulty = "intermediate"
+estimated_minutes = 7
+concept = "trait-in-scope"
+expected_error_code = "E0599"
+solution_outline = """
+`Circle` implements `Area`, but `main` calls `c.area()` without the `Area` trait in
+scope, so the method looks "not found" (E0599) — the impl exists, it just isn't
+visible here. The compiler's `help:` line names the fix: bring the trait into scope
+with `use geometry::Area;` (the help shows `use crate::geometry::Area;`) near the top
+of the file. Importing the trait is what makes its methods callable; the math is
+unchanged.
+"""
+
+[[book_refs]]
+chapter = "ch10-02-traits"
+anchor = "implementing-a-trait-on-a-type"
+why = "The Book notes that to call a trait's methods, you must bring the trait into scope — exactly what this exercise hits."

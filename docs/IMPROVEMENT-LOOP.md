@@ -207,8 +207,18 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   transferring-ownership-through-channels. Added "channels and message passing" glossary term (40→41;
   reworded to drop a Go-proverb echo — charter: no foreign-language analogies). Verified: verify-exercises
   42/42 (emits E0382), anchors, golden-corpus, glossary 3/3, live (08-concurrency now 01→04, run E0382,
-  chip→channels). 08-concurrency 3→4; corpus 42. NEXT thinnest: 07-generics (3), then 2nd exercises in the
-  4-deep phases or error-handling growth.
+  chip→channels). 08-concurrency 3→4; corpus 42.
+  ✅ **Breadth, tick 3: 07-generics-traits-lifetimes** (`<pending>`): had one each of generics(E0369)/
+  traits(E0277)/lifetimes(E0106). Added a 2nd TRAITS exercise `02b_trait_in_scope` (id
+  `traits/02_trait_in_scope`, intermediate; `02b_` sorts after `02_trait_bound`, keeping traits grouped):
+  `Circle` implements `Area` in a module, but `main` calls `c.area()` without `use`-ing the trait →
+  **E0599** "no method named `area` found …" — the impl exists, it's just not IN SCOPE. Great
+  read-the-compiler exercise: the E0599 `help:` line literally names `use crate::geometry::Area;`. book_ref
+  → ch10-02-traits # implementing-a-trait-on-a-type (the Book's "must bring the trait into scope" note).
+  Added "trait methods must be in scope" glossary term (41→42). Verified: verify-exercises 43/43 (E0599),
+  anchors, golden-corpus, glossary 3/3, live (07 order generics→traits→traits→lifetimes, run E0599,
+  chip→trait-in-scope). 07-generics 3→4; corpus 43. NEXT: 2nd exercises in the now-4-deep phases, or
+  error-handling growth (match-on-Err, custom errors, unwrap/expect runtime), or async (ch17).
 - ◐ **Integrate Rust by Example / Rustlings / Cookbook / Exercism** — licenses verified via gh
   (RBE Apache-2.0, Rustlings MIT, Cookbook CC0-1.0, Exercism MIT) + cataloged in
   rust-textbook/catalog/EXTERNAL-MATERIALS.md with an integration plan (Rustlings first).
