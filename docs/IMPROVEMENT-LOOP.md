@@ -264,6 +264,11 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   cheatsheets p1–p6**. Everything remaining (Phase-6 generics/traits/lifetimes/tests/cargo + Phases 7–9) is
   **DRAFT matrix rows 49–62 = Paul-gated** (do NOT author without his matrix review). Loop now rotates to
   housekeeping (`quizzes/phase1.md`, phase2-cheatsheet 1.94.1→1.95.0) / editor lane (#18) until Paul reviews.
+  **★ Housekeeping: `quizzes/phase1.md` authored** (rust-textbook/main `d6b1ad0`) — the one missing quiz; now
+  **quizzes phase1–6 all present**. 13 Qs over Phase-1 foundations (L1–L8): E0384 immutable-reassign, shadowing
+  vs `mut` (E0308), `const`, integer-div-truncates, `as`-truncates, overflow debug-panic/release-wrap, block-as-
+  expression, trailing-`;` E0308, fn-return, tuple Debug. Every snippet compile-checked on 1.95.0; 13/13, no
+  leak. **Remaining housekeeping: phase1/phase2 cheatsheets cite stale 1.94.1 → bump to 1.95.0** (next filler).
   (See refreshed review/merge ask under "Open questions for Paul".)
 - ◐ **Matrix: re-review rows 51–62** (rate-limited). ✅ Fixed the HTML-entity in row 58 title
   (`Advanced patterns &amp; matching` → literal `&`, matching every sibling row; it was the only
