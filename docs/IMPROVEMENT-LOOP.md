@@ -202,10 +202,12 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   compiles-silently-wrong contrast + the Vec push-while-borrowed E0502. **★ PHASE 4 LESSONS COMPLETE: L15 ✓
   L16 ✓ L17 ✓.** **R4 Phase-4 quiz** (`quizzes/phase4.md`, rust-textbook/main `fc36d24` — 10 Qs on
   move/E0382, Copy/Clone, borrow, E0499/E0502/E0106, slice-pins; predict-first + verified answer key, every
-  snippet compile-run on 1.95.0). **R4 status: quiz ✓ · `cheatsheets/phase4.md` ☐.** NEXT (un-gated): the
-  Phase-4 cheatsheet (closes R4), then **Phase 5 — Custom types & matching** lessons (DECIDED matrix — structs/
-  enums/`Option`/error-handling; where L11's deferred match-binding + Option land). (Phases 7–9 lessons remain
-  matrix-review-gated. Minor gaps: Phase-1 lacks `quizzes/phase1.md`; phase2 cheatsheet cites 1.94.1.)
+  snippet compile-run on 1.95.0) + **cheatsheet** (`cheatsheets/phase4.md`, `b974c15`). **★ PHASE 4 FULLY
+  COMPLETE: L15 ✓ L16 ✓ L17 ✓ · quiz ✓ · cheatsheet ✓.** (Textbook: **Phases 1–4 fully done** — 17 lessons,
+  4 quizzes [p1 pending], 4 cheatsheets.) NEXT (un-gated): **Phase 5 — Custom types & matching** lessons
+  (DECIDED matrix — structs/enums/`Option`/error-handling; where L11's deferred match-binding + Option land),
+  then Phase 6. (Phases 7–9 lessons remain matrix-review-gated. Minor gaps: Phase-1 lacks `quizzes/phase1.md`;
+  phase2 cheatsheet cites 1.94.1.)
 - ◐ **Matrix: re-review rows 51–62** (rate-limited). ✅ Fixed the HTML-entity in row 58 title
   (`Advanced patterns &amp; matching` → literal `&`, matching every sibling row; it was the only
   entity left in the matrix — verified). REMAINING (Paul's review domain): add the missing
