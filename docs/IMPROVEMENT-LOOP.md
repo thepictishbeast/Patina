@@ -293,6 +293,17 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   + alphabetical-stable); re-seeded the store and confirmed all 4 resolve via `rpro glossary <term>` lookup.
   Seam-guard N/A (scopes `crates/**/*.rs`; this is a data file). Glossary task (#24) was "complete" — this is
   additive vocabulary coverage for the now-23-lesson corpus.
+  **★ Convergence CONFIRMED + `docs/REVIEW-GUIDE.md` authored** (advisor-directed, after 4 filler ticks): ran a
+  saturation pass to prove convergence rather than assume it — **(a) `cargo audit` = 0 vulnerabilities** (236
+  deps, exit 0; #21's *corrective* part is a verified no-op, only the CI-enforce gate remains deferred); **(b)
+  exercise coverage of approved phases is saturated** — `06-modules/` already has private_module/private_fn/
+  use_scope/super_path matching L21–L23, all 11 phase dirs populated (54 exercises); **(c) lesson cross-refs
+  clean** (no `Lesson N` ref > L23). So the high-value lane is genuinely gated on Paul, confirmed. Highest-
+  leverage un-gated move that does NOT grow the unmerged pile = a reviewer's **reading path**: wrote
+  `docs/REVIEW-GUIDE.md` (the 3 decisions only Paul can make, ~45-min read order starting from STUDY-GUIDE →
+  the L15 centerpiece → the never-hand-answer check → the matrix DECIDED/DRAFT gate, + the verification done).
+  All referenced paths verified to resolve. Linked from the top of "Open questions for Paul". Zero new product
+  surface. **#21 reframed:** corrective audit clean; `cargo deny` + CI-enforce stay deferred (preventive gate).
 - ◐ **Matrix: re-review rows 51–62** (rate-limited). ✅ Fixed the HTML-entity in row 58 title
   (`Advanced patterns &amp; matching` → literal `&`, matching every sibling row; it was the only
   entity left in the matrix — verified). REMAINING (Paul's review domain): add the missing
@@ -664,6 +675,9 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   F-Droid + Obtainium · signed APT/dnf repos.
 
 ## Open questions for Paul
+- 📖 **→ Start with [`docs/REVIEW-GUIDE.md`](REVIEW-GUIDE.md)** — a ~45-min reviewer's reading path for the
+  whole unmerged batch (the 3 decisions only you can make, what to read in what order, what was verified). It
+  exists precisely to make the review/merge below fast. The item below is the rationale; the guide is the *how*.
 - ⚠️ **MILESTONE + the un-gated lesson lane is now EXHAUSTED — your review unblocks the rest** (updated
   2026-06-24). Since the earlier note, the lessons lane re-opened (the "show Paul the matrix first" gate is
   **matrix-status-scoped**, not phase-numbered: DECIDED rows 1–48 are un-gated; only DRAFT rows 49–62 wait) and
