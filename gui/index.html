@@ -314,7 +314,7 @@
         </div>
       </div>
       <div class="runrow">
-        <button class="run" id="runbtn">▷ Run</button>
+        <button class="run" id="runbtn" title="Run (Ctrl/Cmd+Enter from the editor)">▷ Run</button>
         <button class="ghost" id="checkbtn">✓ Check</button>
         <button class="ghost" id="explainbtn">? Explain</button>
         <button class="ghost" id="hintbtn">💡 Hint</button>
@@ -1047,6 +1047,10 @@
     // tier's differentiator): Tab/Shift+Tab indent, Enter auto-indents, and brackets
     // auto-close (with type-over + delete-the-empty-pair).
     editorEl().addEventListener('keydown', e => {
+      // Ctrl/Cmd+Enter runs the exercise from inside the editor — every tier (Learn
+      // included): running your code is the core action, not an autocomplete-style
+      // assist. It calls runOp, so the Learn predict-first gate still applies.
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); runOp('run'); return; }
       if (mode !== 'dev') return;
       const ed = editorEl(), UNIT = '    ', v = ed.value;
       const s = ed.selectionStart, en = ed.selectionEnd;
