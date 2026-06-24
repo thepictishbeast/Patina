@@ -186,9 +186,11 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   (push/pop, `[]`-vs-`.get()` as a design choice, `*n+=` mutate) + HashMap (`use std::collections::HashMap`,
   the `entry().or_insert` word-count). Legit fails verbatim: forgot-import E0433 (compiler gives the fix);
   `v[100]` runtime panic (vs L13 array compile error) vs `.get(100)`→None. **★ PHASE 3 LESSONS COMPLETE:
-  L12 ✓ L13 ✓ L14 ✓.** NEXT (un-gated): **R3** (Phase-3 quiz + `cheatsheets/phase3.md`), then **Phase 4 —
-  Ownership** lessons (DECIDED matrix). (Phases 7–9 lessons remain matrix-review-gated. Minor gap: Phase-1
-  lacks `quizzes/phase1.md`.)
+  L12 ✓ L13 ✓ L14 ✓.** **R3 Phase-3 quiz** (`quizzes/phase3.md`, rust-textbook/main `791276c` — 10 Qs,
+  predict-first + verified answer key, every snippet compile-run on 1.95.0). **R3 status: quiz ✓ ·
+  `cheatsheets/phase3.md` ☐.** NEXT (un-gated): the Phase-3 cheatsheet (closes R3), then **Phase 4 —
+  Ownership** lessons (DECIDED matrix; where the Phase-3 [PHASE-4 LEAN] foreshadows pay off). (Phases 7–9
+  lessons remain matrix-review-gated. Minor gap: Phase-1 lacks `quizzes/phase1.md`.)
 - ◐ **Matrix: re-review rows 51–62** (rate-limited). ✅ Fixed the HTML-entity in row 58 title
   (`Advanced patterns &amp; matching` → literal `&`, matching every sibling row; it was the only
   entity left in the matrix — verified). REMAINING (Paul's review domain): add the missing
