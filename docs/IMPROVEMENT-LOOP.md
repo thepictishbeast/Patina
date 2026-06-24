@@ -193,9 +193,12 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   L1–L8 predate the quiz format.) **Phase 4 STARTED — L15 ownership & moves** (`15-ownership-and-moves.md`,
   rust-textbook/main `a0a5595`; matrix rows 26–27): the heart of Rust — ownership/move (E0382 centerpiece
   reproduced verbatim) + Copy-vs-Clone + stack/heap + Drop; cross-language framing stripped per hard rule 3;
-  cashes in the Phase-3 foreshadows. NEXT (un-gated): **L16** (references & borrowing — the rules + E0499/
-  E0502), **L17** (slices in depth — the `first_word`+`s.clear()` E0502 payoff), then R4; then Phases 5–6.
-  (Phases 7–9 lessons remain matrix-review-gated. Minor gaps: Phase-1 lacks `quizzes/phase1.md`; phase2
+  cashes in the Phase-3 foreshadows. **L16 — references & borrowing** (`16-references-and-borrowing.md`,
+  rust-textbook/main `71bde5d`; row 28): the clean fix to L15's move — `&T` shared / `&mut T` exclusive, the
+  two rules verbatim + "shared xor mutable" + NLL; the three errors verbatim (E0499 two-`&mut`, E0502 `&mut`-
+  while-`&`, E0106 dangling). **Phase 4 lessons: L15 ✓ L16 ✓.** NEXT (un-gated): **L17** (slices in depth —
+  the `first_word`+`s.clear()` E0502 payoff that cashes the Phase-3 row-23 forward-ref), then R4; then Phases
+  5–6. (Phases 7–9 lessons remain matrix-review-gated. Minor gaps: Phase-1 lacks `quizzes/phase1.md`; phase2
   cheatsheet cites 1.94.1.)
 - ◐ **Matrix: re-review rows 51–62** (rate-limited). ✅ Fixed the HTML-entity in row 58 title
   (`Advanced patterns &amp; matching` → literal `&`, matching every sibling row; it was the only
