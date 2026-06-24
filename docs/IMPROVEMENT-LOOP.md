@@ -255,10 +255,16 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   **★ R6 part 1: Phase-6 quiz authored** (`quizzes/phase6.md`, rust-textbook/main `a05a4c0`): 14 Qs over
   L21–L23 (crate roots, foo/bar, E0583, tree vocab, abs+rel paths, E0603, `super`, E0616, `pub enum`, `use`
   scope-locality E0433, `as`, `pub use`, `{self, Write}`, fill-ins). Predict-first + separate verified
-  Answers; every snippet compile-checked on 1.95.0; 14/14 balanced, no leak. **R6: quiz ✓ · cheatsheet ☐
-  (next tick).** After the cheatsheet, Phase-6 Organizing is fully done → **un-gated lesson lane exhausted**
-  (generics/traits/lifetimes/tests/cargo + Phases 7–9 = DRAFT matrix rows 49–62, Paul-gated). Generics+ stay
-  DRAFT rows 49+ / Paul-gated. (Minor gaps: Phase-1 lacks `quizzes/phase1.md`; phase2 cheatsheet cites 1.94.1.)
+  Answers; every snippet compile-checked on 1.95.0; 14/14 balanced, no leak. **★ R6 part 2: `cheatsheets/phase6.md`
+  authored → PHASE-6 ORGANIZING SLICE COMPLETE** (rust-textbook/main `6e5a577`): concise quick-ref over L21–L23
+  (packages/crates, module tree, modules-in-files/E0583, paths, `pub`/privacy/E0603, pub-struct-fields E0616/
+  pub-enum, `use`/scope-locality E0433/`as`/`pub use`/nested/glob; metaphors filesystem-tree + symbolic-link),
+  facts all from verified L21–L23. **R6: quiz ✓ · cheatsheet ✓.** **★ UN-GATED LESSON LANE NOW EXHAUSTED** —
+  textbook has Phases 1–5 fully done + Phase-6 Organizing fully done: **23 lessons (L1–L23), quizzes p2–p6,
+  cheatsheets p1–p6**. Everything remaining (Phase-6 generics/traits/lifetimes/tests/cargo + Phases 7–9) is
+  **DRAFT matrix rows 49–62 = Paul-gated** (do NOT author without his matrix review). Loop now rotates to
+  housekeeping (`quizzes/phase1.md`, phase2-cheatsheet 1.94.1→1.95.0) / editor lane (#18) until Paul reviews.
+  (See refreshed review/merge ask under "Open questions for Paul".)
 - ◐ **Matrix: re-review rows 51–62** (rate-limited). ✅ Fixed the HTML-entity in row 58 title
   (`Advanced patterns &amp; matching` → literal `&`, matching every sibling row; it was the only
   entity left in the matrix — verified). REMAINING (Paul's review domain): add the missing
@@ -630,21 +636,25 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   F-Droid + Obtainium · signed APT/dnf repos.
 
 ## Open questions for Paul
-- ⚠️ **The high-value backlog is now GATED on you — please review/merge** (2026-06-24, ~19 autonomous ticks).
-  The un-blocked work is draining: the genuinely-missing core content is filled (now **48 verified exercises
-  across 11 phases**, error-handling arc complete, HashMap added), the Dev editor has a real assist (Tab +
-  Enter auto-indent), the glossary is 46 terms, and the security review is fresh. Remaining un-blocked work is
-  increasingly marginal (variant exercises, clippy debt, polish). **The biggest remaining value needs YOU:**
-  1. **Review the batch.** 48 exercises + the editor/glossary/runtime-model changes all sit UNMERGED on
-     `textbook-integration`, unvalidated against your intent over ~19 ticks. Do they match the pedagogy you
-     want? Should `textbook-integration` merge to `main` (it never has)?
-  2. **Lessons for Phases 2–9 (#16/#17)** — only Phase 1 / L1–L8 exist; these are your content-review domain
-     (the "show Paul the matrix first" gate). This is the single biggest learner-facing gap and is fully
-     gated on you.
-  3. **Scope calls:** rust-analyzer IDE (#19, big), platform/distribution (#23, mostly env-gated), and the
-     `--solution` rename (below) all want a decision.
-  Until you weigh in, the loop keeps doing bounded un-blocked work (more exercises, clippy hygiene, editor
-  polish), but the marginal value is lower than your review would unlock. One PushNotification sent.
+- ⚠️ **MILESTONE + the un-gated lesson lane is now EXHAUSTED — your review unblocks the rest** (updated
+  2026-06-24). Since the earlier note, the lessons lane re-opened (the "show Paul the matrix first" gate is
+  **matrix-status-scoped**, not phase-numbered: DECIDED rows 1–48 are un-gated; only DRAFT rows 49–62 wait) and
+  has now been driven to completion for every un-gated phase. **What's done and waiting on `textbook-integration`:**
+  1. **rust-textbook: Phases 1–5 complete + Phase-6 "Organizing" complete** — **23 lessons (L1–L23)**, quizzes
+     phase2–6, cheatsheets phase1–6, the `likes` kata. Every snippet compile-run on rustc 1.95.0/ed2024;
+     real compiler errors captured verbatim; 7-part format; write-first (no solutions); no analogies; no
+     answer-leak. **This is the single biggest learner-facing deliverable — please review the pedagogy & merge.**
+  2. **Tempered-Studio: 48 exercises + editor/glossary/runtime-model changes**, all unmerged on
+     `textbook-integration` (which has never merged to `main`). Do they match your intent? OK to merge?
+  3. **THE REMAINING GATE — your matrix review (the real blocker now):** Phase-6 **generics/traits/lifetimes/
+     tests/cargo** and **Phases 7–9** are mapped but **DRAFT (rows 49–62)**, AI-authored, not human-reviewed.
+     Per the corpus's "show Paul the matrix first" rule, **no lessons there until you sign off the DRAFT rows.**
+     This is what stops the loop from finishing the textbook — please review rows 49–62 when you can.
+  4. **Scope calls:** rust-analyzer IDE (#19, big), platform/distribution (#23, mostly env-gated), `--solution`
+     rename (below).
+  With the un-gated lessons done, the loop now rotates to lower-value bounded work (housekeeping: the missing
+  `quizzes/phase1.md`, a stale toolchain cite; editor polish #18). Your review of #1–#3 unlocks the high-value
+  path. (Fresh PushNotification sent — the prior one predates the entire L9–L23 lesson body.)
 - ✅ **RESOLVED — Book chapter sources** (2026-06-23). The chapter-bundling blocker is gone: `curl` to
   `raw.githubusercontent.com/rust-lang/book/main/src/*.md` works in this env, so authentic chapter
   markdown can be vendored the right way (Paul: "do what's best — authentic sources"). NOT WebFetch —
