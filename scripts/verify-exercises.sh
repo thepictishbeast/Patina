@@ -20,11 +20,16 @@ cd "$ROOT_DIR"
 
 RUSTC="${RUSTC:-rustc}"
 WORK="$(mktemp -d "${TMPDIR:-/tmp}/ts-exverify.XXXXXX")"
-trap 'rm -rf "$WORK"' EXIT
+# Runtime-panic exercises must be RUN, so their binary needs an exec-OK dir —
+# /tmp is often mounted noexec. Prefer $HOME/.cache (exec-OK here and in CI).
+EXEC_BASE="${TS_EXVERIFY_EXECDIR:-$HOME/.cache}"
+mkdir -p "$EXEC_BASE" 2>/dev/null || true
+RUNDIR="$(mktemp -d "$EXEC_BASE/ts-exrun.XXXXXX" 2>/dev/null || mktemp -d)"
+trap 'rm -rf "$WORK" "$RUNDIR"' EXIT
 
 fails=0
 checked=0
-echo "== Tempered Studio — exercise error-code verification =="
+echo "== Tempered Studio — exercise error-code + runtime-panic verification =="
 
 for toml in exercises/*/*.toml; do
   [ -e "$toml" ] || continue
@@ -33,20 +38,37 @@ for toml in exercises/*/*.toml; do
   if [ ! -f "$rs" ]; then
     echo "  FAIL — $toml has no sibling .rs"; fails=$((fails + 1)); continue
   fi
-  # Pull the taught error code out of the toml (e.g. expected_error_code = "E0382").
+  # Each exercise teaches EITHER a compile error code OR a runtime panic.
   exp="$(grep -E '^[[:space:]]*expected_error_code' "$toml" | head -1 | sed -E 's/.*"([^"]+)".*/\1/')"
-  if [ -z "$exp" ]; then
-    echo "  skip — $name (no expected_error_code)"; continue
-  fi
-  checked=$((checked + 1))
-  # Compile the single-file program the same way it was authored (edition 2024).
-  out="$("$RUSTC" --edition 2024 --crate-type bin -o "$WORK/out" "$rs" 2>&1)"
-  codes="$(printf '%s' "$out" | grep -oE 'error\[E[0-9]{4}\]' | grep -oE 'E[0-9]{4}' | sort -u | tr '\n' ' ')"
-  if printf '%s ' "$codes" | grep -qw "$exp"; then
-    echo "  ok   — $name emits $exp"
+  panic="$(grep -E '^[[:space:]]*expected_runtime_panic' "$toml" | head -1 | sed -E 's/.*"(.*)".*/\1/')"
+
+  if [ -n "$exp" ]; then
+    # Compile-error exercise: assert the taught code appears in the diagnostics.
+    checked=$((checked + 1))
+    out="$("$RUSTC" --edition 2024 --crate-type bin -o "$WORK/out" "$rs" 2>&1)"
+    codes="$(printf '%s' "$out" | grep -oE 'error\[E[0-9]{4}\]' | grep -oE 'E[0-9]{4}' | sort -u | tr '\n' ' ')"
+    if printf '%s ' "$codes" | grep -qw "$exp"; then
+      echo "  ok   — $name emits $exp"
+    else
+      echo "  FAIL — $name: expected $exp, got [${codes:-none}]"; fails=$((fails + 1))
+    fi
+  elif [ -n "$panic" ]; then
+    # Runtime-panic exercise: must COMPILE clean, then PANIC with the taught
+    # message when run (the predict-then-run "it compiles — but does it panic?").
+    checked=$((checked + 1))
+    if ! "$RUSTC" --edition 2024 --crate-type bin -o "$RUNDIR/out" "$rs" 2>"$WORK/cerr"; then
+      echo "  FAIL — $name: a runtime-panic exercise must COMPILE, but rustc rejected it:"
+      sed 's/^/      /' "$WORK/cerr" | head -3; fails=$((fails + 1)); continue
+    fi
+    runout="$("$RUNDIR/out" 2>&1)"
+    if printf '%s' "$runout" | grep -qF "$panic"; then
+      echo "  ok   — $name panics: \"$panic\""
+    else
+      echo "  FAIL — $name: expected a panic containing \"$panic\", got: $(printf '%s' "$runout" | tr '\n' ' ' | head -c 160)"
+      fails=$((fails + 1))
+    fi
   else
-    echo "  FAIL — $name: expected $exp, got [${codes:-none}]"
-    fails=$((fails + 1))
+    echo "  skip — $name (no expected_error_code or expected_runtime_panic)"; continue
   fi
 done
 

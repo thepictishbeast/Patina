@@ -905,6 +905,7 @@ mod tests {
             concept: "move-semantics".into(),
             book_refs: vec![],
             expected_error_code: err.map(String::from),
+            expected_runtime_panic: None,
             solution_outline: solution.map(String::from),
         }
     }
@@ -983,6 +984,10 @@ mod tests {
         assert!(
             v.get("expected_error_code").is_none(),
             "must not leak the expected error"
+        );
+        assert!(
+            v.get("expected_runtime_panic").is_none(),
+            "must not leak the expected runtime panic"
         );
         assert!(
             !v.to_string().contains("clone"),

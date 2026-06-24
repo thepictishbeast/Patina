@@ -279,14 +279,16 @@
         <h1 id="lessonTitle">Tempered Studio</h1>
         <div class="sub" id="lessonSub">loading the current exercise…</div>
         <div class="glossbox" id="glossbox" hidden aria-live="polite"></div>
-        <p><b>Predict first:</b> will this compile? If not, which <b>error code</b> appears,
-        and what one-word <code>help:</code> fix will the compiler suggest? Lock your guess,
-        then press <b>Run</b> — you'll read the <i>real</i> compiler output, by hand.</p>
+        <p><b>Predict first:</b> will this <b>pass</b> — compile <i>and</i> run cleanly? If not,
+        what goes wrong: a compile <b>error code</b>, or a <b>panic</b> when it runs? Lock your
+        guess, then press <b>Run</b> — you'll read the <i>real</i> output, by hand.</p>
         <div class="predict" id="predictbar">
           <span class="pl">🔮 Lock your prediction:</span>
-          <button class="pbtn" data-pred="compiles">compiles ✓</button>
+          <!-- data-pred "compiles" = predicts SUCCESS (compiles AND runs clean); the
+               label says "passes" since some exercises compile but panic at run time. -->
+          <button class="pbtn" data-pred="compiles">passes ✓</button>
           <button class="pbtn" data-pred="fails">fails ✗</button>
-          <input id="predcode" class="pin" placeholder="error code? e.g. E0382" spellcheck="false" autocomplete="off" />
+          <input id="predcode" class="pin" placeholder="error code? e.g. E0382 (blank if it panics/passes)" spellcheck="false" autocomplete="off" />
           <span id="predverdict" class="pv"></span>
         </div>
       </div>
@@ -392,8 +394,8 @@
         if (pb) { pb.style.outline = '2px solid var(--accent)'; setTimeout(() => pb.style.outline = '', 1200); }
         statusEl().textContent = '🔒 predict first';
         term.clear();
-        term.writeln(d('Learn mode: lock your prediction first — will it compile, or fail? '));
-        term.writeln(d('Pick compiles ✓ / fails ✗ (and an error-code guess), THEN press Run.'));
+        term.writeln(d('Learn mode: lock your prediction first — will it pass (compile AND run cleanly), or fail? '));
+        term.writeln(d('Pick passes ✓ / fails ✗ (and an error-code guess, if any), THEN press Run.'));
         term.writeln(d('Predicting before you run is the active-recall step — that\'s the point.'));
         return;
       }
@@ -573,12 +575,15 @@
     function showPrediction(out) {
       if (predict.compiles === null) return;
       const el = document.getElementById('predverdict');
-      const actualCompiles = !!out.passed;
+      // `predict.compiles` (legacy field name) holds the SUCCESS prediction, and
+      // `out.passed` already means "compiled AND ran clean" — so this reads correctly
+      // for both compile-error and compile-but-panic (runtime) exercises.
+      const actualPasses = !!out.passed;
       const actualCode = lastCode || (((out.raw_stderr || '').match(/error\[(E\d{3,4})\]/) || [])[1] || '');
-      const compRight = predict.compiles === actualCompiles;
+      const compRight = predict.compiles === actualPasses;
       const parts = [compRight
         ? '✓ outcome: right'
-        : `✗ you said it ${predict.compiles ? 'compiles' : 'fails'}, it ${actualCompiles ? 'compiled' : 'failed'}`];
+        : `✗ you said it ${predict.compiles ? 'passes' : 'fails'}, it ${actualPasses ? 'passed' : 'failed'}`];
       if (predict.code.trim()) {
         const guess = predict.code.trim().toUpperCase();
         if (actualCode && guess === actualCode.toUpperCase()) parts.push(`✓ error ${actualCode} — nailed it`);

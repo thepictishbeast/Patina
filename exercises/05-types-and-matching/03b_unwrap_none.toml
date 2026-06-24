@@ -1,0 +1,23 @@
+id = "types/05_unwrap_none"
+title = "unwrap() on None panics — handle the empty case"
+difficulty = "beginner"
+estimated_minutes = 7
+concept = "option-unwrap-panic"
+expected_runtime_panic = "called `Option::unwrap()` on a `None` value"
+solution_outline = """
+`scores.iter().max()` returns an `Option` because an empty list has no maximum, and
+`.unwrap()` panics on `None`. The code COMPILES — it only fails when run. Decide what
+to do when there's no value instead of assuming one: `match scores.iter().max() {
+Some(n) => *n, None => 0 }`, or `scores.iter().max().copied().unwrap_or(0)`, or guard
+with `if scores.is_empty()`. The point is to HANDLE `None`, not to unwrap it.
+"""
+
+[[book_refs]]
+chapter = "ch06-01-defining-an-enum"
+anchor = "the-option-enum"
+why = "Why `.max()` returns an `Option` — there might be no value, and the type makes you handle that."
+
+[[book_refs]]
+chapter = "ch06-02-match"
+anchor = "patterns-that-bind-to-values"
+why = "How to handle the `None` case instead of unwrapping it — `match Some(n) => ... / None => ...`."

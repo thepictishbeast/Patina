@@ -111,6 +111,21 @@ fn golden_corpus_holds_its_invariants() {
             );
         }
 
+        // 3b. expected_runtime_panic (compile-clean-then-panics exercises): when
+        //     present it's a non-empty substring of the real panic, and it never
+        //     coexists with a compile error code — an exercise fails EITHER at
+        //     compile time OR at run time, not both (mirrors validate()).
+        if let Some(panic) = &ex.meta.expected_runtime_panic {
+            assert!(
+                !panic.trim().is_empty(),
+                "{id}: empty expected_runtime_panic"
+            );
+            assert!(
+                ex.meta.expected_error_code.is_none(),
+                "{id}: sets both expected_error_code and expected_runtime_panic"
+            );
+        }
+
         // 4. the exercise sits in a known phase, and its id-area + difficulty are
         //    both allowed there (this is the curriculum-drift guard).
         let phase = phase_dir(&ex.source, &root);

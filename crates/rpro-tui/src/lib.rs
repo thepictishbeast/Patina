@@ -441,6 +441,7 @@ mod tests {
                 why: "ownership basics".into(),
             }],
             expected_error_code: Some("EXXXX".into()),
+            expected_runtime_panic: None,
             solution_outline: Some("clone it".into()),
         }
     }

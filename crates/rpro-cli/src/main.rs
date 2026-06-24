@@ -966,6 +966,7 @@ mod tests {
                 concept: "concept".into(),
                 book_refs: vec![],
                 expected_error_code: None,
+                expected_runtime_panic: None,
                 solution_outline: None,
             },
         }

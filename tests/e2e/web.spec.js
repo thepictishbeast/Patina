@@ -30,7 +30,11 @@ test.describe('Tempered Studio web flow', () => {
     }
   });
 
-  test('tier differentiation: Learn withholds the parsed code, Assist surfaces it', async ({ page }) => {
+  test('tier differentiation: Learn withholds the parsed code, Assist surfaces it', async ({ page, request }) => {
+    // Pin a COMPILE-ERROR exercise so the parsed-code path is deterministic: some
+    // exercises compile but panic at run time (runtime-outcome model) and so carry
+    // no E-code in Diagnostics. 01_immutable_assign fails to compile (E0384).
+    await request.post('/api/select', { data: { id: 'basics/01_immutable_assign', force: true } });
     await page.goto('/');
     await expect(page.locator('#exTitle')).toContainText(/\S/);
     // Learn mode (the default) is "by-hand errors only" (Paul's tier decision): it is

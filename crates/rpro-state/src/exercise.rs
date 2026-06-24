@@ -60,6 +60,17 @@ pub struct ExerciseMetadata {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub expected_error_code: Option<String>,
 
+    /// Runtime panic the exercise is designed around. Unlike `expected_error_code`,
+    /// the starter COMPILES — it fails only when RUN (e.g. `unwrap()` on `None`, an
+    /// out-of-bounds index, debug-mode integer overflow). Holds a substring of the
+    /// real panic message (e.g. ``"called `Option::unwrap()` on a `None` value"``)
+    /// so the gate can assert it. Mutually exclusive with `expected_error_code` —
+    /// an exercise fails EITHER at compile time OR at run time, not both. Like
+    /// `expected_error_code`, this is server-side only and NEVER served: the learner
+    /// predicts the outcome and reads the real panic by hand.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub expected_runtime_panic: Option<String>,
+
     /// Authoring reference only — a one-sentence pointer at the fix shape, kept
     /// server-side so authors can sanity-check exercises. NEVER served to any
     /// surface: [`ExerciseMetadata::hint`] deliberately omits it at every rung,
@@ -107,6 +118,13 @@ impl ExerciseMetadata {
                 ));
             }
         }
+        if self.expected_error_code.is_some() && self.expected_runtime_panic.is_some() {
+            return Err(format!(
+                "exercise '{}' sets both expected_error_code and expected_runtime_panic; \
+                 an exercise fails EITHER at compile time OR at run time, not both",
+                self.id
+            ));
+        }
         Ok(())
     }
 
@@ -142,19 +160,19 @@ impl ExerciseMetadata {
                  usually names the fix.",
                 self.concept
             ),
-            2 => self.expected_error_code.as_ref().map_or_else(
-                || {
-                    "Read the first error top-to-bottom: the `-->` line is the \
-                    location, the `help:` line is usually the fix."
-                        .to_string()
-                },
-                |c| {
-                    format!(
-                        "Expect error {c}. Ask for its full explanation, then look at \
-                         exactly which value or line it flags."
-                    )
-                },
-            ),
+            2 => match (&self.expected_error_code, &self.expected_runtime_panic) {
+                (Some(c), _) => format!(
+                    "Expect error {c}. Ask for its full explanation, then look at \
+                     exactly which value or line it flags."
+                ),
+                (None, Some(_)) => "This one COMPILES — the failure shows when it RUNS. \
+                     Read the panic message: the line after `panicked at` says what went \
+                     wrong, and the location points at the call. Which value made it panic?"
+                    .to_string(),
+                (None, None) => "Read the first error top-to-bottom: the `-->` line is the \
+                     location, the `help:` line is usually the fix."
+                    .to_string(),
+            },
             // Last rung: back to the SOURCE, never the code. The compiler's own
             // `help:` line names the change; the learner applies it themselves.
             _ => {
@@ -202,6 +220,7 @@ mod tests {
                 why: "The three ownership rules.".into(),
             }],
             expected_error_code: Some("EXXXX".into()),
+            expected_runtime_panic: None,
             solution_outline: Some("Use clone() to keep both valid.".into()),
         }
     }
@@ -269,5 +288,32 @@ mod tests {
             "L3 is the source/concept review regardless of outline"
         );
         assert!(!t3.to_lowercase().contains("clone"), "still no solution");
+    }
+
+    #[test]
+    fn runtime_panic_metadata_validates_and_excludes_a_code() {
+        // A runtime-outcome exercise sets expected_runtime_panic INSTEAD of an
+        // error code — the starter compiles, then panics when run. That's valid.
+        let mut m = fx();
+        m.expected_error_code = None;
+        m.expected_runtime_panic = Some("called `Option::unwrap()` on a `None` value".into());
+        assert!(m.validate().is_ok(), "a runtime-panic exercise validates");
+        // Rung 2 sends the learner to read the RUN (the panic), not a compile code,
+        // and never quotes the stored panic message (Hard Rule #1: no hand-outs).
+        let r2 = m.hint(2).2;
+        assert!(
+            r2.contains("RUNS") || r2.to_lowercase().contains("panic"),
+            "rung 2 should point a runtime exercise at the panic, got: {r2}"
+        );
+        assert!(
+            !r2.contains("unwrap"),
+            "rung 2 must not quote the panic message itself"
+        );
+        // Setting BOTH a code and a panic is contradictory and rejected.
+        m.expected_error_code = Some("EXXXX".into());
+        assert!(
+            m.validate().is_err(),
+            "an exercise can't claim both a compile error and a runtime panic"
+        );
     }
 }

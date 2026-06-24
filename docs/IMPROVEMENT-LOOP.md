@@ -129,18 +129,27 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   closures(FnOnce) → iterators → Box → Rc. book_ref → `ch13-01-closures` # moving-captured-values-out-of-closures;
   added an "FnOnce, FnMut, and Fn" glossary term (35→36) aliased to `closure-move-capture`. Verified:
   verify-exercises 36/36 (emits E0382), book anchors, golden-corpus, glossary 3/3, live.
-  TODO: RefCell (ch15-05) — BLOCKED on the runtime-outcome model below; async (ch17); grow async in
-  08-concurrency.
-- ☐ **Runtime-outcome exercise model** (2026-06-24, do-what's-best — NOT a Paul fork): the exercise
-  model assumes the failure is a COMPILE error (`expected_error_code` = E####, `verify-exercises.sh`
-  asserts it). A whole class of core lessons are RUNTIME outcomes instead: RefCell's double-borrow
-  `BorrowMutError` panic, integer-overflow panic, `unwrap()` on `None`, index-out-of-bounds. Extend
-  predict-then-run to "predict: compiles? → if yes, does it PANIC, and with what?" + an
-  `expected_runtime_panic` field + a compile-then-run-and-assert-panic verification branch. Unlocks
-  RefCell + overflow + unwrap/index exercises at once. Higher-leverage than any single exercise;
-  warrants its own tick. RefCell lands properly on top of this (its defining lesson IS the runtime
-  panic; the compile-error-only framing would teach "interior mutability exists" while hiding the
-  gotcha that is RefCell — "easiest not best").
+  TODO: RefCell (ch15-05) — now UNBLOCKED by the runtime-outcome model below; async (ch17); grow
+  async in 08-concurrency.
+- ✅ **Runtime-outcome exercise model** (`<pending>`, do-what's-best — not a Paul fork): the model used
+  to assume every failure is a COMPILE error. A whole class of core lessons are RUNTIME panics instead
+  (RefCell's `BorrowMutError`, integer overflow, `unwrap()` on `None`, index-OOB) — now supported.
+  Pre-check first proved `passed` already means "compiled AND ran AND exit 0", so a compiles-but-panics
+  starter is `passed:false` for FREE (runner already correct). The full slice: `ExerciseMetadata` gained
+  `expected_runtime_panic: Option<String>` (server-side only, mutually exclusive with `expected_error_code`,
+  `validate()` rejects both — unit-tested); the no-leak DTOs are allowlists so it's never served (asserted
+  live + in the oneshot test); `golden_corpus` accepts the new field + checks it's non-empty and code-free;
+  `verify-exercises.sh` gained a runtime branch (compile→expect-clean→run→assert the panic substring, in an
+  exec-OK dir since /tmp is noexec); hint rung-2 has a runtime variant (points at the panic, never quotes
+  it). First runtime exercise: **`05-types-and-matching/03b_unwrap_none`** (id `types/05_unwrap_none`,
+  `.max()` of an empty `Vec` → `None.unwrap()` → panic; sorts after `03_option_value`). The gui predict gate
+  was RELABELED compiles/fails → **pass/fail** (the logic `!!out.passed` was already pass-based) so feedback
+  reads honestly for both kinds — verified live: predicting "fails" on the runtime exercise reads "✓ outcome:
+  right". Verified: workspace build, rpro-state 30 / rpro-serve 18 / golden-corpus green, verify-exercises
+  37/37 (runtime branch asserts the panic), anchors, fmt clean, clippy no new warnings, e2e 4/4 (hardened
+  the tier test to pin a compile-error exercise), no-leak confirmed live, Playwright drove both exercise
+  kinds. **DEFERRED (labelled):** the two-axis prediction ("it compiles — but does it panic?") is the
+  pedagogically-complete version (a separate tick); the pass/fail relabel is honest, which is the ship bar.
 - ◐ **Integrate Rust by Example / Rustlings / Cookbook / Exercism** — licenses verified via gh
   (RBE Apache-2.0, Rustlings MIT, Cookbook CC0-1.0, Exercism MIT) + cataloged in
   rust-textbook/catalog/EXTERNAL-MATERIALS.md with an integration plan (Rustlings first).
