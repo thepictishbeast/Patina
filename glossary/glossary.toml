@@ -310,3 +310,10 @@ aliases = ["trait in scope", "trait-in-scope", "import a trait", "use a trait", 
 definition = "A trait's methods are only callable where the trait itself is in scope — that is, where it has been brought in with a `use`. A type can implement a trait in one place, but if the code calling `.method()` has not imported the trait, the compiler reports the method as not found (even though the impl really exists) and suggests the `use` line you need. Bringing the trait into scope is what makes its methods available to call."
 book_chapter = "ch10-02-traits"
 source = "The Rust Book, ch.10.2 \"Traits: Defining Shared Behavior — Implementing a Trait on a Type\""
+
+[[term]]
+name = "unwrap and expect"
+aliases = ["unwrap", "expect", "unwrap-panics-on-err", "panic on error", "unwrap or expect"]
+definition = "Two shortcuts for pulling the value out of a `Result` or `Option`. `unwrap()` gives you the inner value when it's `Ok`/`Some`, but PANICS (crashes the program) when it's `Err`/`None`. `expect(\"message\")` does the same but lets you attach your own message to the panic. They are a promise that the value can't be the error case — fine in quick code or tests, but in real programs you usually handle the error instead (with `match`, `unwrap_or`, or `?`) so one bad value doesn't bring everything down."
+book_chapter = "ch09-02-recoverable-errors-with-result"
+source = "The Rust Book, ch.9.2 \"Shortcuts for Panic on Error: unwrap and expect\""

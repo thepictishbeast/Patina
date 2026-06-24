@@ -1,0 +1,24 @@
+id = "error-handling/03_unwrap_err_panics"
+title = "unwrap() on an Err crashes — handle the error instead"
+difficulty = "beginner"
+estimated_minutes = 7
+concept = "unwrap-panics-on-err"
+expected_runtime_panic = "called `Result::unwrap()` on an `Err` value"
+solution_outline = """
+`unwrap()` extracts the `Ok` value but PANICS on `Err`. `"ferris"` is not a number,
+so `raw.parse()` is an `Err` and `.unwrap()` crashes — the code compiles, it only
+fails when run. Handle the error instead of unwrapping it: `let count = match
+raw.parse::<i32>() { Ok(n) => n, Err(_) => 0 };`, or `raw.parse().unwrap_or(0)`, or
+use `?` in a Result-returning function. The earlier exercises in this phase showed
+both ways; the point is the program should finish, not crash, on bad input.
+"""
+
+[[book_refs]]
+chapter = "ch09-02-recoverable-errors-with-result"
+anchor = "shortcuts-for-panic-on-error"
+why = "unwrap() and expect() are the shortcuts that turn an Err into a panic — handy, but a crash when the value really is Err."
+
+[[book_refs]]
+chapter = "ch09-02-recoverable-errors-with-result"
+anchor = "recoverable-errors-with-result"
+why = "The match-based way to handle Ok and Err so the program recovers instead of crashing."

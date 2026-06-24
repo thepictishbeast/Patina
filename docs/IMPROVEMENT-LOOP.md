@@ -182,8 +182,16 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   one hyphen). Added a "the ? operator" glossary term (38→39) aliased to `error-propagation`. The phase now
   spans beginner(01)→intermediate(02), exercising the `[Beginner, Intermediate]` golden_map tier. Verified:
   verify-exercises 40/40 (emits E0277), anchors, golden-corpus, glossary 3/3, live (run E0277, chip→? op).
-  NEXT in this phase: matching on `Err` / recover-vs-propagate, custom error types, `unwrap`/`expect` (could
-  be a runtime-panic exercise), `?` on `Option`.
+  ✅ Added the 3rd error-handling exercise `03_unwrap_err_panics` (id `error-handling/03_unwrap_err_panics`,
+  beginner) — a RUNTIME-panic exercise (uses the runtime-outcome model, so the phase now mixes compile-error
+  AND runtime): `raw.parse().unwrap()` on non-numeric text → the code COMPILES then PANICS "called
+  `Result::unwrap()` on an `Err` value". This COMPLETES the error-handling arc: 01 unpack (E0308) → 02
+  propagate (E0277) → 03 the-lazy-unwrap-crashes (runtime) — the consequence that motivates handling errors
+  at all. `expected_runtime_panic`; no new chapter (ch09-02 vendored); book_refs → shortcuts-for-panic-on-error
+  + recoverable-errors-with-result. Added an "unwrap and expect" glossary term (42→43). Verified:
+  verify-exercises 44/44 (runtime branch asserts the panic), anchors, golden-corpus, glossary 3/3, live
+  (05b order 01→02→03, run passed:false + panic in stderr, no field leak, chip→unwrap). 05b 2→3; corpus 44.
+  NEXT in this phase: matching on `Err` / recover-vs-propagate, custom error types, `?` on `Option`.
 - ✅ **Breadth, not depth: filled the sparsest phase `09-advanced`** (`<pending>`, advisor decision rule —
   once a topic's core is covered, prefer breadth = the thinnest reachable phase over a 3rd variant of the
   one just touched). 09-advanced had only `01_unsafe_deref`; added `02_orphan_rule_newtype` (id
