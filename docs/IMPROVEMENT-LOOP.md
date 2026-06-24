@@ -224,8 +224,13 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   analogies/leak. (Textbook: **Phases 1–5 lessons all done — L1–L20**; 20 lessons, 5 quizzes [p1 pending],
   5 cheatsheets.) NEXT (un-gated): **extend R5 to cover L20** (Result/`?`/E0277 quiz Qs + an error-handling
   cheatsheet section), then **Phase 6 — Organizing & generics** (modules/generics/traits/lifetimes/tests/
-  cargo — the LAST un-gated phase before the matrix-review-gated DRAFT Phases 7–9). (Minor gaps: Phase-1
-  lacks `quizzes/phase1.md`; phase2 cheatsheet cites 1.94.1.)
+  cargo — the LAST un-gated phase before the matrix-review-gated DRAFT Phases 7–9). **★ R5 EXTENDED to cover
+  L20 → PHASE 5 FULLY COMPLETE** (rust-textbook/main `2399d3d`): `quizzes/phase5.md` +Q11–Q15 (now 15 Qs —
+  Result `match`, `unwrap_or`, `?`-non-Result-fn E0277, `?`-returns-`Ok`, unwrap-on-`Err` compile-vs-runtime
+  panic; every new snippet compile-run on 1.95.0 this tick) and `cheatsheets/phase5.md` +Error-handling
+  section; both "not covered yet" notes removed. **Phase 5 = lessons L18–L20 ✓ · quiz (15 Qs) ✓ · cheatsheet
+  ✓.** NEXT (un-gated): **Phase 6 — Organizing & generics** (read the Phase-6 matrix section + lesson grouping
+  first; likely L21 = modules). (Minor gaps: Phase-1 lacks `quizzes/phase1.md`; phase2 cheatsheet cites 1.94.1.)
 - ◐ **Matrix: re-review rows 51–62** (rate-limited). ✅ Fixed the HTML-entity in row 58 title
   (`Advanced patterns &amp; matching` → literal `&`, matching every sibling row; it was the only
   entity left in the matrix — verified). REMAINING (Paul's review domain): add the missing
