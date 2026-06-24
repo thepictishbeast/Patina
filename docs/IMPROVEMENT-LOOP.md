@@ -187,10 +187,13 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   the `entry().or_insert` word-count). Legit fails verbatim: forgot-import E0433 (compiler gives the fix);
   `v[100]` runtime panic (vs L13 array compile error) vs `.get(100)`→None. **★ PHASE 3 LESSONS COMPLETE:
   L12 ✓ L13 ✓ L14 ✓.** **R3 Phase-3 quiz** (`quizzes/phase3.md`, rust-textbook/main `791276c` — 10 Qs,
-  predict-first + verified answer key, every snippet compile-run on 1.95.0). **R3 status: quiz ✓ ·
-  `cheatsheets/phase3.md` ☐.** NEXT (un-gated): the Phase-3 cheatsheet (closes R3), then **Phase 4 —
-  Ownership** lessons (DECIDED matrix; where the Phase-3 [PHASE-4 LEAN] foreshadows pay off). (Phases 7–9
-  lessons remain matrix-review-gated. Minor gap: Phase-1 lacks `quizzes/phase1.md`.)
+  predict-first + verified answer key, every snippet compile-run on 1.95.0) + **cheatsheet**
+  (`cheatsheets/phase3.md`, `fc7f6ed`). **★ PHASE 3 FULLY COMPLETE: L12 ✓ L13 ✓ L14 ✓ · quiz ✓ · cheatsheet
+  ✓.** (Textbook progress: **Phases 1, 2, 3 fully done** — lessons + quizzes + cheatsheets; Phase 1 lessons
+  L1–L8 predate the quiz format.) NEXT (un-gated): **Phase 4 — Ownership** lessons (DECIDED matrix; the
+  payoff for the Phase-3 [PHASE-4 LEAN] foreshadows: move/Copy/Drop, references & borrowing `&`/`&mut`, the
+  slice type in depth), then Phases 5–6. (Phases 7–9 lessons remain matrix-review-gated. Minor gaps: Phase-1
+  lacks `quizzes/phase1.md`; phase2 cheatsheet cites 1.94.1.)
 - ◐ **Matrix: re-review rows 51–62** (rate-limited). ✅ Fixed the HTML-entity in row 58 title
   (`Advanced patterns &amp; matching` → literal `&`, matching every sibling row; it was the only
   entity left in the matrix — verified). REMAINING (Paul's review domain): add the missing
