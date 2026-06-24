@@ -60,16 +60,15 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
 - ☐ **Full IDE via rust-analyzer** (`LspSpec` defined, unconsumed) — big; Rust FOSS.
 
 ### Content / corpus
-- ◐ **Built-in glossary (audit G1, Paul's explicit ask)** (`<pending>`): v1 shipped — new shared
-  `rpro-glossary` crate (flat `glossary/glossary.toml`, alias-aware case/separator-insensitive lookup,
-  seeded into the store like `book/`/`exercises/` so it ships to Android) + `/api/glossary` (browse +
-  `?term=` lookup, traversal-safe map key) + a VISIBLE gui slice: the exercise's `concept` tag is now a
-  tappable chip → a plain-language definition box (term + def + source attribution + "read more in the
-  Book"). 8 foundational terms (binding, mutability, shadowing, type-inference, ownership, scope, move,
-  borrowing) synthesized from the bundled Book (ch03–ch04) and ATTRIBUTED; CONCEPTUAL, never an exercise's
-  fix (a unit test guards that the `mutability` def never leaks `let mut`), no Python analogies. Verified
-  live (Playwright: tapped the chip, read the def) + loader/no-leak unit tests + curl. TODO: grow the term
-  set; CLI/TUI lookup; optional inline-in-prose term highlighting (deferred — fiddly). Task #24.
+- ✅ **Built-in glossary (audit G1, Paul's explicit ask)** (`<pending>`): shared `rpro-glossary` crate
+  (flat `glossary/glossary.toml`, alias-aware case/separator-insensitive lookup, seeded into the store like
+  `book/`/`exercises/` so it ships to Android). **Covers all 33 exercise concepts** (verified live every
+  concept resolves) — terms drafted by a bounded workflow from the bundled chapters + adversarially verified
+  (grounded, CONCEPTUAL never an exercise's fix, ATTRIBUTED, no foreign-language analogies; a hardened test
+  enforces no-leak + no-HTML-entity + no-foreign-language on every term). **On ALL THREE surfaces:** web
+  (tappable `concept` chip → definition box + "read more in the Book"), CLI (`rpro glossary [term]`), TUI
+  (`g` key → definition in the shared help slot, TestBackend-verified). Tasks #24, #26 done. Future: add
+  terms as new exercises land; optional inline-in-prose term highlighting (deferred — fiddly).
 - ☐ **Lessons for Phases 2–9** (only Phase 1 / L1–L8 exist; matrix DRAFT rows 49–62 done).
 - ◐ **Matrix: re-review rows 51–62** (rate-limited). ✅ Fixed the HTML-entity in row 58 title
   (`Advanced patterns &amp; matching` → literal `&`, matching every sibling row; it was the only
