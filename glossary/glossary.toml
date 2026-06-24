@@ -407,3 +407,16 @@ aliases = ["tuples", "tuple type", "unit value", "unit type"]
 definition = "A tuple groups a FIXED number of values — which may be of different types — into one compound value, written with parentheses like `(1, \"hi\", true)`. You reach the parts by position (`t.0`, `t.1`, and so on) or by destructuring into separate names (`let (a, b, c) = t`). A tuple's length is fixed once it is written. The empty tuple `()` is called the unit value, and it is what an expression or function produces when it has no other meaningful value to return."
 book_chapter = "ch03-02-data-types"
 source = "The Rust Book, ch.3.2 \"Data Types — The Tuple Type\""
+[[term]]
+name = "array"
+aliases = ["arrays", "array type"]
+definition = "An array is a fixed-length sequence of values that all share one type, written in square brackets like `[10, 20, 30]`; its type is written `[i32; 3]` (element type, then length). The length is part of the type and fixed at compile time, and the whole array is stored inline rather than on the heap. Reading past the end is not allowed — a constant out-of-range index is caught at compile time, and a runtime one stops the program rather than reading stray memory. When you need a sequence that can grow or shrink, reach for a vector instead."
+book_chapter = "ch03-02-data-types"
+source = "The Rust Book, ch.3.2 \"Data Types — The Array Type\""
+
+[[term]]
+name = "slice"
+aliases = ["slices", "slice type"]
+definition = "A slice is a reference to a contiguous run of elements WITHIN a collection — part of an array, vector, or string — rather than the whole thing, written with a range like `&v[1..4]`. It borrows the data instead of owning a copy, so it is cheap, and while a slice is alive the collection it points into cannot be changed (that borrow rule is what makes slices safe). A general slice has the type `&[T]`; a slice of a string is the special case `&str`. A slice also remembers its length, so it always knows where it ends."
+book_chapter = "ch04-03-slices"
+source = "The Rust Book, ch.4.3 \"The Slice Type\""

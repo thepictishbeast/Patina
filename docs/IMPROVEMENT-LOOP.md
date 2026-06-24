@@ -304,6 +304,12 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   the L15 centerpiece → the never-hand-answer check → the matrix DECIDED/DRAFT gate, + the verification done).
   All referenced paths verified to resolve. Linked from the top of "Open questions for Paul". Zero new product
   surface. **#21 reframed:** corrective audit clean; `cargo deny` + CI-enforce stay deferred (preventive gate).
+  **Verify-and-hold tick + glossary 56 → 58:** ground-truth confirmed NO Paul activity since the milestone (TS
+  `main` still at old `89dac0c` — batch unmerged; both repos clean+synced; no new pushes), so convergence holds.
+  Filled two genuine un-gated lookup gaps for shipped lessons L13/L17: **slice** (`&[T]`, a borrowed view; ch4.3)
+  and **array** (`[T; N]`, fixed-length; ch3.2) — neither resolved before. Conceptual, no analogies, no leak,
+  attributed; chosen aliases avoid stealing "string slice" from the existing `&str` term (regression-checked:
+  `string slice` still → that term). `cargo test -p rpro-glossary` 3/3; re-seeded + CLI-verified all three.
 - ◐ **Matrix: re-review rows 51–62** (rate-limited). ✅ Fixed the HTML-entity in row 58 title
   (`Advanced patterns &amp; matching` → literal `&`, matching every sibling row; it was the only
   entity left in the matrix — verified). REMAINING (Paul's review domain): add the missing
