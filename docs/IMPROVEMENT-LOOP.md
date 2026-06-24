@@ -214,12 +214,18 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   DECIDED lessons COMPLETE: L18 ✓ L19 ✓.** **R5 Phase-5 quiz** (`quizzes/phase5.md`, rust-textbook/main
   `d6e98b9` — 10 Qs over L18/L19; predict-first + verified answer key incl. E0282 bare-None; every snippet
   compile-run on 1.95.0) + **cheatsheet** (`cheatsheets/phase5.md`, `181280e`). **★ R5 done (over L18/L19):
-  quiz ✓ · cheatsheet ✓.** (Textbook: Phases 1–4 fully done; Phase 5 lessons L18/L19 + review done — 19
-  lessons, 5 quizzes [p1 pending], 5 cheatsheets.) NEXT (un-gated): the deferred **L20 error-handling**
-  (Result/`?`/panic/unwrap — matrix #37, needs its own E/M; the TS exercises already cover it so it'd
-  reinforce), then **Phase 6 — Organizing & generics** (modules/generics/traits/lifetimes/tests/cargo — the
-  LAST un-gated phase before the matrix-review-gated DRAFT Phases 7–9). (Minor gaps: Phase-1 lacks
-  `quizzes/phase1.md`; phase2 cheatsheet cites 1.94.1.)
+  quiz ✓ · cheatsheet ✓.** **★ L20 error-handling AUTHORED → matrix #37 DECIDED → Phase 5 lessons COMPLETE**
+  (`20-error-handling.md` + matrix #37 + TRACKER, rust-textbook/main `25a750e`): the deferred E/M+L done in
+  one tick — narrowed BOOK Ch.9/CR's whole-chapter superset to the L20 slice (Result `Ok`/`Err`; four
+  readings `match`/`unwrap_or`/`unwrap`-`expect`/the `?` operator; framed as the sibling of L19's `Option`;
+  custom-error/`Box<dyn Error>`/`From` deferred to a later phase). Anchor = `str::parse`; every snippet
+  compile-run on 1.95.0 (match→`parsed: 42`, `unwrap_or`→`42 0`, `?`→`Ok(42)`/`Err(ParseIntError…)`); two
+  fails verbatim (E0277 `?`-in-non-Result-fn, runtime panic on `unwrap`-of-`Err`); 7-part, write-first, no
+  analogies/leak. (Textbook: **Phases 1–5 lessons all done — L1–L20**; 20 lessons, 5 quizzes [p1 pending],
+  5 cheatsheets.) NEXT (un-gated): **extend R5 to cover L20** (Result/`?`/E0277 quiz Qs + an error-handling
+  cheatsheet section), then **Phase 6 — Organizing & generics** (modules/generics/traits/lifetimes/tests/
+  cargo — the LAST un-gated phase before the matrix-review-gated DRAFT Phases 7–9). (Minor gaps: Phase-1
+  lacks `quizzes/phase1.md`; phase2 cheatsheet cites 1.94.1.)
 - ◐ **Matrix: re-review rows 51–62** (rate-limited). ✅ Fixed the HTML-entity in row 58 title
   (`Advanced patterns &amp; matching` → literal `&`, matching every sibling row; it was the only
   entity left in the matrix — verified). REMAINING (Paul's review domain): add the missing
