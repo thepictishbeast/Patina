@@ -1,0 +1,19 @@
+id = "smart-pointers/01_recursive_box"
+title = "A type that contains itself needs heap indirection"
+difficulty = "advanced"
+estimated_minutes = 8
+concept = "recursive-type-indirection"
+expected_error_code = "E0072"
+solution_outline = """
+`List` is recursive — `Cons` holds another `List` directly — so `List` has no
+fixed size and the compiler can't lay it out (E0072). Put the inner list behind a
+`Box`, a smart pointer that stores its value on the heap and is itself a small,
+fixed-size handle on the stack: change `Cons(i32, List)` to `Cons(i32, Box<List>)`
+and wrap each inner list with `Box::new(...)` (e.g. `Cons(1, Box::new(Cons(2,
+Box::new(Nil))))`). The `Box` breaks the size cycle without changing the data.
+"""
+
+[[book_refs]]
+chapter = "ch15-01-box"
+anchor = "enabling-recursive-types-with-boxes"
+why = "The Book uses exactly this cons-list to show why a recursive type has infinite size and how a `Box` fixes it."

@@ -247,3 +247,10 @@ aliases = ["unsafe-raw-pointers", "unsafe keyword", "raw pointer", "dereference 
 definition = "The unsafe keyword opens a small section of code where you can do a handful of things the compiler is not able to check for you. One of those things is following a raw pointer, which is a stored memory location that Rust does not promise is valid, so you take on the responsibility of using it correctly."
 book_chapter = "ch20-01-unsafe-rust"
 source = "The Rust Book, ch.20.1 \"Unsafe Rust\""
+
+[[term]]
+name = "Box"
+aliases = ["box", "smart pointer", "smart-pointer", "recursive-type-indirection", "heap indirection"]
+definition = "A smart pointer that stores its value on the heap; what stays on the stack is just a small, fixed-size pointer to that heap data. Because the handle has a known size, a `Box` lets you give a known size to a value that otherwise wouldn't have one (such as a type that contains itself)."
+book_chapter = "ch15-01-box"
+source = "The Rust Book, ch.15.1 \"Using Box<T> to Point to Data on the Heap\""
