@@ -181,9 +181,14 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   Phase-4 foreshadow only. Snippets compile-run on 1.95.0. **L13 — tuples + arrays + slices** (`13-tuples-
   arrays-slices.md`, rust-textbook/main `1e32f61`; rows 21–23): fixed-shape collections; slice = "a view
   whose length drops out of `&[T]`"; the standout dual-OOB reproduced verbatim (const `a[5]`→compile error
-  `unconditional_panic`; computed `a[pick()]`→runtime panic) + mid-char-boundary slice panic. **Phase 3
-  lessons: L12 ✓ L13 ✓.** NEXT (un-gated): **L14** (Vec + HashMap, rows 24–25), then R3; then Phases 4–6.
-  (Phases 7–9 lessons remain matrix-review-gated. Minor gap: Phase-1 lacks `quizzes/phase1.md`.)
+  `unconditional_panic`; computed `a[pick()]`→runtime panic) + mid-char-boundary slice panic. **L14 — Vec +
+  HashMap** (`14-vec-hashmap.md`, rust-textbook/main `4509870`; rows 24–25): growable collections — Vec
+  (push/pop, `[]`-vs-`.get()` as a design choice, `*n+=` mutate) + HashMap (`use std::collections::HashMap`,
+  the `entry().or_insert` word-count). Legit fails verbatim: forgot-import E0433 (compiler gives the fix);
+  `v[100]` runtime panic (vs L13 array compile error) vs `.get(100)`→None. **★ PHASE 3 LESSONS COMPLETE:
+  L12 ✓ L13 ✓ L14 ✓.** NEXT (un-gated): **R3** (Phase-3 quiz + `cheatsheets/phase3.md`), then **Phase 4 —
+  Ownership** lessons (DECIDED matrix). (Phases 7–9 lessons remain matrix-review-gated. Minor gap: Phase-1
+  lacks `quizzes/phase1.md`.)
 - ◐ **Matrix: re-review rows 51–62** (rate-limited). ✅ Fixed the HTML-entity in row 58 title
   (`Advanced patterns &amp; matching` → literal `&`, matching every sibling row; it was the only
   entity left in the matrix — verified). REMAINING (Paul's review domain): add the missing
