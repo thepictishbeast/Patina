@@ -306,16 +306,17 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   error-code *emission* stay in `verify-exercises.sh`; anchors stay in `verify-book-anchors.mjs`.
 - ✅ **Offline-Android Run UX** (`<pending>`): a failed run with an exercise loaded now shows
   a guiding "can't run here — no toolchain; predict/read/study offline" message, not the demo.
-- ◐ **Clippy hygiene (per-crate)**: **5 crates now clippy-clean** — `rpro-book` (`<pending>`: doc-paragraph
-  split, unused `.peekable()` dropped, `sort_by`→`sort_by_key(Reverse)`), plus `rpro-lang` + `rpro-lang-rust`
-  (`<pending>`: `format_collect` ×2 → `fold`+`push`, identical `display` output confirmed by 7 tests; and the
-  cross-cutting `struct_excessive_bools` resolved with a justified `#[allow]` on `EditorAssists` — four
-  INDEPENDENT serialized editor-tier flags, where a bitfield/enum would be strictly worse), and the already-clean
-  `rpro-storage-fs`/`rpro-runner`. Remaining (6 crates, all genuine fixes except one allow): `rpro-tui` (8),
-  `rpro-core` (6), `rpro-serve` (4), `rpro-state` (4 over-long doc paragraphs), `rpro-toolchain-local` (3:
-  `match`→`if let`, pass-by-value), `rpro-cli` (2) — mostly doc-paragraphs/redundant-clone/str-lifetime, plus
-  the `?Send`-toolchain `future cannot be sent` (×6, rpro-core/serve) which needs the same kind of justified
-  `#[allow]`. Once all clean, add a clippy gate to CI (SECURITY.md §4).
+- ◐ **Clippy hygiene (per-crate)**: **7 crates now clippy-clean** — `rpro-book`, `rpro-lang`, `rpro-lang-rust`
+  (per prior ticks; `format_collect`→`fold`, a justified `#[allow(struct_excessive_bools)]` on `EditorAssists`),
+  the already-clean `rpro-storage-fs`/`rpro-runner`, plus (`<pending>`) **`rpro-state`** (4 `too_long_first_doc_paragraph`
+  → split the summary line on review.rs/tutor.rs) and **`rpro-toolchain-local`** (3: `match`→`if let` in the
+  try_wait poll loop; `push_str(&format!)`→`write!` via `std::fmt::Write`; `map_spawn_err` now takes
+  `&std::io::Error` — both callers pass `&e`). All corrective, mechanical, no `#[allow]`; verified 0 warnings +
+  tests (30 / 5) + fmt + seam-guard. Remaining (4 crates): `rpro-tui` (8), `rpro-core` (6), `rpro-serve` (4),
+  `rpro-cli` (2 `similar_names` — judgment call: rename or `#[allow]`). rpro-core/serve carry the `?Send`-toolchain
+  `future cannot be sent` (×6) which needs a justified `#[allow]`. **Adding the clippy `-D warnings` CI gate is
+  a SEPARATE, LATER task and stays DEFERRED — it's preventive + CI-only (unverifiable from the loop env), same
+  bar that defers cargo-audit's CI job.** This tick only reduced existing debt.
 - ✅ **`SECURITY.md` CORRECTION + freshen** (`<pending>`): the prior "SECURITY.md is MISSING" claim was
   WRONG — it lives at **`docs/SECURITY.md`** (the "§4" the notes cite); the earlier check grepped the repo
   root only. It's a thorough review and was just **re-freshened** to current state (the doc's own rule:
@@ -385,6 +386,21 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   F-Droid + Obtainium · signed APT/dnf repos.
 
 ## Open questions for Paul
+- ⚠️ **The high-value backlog is now GATED on you — please review/merge** (2026-06-24, ~19 autonomous ticks).
+  The un-blocked work is draining: the genuinely-missing core content is filled (now **48 verified exercises
+  across 11 phases**, error-handling arc complete, HashMap added), the Dev editor has a real assist (Tab +
+  Enter auto-indent), the glossary is 46 terms, and the security review is fresh. Remaining un-blocked work is
+  increasingly marginal (variant exercises, clippy debt, polish). **The biggest remaining value needs YOU:**
+  1. **Review the batch.** 48 exercises + the editor/glossary/runtime-model changes all sit UNMERGED on
+     `textbook-integration`, unvalidated against your intent over ~19 ticks. Do they match the pedagogy you
+     want? Should `textbook-integration` merge to `main` (it never has)?
+  2. **Lessons for Phases 2–9 (#16/#17)** — only Phase 1 / L1–L8 exist; these are your content-review domain
+     (the "show Paul the matrix first" gate). This is the single biggest learner-facing gap and is fully
+     gated on you.
+  3. **Scope calls:** rust-analyzer IDE (#19, big), platform/distribution (#23, mostly env-gated), and the
+     `--solution` rename (below) all want a decision.
+  Until you weigh in, the loop keeps doing bounded un-blocked work (more exercises, clippy hygiene, editor
+  polish), but the marginal value is lower than your review would unlock. One PushNotification sent.
 - ✅ **RESOLVED — Book chapter sources** (2026-06-23). The chapter-bundling blocker is gone: `curl` to
   `raw.githubusercontent.com/rust-lang/book/main/src/*.md` works in this env, so authentic chapter
   markdown can be vendored the right way (Paul: "do what's best — authentic sources"). NOT WebFetch —

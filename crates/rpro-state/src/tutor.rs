@@ -32,9 +32,10 @@ pub enum Actor {
     Tutor,
 }
 
-/// The nine steps of the interactive loop (`docs/EDUCATION.md`). Seven are
-/// tutor-silent by invariant; the tutor only truly acts at [`LoopStep::Guide`]
-/// (with a light supporting role at [`LoopStep::Explain`]).
+/// The nine steps of the interactive loop (`docs/EDUCATION.md`).
+///
+/// Seven are tutor-silent by invariant; the tutor only truly acts at
+/// [`LoopStep::Guide`] (with a light supporting role at [`LoopStep::Explain`]).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LoopStep {
     /// Capture + lock a typed prediction before any run.
@@ -212,9 +213,10 @@ impl TutorContext<'_> {
 }
 
 /// The hard guardrails every tutor turn must obey (`docs/EDUCATION.md`
-/// §"How the AI tutor must GUIDE not solve"). A backend prepends these to its
-/// system prompt verbatim. Neutral by design — no toolchain or error-code
-/// literals — so the rules travel across surfaces unchanged.
+/// §"How the AI tutor must GUIDE not solve").
+///
+/// A backend prepends these to its system prompt verbatim. Neutral by design — no
+/// toolchain or error-code literals — so the rules travel across surfaces unchanged.
 pub const GUARDRAILS: &[&str] = &[
     "Never post corrected code for their exercise. A different teaching snippet to \
      illustrate a mechanism is fine; their practice code never is.",
@@ -232,10 +234,12 @@ pub const GUARDRAILS: &[&str] = &[
 ];
 
 /// The meta-instruction the tutor backend executes to produce a single GUIDE turn
-/// at `rung` for `ctx`. This is an instruction *to the tutor*, parameterised by
-/// the concept and observed code — never a fixed reply, and never a worked fix.
-/// The top rung is itself an instruction to *generate* a throwaway example, so no
-/// concrete fix is ever stored here.
+/// at `rung` for `ctx`.
+///
+/// This is an instruction *to the tutor*, parameterised by the concept and observed
+/// code — never a fixed reply, and never a worked fix. The top rung is itself an
+/// instruction to *generate* a throwaway example, so no concrete fix is ever stored
+/// here.
 #[must_use]
 pub fn guide_rung(rung: HintRung, ctx: &TutorContext) -> String {
     let code = ctx.code_phrase();

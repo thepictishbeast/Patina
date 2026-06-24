@@ -1,7 +1,8 @@
 //! Spaced repetition over diagnostic codes — the "RECALL" beat of the
-//! educational loop (docs/EDUCATION.md). When a learner keeps hitting the same
-//! compiler error, that concept should resurface; once they reliably overcome
-//! it, it retires.
+//! educational loop (docs/EDUCATION.md).
+//!
+//! When a learner keeps hitting the same compiler error, that concept should
+//! resurface; once they reliably overcome it, it retires.
 //!
 //! v1 is a clock-free Leitner-box model: every diagnostic code sits in a box
 //! `0..=MAX_BOX`. A fresh miss resets it to 0; overcoming it bumps it up one.

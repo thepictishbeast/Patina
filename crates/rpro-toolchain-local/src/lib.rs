@@ -51,7 +51,7 @@ impl LocalProcess {
 
         let Some(limit) = timeout else {
             // No cap: the simple, well-trodden path. Unchanged behaviour.
-            let output = cmd.output().map_err(|e| map_spawn_err(e, plan))?;
+            let output = cmd.output().map_err(|e| map_spawn_err(&e, plan))?;
             return Ok(outcome(
                 output.status.code(),
                 String::from_utf8_lossy(&output.stdout).into_owned(),
@@ -61,7 +61,7 @@ impl LocalProcess {
         };
 
         cmd.stdout(Stdio::piped()).stderr(Stdio::piped());
-        let mut child = cmd.spawn().map_err(|e| map_spawn_err(e, plan))?;
+        let mut child = cmd.spawn().map_err(|e| map_spawn_err(&e, plan))?;
         // Drain both pipes concurrently so the child never blocks on a full
         // buffer while we poll for exit (the classic timeout+capture deadlock).
         let mut out = child.stdout.take();
@@ -71,31 +71,31 @@ impl LocalProcess {
 
         let mut timed_out = false;
         let status = loop {
-            match child
+            if let Some(s) = child
                 .try_wait()
                 .map_err(|e| ToolError::Spawn(e.to_string()))?
             {
-                Some(s) => break s,
-                None => {
-                    if started.elapsed() >= limit {
-                        let _ = child.kill();
-                        let s = child.wait().map_err(|e| ToolError::Spawn(e.to_string()))?;
-                        timed_out = true;
-                        break s;
-                    }
-                    std::thread::sleep(Duration::from_millis(20));
-                }
+                break s;
             }
+            if started.elapsed() >= limit {
+                let _ = child.kill();
+                let s = child.wait().map_err(|e| ToolError::Spawn(e.to_string()))?;
+                timed_out = true;
+                break s;
+            }
+            std::thread::sleep(Duration::from_millis(20));
         };
 
         let stdout = out_h.join().unwrap_or_default();
         let mut stderr = err_h.join().unwrap_or_default();
         if timed_out {
             // Surface *why* it stopped in the raw bytes the learner reads.
-            stderr.push_str(&format!(
+            use std::fmt::Write as _;
+            let _ = write!(
+                stderr,
                 "\n[rpro: run exceeded the {}s timeout and was stopped]\n",
                 limit.as_secs()
-            ));
+            );
         }
         Ok(outcome(status.code(), stdout, stderr, started))
     }
@@ -145,7 +145,7 @@ fn outcome(
 }
 
 /// Map a spawn I/O error to the right [`ToolError`].
-fn map_spawn_err(e: std::io::Error, plan: &CommandPlan) -> ToolError {
+fn map_spawn_err(e: &std::io::Error, plan: &CommandPlan) -> ToolError {
     if e.kind() == std::io::ErrorKind::NotFound {
         ToolError::NotFound(plan.program.clone())
     } else {
