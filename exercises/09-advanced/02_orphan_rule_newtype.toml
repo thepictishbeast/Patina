@@ -1,0 +1,24 @@
+id = "advanced/02_orphan_rule_newtype"
+title = "The orphan rule: wrap a foreign type to give it a foreign trait"
+difficulty = "advanced"
+estimated_minutes = 10
+concept = "orphan-rule-newtype"
+expected_error_code = "E0117"
+solution_outline = """
+The coherence ("orphan") rule lets you implement a trait for a type only if you own
+the TRAIT or the TYPE. `Display` and `Vec` are both the standard library's, so this
+impl is rejected (E0117). Use the NEWTYPE pattern: define your own one-field wrapper
+`struct List(Vec<String>);` and implement `Display` for `List` (reach the inner Vec
+via `self.0`). Then build a `List(vec![...])` in main and print THAT. The wrapper is
+a type you own, so the impl is allowed, and it's a thin, zero-cost shell around the Vec.
+"""
+
+[[book_refs]]
+chapter = "ch10-02-traits"
+anchor = "implementing-a-trait-on-a-type"
+why = "The coherence rule — you may implement a trait on a type only if the trait or the type is local to your crate."
+
+[[book_refs]]
+chapter = "ch20-02-advanced-traits"
+anchor = "implementing-external-traits-with-the-newtype-pattern"
+why = "The newtype pattern — wrap the foreign type in a struct you own so you're allowed to implement the foreign trait."

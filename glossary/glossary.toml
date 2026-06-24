@@ -289,3 +289,10 @@ aliases = ["question mark operator", "question-mark", "error-propagation", "erro
 definition = "A shortcut for passing errors upward. Written right after an expression that produces a `Result` (or `Option`), `?` means: if the value is `Err` (or `None`), stop the current function and return that error to whoever called it; otherwise, take the `Ok` value out and carry on. It replaces a whole `match` that would check for the error case by hand. It only works inside a function that itself returns a `Result` or `Option`, because that return type is where the error gets sent."
 book_chapter = "ch09-02-recoverable-errors-with-result"
 source = "The Rust Book, ch.9.2 \"A Shortcut for Propagating Errors: the ? Operator\""
+
+[[term]]
+name = "the orphan rule and the newtype pattern"
+aliases = ["orphan rule", "orphan-rule", "coherence", "coherence rule", "newtype", "newtype pattern", "orphan-rule-newtype", "external traits"]
+definition = "The orphan rule (part of \"coherence\") says you may implement a trait for a type only if you define the trait, or you define the type — you can't add a foreign trait to a foreign type, because two unrelated crates could otherwise write conflicting impls and break each other. The newtype pattern is the way around it: wrap the foreign type in your own one-field struct (a \"newtype\") and implement the trait on that wrapper instead. The wrapper is a type you own, so the impl is allowed, and it costs nothing extra at runtime."
+book_chapter = "ch20-02-advanced-traits"
+source = "The Rust Book, ch.20.2 \"Advanced Traits — Implementing External Traits with the Newtype Pattern\""

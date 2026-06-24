@@ -184,6 +184,19 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   verify-exercises 40/40 (emits E0277), anchors, golden-corpus, glossary 3/3, live (run E0277, chip→? op).
   NEXT in this phase: matching on `Err` / recover-vs-propagate, custom error types, `unwrap`/`expect` (could
   be a runtime-panic exercise), `?` on `Option`.
+- ✅ **Breadth, not depth: filled the sparsest phase `09-advanced`** (`<pending>`, advisor decision rule —
+  once a topic's core is covered, prefer breadth = the thinnest reachable phase over a 3rd variant of the
+  one just touched). 09-advanced had only `01_unsafe_deref`; added `02_orphan_rule_newtype` (id
+  `advanced/02_orphan_rule_newtype`, advanced): `impl Display for Vec<String>` (foreign trait on foreign
+  type) → **E0117** "only traits defined in the current crate can be implemented for types defined outside"
+  — the coherence/orphan rule. Probed clean single E0117 even with a `println!` (rustc still records the
+  rejected impl for resolution, so no secondary E0277). The fix is the **newtype pattern** (wrap the foreign
+  type in a one-field struct you own) — a genuinely important Rust idiom. Vendored `ch20-02-advanced-traits`;
+  book_refs → `ch10-02-traits` # implementing-a-trait-on-a-type (the rule) + `ch20-02` #
+  implementing-external-traits-with-the-newtype-pattern (the fix). Added "the orphan rule and the newtype
+  pattern" glossary term (39→40). Verified: verify-exercises 41/41 (emits E0117), anchors, golden-corpus,
+  glossary 3/3, live (09-advanced now 01→02, run E0117, chip→orphan-rule term). 09-advanced 1→2; corpus
+  41 exercises. NEXT thin phases: 08-concurrency (3), 07-generics (3).
 - ◐ **Integrate Rust by Example / Rustlings / Cookbook / Exercism** — licenses verified via gh
   (RBE Apache-2.0, Rustlings MIT, Cookbook CC0-1.0, Exercism MIT) + cataloged in
   rust-textbook/catalog/EXTERNAL-MATERIALS.md with an integration plan (Rustlings first).
@@ -210,6 +223,14 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   `match`→`if let`, pass-by-value), `rpro-cli` (2) — mostly doc-paragraphs/redundant-clone/str-lifetime, plus
   the `?Send`-toolchain `future cannot be sent` (×6, rpro-core/serve) which needs the same kind of justified
   `#[allow]`. Once all clean, add a clippy gate to CI (SECURITY.md §4).
+- ☐ **`SECURITY.md` is MISSING but referenced** (found 2026-06-24): the clippy/audit notes and prior
+  memory cite "SECURITY.md §4", but the file does not exist in the repo. Either CREATE it documenting the
+  posture already built (loopback-only bind, op-whitelist, no-leak DTOs, `DefaultBodyLimit`/413,
+  path-traversal blocks, cargo-audit clean) — a real artifact — or scrub the dangling references. A clean
+  bounded tick on its own. NOTE: security-CI gates (cargo-audit/deny job) were considered and DEFERRED —
+  cargo-audit was already clean (preventive, not corrective), cargo-deny isn't installed, and a CI-only
+  change can't be verified from the loop env (fails the "verified improvement" bar); revisit on a concrete
+  dependency-vuln signal, not preventively.
 - ✅ **e2e a11y regression fixed** (`<pending>`): the serious `color-contrast` violation was the
   *selected* mode-switcher button — white `#fff` on `--accent` `#f74c00` = **3.5:1** at 11px (needs
   4.5:1); regressed when the switcher landed (`158c997`). Deepened just that button's bg to
