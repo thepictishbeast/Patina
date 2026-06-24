@@ -237,8 +237,15 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   include"). 7-part, write-first, baby-steps (`pub`/paths introduced minimally, full privacy deferred to L22).
   Snippets compile-run on 1.95.0 (`foo`/`bar`→`In the foo module`/`In the bar module`; nested tree builds
   clean); failing demo verbatim **E0583** "file not found for module `garden`" + the help line naming
-  `garden.rs`/`garden/mod.rs`. No analogies/leak. Metaphor = filesystem dir-tree (BOOK's own). **Phase 6
-  Organizing lessons: L21 ✓; remaining L22 (paths & `pub`, #44–46), L23 (`use`, #47–48), then R6.** (Minor
+  `garden.rs`/`garden/mod.rs`. No analogies/leak. Metaphor = filesystem dir-tree (BOOK's own). **★ L22 authored**
+  (`22-paths-and-visibility.md`, rust-textbook/main `1723c6e`; rows 44–46): paths (absolute `crate::` vs
+  relative `self`/`super`; prefer absolute) · privacy-by-default + `pub` (child sees ancestors' privates; the
+  "`pub mod` ≠ `pub` contents" surprise; `pub(crate)`) · `pub` on structs vs enums (struct keeps fields private
+  → needs a public constructor; enum publishes all variants; "privacy is module-based not type-based"). 7-part,
+  write-first, baby-steps (continues L21; `use` deferred to L23). Snippets compile-checked on 1.95.0 (abs+rel,
+  `super`, outer/inner runs, `Breakfast`, `pub enum`, `pub(crate)`); two errors verbatim **E0603** (private fn —
+  the two-strike) + **E0616** (private field). No analogies/leak. **Phase 6 Organizing lessons: L21 ✓ L22 ✓;
+  remaining L23 (`use`, #47–48), then R6 over L21–L23.** (Minor
   gaps: Phase-1 lacks `quizzes/phase1.md`; phase2 cheatsheet cites 1.94.1.)
 - ◐ **Matrix: re-review rows 51–62** (rate-limited). ✅ Fixed the HTML-entity in row 58 title
   (`Advanced patterns &amp; matching` → literal `&`, matching every sibling row; it was the only
