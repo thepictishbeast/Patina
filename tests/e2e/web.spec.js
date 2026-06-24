@@ -30,16 +30,24 @@ test.describe('Tempered Studio web flow', () => {
     }
   });
 
-  test('Run compiles the real toolchain and surfaces the error code in Diagnostics', async ({ page }) => {
+  test('tier differentiation: Learn withholds the parsed code, Assist surfaces it', async ({ page }) => {
     await page.goto('/');
     await expect(page.locator('#exTitle')).toContainText(/\S/);
-    // Learn mode (the default) is predict-first: Run is gated until a compiles/fails
-    // guess is locked (the active-recall contract, 158c997). Lock the honest guess for
-    // the seeded starter (01_immutable_assign FAILS to compile), then Run must surface
-    // its real rustc error code (E0xxx) in Diagnostics.
+    // Learn mode (the default) is "by-hand errors only" (Paul's tier decision): it is
+    // predict-first (Run gated until a compiles/fails guess is locked, 158c997), and
+    // after Run the parsed Diagnostics panel is WITHHELD — the real rustc error code
+    // lives only in the terminal, to be read by hand. Lock the honest guess for the
+    // seeded starter (01_immutable_assign FAILS to compile), then Run.
     await page.locator('.pbtn[data-pred="fails"]').click();
     await page.locator('#runbtn').click();
-    await expect(page.locator('#diag'), 'Diagnostics shows a real rustc error code')
+    await expect(page.locator('#statusline'), 'the run lands')
+      .toContainText(/failed|passed/, { timeout: 25_000 });
+    await expect(page.locator('#diag'), 'Learn withholds the parsed error code (by hand)')
+      .not.toContainText(/E0\d{3}/);
+    // Switch to Assist: the SAME last run re-renders with the parsed Diagnostics panel,
+    // surfacing the real rustc error code — no re-run needed (the tier re-render path).
+    await page.locator('#modesw button[data-mode="assist"]').click();
+    await expect(page.locator('#diag'), 'Assist surfaces the parsed rustc error code')
       .toContainText(/E0\d{3}/, { timeout: 25_000 });
   });
 });

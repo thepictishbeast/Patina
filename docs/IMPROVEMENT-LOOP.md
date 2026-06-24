@@ -53,8 +53,23 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
 ### Editor / IDE
 - ◐ **3 modes (Learn/Assist/Dev)** — switcher + persistence + Learn predict-gate DONE
   (`158c997`); legacy header `FREE` badge **removed** (`<pending>`) so the switcher is the sole
-  mode authority (verified live: header renders, badge gone, no a11y/contrast change). Remaining:
-  Learn must BLOCK autocomplete/auto-fix; Assist/Dev get inline diagnostics.
+  mode authority (verified live: header renders, badge gone, no a11y/contrast change).
+  ✅ **Tier-gate the Diagnostics panel** (`<pending>`, audit G2 / task #18): `renderDiag` was
+  mode-agnostic — it handed the learner a parsed, clickable error code + line in ALL modes,
+  including Learn, contradicting Paul's "Learn = by-hand errors only" decision. Now Learn shows a
+  "read it by hand — find the error code yourself (switch to Assist)" nudge and withholds the
+  parsed panel; **Assist/Dev** get the parsed Diagnostics. `lastCode` resets per `renderDiag`
+  (kills cross-run/mode staleness) so predict-feedback still scrapes the real code AFTER a guess
+  (active recall preserved); `setMode` re-renders the last run so switching tiers updates the panel
+  with NO re-run. Honest tooltips (Learn "read errors by hand"; Assist "parsed diagnostics panel").
+  Verified: gui transforms green; live e2e rewritten to a tier-diff test (Learn `#diag` has no
+  E-code → switch to Assist → `E0384` appears without re-running) — **3/3 e2e pass**; Playwright
+  read + screenshot confirm. **Autocomplete/auto-fix:** already satisfied — the textarea sets
+  `autocomplete/autocorrect/autocapitalize/spellcheck` off for all modes and has NO Tab/auto-close/
+  auto-indent assists to gate.
+  Remaining (#18, still open): TRUE **inline-in-editor** diagnostics — surface `dg.span.line` as a
+  gutter marker / underline on the offending line in the highlight overlay (Assist/Dev only). The
+  data (line spans) is already in the run response; only the editor-overlay rendering is left.
 - ✅ **Editable-pane syntax highlighting** (`<pending>`): colored `<pre>` overlay behind a
   transparent textarea, reusing highlightRust; always-on. Verified live.
 - ☐ **Full IDE via rust-analyzer** (`LspSpec` defined, unconsumed) — big; Rust FOSS.

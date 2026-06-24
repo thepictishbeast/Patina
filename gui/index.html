@@ -297,8 +297,8 @@
           <span class="dot" style="background:var(--done)"></span>
           &nbsp; <span id="editorBar">main.rs</span>
           <span class="modesw" id="modesw" role="group" aria-label="Editor mode">
-            <button data-mode="learn" title="Learn: you do the work — predict before Run, no autocomplete/auto-fix">Learn</button>
-            <button data-mode="assist" title="Assist: + inline diagnostics and hints on demand">Assist</button>
+            <button data-mode="learn" title="Learn: you do the work — predict before Run, read errors by hand, no autocomplete/auto-fix">Learn</button>
+            <button data-mode="assist" title="Assist: parsed diagnostics panel + hints on demand">Assist</button>
             <button data-mode="dev" title="Dev: full editor assists">Dev</button>
           </span>
           <span style="flex:1"></span>
@@ -418,6 +418,7 @@
           return;
         }
         const out = await res.json();
+        lastOut = out; // remember for tier re-render (see setMode)
         term.clear();
         // Raw bytes carry ANSI from the toolchain — write verbatim, no recolor.
         if (out.raw_stdout) term.write(out.raw_stdout.replace(/\n/g,'\r\n'));
@@ -470,6 +471,9 @@
 
     // ── live rendering: the page reflects the REAL current exercise + list ──
     let lastCode = '';
+    // The most recent run/check/explain response, kept so a tier switch can
+    // re-render the Diagnostics panel without re-running (Learn withholds it).
+    let lastOut = null;
     const esc = s => (s == null ? '' : String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     const CHIP = { done:'✓', current:'▸', locked:'🔒', skipped:'»' };
 
@@ -560,6 +564,9 @@
       // dimmed (optional) in Assist/Dev. The switcher highlight shows the mode.
       const pb = document.getElementById('predictbar');
       if (pb) pb.style.opacity = m === 'learn' ? '1' : '.55';
+      // Diagnostics are a tier feature — re-render the last run so switching tiers
+      // updates the panel immediately (Learn withholds it; Assist/Dev show it).
+      if (lastOut) renderDiag(lastOut);
     }
 
     // Compare the learner's locked prediction against the real result.
@@ -698,6 +705,19 @@
     // error codes from the raw output (and prefill Explain with the first one).
     function renderDiag(out) {
       const box = document.getElementById('diag');
+      // Diagnostics are a TIER feature. Reset the remembered code each call so it
+      // reflects only the current run (never lingering across runs or modes).
+      lastCode = '';
+      // Learn = "by-hand errors only" (Paul's tier decision): withhold the parsed,
+      // clickable Diagnostics panel — the learner reads the raw terminal output and
+      // finds the error code themselves. Assist/Dev get the parsed panel below.
+      // (The predict-then-run feedback still reveals the real code — but only AFTER
+      // a guess is locked, which is the active-recall step, not a free hand-over.)
+      if (mode === 'learn') {
+        box.innerHTML = '<div class="diag note"><span class="lvl">[i]</span>'
+          + '<span class="msg">read it by hand<small>the compiler output is in the terminal above — find the error code yourself (switch to Assist to have it parsed)</small></span></div>';
+        return;
+      }
       let rows = [];
       if (out.diagnostics && out.diagnostics.length) {
         rows = out.diagnostics.map(dg => {
