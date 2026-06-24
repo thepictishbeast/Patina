@@ -163,8 +163,12 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   `dc7bb05`): `loop`+break-value+labels · `while` · `for`+ranges (matrix rows 16–18); same format/rules;
   every snippet compile-run on 1.95.0/ed2024 (loop→20, while→LIFTOFF, ranges→1 2 3/1 2 3 4/3 2 1, label→2);
   off-by-one `while index <= len` panic reproduced verbatim ("index out of bounds…") with `for` as the fix.
-  **Phase 2 lessons: L9 ✓ L10 ✓.** NEXT (un-gated): L11 (`match` intro, row 19), R2 + `likes` kata; then
-  Phases 3–6. (Phases 7–9 lessons remain matrix-review-gated.)
+  **L11 — `match` intro** (`11-match-intro.md`, rust-textbook/main `b2baebd`): literal arms, `_` wildcard,
+  value-returning, exhaustiveness (matrix row 19); CR intro + BLOG's E0004 non-exhaustive demo + BOOK's
+  coin-sorting-machine metaphor; deep patterns deferred to Phase 5. Snippets compile-run on 1.95.0/ed2024;
+  E0004 "`2_u8..=u8::MAX` not covered" reproduced verbatim. **Phase 2 lessons COMPLETE: L9 ✓ L10 ✓ L11 ✓.**
+  NEXT (un-gated): **R2** (Phase 2 review quiz + cheatsheet + the `likes` kata capstone), then Phases 3–6
+  lessons (DECIDED matrix). (Phases 7–9 lessons remain matrix-review-gated.)
 - ◐ **Matrix: re-review rows 51–62** (rate-limited). ✅ Fixed the HTML-entity in row 58 title
   (`Advanced patterns &amp; matching` → literal `&`, matching every sibling row; it was the only
   entity left in the matrix — verified). REMAINING (Paul's review domain): add the missing
