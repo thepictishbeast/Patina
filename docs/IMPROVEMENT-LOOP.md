@@ -172,9 +172,12 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   solution (CLAUDE.md rule 1 — kata is the learner's): task + `fn likes(names: &[&str]) -> String` signature
   + 5 count rules + verified answer-key table (reference solution compiled privately on 1.95.0, kept OUT of
   the repo) + a hint ladder (structure only, never the arm bodies) + a `main` test harness. R2 now:
-  cheatsheet (pre-existing) ✓ · `likes` kata spec ✓ · **quiz ☐** (remaining). NEXT (un-gated): R2 quiz, then
-  Phases 3–6 lessons (DECIDED matrix; Phase 3 = Text & collections). (Phases 7–9 lessons remain
-  matrix-review-gated.)
+  cheatsheet (pre-existing) ✓ · `likes` kata spec ✓ · quiz ✓ (`quizzes/phase2.md`, rust-textbook/main
+  `e17ae50` — 10 Qs on if/loop/while/for/match, predict-first with a verified answer key; every snippet
+  compile-run on 1.95.0). **★ PHASE 2 FULLY COMPLETE: lessons L9–L11 + cheatsheet + `likes` kata + quiz.**
+  NEXT (un-gated): **Phase 3 lessons — Text & collections** (DECIDED matrix; BLUEPRINT order: String/&str ·
+  tuples · arrays · slices · Vec · HashMap), then Phases 4–6. (Phases 7–9 lessons remain matrix-review-gated.
+  Minor gap: R1/Phase-1 also lacks a `quizzes/phase1.md` — future tick.)
 - ◐ **Matrix: re-review rows 51–62** (rate-limited). ✅ Fixed the HTML-entity in row 58 title
   (`Advanced patterns &amp; matching` → literal `&`, matching every sibling row; it was the only
   entity left in the matrix — verified). REMAINING (Paul's review domain): add the missing
