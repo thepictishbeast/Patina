@@ -113,6 +113,16 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   Remaining (#18, optional): a TRUE inline gutter marker / underline on the offending line in the
   highlight overlay — lower-value now that click-to-jump exists, and still the fragile pre-wrap pixel-map
   job; defer unless it proves worth it.
+- ✅ **Ctrl/Cmd+Enter runs from the editor** (`3dd40b3`): the web editor lacked the standard "write code,
+  press Ctrl+Enter to Run" shortcut. Added as the FIRST check in the editor keydown handler, ahead of the
+  `mode !== 'dev'` gate → works in EVERY tier (Learn included): running your code is the core action, not
+  an autocomplete-style assist Learn blocks. Calls `runOp('run')` (the Run-button path), so the Learn
+  predict-first gate still applies — Ctrl+Enter with no locked guess shows "predict first", not a free run.
+  `return`s before the Dev Enter auto-indent → no stray newline. Robust by construction (key→action, no
+  pixel mapping, so the pre-wrap layout is irrelevant — unlike the deferred gutter overlay). Run button
+  title advertises it. Verified LIVE (`tests/e2e/editor-run-shortcut.spec.js`, 3 cases: Assist runs, Learn
+  gated-then-runs, Dev no-newline) + web/a11y/brackets/jump 12/12 unchanged + screenshot (keyboard-only run,
+  sidebar "3 tries"). gui-only + spec, no crates/*.rs.
 - ✅ **Editable-pane syntax highlighting** (`<pending>`): colored `<pre>` overlay behind a
   transparent textarea, reusing highlightRust; always-on. Verified live.
 - ☐ **Full IDE via rust-analyzer** (`LspSpec` defined, unconsumed) — big; Rust FOSS.
