@@ -77,6 +77,15 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   Playwright: Dev Tab → 4 spaces at caret; Dev multi-line → all lines indented; Dev Shift+Tab → dedented;
   Learn Tab → no-op; `fn main(){...}` body indented cleanly + highlight overlay tracks it (screenshot);
   gui transforms green; e2e 4/4 (no regression).
+  ✅ **Dev auto-indent on Enter** (`<pending>`): extended the same Dev-only keydown handler — Enter starts
+  the new line at the current line's indentation, one level deeper after an opening `{`, and splits a
+  `{<caret>}` into a tidy block (open brace, indented middle line, closing brace on its own line). Together
+  with Tab-indent this is the minimum viable code editor — a Dev learner can write nested Rust without
+  re-typing indentation. Learn/Assist keep the default Enter (plain newline, no assist). Verified LIVE
+  (Playwright): match-indent, +level-after-`{`, split-`{}`, Learn no-assist; built a nested
+  `fn main(){ if true { println!() } }` by Enter alone (4→8-space nesting compounds correctly) + highlight
+  tracks (screenshot); gui transforms green; e2e 4/4. Dev tooltip updated. **Dev tier is now a genuinely
+  usable editor (Tab/Shift+Tab + Enter auto-indent).**
   Remaining (#18, still open): TRUE **inline-in-editor** diagnostics — surface `dg.span.line` as a
   gutter marker / underline on the offending line in the highlight overlay (Assist/Dev only). The
   data (line spans) is already in the run response; only the editor-overlay rendering is left.
