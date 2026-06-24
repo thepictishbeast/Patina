@@ -96,9 +96,23 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   built via one `[` keystroke); web + a11y e2e unchanged; node --check + GUI transforms green. **Dev code
   editor is complete (Tab/Shift+Tab + Enter auto-indent + bracket auto-close); next IDE step is
   rust-analyzer (#19).**
-  Remaining (#18, still open): TRUE **inline-in-editor** diagnostics — surface `dg.span.line` as a
-  gutter marker / underline on the offending line in the highlight overlay (Assist/Dev only). The
-  data (line spans) is already in the run response; only the editor-overlay rendering is left.
+  ✅ **Diagnostic → jump-to-line** (`9e21076`, bounded slice of #18): each parsed diagnostic in
+  Assist/Dev now shows two buttons — the CODE (→ Explain) and the LINE `L<n>` (→ move the editor caret
+  to that line + select it + scroll into view). **Found a stale premise while doing it**: the backlog
+  claimed "line spans are already in the run response" — they were NOT; the Rust plugin's
+  `parse_diagnostics` scraped only the error/warning HEADER and returned `span: None`, so the gui's
+  existing `· L<line>` never populated. Fixed at the seam: `crates/languages/rust` now scans forward to
+  the `--> file:line:col` line and attaches `Span{file,line,col}` (new `parse_arrow_location` + 2 unit
+  tests; rustc parsing stays inside `crates/languages/` per the seam gate). The view uses
+  `setSelectionRange` (CHARACTER-offset based → **wrap-immune**, sidestepping the pixel-mapping that made
+  a gutter overlay fragile). Also de-nested the row (was itself `role=button`; now a plain container with
+  sibling `.diagcode`/`.jumpline` buttons → avoids axe nested-interactive). Learn still withholds the
+  whole panel. Verified: rpro-lang-rust 9/9 + core/runner green, fmt+seam clean, clippy adds none; LIVE
+  `tests/e2e/dev-diag-jump.spec.js` 3/3 (jump moves caret, no nesting, Learn withholds) + web/a11y/brackets
+  9/9 unchanged + screenshot (L47 → line selected & scrolled).
+  Remaining (#18, optional): a TRUE inline gutter marker / underline on the offending line in the
+  highlight overlay — lower-value now that click-to-jump exists, and still the fragile pre-wrap pixel-map
+  job; defer unless it proves worth it.
 - ✅ **Editable-pane syntax highlighting** (`<pending>`): colored `<pre>` overlay behind a
   transparent textarea, reusing highlightRust; always-on. Verified live.
 - ☐ **Full IDE via rust-analyzer** (`LspSpec` defined, unconsumed) — big; Rust FOSS.
