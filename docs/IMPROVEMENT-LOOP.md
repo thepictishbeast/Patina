@@ -278,6 +278,14 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   unedited" for its displayed E0384 block — byte-identical on 1.95.0 EXCEPT 1.95.0 adds a secondary
   `unused_assignments` warning L1 omits, so refreshing that cite is a pedagogy call on the calibration lesson
   (show the warning or not?), not a trivial bump — left as-is. (Review/merge ask under "Open questions for Paul".)
+  **★ `STUDY-GUIDE.md` authored** (rust-textbook/main `26390ec`) — closed a real learner-facing navigation gap:
+  the textbook README was builder-facing ("read lessons in order", no index), so a phone learner had no map of
+  the 23 lessons / 6 phases / quizzes / cheatsheets / kata. New guide gives the phase-by-phase reading order
+  (Phase 1 Foundations → Phase 6 Organizing) with every lesson/quiz/cheatsheet/kata linked in sequence + how-to-
+  study + offline "if stuck" help; README now points to it. **All links verified (0 missing; 23/23 lessons,
+  6/6 quizzes, 6/6 cheatsheets, 1/1 kata).** **#20 clippy reframed:** the TS workspace's default `clippy::all` is
+  CLEAN (0 warnings) — the 30 warnings are all opt-in pedantic (20) + nursery (10); nursery is the Paul-gated
+  lint-policy question → corrective clippy debt is effectively DONE, the aspirational/gated tail awaits Paul.
 - ◐ **Matrix: re-review rows 51–62** (rate-limited). ✅ Fixed the HTML-entity in row 58 title
   (`Advanced patterns &amp; matching` → literal `&`, matching every sibling row; it was the only
   entity left in the matrix — verified). REMAINING (Paul's review domain): add the missing
