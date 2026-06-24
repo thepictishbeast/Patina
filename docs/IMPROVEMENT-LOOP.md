@@ -268,8 +268,16 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   **quizzes phase1–6 all present**. 13 Qs over Phase-1 foundations (L1–L8): E0384 immutable-reassign, shadowing
   vs `mut` (E0308), `const`, integer-div-truncates, `as`-truncates, overflow debug-panic/release-wrap, block-as-
   expression, trailing-`;` E0308, fn-return, tuple Debug. Every snippet compile-checked on 1.95.0; 13/13, no
-  leak. **Remaining housekeeping: phase1/phase2 cheatsheets cite stale 1.94.1 → bump to 1.95.0** (next filler).
-  (See refreshed review/merge ask under "Open questions for Paul".)
+  leak. **★ Housekeeping: bumped `cheatsheets/phase1.md` + `phase2.md` cite 1.94.1→1.95.0** (rust-textbook/main
+  `cde8dab`) — HONEST bump: re-verified both cheatsheets' load-bearing snippets on 1.95.0 first (phase1: E0384,
+  shadowing, `-5/3`, `as`-truncate, overflow, block-expr, E0308; phase2: if-expr, E0308 arms, break-value=6,
+  label, for-rev, match, E0004). No 1.94.1 left in cheatsheets. **Also checked #18 (editor inline diagnostics):
+  essentially DONE** — tier-gated diag panel, diagnostic→jump-to-line (CODE/LINE buttons), Ctrl+Enter all
+  shipped; the only remainder is a true inline gutter/underline, which the backlog explicitly DEFERS (fragile
+  pixel-map, low-value now that click-to-jump exists). **Minor note:** `lessons/01-...md` cites "(1.94.1),
+  unedited" for its displayed E0384 block — byte-identical on 1.95.0 EXCEPT 1.95.0 adds a secondary
+  `unused_assignments` warning L1 omits, so refreshing that cite is a pedagogy call on the calibration lesson
+  (show the warning or not?), not a trivial bump — left as-is. (Review/merge ask under "Open questions for Paul".)
 - ◐ **Matrix: re-review rows 51–62** (rate-limited). ✅ Fixed the HTML-entity in row 58 title
   (`Advanced patterns &amp; matching` → literal `&`, matching every sibling row; it was the only
   entity left in the matrix — verified). REMAINING (Paul's review domain): add the missing
