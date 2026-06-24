@@ -62,6 +62,8 @@ in the order below should take well under an hour and unblock the rest.
   (error code + message), captured live, never paraphrased.
 - `cargo audit`: **0 vulnerabilities** (236 deps). Default `cargo clippy`: **clean** (remaining
   warnings are opt-in pedantic/nursery only — see decision #3 on nursery policy).
+- `cargo test --workspace`: **all green — 94 tests pass, 0 failed** (the app builds and its
+  serving/runner/glossary/state layers are healthy as the batch stands).
 - Spot-check anything: paste a lesson snippet into the editor, or `rustc --edition 2024 file.rs`,
   and compare to what the lesson claims.
 
