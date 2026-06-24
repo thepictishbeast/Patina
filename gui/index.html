@@ -128,7 +128,9 @@
   .recall-h { margin:0 0 6px; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--fg-dim); }
   .recall-codes { display:flex; flex-wrap:wrap; gap:5px; align-items:center; }
   .rc { font:600 11px var(--mono); color:var(--error); background:var(--bg-3); border:1px solid var(--line);
-        border-radius:5px; padding:2px 7px; }
+        border-radius:5px; padding:2px 7px; cursor:pointer; transition:background .12s; }
+  .rc:hover { background:var(--bg-2); }
+  .rc:focus-visible { outline:2px solid var(--accent); outline-offset:1px; }
   .rc-done { font-size:12px; color:var(--done); }
   .rc-meta { font-size:11px; color:var(--fg-dim); margin-left:auto; }
 
@@ -537,7 +539,10 @@
         box.innerHTML = `<span class="rc-done">all ${tracked} concept${tracked === 1 ? '' : 's'} mastered ✓</span>`;
         return;
       }
-      box.innerHTML = due.map(c => `<span class="rc" title="a compiler error to refresh">${esc(c)}</span>`).join('')
+      // Each due code is an ACTIVE-RECALL prompt: the chip shows the code (try to
+      // remember what it means) and clicking reveals the explanation as the self-
+      // check — reusing the same Explain op as the diagnostics panel.
+      box.innerHTML = due.map(c => `<span class="rc" role="button" tabindex="0" data-code="${esc(c)}" aria-label="Recall ${esc(c)}, then activate to explain it" title="recall what ${esc(c)} means — then click to check with rustc --explain">${esc(c)}</span>`).join('')
                     + `<span class="rc-meta">${mastered}/${tracked} mastered</span>`;
     }
 
@@ -1157,6 +1162,15 @@
     };
     diagBox.addEventListener('click', e => actOnDiag(e, false));
     diagBox.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') actOnDiag(e, true); });
+    // RECALL (spaced-repetition) chips: each due code is an active-recall prompt —
+    // activate it to reveal the explanation (the self-check). Reuses Explain.
+    const recallBox = document.getElementById('recallCodes');
+    const actOnRecall = (e, key) => {
+      const rc = e.target.closest('.rc[data-code]');
+      if (rc) { if (key) e.preventDefault(); explainFromEl(rc); }
+    };
+    recallBox.addEventListener('click', e => actOnRecall(e, false));
+    recallBox.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') actOnRecall(e, true); });
     window.addEventListener('load', () => { refit(); });
   </script>
 </body>
