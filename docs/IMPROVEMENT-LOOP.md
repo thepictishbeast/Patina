@@ -197,6 +197,18 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   pattern" glossary term (39→40). Verified: verify-exercises 41/41 (emits E0117), anchors, golden-corpus,
   glossary 3/3, live (09-advanced now 01→02, run E0117, chip→orphan-rule term). 09-advanced 1→2; corpus
   41 exercises. NEXT thin phases: 08-concurrency (3), 07-generics (3).
+  ✅ **Breadth, tick 2: 08-concurrency was all SHARED-STATE, no MESSAGE PASSING** (`<pending>`): the 3
+  existing exercises (spawn-move E0373, Rc-not-Send E0277, Arc-Mutex E0594) all cover sharing memory; the
+  channels/message-passing model (Book ch16-02) was absent — no exercise AND ch16-02 unvendored. Added
+  `08-concurrency/04_channel_send` (id `concurrency/04_channel_send`, advanced): `tx.send(message)` moves
+  the value into the channel, then using `message` again → **E0382** "borrow of moved value" (probed clean).
+  Lesson: send MOVES ownership to the receiver — channels are the move-don't-share half of concurrency.
+  Vendored `ch16-02-message-passing`; book_refs → transfer-data-between-threads-with-message-passing +
+  transferring-ownership-through-channels. Added "channels and message passing" glossary term (40→41;
+  reworded to drop a Go-proverb echo — charter: no foreign-language analogies). Verified: verify-exercises
+  42/42 (emits E0382), anchors, golden-corpus, glossary 3/3, live (08-concurrency now 01→04, run E0382,
+  chip→channels). 08-concurrency 3→4; corpus 42. NEXT thinnest: 07-generics (3), then 2nd exercises in the
+  4-deep phases or error-handling growth.
 - ◐ **Integrate Rust by Example / Rustlings / Cookbook / Exercism** — licenses verified via gh
   (RBE Apache-2.0, Rustlings MIT, Cookbook CC0-1.0, Exercism MIT) + cataloged in
   rust-textbook/catalog/EXTERNAL-MATERIALS.md with an integration plan (Rustlings first).

@@ -1,0 +1,25 @@
+id = "concurrency/04_channel_send"
+title = "Channels move the value: you can't use it after sending"
+difficulty = "advanced"
+estimated_minutes = 9
+concept = "channel-message-passing"
+expected_error_code = "E0382"
+solution_outline = """
+A channel passes data between threads by MOVING it: `tx.send(message)` hands
+ownership of `message` to the receiver, so using `message` afterward on the sending
+side is a use-after-move (E0382). Decide who keeps it: print BEFORE sending
+(`println!("...{message}"); tx.send(message).unwrap();`), or send a copy if both
+sides need one (`tx.send(message.clone()).unwrap();`, leaving the local `message`
+yours). The receiver reads it with `rx.recv()`. Channels are the move-don't-share
+half of Rust concurrency.
+"""
+
+[[book_refs]]
+chapter = "ch16-02-message-passing"
+anchor = "transfer-data-between-threads-with-message-passing"
+why = "What a channel is — a transmitter (tx) and receiver (rx), with send() and recv()."
+
+[[book_refs]]
+chapter = "ch16-02-message-passing"
+anchor = "transferring-ownership-through-channels"
+why = "send() MOVES the value into the channel — ownership travels to the receiver, which is exactly why using it after send is an error."

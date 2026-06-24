@@ -296,3 +296,10 @@ aliases = ["orphan rule", "orphan-rule", "coherence", "coherence rule", "newtype
 definition = "The orphan rule (part of \"coherence\") says you may implement a trait for a type only if you define the trait, or you define the type — you can't add a foreign trait to a foreign type, because two unrelated crates could otherwise write conflicting impls and break each other. The newtype pattern is the way around it: wrap the foreign type in your own one-field struct (a \"newtype\") and implement the trait on that wrapper instead. The wrapper is a type you own, so the impl is allowed, and it costs nothing extra at runtime."
 book_chapter = "ch20-02-advanced-traits"
 source = "The Rust Book, ch.20.2 \"Advanced Traits — Implementing External Traits with the Newtype Pattern\""
+
+[[term]]
+name = "channels and message passing"
+aliases = ["channel", "channels", "mpsc", "message passing", "message-passing", "channel-message-passing", "send and recv", "tx and rx"]
+definition = "A way for threads to communicate by SENDING values to each other instead of sharing memory. A channel has two ends: a transmitter (`tx`) you send values down, and a receiver (`rx`) another thread reads them from. Sending a value MOVES it — ownership travels down the channel to the receiver, so once you've sent something you can no longer use it on the sending side. This message-passing style is an alternative to sharing state between threads and locking it with a `Mutex`."
+book_chapter = "ch16-02-message-passing"
+source = "The Rust Book, ch.16.2 \"Using Message Passing to Transfer Data Between Threads\""
