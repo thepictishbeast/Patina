@@ -359,3 +359,10 @@ aliases = ["trait object", "trait objects", "trait-objects", "dyn", "dyn trait",
 definition = "A value used through a shared trait instead of through its concrete type, written `dyn Trait` and usually held behind a pointer such as `Box<dyn Trait>` or `&dyn Trait`. It lets one collection or function work with a MIX of types that all implement the same trait — for example a `Vec<Box<dyn Shape>>` holding both a `Circle` and a `Square`. Calling a method on a trait object uses DYNAMIC DISPATCH: the concrete type is not known at compile time, so the right impl is looked up at run time. That trades a little speed for flexibility — the run-time counterpart to the compile-time dispatch you get from generics and trait bounds."
 book_chapter = "ch18-02-trait-objects"
 source = "The Rust Book, ch.18.2 \"Using Trait Objects to Abstract over Shared Behavior\""
+
+[[term]]
+name = "enum with data"
+aliases = ["enum with data", "enums with data", "enum data", "enum-data", "tuple variant", "data-carrying variant", "pattern binding", "binding in match"]
+definition = "An `enum` lists the possible forms a value can take, and each variant may CARRY its own data: `enum Event { Click(i32, i32), KeyPress(char), Closed }` says an `Event` is either a click at some coordinates, a key press of some character, or a plain close with no data. To read that data back out you `match` the value and BIND it in the pattern — `Event::KeyPress(c)` names the character `c` so the arm can use it. A variant that carries data must be matched with a pattern of the same shape, e.g. `Click(x, y)`; writing the bare name `Click` is rejected, because that is the pattern for a variant that carries nothing."
+book_chapter = "ch06-01-defining-an-enum"
+source = "The Rust Book, ch.6.1 \"Defining an Enum\" + ch.6.2 \"Patterns That Bind to Values\""

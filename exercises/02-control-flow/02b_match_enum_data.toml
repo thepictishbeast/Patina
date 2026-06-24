@@ -1,0 +1,25 @@
+id = "control-flow/05_match_enum_data"
+title = "Enum variants carry data — bind it in the match arm"
+difficulty = "beginner"
+estimated_minutes = 7
+concept = "enum-data"
+expected_error_code = "E0532"
+solution_outline = """
+`Shape::Rectangle` is a TUPLE variant — it carries `(f64, f64)`. Writing it as a
+bare `Shape::Rectangle` in a match arm is the pattern for a variant with NO data,
+so the compiler rejects it (E0532) and its `help:` line shows the shape you need:
+`Shape::Rectangle(_, _)`. Replace the `_`s with names so the arm can use the values,
+mirroring how `Shape::Circle(r)` binds the radius: `Shape::Rectangle(w, h) => w * h`.
+Now the arm reads the width and height out of the value and returns the area. Leave
+the `Circle` arm, the enum, and `main` unchanged.
+"""
+
+[[book_refs]]
+chapter = "ch06-01-defining-an-enum"
+anchor = "enum-values"
+why = "Shows that enum variants can hold data (e.g. `Circle(f64)`) — the values each variant carries, which the match arm must then bind."
+
+[[book_refs]]
+chapter = "ch06-02-match"
+anchor = "patterns-that-bind-to-values"
+why = "The Book section on binding a variant's data into named values inside a `match` arm — the technique this exercise needs to handle the rectangle."
