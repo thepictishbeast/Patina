@@ -150,7 +150,17 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   (tappable `concept` chip → definition box + "read more in the Book"), CLI (`rpro glossary [term]`), TUI
   (`g` key → definition in the shared help slot, TestBackend-verified). Tasks #24, #26 done. Future: add
   terms as new exercises land; optional inline-in-prose term highlighting (deferred — fiddly).
-- ☐ **Lessons for Phases 2–9** (only Phase 1 / L1–L8 exist; matrix DRAFT rows 49–62 done).
+- ◐ **Lessons for Phases 2–9** — **STARTED Phase 2** (rust-textbook `c8dab96`). **Gate re-examined: it
+  was being treated as wholly Paul-gated, but the "show Paul the matrix first" gate is MATRIX-STATUS-scoped,
+  not phase-numbered.** Phases 2–6 ride DECIDED (human-reviewed) matrix rows 1–48 — the same reviewed footing
+  Phase 1's L1–L8 were authored on, under the calibration Paul released 2026-06-22 ("finish the tasks / do
+  what's best"; write-first + baby-steps). So Phases 2–6 lessons are UN-GATED; only Phases 7–9 (DRAFT rows
+  49–62) still wait on Paul's matrix review. Authored **L9 — `if`/`else if`/`else` as an expression**
+  (`lessons/09-if-else-expressions.md`, rust-textbook/main) — Phase 2 = control flow is the learner's stated
+  CURRENT GAP per CLAUDE.md. 7-part format + write-first + baby-steps (builds on L6 semicolon/expression);
+  every snippet compile-run on rustc 1.95.0/ed2024; both E0308 failure demos verbatim; no Python/foreign
+  analogies; no answer-leak; BOOK/CR/BLOG attributed. NEXT (un-gated): L10 loops, L11 match-intro, R2 +
+  `likes` kata; then Phases 3–6. (Phases 7–9 lessons remain matrix-review-gated.)
 - ◐ **Matrix: re-review rows 51–62** (rate-limited). ✅ Fixed the HTML-entity in row 58 title
   (`Advanced patterns &amp; matching` → literal `&`, matching every sibling row; it was the only
   entity left in the matrix — verified). REMAINING (Paul's review domain): add the missing
