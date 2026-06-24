@@ -175,9 +175,12 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   cheatsheet (pre-existing) ✓ · `likes` kata spec ✓ · quiz ✓ (`quizzes/phase2.md`, rust-textbook/main
   `e17ae50` — 10 Qs on if/loop/while/for/match, predict-first with a verified answer key; every snippet
   compile-run on 1.95.0). **★ PHASE 2 FULLY COMPLETE: lessons L9–L11 + cheatsheet + `likes` kata + quiz.**
-  NEXT (un-gated): **Phase 3 lessons — Text & collections** (DECIDED matrix; BLUEPRINT order: String/&str ·
-  tuples · arrays · slices · Vec · HashMap), then Phases 4–6. (Phases 7–9 lessons remain matrix-review-gated.
-  Minor gap: R1/Phase-1 also lacks a `quizzes/phase1.md` — future tick.)
+  **Phase 3 STARTED — L12 `String` vs `&str`** (`12-string-vs-str.md`, rust-textbook/main `90ad7b1`; matrix
+  row 20 DECIDED). [PHASE-4 LEAN]: surface-level owned-vs-borrowed (deep borrow rules → Phase 4); BOOK
+  trade-off + build-a-String; CR unified example; legit fail `s[0]`→E0277 verbatim; `+`-moves-`s1` as a
+  Phase-4 foreshadow only. Snippets compile-run on 1.95.0. **Phase 3 lessons: L12 ✓.** NEXT (un-gated):
+  **L13** (tuples + arrays + slices, rows 21–23), **L14** (Vec + HashMap, rows 24–25), then R3; then Phases
+  4–6. (Phases 7–9 lessons remain matrix-review-gated. Minor gap: Phase-1 lacks `quizzes/phase1.md`.)
 - ◐ **Matrix: re-review rows 51–62** (rate-limited). ✅ Fixed the HTML-entity in row 58 title
   (`Advanced patterns &amp; matching` → literal `&`, matching every sibling row; it was the only
   entity left in the matrix — verified). REMAINING (Paul's review domain): add the missing
