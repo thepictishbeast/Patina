@@ -119,6 +119,10 @@
   .docview .gloss-foot { margin-top:8px; font-size:12px; color:var(--fg-dim); display:flex; gap:14px; align-items:center; flex-wrap:wrap; }
   .docview .gloss-more { color:var(--note); text-decoration:none; font-weight:600; }
   .docview .gloss-more:hover { text-decoration:underline; }
+  /* Lessons tab: the prev/next/Study-Guide nav bar lifted out of the footer */
+  .docview .lessonnav { display:flex; flex-wrap:wrap; gap:10px 18px; margin:18px 0 8px; padding-top:14px; border-top:1px solid var(--line); }
+  .docview .lessonnav a { color:var(--note); font-weight:600; text-decoration:none; }
+  .docview .lessonnav a:hover { text-decoration:underline; }
   .docview .booksearch input { width:100%; box-sizing:border-box; padding:9px 12px; font-size:14px; font-family:var(--ui);
     color:var(--fg); background:var(--bg-2); border:1px solid var(--line); border-radius:8px; margin:6px 0 4px; }
   .docview .booksearch input:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 2px rgba(247,76,0,.18); }
@@ -287,6 +291,7 @@
     <div class="brand"><span class="mark">◆</span> Tempered&nbsp;Studio</div>
     <nav class="tabs">
       <div class="tab active" data-view="practice">📝 Practice</div>
+      <div class="tab" data-view="lessons">🎓 Lessons</div>
       <div class="tab" data-view="book">📖 Book</div>
       <div class="tab" data-view="glossary">📚 Glossary</div>
       <div class="tab" data-view="roadmap">🗒️ Roadmap</div>
@@ -869,7 +874,7 @@
     }
     function mdToHtml(md) {
       const lines = esc(md).split('\n');
-      let html = '', list = null, inCode = false, quote = [], code = [];
+      let html = '', list = null, inCode = false, quote = [], code = [], para = [];
       const inline = s => s
         .replace(/`([^`]+)`/g, '<code>$1</code>')
         .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
@@ -885,6 +890,10 @@
         .replace(/(^|[^A-Za-z0-9*])\*([^*\s](?:[^*]*[^*\s])?)\*(?![A-Za-z0-9*])/g, '$1<em>$2</em>');
       const closeList = () => { if (list) { html += list === 'ol' ? '</ol>' : '</ul>'; list = null; } };
       const flushQuote = () => { if (quote.length) { html += '<blockquote>' + inline(quote.join(' ')) + '</blockquote>'; quote = []; } };
+      // Join soft-wrapped (hard-wrapped-source) lines into one paragraph, so prose
+      // reads as paragraphs — not one <p> per physical line — and inline markup
+      // like **bold** that spans a wrap is parsed. Flushed at every block boundary.
+      const flushPara = () => { if (para.length) { html += '<p>' + inline(para.join(' ')) + '</p>'; para = []; } };
       // A GFM table separator row, e.g. `|----|:--:|---|` — pipes + dashes, opt. colons.
       const isSep = s => /\|/.test(s) && /-/.test(s) && /^[\s|:-]+$/.test(s);
       // Split a `| a | b |` row into trimmed, inline-rendered cells (escape-safe).
@@ -899,13 +908,13 @@
         // ``` toggles a raw code block: no inline/list/heading handling inside.
         if (/^\s*```/.test(ln)) {
           if (inCode) { html += '<pre><code>' + highlightRust(code.join('\n')) + '</code></pre>'; inCode = false; }
-          else { closeList(); flushQuote(); code = []; inCode = true; }
+          else { flushPara(); closeList(); flushQuote(); code = []; inCode = true; }
           continue;
         }
         if (inCode) { code.push(ln); continue; }
         // GFM table: a `|`-row immediately followed by a |---|--- separator row.
         if (ln.includes('|') && isSep(lines[i + 1] || '')) {
-          closeList(); flushQuote();
+          flushPara(); closeList(); flushQuote();
           let t = '<table><thead><tr>' + cells(ln).map(c => '<th>' + c + '</th>').join('') + '</tr></thead><tbody>';
           let j = i + 2;
           for (; j < lines.length && lines[j].includes('|') && lines[j].trim(); j++)
@@ -916,24 +925,26 @@
         }
         // Blockquote: accumulate consecutive `&gt;` lines into one callout.
         const q = ln.match(/^&gt;\s?(.*)$/);
-        if (q) { closeList(); quote.push(q[1]); continue; }
+        if (q) { flushPara(); closeList(); quote.push(q[1]); continue; }
         flushQuote();
         // Thematic break (`---`, `***`, `___`, optionally spaced) → <hr>. Must run
         // BEFORE the list check, else a spaced "- - -" parses as a bullet. (Our
         // markdown — lesson footers, section breaks — uses `---` liberally.)
-        if (/^\s*([-*_])(\s*\1){2,}\s*$/.test(ln)) { closeList(); html += '<hr>'; continue; }
+        if (/^\s*([-*_])(\s*\1){2,}\s*$/.test(ln)) { flushPara(); closeList(); html += '<hr>'; continue; }
         const ul = ln.match(/^\s*[-*]\s+(.*)$/);
-        if (ul) { if (list !== 'ul') { closeList(); html += '<ul>'; list = 'ul'; } html += '<li>' + inline(ul[1]) + '</li>'; continue; }
+        if (ul) { flushPara(); if (list !== 'ul') { closeList(); html += '<ul>'; list = 'ul'; } html += '<li>' + inline(ul[1]) + '</li>'; continue; }
         const ol = ln.match(/^\s*\d+\.\s+(.*)$/);
-        if (ol) { if (list !== 'ol') { closeList(); html += '<ol>'; list = 'ol'; } html += '<li>' + inline(ol[1]) + '</li>'; continue; }
+        if (ol) { flushPara(); if (list !== 'ol') { closeList(); html += '<ol>'; list = 'ol'; } html += '<li>' + inline(ol[1]) + '</li>'; continue; }
         closeList();
         // ATX headings, h1–h6 (single regex; the corpus uses through h4). Each
         // carries a slug `id` so book_ref anchors can scroll to the section.
         const hm = ln.match(/^(#{1,6})\s+(.*)$/);
-        if (hm) { const lv = hm[1].length, id = slug(hm[2]); html += '<h' + lv + (id ? ' id="' + id + '"' : '') + '>' + inline(hm[2]) + '</h' + lv + '>'; }
-        else if (ln.trim()) html += '<p>' + inline(ln) + '</p>';
+        if (hm) { flushPara(); const lv = hm[1].length, id = slug(hm[2]); html += '<h' + lv + (id ? ' id="' + id + '"' : '') + '>' + inline(hm[2]) + '</h' + lv + '>'; }
+        else if (ln.trim()) para.push(ln); // accumulate; a blank line or block flushes
+        else flushPara();
       }
       if (inCode) html += '<pre><code>' + highlightRust(code.join('\n')) + '</code></pre>';
+      flushPara();
       closeList();
       flushQuote();
       return html;
@@ -955,7 +966,75 @@
         await renderBook(chapter || null, anchor || null);
       } else if (view === 'glossary') {
         await renderGlossary();
+      } else if (view === 'lessons') {
+        await renderLessons();
       }
+    }
+
+    // The Lessons tab: the embedded Patina curriculum (the 37 authored,
+    // beginner-tuned lessons), served offline by /api/lessons. With no id it
+    // lists the lessons in order; with one it renders that lesson's markdown and
+    // wires the in-lesson nav-footer links (prev/next lesson, Study Guide) to stay
+    // inside the app. Read the lesson, then switch to Practice to write it.
+    async function renderLessons(id) {
+      const d = document.getElementById('docview');
+      if (!id) {
+        d.innerHTML = '<h1>🎓 Lessons</h1><p style="color:var(--fg-dim)">loading…</p>';
+        let data;
+        try { data = await fetch('api/lessons').then(r => r.json()); }
+        catch (_) { d.innerHTML = '<h1>🎓 Lessons</h1><p>Lessons unavailable (open via the local server).</p>'; return; }
+        const items = data.lessons || [];
+        d.innerHTML = '<h1>🎓 Lessons</h1>'
+          + `<p style="color:var(--fg-dim)">The Patina curriculum — ${items.length} lessons for absolute beginners. Read a lesson, then switch to Practice to write it. Fully offline.</p>`
+          + (items.length
+            ? '<ul class="booktoc">' + items.map(l =>
+                `<li><a href="#" class="lessonjump" data-id="${esc(l.id)}">${esc(l.title)}</a></li>`).join('') + '</ul>'
+            : '<p>no lessons seeded — run the server with the bundled lessons/.</p>');
+        d.querySelectorAll('.lessonjump').forEach(a =>
+          a.onclick = e => { e.preventDefault(); renderLessons(a.dataset.id); });
+        d.scrollTop = 0;
+        return;
+      }
+      d.innerHTML = '<p style="color:var(--fg-dim)">loading lesson…</p>';
+      let l = null;
+      try { l = await fetch('api/lessons?id=' + encodeURIComponent(id)).then(r => r.json()).then(j => j.lesson); }
+      catch (_) { l = null; }
+      const back = '<p><a href="#" class="lessonback">← all lessons</a></p>';
+      if (!l || !l.markdown) {
+        d.innerHTML = back + '<p>Lesson not found.</p>';
+      } else {
+        let md = l.markdown.replace(/<!--[\s\S]*?-->/g, ''); // drop HTML comments
+        // Lift the nav footer (the final `---` block) out: its relative `.md`
+        // links (Study Guide, prev/next lesson) would render as literal text
+        // because mdToHtml only linkifies http(s) URLs — so we extract them into
+        // a real nav bar and drop the footer from the body.
+        const nav = [];
+        const fm = md.match(/^([\s\S]*)\n[-*_]{3,}[ \t]*\n([\s\S]*)$/);
+        if (fm && /\]\([^)]*\.md/.test(fm[2])) {
+          md = fm[1];
+          (fm[2].match(/\[([^\]]+)\]\(([^)]+\.md)(?:#[^)]*)?\)/g) || []).forEach(s => {
+            const mm = s.match(/\[([^\]]+)\]\(([^)]+\.md)(?:#[^)]*)?\)/);
+            nav.push({ label: mm[1].replace(/`/g, '').trim(), href: mm[2] });
+          });
+        }
+        const navHtml = nav.length
+          ? '<div class="lessonnav">' + nav.map(n =>
+              `<a href="#" class="lessonnavlink" data-href="${esc(n.href)}">${esc(n.label)}</a>`).join('') + '</div>'
+          : '';
+        d.innerHTML = back + '<div class="bookbody lessonbody">' + mdToHtml(md) + '</div>' + navHtml;
+      }
+      d.querySelectorAll('.lessonback').forEach(a => a.onclick = e => { e.preventDefault(); renderLessons(null); });
+      // Wire the nav bar: a `.md` href routes to that lesson; the Study Guide link
+      // returns to the lesson list — all in-app, no page navigation.
+      d.querySelectorAll('.lessonnavlink').forEach(a => {
+        const href = a.dataset.href || '';
+        a.onclick = e => {
+          e.preventDefault();
+          if (/STUDY-GUIDE/i.test(href)) { renderLessons(null); return; }
+          renderLessons(href.split('#')[0].split('/').pop().replace(/\.md$/i, ''));
+        };
+      });
+      d.scrollTop = 0;
     }
 
     // The Glossary tab: a browsable, filterable list of every built-in term
@@ -1099,7 +1178,7 @@
     const KEYMAP = {
       r: () => runOp('run'), c: () => runOp('check'), h: runHint,
       b: () => showView('book'), t: () => showView('roadmap'), p: () => showView('practice'),
-      g: () => showView('glossary'),
+      g: () => showView('glossary'), l: () => showView('lessons'),
       i: () => setInsights(!document.querySelector('main').classList.contains('show-insights')),
       f: () => setFocusMode(!document.querySelector('main').classList.contains('no-list')),
     };
