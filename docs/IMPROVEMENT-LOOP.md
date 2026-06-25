@@ -365,8 +365,17 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   `interior-mutability`. Verified: verify-exercises 38/38 (runtime branch asserts the panic), anchors,
   golden-corpus, glossary 3/3, live (select 200 → run passed:false + "already borrowed" in stderr → chip
   resolves). This is the 2nd runtime-outcome exercise, proving the model generalizes beyond unwrap-on-None.
-  TODO: async (ch17, may need its own model work); integer-overflow / index-OOB runtime exercises; more
-  closures; grow async in 08-concurrency.
+  ✅ Added two **iterators** exercises (2026-06-25), filling the L28 gap — `07b` had only the lone
+  `collect`-annotation iterator exercise. (1) `07b/06_into_iter_moves` (id `iterators/02_into_iter_moves`,
+  intermediate): `v.into_iter().map(...).collect()` then `println!("{v:?}")` → **E0382** — `into_iter`
+  consumes the collection; the fix is `iter()` (borrows, `&i32` items, `|x| x*2` still works via auto-deref).
+  Teaches the three iterator-makers' ownership split (into_iter/iter/iter_mut). (2) `07b/07_sum_type_annotation`
+  (id `iterators/03_sum_annotation`, intermediate): `let total = v.iter().sum();` with no type pin → **E0283**
+  — `sum` is generic over its output, same shape as `collect`; fix on the binding or via turbofish. Both reuse
+  the validated book_ref `ch13-02-iterators#methods-that-consume-the-iterator`. `07b` now 8 exercises. Verified:
+  golden-corpus (ids unique, area `iterators` ∈ 07b, E####-shaped, concept present) + both emit their claimed
+  codes on rustc 1.95.0. Commit `4562dd2` → textbook-integration. TODO: async (ch17, may need its own model
+  work); integer-overflow / index-OOB runtime exercises; more closures; grow async in 08-concurrency.
 - ✅ **Runtime-outcome exercise model** (`<pending>`, do-what's-best — not a Paul fork): the model used
   to assume every failure is a COMPILE error. A whole class of core lessons are RUNTIME panics instead
   (RefCell's `BorrowMutError`, integer overflow, `unwrap()` on `None`, index-OOB) — now supported.
