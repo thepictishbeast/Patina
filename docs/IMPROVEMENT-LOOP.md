@@ -1,5 +1,16 @@
 # Improvement Loop — toward the greatest Rust learning platform
 
+> **✅ RELEASE-READINESS BASELINE (textbook-integration `014a8ed`, verified 2026-06-25).** Full-workspace
+> health pass, all green: `cargo build --workspace` clean; **`cargo test --workspace` all pass (0 failed,
+> ~137 tests across all 12 crates)**; `cargo fmt --all --check` clean; `verify-exercises.sh` 63/63;
+> `verify-book-anchors.mjs` all resolve; `golden_corpus` green (incl. the concept→glossary guard). Clippy:
+> **zero default/correctness lints** — the ~20 remaining are 100% the opt-in `pedantic`+`nursery` tail the
+> workspace enables (future_not_send ×6 on the wasm-safe Core, option_if_let_else, too_many_lines,
+> similar_names, redundant_clone), which is the Paul-gated lint-policy call, NOT regressions. rust-textbook
+> (`ad13cb8`): 170/170 internal links resolve. **The branch is in a clean, mergeable state** whenever Paul
+> wants to review/merge `textbook-integration` → `main` (see "Open questions for Paul"; `docs/REVIEW-GUIDE.md`
+> is the reading path). No code change this tick — this is a verification baseline.
+
 Living backlog for the open-ended improvement loop (started 2026-06-23). Goal:
 make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
 
