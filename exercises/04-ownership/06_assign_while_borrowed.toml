@@ -1,0 +1,32 @@
+id = "ownership/06_assign_while_borrowed"
+title = "Can't change a value while it's borrowed"
+difficulty = "beginner"
+estimated_minutes = 10
+concept = "assign-while-borrowed"
+expected_error_code = "E0506"
+solution_outline = """
+This completes the borrow rules. The earlier exercises were about taking a
+second *reference* (an immutable and a mutable one, or two mutable ones). This
+one is different: there's only a single reference (`watcher`), but the code
+tries to *reassign the original* `total` while that reference is still alive. An
+active borrow freezes the value it points at — otherwise `watcher` could be left
+pointing at data that silently changed.
+
+The fix is the same lever as the borrow-checker exercises: a borrow ends at its
+LAST use, not at the end of the block. Finish reading through `watcher` (e.g.
+print what it saw) *before* the `total = 200` line, so at the moment of the
+assignment nothing is borrowing `total` anymore. Then the reassignment is fine.
+
+(You could also drop `watcher` entirely and read `total` directly — the point is
+to see why an in-flight borrow blocks the change.)
+"""
+
+[[book_refs]]
+chapter = "ch04-02-references-and-borrowing"
+anchor = "mutable-references"
+why = "The borrowing rules this violates: while a value is borrowed, you can't mutate the original — reassigning it counts as mutation."
+
+[[book_refs]]
+chapter = "ch10-03-lifetime-syntax"
+anchor = "the-borrow-checker"
+why = "Why reordering fixes it: a borrow ends at its last point of USE, so once `watcher` is done being read, `total` is free to change."
