@@ -136,6 +136,18 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   dead-end.** gui-only + spec, no crates/*.rs. Verified LIVE: pass `01_immutable_assign` → RECALL shows an
   E0384 button → keyboard-activate sends an Explain request for E0384 → rustc explanation renders. New
   `tests/e2e/recall-chip.spec.js` green; full e2e 16/16; node --check + transforms green; screenshots.
+- ✅ **Exercise-list phase-group headers (`8791aba`, 2026-06-25)** — found via a live-GUI UX pass: the
+  sidebar was a flat **60-item** scroll (`phase/name` prefixes, no visual grouping) — hard to scan or orient
+  within. `renderList` now emits a quiet uppercase `.exphase` label whenever the id's phase prefix changes
+  (BASICS / CONTROL FLOW / OWNERSHIP / …). CSS uses `--fg-dim` (≥4.5:1) and headers are `aria-hidden` (each
+  item's button label already names its full phase/id → no a11y/contrast change). Verified LIVE (rpro-serve +
+  Playwright): headers render for every phase, all 60 items present + clickable, a11y + web + tier e2e 4/4,
+  screenshot read. Faithful quirk: "iterators" shows twice because the 07b ramp interleaves iterators ↔
+  smart-pointers on disk (`02_collect`→`03_box`…→`06_into_iter`) — grouping-by-adjacency reflects file order
+  honestly; it's a content-ordering artifact (renumbering 07b would churn ids), not a gui bug. **Same pass
+  also confirmed (NOT bugs): the dev `~/.cache/ts-serve` store held a STALE 32-exercise copy (re-seeded from
+  the live 60 — packaged builds bundle fresh, so prod is unaffected); editor drafts are correctly keyed
+  per-exercise (`lsKey(id)`).**
 - ✅ **Editable-pane syntax highlighting** (`<pending>`): colored `<pre>` overlay behind a
   transparent textarea, reusing highlightRust; always-on. Verified live.
 - ☐ **Full IDE via rust-analyzer** (`LspSpec` defined, unconsumed) — big; Rust FOSS.
