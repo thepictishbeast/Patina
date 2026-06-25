@@ -143,10 +143,11 @@ mod tests {
     /// seam-grep gate stays green even though this lives outside `languages/`.
     struct EchoLang;
 
-    // `id`/`source_ext` return string literals, so clippy (unnecessary_literal_bound)
-    // suggests `&'static str` — but these implement `Language`, whose signatures are
-    // `-> &str` (tied to &self); a `&'static` impl return would mismatch the trait
-    // (E0053). The borrowed signature is correct here; the lint doesn't see the trait.
+    // `id`/`source_ext` return string literals, so the literal-bound lint suggests a
+    // `&'static str` return — but these implement `Language`, whose signatures are
+    // `-> &str` (tied to &self); a `&'static` impl return would mismatch the trait's
+    // method signature. The borrowed signature is correct here; the lint doesn't see
+    // the trait constraint.
     #[allow(clippy::unnecessary_literal_bound)]
     #[async_trait::async_trait(?Send)]
     impl Language for EchoLang {
