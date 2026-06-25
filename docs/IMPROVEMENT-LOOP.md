@@ -310,10 +310,16 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   and **array** (`[T; N]`, fixed-length; ch3.2) — neither resolved before. Conceptual, no analogies, no leak,
   attributed; chosen aliases avoid stealing "string slice" from the existing `&str` term (regression-checked:
   `string slice` still → that term). `cargo test -p rpro-glossary` 3/3; re-seeded + CLI-verified all three.
-- ◐ **Matrix: re-review rows 51–62** (rate-limited). ✅ Fixed the HTML-entity in row 58 title
-  (`Advanced patterns &amp; matching` → literal `&`, matching every sibling row; it was the only
-  entity left in the matrix — verified). REMAINING (Paul's review domain): add the missing
-  back-references the DECIDED rows use, decide Lesson# assignment for the DRAFT rows.
+- ✅ **Matrix: rows 49–62 reconciled to ground truth (#16 DONE, 2026-06-25).** Earlier fixed the
+  HTML-entity in row 58 title (`Advanced patterns &amp; matching` → literal `&`). This tick: the
+  DRAFT rows were stale (status DRAFT "pending Paul's review", Lesson# `—`) even though all 14 had
+  since been authored + adversarially verified + shipped as lessons. Filled the **Lesson #** column
+  (49→L24 … 62→L37, sequential, matches STUDY-GUIDE) and flipped **Status** DRAFT→**SHIPPED** —
+  deliberately NOT `DECIDED` (reserved for the human-reviewed rows 1–48; Paul released the show-me-first
+  gate but did not line-by-line review, so SHIPPED keeps that split honest). Updated 5 section headers
+  `⟨DRAFT⟩`→`⟨SHIPPED⟩` + 5 banner leads (dropped the false "pending review" framing, KEPT the
+  verification provenance). Verified: 0 DRAFT hits left, all 14 tails `| L## | SHIPPED |`. rust-textbook
+  main `4e51b9b`. Matrix now internally consistent end-to-end.
 - ◐ **More exercises / functional phase** — created `07b-functional-and-smart-pointers` and
   relocated the misplaced iterators exercise (was in 09-advanced) into it. Also relocated
   `09-advanced/03_move_out_of_borrow` (E0507, core ownership) → `04-ownership/04_move_out_of_borrow`
@@ -700,11 +706,13 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
 ## Open questions for Paul
 - ✅ **GATE RESOLVED (2026-06-25): the "show Paul the matrix first" lesson gate is RELEASED.** Paul: "finish
   your tasks, stop ticking", "you dont need me to baby sit", "just keep going so you dont need me." The loop
-  now authors the remaining DRAFT-matrix lessons (rows 49–62) AUTONOMOUSLY — no review needed. **L24–L29 shipped**
-  (generics/traits/lifetimes/closures/iterators/smart-pointers, rust-textbook/main `b87c71a`); L30–L37 + new-phase
-  reviews/exercises follow, one batch per tick. The review/merge of `textbook-integration`→`main` is still a Paul
-  decision when he wants it, but it no longer blocks the loop. (`docs/REVIEW-GUIDE.md` remains a reading path if/when
-  you do review.) The note below is kept for history.
+  now authors the remaining DRAFT-matrix lessons (rows 49–62) AUTONOMOUSLY — no review needed. **DONE: all 37
+  lessons (L1–L37) + 11 phase reviews (quiz+cheatsheet each) shipped to rust-textbook/main, and the concept-matrix
+  rows 49–62 are reconciled (DRAFT→SHIPPED, Lesson# L24–L37 filled — `4e51b9b`).** The matrix's `DECIDED` token
+  stays reserved for the human-reviewed rows 1–48; rows 49–62 are `SHIPPED` (AI-authored + adversarially verified +
+  gate-released), an honest distinction kept visible should Paul ever want to review-and-promote them. The
+  review/merge of `textbook-integration`→`main` is still a Paul decision when he wants it, but it no longer blocks
+  the loop. (`docs/REVIEW-GUIDE.md` remains a reading path if/when you do review.) The note below is kept for history.
 - ⚠️ ~~**MILESTONE + the un-gated lesson lane is now EXHAUSTED — your review unblocks the rest**~~ *(SUPERSEDED — gate released above)* (updated
   2026-06-24). Since the earlier note, the lessons lane re-opened (the "show Paul the matrix first" gate is
   **matrix-status-scoped**, not phase-numbered: DECIDED rows 1–48 are un-gated; only DRAFT rows 49–62 wait) and
