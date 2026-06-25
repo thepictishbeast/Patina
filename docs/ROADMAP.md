@@ -36,12 +36,12 @@ so the learner (and Paul) can see what's done and what's next. Status:
 - [ ] Wrap in Tauri v2 → desktop + Android (Termux rust), reusing this frontend (env-gated here)
 
 ## Phase 3 — Learning content
-- [x] Merged corpus: concept matrix Phases 1–6 (compile-verified)
-- [x] 39 verified exercises across 11 phases (basics → advanced), each with book refs + an expected compiler error OR runtime panic + solution outline
-- [x] 23 embedded Book chapters (bundled + seeded into the store; code listings link out to the live Book — see the vendor-vs-link decision below)
+- [x] Merged corpus: concept matrix Phases 1–9 (compile-verified; rows 1–62, every row mapped to a lesson)
+- [x] 63 verified exercises across 11 phases (basics → advanced), each with book refs + an expected compiler error OR runtime panic + solution outline (concept→glossary resolution CI-guarded)
+- [x] 33 embedded Book chapters (bundled + seeded into the store; code listings link out to the live Book — see the vendor-vs-link decision below)
 - [x] Education engine — spec (docs/EDUCATION.md) AND implementation: shared hint ladder, spaced-repetition, tutor guide-not-solve scaffolding
-- [ ] Lesson 1 calibration (needs Paul) → unlocks Lessons 2–8
-- [ ] Corpus concept-matrix for Phases 7–9; book code-listings: vendor ~200 files vs keep link-out (needs Paul)
+- [x] All 37 lessons (L1–L37, Phase 1 foundations → multithreaded-web-server capstone) + 11 phase reviews (quiz + cheatsheet each) + STUDY-GUIDE + in-lesson prev/next nav (rust-textbook); every snippet compile-verified on rustc 1.95.0/ed2024, real compiler errors verbatim, no analogies, no answer-leak
+- [ ] Book code-listings: vendor ~200 files vs keep link-out (needs Paul)
 
 ## Phase 4 — Distribution & sync
 - [x] Packaging plan + .deb/.rpm + release CI (docs/DISTRIBUTION.md)
