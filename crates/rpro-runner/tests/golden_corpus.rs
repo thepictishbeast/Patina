@@ -11,13 +11,17 @@
 //!   compile check),
 //! - a duplicate `id` (silent wrong-lookup, since `select`/`current` find by id),
 //! - a malformed `expected_error_code`,
-//! - an empty `concept` (the hint ladder leans on it).
+//! - an empty `concept`, OR a `concept` that doesn't resolve to a glossary term
+//!   (the exercise header renders it as a tappable definition chip — an
+//!   unresolved concept is a silent dead chip, the bug that rotted across 9
+//!   exercises before this guard existed).
 //!
 //! Deliberately NOT here (kept where they belong, to keep this fast and pure):
 //! compilation + `expected_error_code` *emission* live in
 //! `scripts/verify-exercises.sh` (needs a real toolchain); book-anchor
 //! resolution lives in `scripts/verify-book-anchors.mjs`.
 
+use rpro_glossary::Glossary;
 use rpro_runner::discover;
 use rpro_state::Difficulty;
 use std::collections::BTreeSet;
@@ -27,6 +31,14 @@ use std::path::{Path, PathBuf};
 /// test is independent of the caller's CWD.
 fn exercises_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../exercises")
+}
+
+/// The built-in glossary, loaded from the workspace so the concept→term guard
+/// uses the exact same (case- and separator-insensitive) lookup the live
+/// `/api/glossary` endpoint does — no risk of normalization drift.
+fn glossary() -> Glossary {
+    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../glossary/glossary.toml");
+    Glossary::load(&path).expect("the built-in glossary must load")
 }
 
 /// The intended curriculum structure, phase by phase: each directory maps to the
@@ -94,6 +106,7 @@ fn golden_corpus_holds_its_invariants() {
     );
 
     let map = golden_map();
+    let gloss = glossary();
     let mut seen_ids = BTreeSet::new();
 
     for ex in &exercises {
@@ -106,6 +119,17 @@ fn golden_corpus_holds_its_invariants() {
         assert!(
             !ex.meta.concept.trim().is_empty(),
             "{id}: empty concept tag"
+        );
+
+        // 2b. concept resolves to a glossary term — the exercise header renders it
+        //     as a tappable definition chip, so an unresolved concept is a silent
+        //     dead chip. Fix: add `concept` as an alias on the right term in
+        //     glossary/glossary.toml (or reuse a concept that already resolves).
+        assert!(
+            gloss.get(&ex.meta.concept).is_some(),
+            "{id}: concept {:?} has no glossary term/alias — dead chip. \
+             Add it as an alias in glossary/glossary.toml.",
+            ex.meta.concept
         );
 
         // 3. expected_error_code, when present, is E#### shaped.
