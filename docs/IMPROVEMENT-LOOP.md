@@ -927,11 +927,16 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
     LSP client + live diagnostics/completion/hover wired into the Dev editor — a multi-session feature, and
     blocked until a toolchain-matched rust-analyzer is available. **Needs: a matching rust-analyzer build (or
     toolchain pin), and your sign-off on the scope (it's the biggest remaining feature).**
-  - **#23 Distribution (the non-AppImage parts).** AppImage edition is DONE (built + verified). The rest is
-    external-infra/key-gated: signed **APT/dnf repos** need your GPG signing key + a GH-Pages deploy target;
-    **F-Droid** needs the mobile-repo submission; **APK + online Run for Android** need Android signing keys +
-    a hosted remote-toolchain server. **I can't generate your signing keys or submit to F-Droid autonomously —
-    these need you (or the keys/infra) to proceed.**
+  - **#23 Distribution.** AppImage DONE. **★ APK DONE + DOWNLOADABLE (2026-06-25):** the Android app builds
+    end-to-end (seam cross-compiled for all 4 ABIs + gui/exercises/book bundled → 5.3 MB **debug-signed,
+    sideloadable** APK), published at **github.com/thepictishbeast/Tempered-Studio-Mobile/releases/tag/v0.2.0**
+    + auto-published every push via `apk.yml` (mobile `c5866ac`). Build was unblocked by fixing build-apk.sh's
+    `$HOME/.rustup` → `/home/paul/.rustup` (the android std targets live under paul, not root). **The remaining
+    #23 parts genuinely need you / external infra:** signed **APT/dnf repos** (your GPG key + a GH-Pages target),
+    **F-Droid** (submission + a *release*-signed build → your keystore), **Play-Store release APK** (your Android
+    keystore), **web deploy** (a GH-Pages/host target), **online Run for Android** (a hosted remote-toolchain
+    server, since Android has no on-device rustc). The debug APK gives a working downloadable app TODAY; the
+    signed/hosted distribution channels are the key/infra-gated next layer.
 - ✅ **GATE RESOLVED (2026-06-25): the "show Paul the matrix first" lesson gate is RELEASED.** Paul: "finish
   your tasks, stop ticking", "you dont need me to baby sit", "just keep going so you dont need me." The loop
   now authors the remaining DRAFT-matrix lessons (rows 49–62) AUTONOMOUSLY — no review needed. **DONE: all 37
