@@ -225,9 +225,11 @@ pub struct ExerciseViewData {
     pub gloss: Option<(String, String, String)>,
 }
 
-/// Render the exercise view: tab bar, a title/verdict header, the **raw output**
-/// (the big, always-present region — the by-hand-error contract) beside an
-/// additive **diagnostics** sidebar, and a book-refs footer. Stacks on narrow.
+/// Render the exercise view.
+///
+/// Tab bar, a title/verdict header, the **raw output** (the big, always-present
+/// region — the by-hand-error contract) beside an additive **diagnostics**
+/// sidebar, and a book-refs footer. Stacks on narrow.
 pub fn render_exercise(f: &mut Frame, app: &App, data: &ExerciseViewData) {
     let area = f.area();
     // A hint row only appears once the learner has climbed the ladder (pressed h).
@@ -621,9 +623,11 @@ pub fn render_book(f: &mut Frame, app: &App, book: &Book) {
     );
 }
 
-/// Render the roadmap: the tab bar over a styled list parsed from a
-/// checkbox-markdown string (`## Section`, `- [x]/[>]/[ ] task`, prose). Status
-/// boxes get the legend's glyphs + colors; ASCII mode keeps the raw `[x]`.
+/// Render the roadmap.
+///
+/// The tab bar over a styled list parsed from a checkbox-markdown string
+/// (`## Section`, `- [x]/[>]/[ ] task`, prose). Status boxes get the legend's
+/// glyphs + colors; ASCII mode keeps the raw `[x]`.
 pub fn render_roadmap(f: &mut Frame, app: &App, content: &str) {
     let area = f.area();
     let rows = Layout::vertical([Constraint::Length(3), Constraint::Min(0)]).split(area);

@@ -772,7 +772,7 @@ fn build_router(state: AppState, gui_dir: &Path) -> Router {
 /// `exercises/`, `book/`). Pure (no filesystem) so the precedence is unit-tested;
 /// [`resolve_asset_root`] picks the first that actually exists. First match wins:
 ///   1. `$TS_ASSET_ROOT`                  — explicit operator/packager override.
-///   2. `<exe>/../share/tempered-studio`  — FHS install (.deb) / AppDir mirror.
+///   2. `<exe>/../share/tempered-studio`  — FHS install (.deb) / `AppDir` mirror.
 ///   3. `<exe>/`                          — assets sitting beside the binary.
 ///   4. `<CARGO_MANIFEST_DIR>/../..`       — the source tree (dev runs + tests).
 fn asset_root_candidates(
@@ -793,7 +793,7 @@ fn asset_root_candidates(
 }
 
 /// Resolve the directory holding the bundled assets, relative to the running
-/// executable — so a *packaged* binary (.deb / AppImage) finds `gui/` etc. on a
+/// executable — so a *packaged* binary (.deb / `AppImage`) finds `gui/` etc. on a
 /// user's machine, not only from the source tree it was built in. Returns the
 /// first candidate whose `gui/index.html` is present; if none match, the last
 /// (source-tree) candidate is returned unconditionally, preserving the prior
