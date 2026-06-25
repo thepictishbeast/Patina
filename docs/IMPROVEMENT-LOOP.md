@@ -681,10 +681,15 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   4.5:1); regressed when the switcher landed (`158c997`). Deepened just that button's bg to
   `#c44000` (white = ~5.1:1, self-contained so passes in both themes), preserving the filled-orange
   "selected" affordance. `a11y.spec.js` gate green again; verified live (axe probe + screenshot).
-- ☐ **White-on-`--accent` is fragile at small sizes** (note, 2026-06-23): the bright `#f74c00`
-  only clears AA for *large* white text — the `.run` button passes solely on size. Any NEW small
-  white-on-accent element will silently fail contrast; reuse the deepened `#c44000` (or a token) and
-  let `a11y.spec.js` catch it.
+- ✅ **White-on-`--accent` token (`59cb2f7`, 2026-06-25)** — closed the 2026-06-23 note: the bright
+  `#f74c00` only clears AA for *large* white text, and the contrast fix lived as a magic `#c44000`
+  literal in `.modesw button.sel`. Promoted it to a documented `:root` token **`--accent-deep: #c44000`**
+  (white ≈ 5.1:1 vs the bright accent's ~3.5:1) with a comment telling future code to use it — NOT
+  `--accent` — under any small `color:#fff` element. Behavior-identical (`var()` → same `#c44000`); the
+  existing `a11y.spec.js` axe gate is the catch for anything that ignores the guidance. Verified LIVE
+  (rpro-serve + Playwright): selected button computes `rgb(196,64,0)`/white, a11y + web + tier e2e 4/4,
+  screenshot read. (The `.run` button keeps the bright-accent gradient — it passes on size; if it ever
+  shrinks, switch it to `--accent-deep`.)
 - ✅ **e2e web.spec fixed vs predict-gate** (`<pending>`): the "Run → error code" test clicked
   `#runbtn` cold, so the Learn-mode predict-gate (`158c997`) blocked the run → timeout (perma-red,
   masking real regressions). Now locks the honest `fails` prediction first, exercising the real
