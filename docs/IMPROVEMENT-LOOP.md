@@ -720,6 +720,14 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   scatter justified `#[allow]`s, or (b) relax `nursery` to `allow`/remove it (pedantic alone is the usual bar).
   That's a project-wide quality-bar call → flagged for Paul, LOW priority, deferred alongside the `-D` gate.**
   Did NOT churn the debatable ones this tick.
+  ✅ **Cleared the clean corrective tail (`4080c4e`, 2026-06-25):** the 4 genuinely-clean warnings are now
+  fixed — `doc_markdown` ×2 (rpro-serve/main.rs: backtick `AppDir`/`AppImage`) + `too_long_first_doc_paragraph`
+  ×2 (rpro-tui/render.rs: split the `render_exercise`/`render_roadmap` summary into a short first line + detail).
+  **rpro-serve 4→2, rpro-tui 8→6.** Verified: the 2 lint names → 0 occurrences, rpro-tui 18 + rpro-serve 35
+  tests pass, fmt clean. **What REMAINS is now 100% the Paul-gated lint-policy tail** — nursery false-positives
+  (`future_not_send` ×6 on the wasm-safe `Core`, `option_if_let_else` ×3 whose `map_or_else` rewrites are
+  *less* readable, `redundant_clone` ×1 likely-required) + pedantic refactors (`too_many_lines` ×3,
+  `similar_names` ×3). No more clean corrective clippy work exists; the rest awaits Paul's nursery/`-D` decision.
 - ✅ **`SECURITY.md` CORRECTION + freshen** (`<pending>`): the prior "SECURITY.md is MISSING" claim was
   WRONG — it lives at **`docs/SECURITY.md`** (the "§4" the notes cite); the earlier check grepped the repo
   root only. It's a thorough review and was just **re-freshened** to current state (the doc's own rule:
