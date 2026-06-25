@@ -33,7 +33,7 @@ run() { # run "<label>" <cmd...>
 
 # ── ci.yml gates ───────────────────────────────────────────────────────────
 run "rustfmt" cargo fmt --all -- --check
-run "clippy" cargo clippy --workspace --all-targets --locked
+run "clippy (-D warnings)" cargo clippy --workspace --all-targets --locked -- -D warnings
 run "test" cargo test --workspace --locked
 run "doc" cargo doc --workspace --no-deps --locked
 run "e2e smoke" bash scripts/smoke.sh
