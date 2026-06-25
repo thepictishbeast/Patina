@@ -81,6 +81,10 @@
                  until opened (▦) or a Run/Hint reveals it.
      These four tracks cover every list × insights combination. */
   main { display:grid; grid-template-columns:248px 1fr; grid-template-rows:1fr; height:calc(100vh - 45px); }
+  /* `main { display:grid }` (author) otherwise defeats the `hidden` attribute's
+     UA `display:none`, so Book/Glossary/Roadmap rendered UNDER the practice view
+     instead of replacing it. This restores the intended view-switch. */
+  main[hidden] { display:none; }
   main.show-insights:not(.no-list) { grid-template-columns:248px 1fr 340px; }
   main.no-list:not(.show-insights) { grid-template-columns:1fr; }
   main.no-list.show-insights { grid-template-columns:1fr 340px; }
@@ -108,6 +112,13 @@
   .docview table { border-collapse:collapse; margin:12px 0; font-size:12.5px; display:block; overflow-x:auto; }
   .docview th, .docview td { border:1px solid var(--line); padding:5px 11px; text-align:left; }
   .docview thead th { background:var(--bg-3); font-weight:600; }
+  /* Glossary tab term cards */
+  .docview .gloss-term { border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:8px; padding:11px 14px; margin:10px 0; }
+  .docview .gloss-name { font-size:14px; color:var(--fg); margin:0 0 5px; letter-spacing:0; text-transform:none; }
+  .docview .gloss-def { line-height:1.6; margin:0; }
+  .docview .gloss-foot { margin-top:8px; font-size:12px; color:var(--fg-dim); display:flex; gap:14px; align-items:center; flex-wrap:wrap; }
+  .docview .gloss-more { color:var(--note); text-decoration:none; font-weight:600; }
+  .docview .gloss-more:hover { text-decoration:underline; }
   .docview .booksearch input { width:100%; box-sizing:border-box; padding:9px 12px; font-size:14px; font-family:var(--ui);
     color:var(--fg); background:var(--bg-2); border:1px solid var(--line); border-radius:8px; margin:6px 0 4px; }
   .docview .booksearch input:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 2px rgba(247,76,0,.18); }
@@ -277,6 +288,7 @@
     <nav class="tabs">
       <div class="tab active" data-view="practice">📝 Practice</div>
       <div class="tab" data-view="book">📖 Book</div>
+      <div class="tab" data-view="glossary">📚 Glossary</div>
       <div class="tab" data-view="roadmap">🗒️ Roadmap</div>
     </nav>
     <div class="spacer"></div>
@@ -941,7 +953,52 @@
         catch (_) { d.innerHTML = '<p>Roadmap unavailable (open via the local server).</p>'; }
       } else if (view === 'book') {
         await renderBook(chapter || null, anchor || null);
+      } else if (view === 'glossary') {
+        await renderGlossary();
       }
+    }
+
+    // The Glossary tab: a browsable, filterable list of every built-in term
+    // (served offline by /api/glossary with no query). Until now the glossary was
+    // only reachable by tapping a concept chip on the current exercise — this lets
+    // a learner read the whole vocabulary, and jump from any term to its Book
+    // chapter. Pure offline reference; no internet, no LLM.
+    async function renderGlossary() {
+      const d = document.getElementById('docview');
+      d.innerHTML = '<p style="color:var(--fg-dim)">loading glossary…</p>';
+      let terms = [];
+      try {
+        const j = await fetch('api/glossary').then(r => r.json());
+        terms = (j && j.terms) || [];
+      } catch (_) { d.innerHTML = '<p>Glossary unavailable (open via the local server).</p>'; return; }
+      terms = terms.slice().sort((a, b) => a.name.localeCompare(b.name));
+      const cards = terms.map(t => {
+        const hay = (t.name + ' ' + (t.aliases || []).join(' ') + ' ' + t.definition).toLowerCase();
+        const more = t.book_chapter
+          ? ` <a class="gloss-more" href="#" data-ch="${esc(t.book_chapter)}">read more in the Book →</a>` : '';
+        return `<div class="gloss-term" data-hay="${esc(hay)}">`
+          + `<h3 class="gloss-name">${esc(t.name)}</h3>`
+          + `<p class="gloss-def">${esc(t.definition)}</p>`
+          + `<div class="gloss-foot"><span class="gloss-src">${esc(t.source)}</span>${more}</div></div>`;
+      }).join('');
+      d.innerHTML = '<h1>Glossary</h1>'
+        + `<p style="color:var(--fg-dim)">Plain-language definitions of the Rust terms used across the exercises — fully offline. ${terms.length} terms.</p>`
+        + '<div class="booksearch"><input id="glq" type="search" placeholder="Filter terms…" aria-label="Filter glossary terms" autocomplete="off" autocapitalize="off" spellcheck="false"><span class="bscount" id="glCount"></span></div>'
+        + `<div id="glossList">${cards}</div>`;
+      d.querySelectorAll('.gloss-more[data-ch]').forEach(a =>
+        a.onclick = e => { e.preventDefault(); showView('book', a.dataset.ch); });
+      const q = document.getElementById('glq');
+      if (q) q.addEventListener('input', () => {
+        const needle = q.value.trim().toLowerCase();
+        let shown = 0;
+        d.querySelectorAll('.gloss-term').forEach(el => {
+          const hit = !needle || el.dataset.hay.includes(needle);
+          el.hidden = !hit;
+          if (hit) shown++;
+        });
+        const c = document.getElementById('glCount');
+        if (c) c.textContent = needle ? `${shown} match${shown === 1 ? '' : 'es'}` : '';
+      });
     }
 
     // The embedded Rust Book reader. With no chapter it renders the table of
@@ -1042,6 +1099,7 @@
     const KEYMAP = {
       r: () => runOp('run'), c: () => runOp('check'), h: runHint,
       b: () => showView('book'), t: () => showView('roadmap'), p: () => showView('practice'),
+      g: () => showView('glossary'),
       i: () => setInsights(!document.querySelector('main').classList.contains('show-insights')),
       f: () => setFocusMode(!document.querySelector('main').classList.contains('no-list')),
     };

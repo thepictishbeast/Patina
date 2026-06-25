@@ -78,8 +78,17 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   Exercise-tab "focus" behaviour into a header **◧ Focus toggle** (`f` key) that collapses the exercise-list pane
   for full-width practice — symmetric with the ▦ Insights drawer, and the two compose (clean CSS matrix over
   no-list × show-insights, all 4 combos verified). Focus state persists in localStorage. Verified LIVE (Playwright):
-  all 4 layout combos render clean (no overflow); gui-transform + **all 16 e2e still green**. NEXT steps:
-  move Glossary into its own tab/menu; fold RECALL + a Settings/detect menu into the bar; tighter spacing pass.
+  all 4 layout combos render clean (no overflow); gui-transform + **all 16 e2e still green**.
+  **Step 3 done (this commit): Glossary tab.** The built-in glossary was only reachable by tapping a concept chip
+  on the current exercise; now a **`Glossary` tab** (tab bar: Practice · Book · Glossary · Roadmap; `g` key)
+  renders all 58 terms — alphabetised cards with definition + source + a "read more in the Book →" jump — from the
+  existing `GET /api/glossary` (frontend-only; offline). Includes a live **filter box** (type-to-narrow, match
+  count). **Bonus: fixed a pre-existing latent bug** — `main { display:grid }` (author) overrode the `hidden`
+  attribute's UA `display:none`, so Book/Roadmap had been rendering UNDER the practice view rather than replacing
+  it; added `main[hidden] { display:none }`. Verified LIVE: tab renders 58 terms, filter narrows 58→8 on "borrow",
+  Book-jump opens the right chapter, view properly replaces practice; gui-transform + **all 16 e2e still green**.
+  NEXT steps: fold RECALL + a Settings/detect menu into the bar; tighter spacing pass; (awaiting Paul on whether
+  Book-refs should stay visible while solving vs. living in the Insights drawer).
 - ◐ **3 modes (Learn/Assist/Dev)** — switcher + persistence + Learn predict-gate DONE
   (`158c997`); legacy header `FREE` badge **removed** (`<pending>`) so the switcher is the sole
   mode authority (verified live: header renders, badge gone, no a11y/contrast change).
