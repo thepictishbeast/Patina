@@ -1,0 +1,22 @@
+id = "basics/07_fn_arg_count"
+title = "A call must supply every argument the function declares"
+difficulty = "beginner"
+estimated_minutes = 6
+concept = "function-argument-count"
+expected_error_code = "E0061"
+solution_outline = """
+This is the count companion to the argument-type exercise: there the value was
+the wrong type; here there are the wrong *number* of values. `area` is declared
+with two parameters (`width` and `height`), so every call must pass exactly two
+arguments — the compiler even tells you which one (`argument #2`) is missing.
+
+Read `area`'s definition line to see how many parameters it expects, then add the
+missing argument to the call so the counts match. You pick the second number;
+there's no single right value — once both arguments are supplied, it compiles and
+prints the product.
+"""
+
+[[book_refs]]
+chapter = "ch03-03-how-functions-work"
+anchor = "parameters"
+why = "A function's parameters are fixed in its signature; a call has to supply a value for each one. The rule this call breaks."

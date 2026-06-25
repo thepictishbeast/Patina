@@ -89,7 +89,7 @@ source = "The Rust Book, ch.3.2 \"Data Types\""
 
 [[term]]
 name = "function argument types"
-aliases = ["function-arg-types", "parameter type declaration", "declaring parameter types", "function signature types"]
+aliases = ["function-arg-types", "parameter type declaration", "declaring parameter types", "function signature types", "function-argument-count"]
 definition = "Every special variable a function takes in (its parameters) must have its type written down in the function's opening line. This tells Rust exactly what kind of value each one expects before the function is ever used."
 book_chapter = "ch03-03-how-functions-work"
 source = "The Rust Book, ch.3.3 \"Functions\""
