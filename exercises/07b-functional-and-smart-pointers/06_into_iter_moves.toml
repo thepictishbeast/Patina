@@ -1,0 +1,21 @@
+id = "iterators/02_into_iter_moves"
+title = "into_iter() consumes the collection — iter() borrows it"
+difficulty = "intermediate"
+estimated_minutes = 8
+concept = "iterator-into-iter-ownership"
+expected_error_code = "E0382"
+solution_outline = """
+There are three ways to start iterating, and they differ in ownership:
+`into_iter()` takes the collection by value (it's gone afterward), `iter()`
+borrows it (`&T` items, the collection survives), and `iter_mut()` borrows it
+mutably. This program used `into_iter()`, so `v` was moved into the chain and
+can't be printed again. Since you only need to *read* the numbers to double
+them, borrow instead: iterate with `v.iter()` (and the closure now receives
+`&i32`, so `|x| x * 2` still works via auto-deref). Then `v` is still yours on
+the last line.
+"""
+
+[[book_refs]]
+chapter = "ch13-02-iterators"
+anchor = "methods-that-consume-the-iterator"
+why = "iter / into_iter / iter_mut and how an iterator relates to the data it walks — borrow vs consume."

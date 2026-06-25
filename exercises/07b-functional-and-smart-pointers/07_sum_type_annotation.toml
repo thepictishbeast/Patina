@@ -1,0 +1,20 @@
+id = "iterators/03_sum_annotation"
+title = "sum() needs to know what type to total into"
+difficulty = "intermediate"
+estimated_minutes = 8
+concept = "iterator-consumer-sum"
+expected_error_code = "E0283"
+solution_outline = """
+`sum` is generic over its output type — it can produce an `i32`, a `u64`, an
+`f64`, and so on — so when nothing in the surrounding code pins that type down,
+inference is stuck (the same shape of problem as `collect`). Name the type on
+the binding: `let total: i32 = v.iter().sum();`. You can also tell `sum`
+directly with the turbofish, `.sum::<i32>()`. Like every consuming adapter,
+`sum` is where a lazy iterator is forced to produce a concrete value — and that
+value needs a concrete type.
+"""
+
+[[book_refs]]
+chapter = "ch13-02-iterators"
+anchor = "methods-that-consume-the-iterator"
+why = "`sum` is a consuming adapter; this section is where lazy iteration becomes a concrete result."
