@@ -893,6 +893,10 @@
         const q = ln.match(/^&gt;\s?(.*)$/);
         if (q) { closeList(); quote.push(q[1]); continue; }
         flushQuote();
+        // Thematic break (`---`, `***`, `___`, optionally spaced) → <hr>. Must run
+        // BEFORE the list check, else a spaced "- - -" parses as a bullet. (Our
+        // markdown — lesson footers, section breaks — uses `---` liberally.)
+        if (/^\s*([-*_])(\s*\1){2,}\s*$/.test(ln)) { closeList(); html += '<hr>'; continue; }
         const ul = ln.match(/^\s*[-*]\s+(.*)$/);
         if (ul) { if (list !== 'ul') { closeList(); html += '<ul>'; list = 'ul'; } html += '<li>' + inline(ul[1]) + '</li>'; continue; }
         const ol = ln.match(/^\s*\d+\.\s+(.*)$/);
