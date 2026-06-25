@@ -476,6 +476,17 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   ch10-03 `the-borrow-checker` + `lifetime-annotation-syntax` anchors. golden_map: 07 = generics/traits/
   lifetimes, Intermediate. Verified: emits E0597 on 1.95.0, golden_corpus green, verify-exercises **61/61**,
   anchors 97/97. Commit `1415807`. Corpus = **29 distinct codes + 5 runtime panics / 61 exercises.**
+  ✅ Added a 3rd **ownership** borrow-interaction exercise (2026-06-25) — `04-ownership/07_move_while_borrowed`
+  (id `ownership/07_move_while_borrowed`, **E0505**, beginner): `let r=&v; let v2=v; use(r)` → "cannot move
+  out of `v` because it is borrowed". COMPLETES the "can't-while-borrowed" pair with `06_assign_while_borrowed`
+  (E0506): an active borrow freezes the value against BOTH reassignment (E0506) and moving (E0505). Distinct
+  from E0507 (move out OF a borrow, e.g. `*ref`) and E0382 (plain move, no live borrow). Same "borrow ends at
+  last use" fix lever as the rest of 04. Reused 04's validated ch04-02 `the-rules-of-references` + ch10-03
+  `the-borrow-checker` anchors. golden_map: 04 = ownership + Beginner. Verified: emits E0505 on 1.95.0,
+  golden_corpus green, verify-exercises **62/62**, anchors 99/99. Commit `ba53f27`. 04-ownership now 7
+  exercises (E0382/E0502/E0515/E0507/E0499/E0506/E0505). Corpus = **30 distinct codes + 5 runtime panics / 62
+  exercises.** Remaining mined codes: E0716 (temporary dropped while borrowed), E0061 (wrong arg count) —
+  both more niche/shallow; the high-value borrow/lifetime set is now essentially complete.
 - ✅ **Runtime-outcome exercise model** (`<pending>`, do-what's-best — not a Paul fork): the model used
   to assume every failure is a COMPILE error. A whole class of core lessons are RUNTIME panics instead
   (RefCell's `BorrowMutError`, integer overflow, `unwrap()` on `None`, index-OOB) — now supported.
