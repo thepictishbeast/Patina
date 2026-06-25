@@ -564,6 +564,16 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   item) → correctly left as-is. **Stale-content sweep now covers the 2 highest-visibility surfaces: the
   in-app Roadmap tab (last tick) + the top README (this tick).** Lower-visibility docs (ARCHITECTURE.md,
   DISTRIBUTION.md, etc.) may have drift but aren't learner-facing; a future spot-check, not urgent.
+- ✅ **`scripts/check.sh` — one-command local CI mirror (`5ebc28c`, 2026-06-25)** — rotated out of the
+  stale-content sweep to a real DX/robustness gap: there was NO single local command to confirm a change is
+  mergeable — you had to read `ci.yml` + `seam-gates.yml` and run ~11 commands by hand. `check.sh` mirrors
+  every gate (fmt, clippy, test, doc, e2e + CLI smokes, gui-transforms, exercise integrity, book anchors,
+  language-seam guard, wasm32 pure-core build), prints a pass/fail line per gate, runs them ALL (no fail-fast
+  → see every problem at once), and exits nonzero if any fail. wasm32 gate auto-skips when the target isn't
+  installed. Doubles as the improvement loop's **regression sentinel** (one command per tick instead of the
+  ad-hoc subset I was running). Verified: shellcheck clean; full run = **10/10 gates green** on the current
+  branch (+ wasm32 skipped locally) → "branch is mergeable". Documented in RUN.md. (The two workflow files
+  remain the merge-gating source of truth; check.sh notes "keep in sync".)
 - ✅ **Runtime-outcome exercise model** (`<pending>`, do-what's-best — not a Paul fork): the model used
   to assume every failure is a COMPILE error. A whole class of core lessons are RUNTIME panics instead
   (RefCell's `BorrowMutError`, integer overflow, `unwrap()` on `None`, index-OOB) — now supported.
