@@ -197,9 +197,14 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
     5 deterministic unit tests (framing round-trip, two-message stream, notification-skipping, two protocol-error
     paths); clippy `-D warnings` + fmt + seam-grep clean; and an opt-in `#[ignore]` e2e ran LIVE against the
     matched server → `server reported: rust-analyzer 1.95.0`, clean exit, 0.05s.
-  - ☐ NEXT: wire `rpro-lsp` into a surface — first `rpro detect` (replace its `--version` probe with a real
-    handshake), then the streaming client (`didOpen`/`didChange` → `publishDiagnostics`/completion/hover) into
-    the Dev-tier editor. Multi-session; build incrementally.
+  - ✅ **Wired `rpro-lsp` into `rpro detect`** (this commit): the "Language server (Dev IDE)" block now runs a
+    REAL `rpro_lsp::server_info(&lsp, DEFAULT_TIMEOUT)` handshake instead of a `--version` shell-out. Reports
+    `✓ <name> <version> — completed an LSP handshake` on success, a not-found hint on spawn failure, and a
+    distinct `⚠ on PATH but did not complete an LSP handshake` when the binary exists but doesn't speak the
+    protocol. Server name stays data-driven from `LspSpec` (seam-grep clean). Verified live: `✓ rust-analyzer
+    1.95.0 — completed an LSP handshake (owns **/*.rs)`; build + clippy `-D warnings` + fmt + seam all green.
+  - ☐ NEXT: the streaming client (`didOpen`/`didChange` → `publishDiagnostics`/completion/hover) into the
+    Dev-tier editor. Multi-session; build incrementally.
 
 ### Content / corpus
 - ✅ **#22 — E0005 corpus gap filled** (this commit): added `exercises/05-types-and-matching/05_refutable_let.{rs,toml}`

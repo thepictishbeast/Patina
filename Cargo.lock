@@ -1144,6 +1144,7 @@ dependencies = [
  "rpro-glossary",
  "rpro-lang",
  "rpro-lang-rust",
+ "rpro-lsp",
  "rpro-runner",
  "rpro-state",
  "rpro-storage-fs",

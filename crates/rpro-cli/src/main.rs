@@ -693,25 +693,23 @@ fn cmd_detect() -> Result<()> {
 
     // Language server (the Dev tier's IDE will launch the server this LspSpec
     // names). Data-driven — the binary comes from `lsp.server`, never hardcoded —
-    // so the language-seam stays clean. This is the first real consumer of
-    // `LspSpec`, which until now was defined-but-unused.
+    // so the language-seam stays clean. We run a REAL protocol handshake (via the
+    // rpro-lsp client), not a version shell-out: that proves the server actually
+    // speaks the protocol, and reports the name/version IT announces in its reply.
     println!();
     println!("{}", style("Language server (Dev IDE)").bold().cyan());
-    match std::process::Command::new(&lsp.server)
-        .arg("--version")
-        .output()
-    {
-        Ok(out) if out.status.success() => {
-            let v = String::from_utf8_lossy(&out.stdout);
+    match rpro_lsp::server_info(&lsp, rpro_lsp::DEFAULT_TIMEOUT) {
+        Ok(info) => {
+            let version = info.version.as_deref().unwrap_or("version not reported");
             println!(
-                "  {} {} — {} (owns {})",
+                "  {} {} {} — completed an LSP handshake (owns {})",
                 style("✓").green().bold(),
-                style(&lsp.server).bold(),
-                v.trim(),
+                style(&info.name).bold(),
+                version,
                 style(&lsp.file_glob).dim()
             );
         }
-        _ => {
+        Err(rpro_lsp::LspError::Spawn { .. }) => {
             println!(
                 "  {} {} not found on PATH",
                 style("·").dim(),
@@ -719,6 +717,14 @@ fn cmd_detect() -> Result<()> {
             );
             println!(
                 "    the Dev tier's editor assists rely on it once wired; install it to enable"
+            );
+        }
+        Err(e) => {
+            println!(
+                "  {} {} is on PATH but did not complete an LSP handshake: {}",
+                style("⚠").yellow().bold(),
+                style(&lsp.server).bold(),
+                e
             );
         }
     }
