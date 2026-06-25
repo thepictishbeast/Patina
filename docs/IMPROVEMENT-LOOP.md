@@ -252,8 +252,14 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   and dropping multi-line `**bold**`. Added a paragraph buffer (`flushPara`) that joins soft-wrapped lines at block
   boundaries → proper paragraphs everywhere (Book + Roadmap + Lessons all improved). Verified LIVE (Playwright):
   list + content render clean, multi-line bold now bold, prev/next nav loads Lesson 2, Roadmap improved, no literal
-  `[..](.md)` leaks; gui-transform tests pass (slugs/tables/anchors intact); **all 16 e2e pass**. **NEXT: teach the
-  mobile `build-apk.sh` to sync `lessons/` so Android bundles them; optionally link each exercise to its lesson.**
+  `[..](.md)` leaks; gui-transform tests pass (slugs/tables/anchors intact); **all 16 e2e pass**.
+  **Android bundling DONE** (mobile `1794beb`): `build-apk.sh` synced gui/exercises/book but NOT glossary/ or
+  lessons/, so the APK was missing BOTH the Glossary data and the 37 lessons. Added them to the asset sync (+ the
+  `apk.yml` step name/comment); the committed `assets/store` is regenerated each build (CI clones current
+  Tempered-Studio), so the next APK from CI bundles the complete offline store. Verified: `bash -n` clean; the sync
+  block populates `assets/store/{glossary/glossary.toml, lessons/*.md (37)}`. **NEXT (open): link each exercise to
+  its matching lesson** (needs an exercise→lesson map — a `lesson` field on the toml, or concept-based) so a learner
+  on an exercise can jump straight to the lesson that teaches it.
 - ✅ **#22 — E0432 corpus gap filled** (`a0e8f38`): added `exercises/06-modules/05_unresolved_import.{rs,toml}`
   — a `use crate::shape::Circle;` whose module is really spelled `shapes` (an *unresolved import*). E0432 was not
   in the corpus, and `06-modules` was a thin phase (4 → 5). Teaches that a `use` is only a shortcut — the path it
