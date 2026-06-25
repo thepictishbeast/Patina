@@ -1,0 +1,38 @@
+id = "ownership/05_double_mut_borrow"
+title = "Only one mutable reference at a time"
+difficulty = "beginner"
+estimated_minutes = 10
+concept = "borrow-checker-one-mut"
+expected_error_code = "E0499"
+solution_outline = """
+This is the other half of the borrow rule (the first half — that a `&mut` and
+a `&` can't coexist — is the previous exercise): you may have at most ONE
+active mutable reference to a value at a time. Two `&mut count` borrows are
+alive together here, because `first` is still used (`*first += 1`) after
+`second` is created.
+
+The fix relies on the same idea as the mut/immut exercise: a borrow lasts only
+until its LAST use, not until the end of the block. So if you completely finish
+with `first` — create it AND do `*first += 1` — before you create `second`,
+then only one mutable borrow is ever live, and the code compiles. Reorder the
+four middle lines so each reference is fully used before the next is made.
+
+(You don't actually need two references at all here — a single `&mut`, or just
+mutating `count` directly, also works. The point is to see why two-at-once is
+rejected.)
+"""
+
+[[book_refs]]
+chapter = "ch04-02-references-and-borrowing"
+anchor = "mutable-references"
+why = "The exact rule the failing line violates: you can have only one mutable reference to a particular value at a time. The Book shows this same two-`&mut` error here."
+
+[[book_refs]]
+chapter = "ch04-02-references-and-borrowing"
+anchor = "the-rules-of-references"
+why = "The three rules of references in one place — at most one `&mut`, OR any number of `&`, never both; references must always be valid."
+
+[[book_refs]]
+chapter = "ch10-03-lifetime-syntax"
+anchor = "the-borrow-checker"
+why = "Why reordering fixes it: modern Rust ends a borrow at its last point of USE, not at the closing brace, so sequencing the two borrows means only one is ever active."
