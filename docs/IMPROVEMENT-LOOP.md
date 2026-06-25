@@ -413,6 +413,16 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   golden_map: 01-basics = `basics` + Beginner. Verified: emits E0596 on 1.95.0, golden_corpus green,
   verify-exercises **59/59**, book anchors 93/93. Commit `c5b27c9`. 01-basics now 6 exercises.
   (Corpus-wide error-code coverage now 27 distinct codes + 5 runtime panics across 59 exercises.)
+  ✅ Added a 2nd **ownership** exercise (2026-06-25) — `04-ownership/06_assign_while_borrowed`
+  (id `ownership/06_assign_while_borrowed`, **E0506**, beginner): a single `&total` borrow alive while the
+  code reassigns `total` → "cannot assign to `total` because it is borrowed". COMPLETES the borrow story —
+  distinct from the conflict codes (E0502 `&`/`&mut`, E0499 two-`&mut`): here there's only ONE reference, and
+  the violation is mutating the ORIGINAL while it's borrowed (an active borrow freezes the value). Same
+  "borrow ends at last use" fix lever as the rest of 04 (finish reading `watcher` before the reassignment).
+  Reused 04's validated ch04-02 `mutable-references` + ch10-03 `the-borrow-checker` anchors. golden_map:
+  04-ownership = `ownership`+Beginner. Verified: emits E0506 on 1.95.0, golden_corpus green, verify-exercises
+  **60/60**, anchors 95/95. Commit `61ed117`. 04-ownership now 6 exercises (E0382/E0502/E0515/E0507/E0499/E0506).
+  Corpus = **28 distinct error codes + 5 runtime panics across 60 exercises.**
 - ✅ **Runtime-outcome exercise model** (`<pending>`, do-what's-best — not a Paul fork): the model used
   to assume every failure is a COMPILE error. A whole class of core lessons are RUNTIME panics instead
   (RefCell's `BorrowMutError`, integer overflow, `unwrap()` on `None`, index-OOB) — now supported.
