@@ -234,7 +234,13 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
     Dev-tier editor. Multi-session; build incrementally.
 
 ### Content / corpus
-- ✅ **#22 — E0005 corpus gap filled** (this commit): added `exercises/05-types-and-matching/05_refutable_let.{rs,toml}`
+- ✅ **#22 — E0432 corpus gap filled** (this commit): added `exercises/06-modules/05_unresolved_import.{rs,toml}`
+  — a `use crate::shape::Circle;` whose module is really spelled `shapes` (an *unresolved import*). E0432 was not
+  in the corpus, and `06-modules` was a thin phase (4 → 5). Teaches that a `use` is only a shortcut — the path it
+  follows must lead to a real item in the module tree. Predict-then-run, no answer-leak; `concept = "use-and-paths"`
+  resolves to the glossary "use keyword" term; two ch07-03/ch07-04 book_refs. Verified: `rustc` emits exactly one
+  error (`error[E0432]`, secondary suppressed), golden_corpus green, anchors 112/112.
+- ✅ **#22 — E0005 corpus gap filled** (`93ecdef`): added `exercises/05-types-and-matching/05_refutable_let.{rs,toml}`
   — the classic beginner trap `let Some(n) = maybe;` (a *refutable* pattern in a plain `let`). E0005 was
   absent from the corpus's error-code set, so this is genuinely new coverage, not a duplicate. Predict-then-run
   format, no answer-leak in the `.rs`; `concept = "if-let"` resolves to the glossary "if let" term (golden_corpus

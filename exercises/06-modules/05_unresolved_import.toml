@@ -1,0 +1,27 @@
+id = "modules/05_unresolved_import"
+title = "A `use` path must point at something that exists"
+difficulty = "beginner"
+estimated_minutes = 6
+concept = "use-and-paths"
+expected_error_code = "E0432"
+solution_outline = """
+`use crate::shape::Circle;` names a module `shape` that does not exist — the
+module is spelled `shapes` (with an `s`). A `use` is only a shortcut; the path
+it follows still has to lead to a real item in the module tree, so an
+unresolvable path is rejected before the program can run.
+
+Fix the path WITHOUT touching the `mod shapes` block, the struct, or `main`:
+write `use crate::shapes::Circle;` (or, equivalently from the crate root,
+`use shapes::Circle;`). Either points the shortcut at the module that is really
+there, and `Circle` then resolves in `main`.
+"""
+
+[[book_refs]]
+chapter = "ch07-04-bringing-paths-into-scope-with-the-use-keyword"
+anchor = "bringing-paths-into-scope-with-the-use-keyword"
+why = "`use` creates a shortcut name from a path into the module tree — and that path must resolve. Exactly the mechanism that fails here."
+
+[[book_refs]]
+chapter = "ch07-03-paths-for-referring-to-an-item-in-the-module-tree"
+anchor = "paths-for-referring-to-an-item-in-the-module-tree"
+why = "A path names its way through the module tree to an item; this import fails because the path doesn't lead to a real module."
