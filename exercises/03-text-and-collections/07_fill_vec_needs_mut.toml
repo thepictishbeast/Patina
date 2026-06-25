@@ -1,0 +1,31 @@
+id = "collections/07_fill_vec_needs_mut"
+title = "Mutating a Vec inside a function needs `mut`"
+difficulty = "beginner"
+estimated_minutes = 8
+concept = "mutable-borrow-needs-mut"
+expected_error_code = "E0596"
+# Adapted from Rustlings (https://github.com/rust-lang/rustlings, MIT License) —
+# 06_move_semantics/move_semantics1 — rebuilt into the predict-then-run format
+# (broken starter + .toml metadata + book refs), attributed per the corpus rules.
+attribution = "Rustlings (rust-lang/rustlings), MIT — 06_move_semantics/move_semantics1, adapted"
+solution_outline = """
+This is the same rule as the top-level mutability exercise, in a new place: the
+value a function receives. `let vec = vec;` rebinds the parameter immutably, and
+`.push` (declared `fn push(&mut self, ...)`) needs a *mutable* borrow — which is
+only allowed when the binding is `mut`.
+
+Read the compiler's suggestion: it points at the rebinding line and shows the one
+keyword to add (`let mut vec = vec;`). With that, the push is allowed and the
+function returns `[22, 44, 66, 88]`. (You could also drop the rebinding and add
+`mut` to the parameter itself: `fn fill_vec(mut vec: Vec<i32>)`.)
+"""
+
+[[book_refs]]
+chapter = "ch03-01-variables-and-mutability"
+anchor = "variables-and-mutability"
+why = "Why a binding is immutable by default and how `mut` opts into mutation — the keyword the fix adds."
+
+[[book_refs]]
+chapter = "ch04-02-references-and-borrowing"
+anchor = "mutable-references"
+why = "Why `.push` (a `&mut self` method) requires a mutable borrow, which only a `mut` binding can give."
