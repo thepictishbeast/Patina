@@ -1,0 +1,32 @@
+id = "basics/06_mutable_method_needs_mut"
+title = "Mutating in place also needs `mut`"
+difficulty = "beginner"
+estimated_minutes = 8
+concept = "mutable-borrow-needs-mut"
+expected_error_code = "E0596"
+solution_outline = """
+This is the companion to the immutable-reassignment exercise. There the problem
+was rebinding (`x = 6`); here the problem is changing the value *in place*.
+`.push` is declared `fn push(&mut self, ...)`, so to call it Rust must take a
+*mutable* borrow of `scores` — and you can only borrow a binding mutably if the
+binding itself was declared mutable.
+
+Read the compiler's suggestion: it points at the `let` line and shows the one
+keyword to add. Add `mut` to the binding so `let scores` becomes a mutable
+binding, and the `.push` call is then allowed. The program prints all three
+scores.
+
+The takeaway: `mut` governs BOTH reassigning a binding and mutating the value
+behind it (directly or through any `&mut self` method). Forgetting it is one of
+the most common first errors — and the compiler tells you exactly where to fix.
+"""
+
+[[book_refs]]
+chapter = "ch03-01-variables-and-mutability"
+anchor = "variables-and-mutability"
+why = "Why `let` is immutable and how `let mut` opts into mutation — exactly the fix here, and the same section behind the reassignment (E0384) exercise."
+
+[[book_refs]]
+chapter = "ch04-02-references-and-borrowing"
+anchor = "mutable-references"
+why = "Why a method like `.push` (which takes `&mut self`) requires a mutable borrow, and why that borrow is only allowed when the binding is `mut`."
