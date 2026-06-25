@@ -648,6 +648,9 @@ fn cmd_detect() -> Result<()> {
     let lang = RustLanguage;
     let probe = lang.detect_plan();
     let tools = lang.tools();
+    // The Dev tier's IDE launches the language server this `LspSpec` describes;
+    // capture it before `lang` is moved so `detect` can report its availability.
+    let lsp = lang.lsp();
 
     // Route the probe through the Core so this command exercises the exact
     // plan → execute → interpret path every surface will use.
@@ -684,6 +687,38 @@ fn cmd_detect() -> Result<()> {
             println!(
                 "  Install the toolchain from {} and re-run.",
                 style("https://rustup.rs").underlined()
+            );
+        }
+    }
+
+    // Language server (the Dev tier's IDE will launch the server this LspSpec
+    // names). Data-driven — the binary comes from `lsp.server`, never hardcoded —
+    // so the language-seam stays clean. This is the first real consumer of
+    // `LspSpec`, which until now was defined-but-unused.
+    println!();
+    println!("{}", style("Language server (Dev IDE)").bold().cyan());
+    match std::process::Command::new(&lsp.server)
+        .arg("--version")
+        .output()
+    {
+        Ok(out) if out.status.success() => {
+            let v = String::from_utf8_lossy(&out.stdout);
+            println!(
+                "  {} {} — {} (owns {})",
+                style("✓").green().bold(),
+                style(&lsp.server).bold(),
+                v.trim(),
+                style(&lsp.file_glob).dim()
+            );
+        }
+        _ => {
+            println!(
+                "  {} {} not found on PATH",
+                style("·").dim(),
+                style(&lsp.server).bold()
+            );
+            println!(
+                "    the Dev tier's editor assists rely on it once wired; install it to enable"
             );
         }
     }
