@@ -177,6 +177,8 @@
   .lesson .sub { color:var(--fg-dim); font-size:13px; margin-bottom:14px; }
   /* concept chip → tap for a glossary definition */
   .gloss { color:var(--accent-soft); border-bottom:1px dotted var(--accent-soft); cursor:pointer; }
+  .lesson-link { color:var(--note); font-weight:600; text-decoration:none; }
+  .lesson-link:hover { text-decoration:underline; }
   .gloss:hover, .gloss:focus-visible { color:var(--accent); border-bottom-style:solid; outline:none; }
   .glossbox { margin:-4px 0 14px; padding:10px 13px; border:1px solid var(--line); border-left:3px solid var(--accent);
     border-radius:8px; background:var(--bg-2); font-size:13px; line-height:1.5; }
@@ -703,6 +705,76 @@
       syncHL();
     }
 
+    // Each exercise concept → the textbook lesson that teaches it, so an exercise
+    // can offer "read the lesson" and close the read→practice loop. Keys are the
+    // exercise `concept` tags; values are lesson file stems (see /api/lessons).
+    const CONCEPT_LESSON = {
+      'mutability': '02-mutability',
+      'integer-overflow': '05-number-types-and-overflow',
+      'explicit-numeric-conversion': '05-number-types-and-overflow',
+      'function-arg-types': '07-functions',
+      'function-argument-count': '07-functions',
+      'if-as-expression': '09-if-else-expressions',
+      'loop-break-value': '10-loops',
+      'loop-variable-scope': '10-loops',
+      'match-exhaustiveness': '11-match-intro',
+      'string-vs-str': '12-string-vs-str',
+      'vec-element-type': '14-vec-hashmap',
+      'vec-index-bounds': '14-vec-hashmap',
+      'hashmap-insert-ownership': '14-vec-hashmap',
+      'move-semantics': '15-ownership-and-moves',
+      'move-while-borrowed': '16-references-and-borrowing',
+      'move-out-of-borrow': '16-references-and-borrowing',
+      'assign-while-borrowed': '16-references-and-borrowing',
+      'borrow-checker-one-mut': '16-references-and-borrowing',
+      'borrow-checker-mut-vs-immut': '16-references-and-borrowing',
+      'borrow-must-not-outlive-value': '16-references-and-borrowing',
+      'no-dangling-refs': '16-references-and-borrowing',
+      'mutable-borrow-needs-mut': '16-references-and-borrowing',
+      'struct-construction': '18-structs',
+      'struct-field-privacy': '18-structs',
+      'method-syntax': '18-structs',
+      'enum-data': '19-enums-and-matching',
+      'if-let': '19-enums-and-matching',
+      'option-extract-value': '19-enums-and-matching',
+      'error-propagation': '20-error-handling',
+      'result-extract-value': '20-error-handling',
+      'question-mark-option-vs-result': '20-error-handling',
+      'custom-error-from': '20-error-handling',
+      'unwrap-panics-on-err': '20-error-handling',
+      'option-unwrap-panic': '20-error-handling',
+      'module-privacy': '22-paths-and-visibility',
+      'item-privacy': '22-paths-and-visibility',
+      'super-paths': '22-paths-and-visibility',
+      'use-and-paths': '23-the-use-keyword',
+      'generic-trait-bounds': '24-generics',
+      'type-inference-limits': '24-generics',
+      'trait-implementation': '25-traits',
+      'trait-in-scope': '25-traits',
+      'supertrait': '25-traits',
+      'operator-overloading': '25-traits',
+      'orphan-rule-newtype': '25-traits',
+      'lifetime-annotations': '26-lifetimes',
+      'struct-lifetime': '26-lifetimes',
+      'closure-type-inference': '27-closures',
+      'closure-move-capture': '27-closures',
+      'iterator-collect': '28-iterators',
+      'iterator-collect-inference': '28-iterators',
+      'iterator-consumer-sum': '28-iterators',
+      'iterator-into-iter-ownership': '28-iterators',
+      'iterate-by-reference': '28-iterators',
+      'shared-ownership': '29-smart-pointers',
+      'recursive-type-indirection': '29-smart-pointers',
+      'interior-mutability': '29-smart-pointers',
+      'thread-move-closures': '30-threads-and-concurrency',
+      'send-across-threads': '30-threads-and-concurrency',
+      'channel-message-passing': '30-threads-and-concurrency',
+      'shared-mutable-state': '30-threads-and-concurrency',
+      'trait-objects': '32-trait-objects-and-oop',
+      'dynamically-sized-types': '32-trait-objects-and-oop',
+      'unsafe-raw-pointers': '34-advanced-features',
+    };
+
     function renderCurrent(j) {
       const ed = editorEl();
       if (!j || !j.exercise) {
@@ -727,14 +799,22 @@
       const chip = j.concept
         ? ` · <span class="gloss" id="conceptChip" role="button" tabindex="0" data-term="${esc(j.concept)}" title="Tap for a plain-language definition">${esc(j.concept)}</span>`
         : '';
+      // Link to the textbook lesson that teaches this exercise's concept (closes
+      // the read→practice loop): read the lesson, then come back and write it.
+      const lessonId = j.concept ? CONCEPT_LESSON[j.concept] : null;
+      const lessonLink = lessonId
+        ? ` · <a href="#" class="lesson-link" id="lessonLink" data-lesson="${esc(lessonId)}" title="Read the textbook lesson that teaches this">📖 read the lesson</a>`
+        : '';
       document.getElementById('lessonSub').innerHTML =
-        `${esc(j.exercise)}${chip}${esc(mins)} · reads → writes`;
+        `${esc(j.exercise)}${chip}${esc(mins)}${lessonLink} · reads → writes`;
       const gb = document.getElementById('glossbox'); if (gb) { gb.hidden = true; gb.innerHTML = ''; }
       const cc = document.getElementById('conceptChip');
       if (cc) {
         cc.onclick = () => showGloss(cc.dataset.term);
         cc.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showGloss(cc.dataset.term); } };
       }
+      const ll = document.getElementById('lessonLink');
+      if (ll) ll.onclick = e => { e.preventDefault(); showView('lessons', ll.dataset.lesson); };
       document.getElementById('editorBar').textContent = `${j.exercise} · main.rs`;
       // Restore a saved edit for this exercise if present, else the starter.
       let saved = null;
@@ -967,7 +1047,7 @@
       } else if (view === 'glossary') {
         await renderGlossary();
       } else if (view === 'lessons') {
-        await renderLessons();
+        await renderLessons(chapter || null); // `chapter` doubles as an optional lesson id
       }
     }
 
