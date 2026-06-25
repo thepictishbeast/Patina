@@ -337,6 +337,20 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   + alphabetical-stable); re-seeded the store and confirmed all 4 resolve via `rpro glossary <term>` lookup.
   Seam-guard N/A (scopes `crates/**/*.rs`; this is a data file). Glossary task (#24) was "complete" — this is
   additive vocabulary coverage for the now-23-lesson corpus.
+  **★ Fixed 9 DEAD concept chips (`5ca856c`, 2026-06-25)** — found via audit: the exercise header renders each
+  `concept` as a tappable glossary chip (`/api/glossary?term=<concept>`), but 9 exercises (the recent
+  E0499/E0506/E0505/E0596/E0597/?-on-Option/iterator adds + the older `unwrap_none`) shipped concepts with no
+  matching glossary term/alias → chip showed but tapping returned nothing, violating the glossary's stated
+  invariant *"every exercise concept resolves to a term."* Root cause: I'd been adding exercises without adding
+  the matching glossary alias. Fixed by adding each dead concept as an **alias on the right existing term**
+  (facets of existing vocabulary, not new terms): borrow trio → `borrowing`, `option-unwrap-panic` → `unwrap
+  and expect`, `question-mark-option-vs-result` → `the ? operator`, `borrow-must-not-outlive-value` → `no
+  dangling references`, iterator pair → `iterating by reference` / `collecting an iterator`,
+  `mutable-borrow-needs-mut` → `mutability`. Verified: 0/62 concepts unresolved (was 9), rpro-glossary 3/3,
+  live `/api/glossary?term=move-while-borrowed` → "borrowing" definition. **★ FOLLOW-UP (next-tick, high-value):
+  add a REGRESSION GUARD so this can't recur silently — a check (golden_corpus or verify-exercises) that every
+  exercise `concept` normalizes to a glossary key; the invariant is documented but UN-enforced, which is why it
+  silently rotted across 8 exercises.** That guard is the clean next pick.
   **★ Convergence CONFIRMED + `docs/REVIEW-GUIDE.md` authored** (advisor-directed, after 4 filler ticks): ran a
   saturation pass to prove convergence rather than assume it — **(a) `cargo audit` = 0 vulnerabilities** (236
   deps, exit 0; #21's *corrective* part is a verified no-op, only the CI-enforce gate remains deferred); **(b)
