@@ -467,6 +467,15 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   04-ownership = `ownership`+Beginner. Verified: emits E0506 on 1.95.0, golden_corpus green, verify-exercises
   **60/60**, anchors 95/95. Commit `61ed117`. 04-ownership now 6 exercises (E0382/E0502/E0515/E0507/E0499/E0506).
   Corpus = **28 distinct error codes + 5 runtime panics across 60 exercises.**
+  ✅ Added a **lifetimes** exercise (2026-06-25) — `07-generics-traits-lifetimes/03c_lifetime_dangling`
+  (id `lifetimes/03_borrow_outlives_value`, **E0597**, intermediate): `let r; { let x=5; r=&x; } use(r)` →
+  "`x` does not live long enough / dropped here while still borrowed". E0597 was missing corpus-wide yet is
+  the **Book's OPENING lifetime example** and a top beginner borrow error — the simplest dangling reference,
+  needing NO `'a` syntax, so it motivates *why* lifetimes exist. Fills the thin lifetimes area (2→3); placed
+  as the 3rd lifetimes exercise (filename `03c_` sorts last so id-order = display-order). Reused the validated
+  ch10-03 `the-borrow-checker` + `lifetime-annotation-syntax` anchors. golden_map: 07 = generics/traits/
+  lifetimes, Intermediate. Verified: emits E0597 on 1.95.0, golden_corpus green, verify-exercises **61/61**,
+  anchors 97/97. Commit `1415807`. Corpus = **29 distinct codes + 5 runtime panics / 61 exercises.**
 - ✅ **Runtime-outcome exercise model** (`<pending>`, do-what's-best — not a Paul fork): the model used
   to assume every failure is a COMPILE error. A whole class of core lessons are RUNTIME panics instead
   (RefCell's `BorrowMutError`, integer overflow, `unwrap()` on `None`, index-OOB) — now supported.
