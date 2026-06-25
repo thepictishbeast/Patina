@@ -1,0 +1,29 @@
+id = "lifetimes/03_borrow_outlives_value"
+title = "A reference can't outlive the value it borrows"
+difficulty = "intermediate"
+estimated_minutes = 10
+concept = "borrow-must-not-outlive-value"
+expected_error_code = "E0597"
+solution_outline = """
+This is the dangling reference lifetimes exist to prevent — and the simplest
+form, with no `'a` annotations at all. `r` borrows `x`, but `x` is declared
+inside the inner block, so it is dropped at the block's closing `}` while `r`
+still refers to it. The compiler points at all three facts: where `x` is
+declared, where it is "dropped here while still borrowed", and where the borrow
+is "later used".
+
+The reference must stay valid for its whole use. Two clean fixes: (a) move the
+binding of `x` out to the same scope as `r` (so it lives at least as long as the
+borrow), or (b) move the read (`println!`) *inside* the block, while `x` is still
+alive. Either way, the value outlives the reference to it.
+"""
+
+[[book_refs]]
+chapter = "ch10-03-lifetime-syntax"
+anchor = "the-borrow-checker"
+why = "The Book opens lifetimes with exactly this example — the borrow checker rejecting a reference (`r = &x`) that outlives the value `x` it points to."
+
+[[book_refs]]
+chapter = "ch10-03-lifetime-syntax"
+anchor = "lifetime-annotation-syntax"
+why = "Lifetimes describe (they don't change) how long references are valid — the concept this dangling-reference error motivates, before any `<'a>` syntax is introduced."
