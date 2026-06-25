@@ -1,0 +1,31 @@
+id = "types/05_refutable_let"
+title = "A plain `let` needs an irrefutable pattern"
+difficulty = "beginner"
+estimated_minutes = 6
+concept = "if-let"
+expected_error_code = "E0005"
+solution_outline = """
+A `let` binding must use an *irrefutable* pattern — one that can never fail to
+match. `Some(n)` is *refutable*: the `Option` could be `None`, and a bare `let`
+has nowhere to go in that case, so the compiler rejects it (it even names the
+variant that "isn't covered", `None`).
+
+Keep the type of `maybe` as-is and choose a construct that gives the `None`
+path somewhere to go. Any of these is correct:
+  * `if let Some(n) = maybe { println!("the number is {n}"); }`
+  * a full `match` with a `Some(n) => ...` arm AND a `None => ...` arm
+  * `let Some(n) = maybe else { return; };` (the `let ... else` form)
+
+The thing a plain `let` lacks is a branch for the failing case — each option
+above supplies one.
+"""
+
+[[book_refs]]
+chapter = "ch06-02-match"
+anchor = "patterns-that-bind-to-values"
+why = "Binding the inner value out of `Some(n)` — the move this exercise needs — is a pattern that binds to values."
+
+[[book_refs]]
+chapter = "ch06-02-match"
+anchor = "matches-are-exhaustive"
+why = "Why a bare `let Some(n) = ...` is rejected: the `None` case must be handled. A plain `let` can't, so the pattern isn't irrefutable."

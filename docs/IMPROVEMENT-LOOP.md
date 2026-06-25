@@ -189,6 +189,12 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
 - ☐ **Full IDE via rust-analyzer** (`LspSpec` defined, unconsumed) — big; Rust FOSS.
 
 ### Content / corpus
+- ✅ **#22 — E0005 corpus gap filled** (this commit): added `exercises/05-types-and-matching/05_refutable_let.{rs,toml}`
+  — the classic beginner trap `let Some(n) = maybe;` (a *refutable* pattern in a plain `let`). E0005 was
+  absent from the corpus's error-code set, so this is genuinely new coverage, not a duplicate. Predict-then-run
+  format, no answer-leak in the `.rs`; `concept = "if-let"` resolves to the glossary "if let" term (golden_corpus
+  concept-guard green); two `ch06-02-match` book_refs (`patterns-that-bind-to-values`, `matches-are-exhaustive`).
+  Verified: golden_corpus ✓, anchors 110/110 ✓, direct rustc emits exactly `error[E0005]` ✓.
 - ✅ **Built-in glossary (audit G1, Paul's explicit ask)** (`<pending>`): shared `rpro-glossary` crate
   (flat `glossary/glossary.toml`, alias-aware case/separator-insensitive lookup, seeded into the store like
   `book/`/`exercises/` so it ships to Android). **Covers all 33 exercise concepts** (verified live every
