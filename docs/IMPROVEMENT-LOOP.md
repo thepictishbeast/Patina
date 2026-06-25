@@ -689,10 +689,14 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   F-Droid + Obtainium · signed APT/dnf repos.
 
 ## Open questions for Paul
-- 📖 **→ Start with [`docs/REVIEW-GUIDE.md`](REVIEW-GUIDE.md)** — a ~45-min reviewer's reading path for the
-  whole unmerged batch (the 3 decisions only you can make, what to read in what order, what was verified). It
-  exists precisely to make the review/merge below fast. The item below is the rationale; the guide is the *how*.
-- ⚠️ **MILESTONE + the un-gated lesson lane is now EXHAUSTED — your review unblocks the rest** (updated
+- ✅ **GATE RESOLVED (2026-06-25): the "show Paul the matrix first" lesson gate is RELEASED.** Paul: "finish
+  your tasks, stop ticking", "you dont need me to baby sit", "just keep going so you dont need me." The loop
+  now authors the remaining DRAFT-matrix lessons (rows 49–62) AUTONOMOUSLY — no review needed. **L24–L29 shipped**
+  (generics/traits/lifetimes/closures/iterators/smart-pointers, rust-textbook/main `b87c71a`); L30–L37 + new-phase
+  reviews/exercises follow, one batch per tick. The review/merge of `textbook-integration`→`main` is still a Paul
+  decision when he wants it, but it no longer blocks the loop. (`docs/REVIEW-GUIDE.md` remains a reading path if/when
+  you do review.) The note below is kept for history.
+- ⚠️ ~~**MILESTONE + the un-gated lesson lane is now EXHAUSTED — your review unblocks the rest**~~ *(SUPERSEDED — gate released above)* (updated
   2026-06-24). Since the earlier note, the lessons lane re-opened (the "show Paul the matrix first" gate is
   **matrix-status-scoped**, not phase-numbered: DECIDED rows 1–48 are un-gated; only DRAFT rows 49–62 wait) and
   has now been driven to completion for every un-gated phase. **What's done and waiting on `textbook-integration`:**
