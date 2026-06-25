@@ -402,6 +402,17 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   outline). Reused 02's validated ch09-02 anchors (the-operator-shortcut + propagating-errors). golden_map: 05b
   = area `error-handling`, beginner|intermediate. Verified: emits E0277 on 1.95.0, golden_corpus green,
   verify-exercises **58/58**, book anchors 91/91. Commit `3181a73`. 05b now 5 exercises.
+  ✅ Added a **basics/mutability** exercise (2026-06-25) — `01-basics/06_mutable_method_needs_mut`
+  (id `basics/06_mutable_method_needs_mut`, **E0596**, beginner): `.push` (a `&mut self` method) on a
+  non-`mut` Vec → "cannot borrow `scores` as mutable, as it is not declared as mutable". Fills a
+  CORPUS-WIDE gap (E0596 was absent entirely, yet it's one of the most common first errors). Placed beside
+  `01_immutable_assign` (E0384) as the two faces of forgetting `mut`: E0384 = rebinding (`x = 6`), E0596 =
+  mutating in PLACE (`x.push()`/`&mut x`) — same "two faces of one rule" pairing as the ownership E0502/E0499
+  set. Compiler's help shows the `let mut` fix → exercise teaches reading the suggestion (outline hints, not
+  literal). Reused 01's validated ch03-01 `variables-and-mutability` anchor + ch04-02 `mutable-references`.
+  golden_map: 01-basics = `basics` + Beginner. Verified: emits E0596 on 1.95.0, golden_corpus green,
+  verify-exercises **59/59**, book anchors 93/93. Commit `c5b27c9`. 01-basics now 6 exercises.
+  (Corpus-wide error-code coverage now 27 distinct codes + 5 runtime panics across 59 exercises.)
 - ✅ **Runtime-outcome exercise model** (`<pending>`, do-what's-best — not a Paul fork): the model used
   to assume every failure is a COMPILE error. A whole class of core lessons are RUNTIME panics instead
   (RefCell's `BorrowMutError`, integer overflow, `unwrap()` on `None`, index-OOB) — now supported.
