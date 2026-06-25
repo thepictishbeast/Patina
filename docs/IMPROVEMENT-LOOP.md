@@ -234,7 +234,18 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
     Dev-tier editor. Multi-session; build incrementally.
 
 ### Content / corpus
-- ✅ **#22 — E0432 corpus gap filled** (this commit): added `exercises/06-modules/05_unresolved_import.{rs,toml}`
+- ◐ **Surface the 37 textbook lessons in the app** (the namesake "rust-textbook → Tempered Studio" integration —
+  the authored Patina curriculum was invisible in the GUI; only the Rust Book + per-exercise text were readable).
+  **Backend slice DONE (this commit):** the 37 lessons are now **embedded** in `lessons/` (synced from the upstream
+  `rust-textbook` repo via new `scripts/sync-lessons.sh`; rust-textbook stays source-of-truth, like `book/`), the
+  serve layer **seeds** them into the store alongside `book/`/`glossary/`, and a new **`GET /api/lessons`** endpoint
+  lists them (`id`+`title` from the first `# ` heading, filename order) or returns one's markdown via `?id=STEM`.
+  Traversal-safe (id matched against real file stems, never path-joined; unit test asserts a `../../` id → null).
+  Verified: `cargo test -p rpro-serve` 19 pass (incl. the new list/fetch/traversal test), clippy `-D warnings` +
+  fmt + seam clean; LIVE curl → 37 lessons listed, fetch returns markdown, traversal id → null. **NEXT: a GUI
+  "Lessons" tab** (render via `mdToHtml`, wire the inter-lesson nav-footer links) + teach `build-apk.sh` to sync
+  `lessons/` so Android bundles them. (One semgrep FP on the server-fixed seeding `read_dir` annotated `nosemgrep`.)
+- ✅ **#22 — E0432 corpus gap filled** (`a0e8f38`): added `exercises/06-modules/05_unresolved_import.{rs,toml}`
   — a `use crate::shape::Circle;` whose module is really spelled `shapes` (an *unresolved import*). E0432 was not
   in the corpus, and `06-modules` was a thin phase (4 → 5). Teaches that a `use` is only a shortcut — the path it
   follows must lead to a real item in the module tree. Predict-then-run, no answer-leak; `concept = "use-and-paths"`

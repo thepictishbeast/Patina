@@ -620,6 +620,7 @@ fn ensure_seeded(
     workspace_exercises: &Path,
     workspace_book: &Path,
     workspace_glossary: &Path,
+    workspace_lessons: &Path,
 ) -> std::io::Result<()> {
     let store = Store::at(store_root.to_path_buf());
     let ex_dir = store.root().join("exercises");
@@ -645,6 +646,18 @@ fn ensure_seeded(
     let gloss_dir = store.root().join("glossary");
     if !gloss_dir.join("glossary.toml").exists() && workspace_glossary.is_dir() {
         copy_dir_recursive(workspace_glossary, &gloss_dir)?;
+    }
+
+    // Copy the bundled textbook lessons in if absent — the offline reading
+    // material served via `/api/lessons`. Like the book, these ship in the
+    // portable store the Android seam copies. Server-fixed dir; nothing from
+    // the wire.
+    // The path is `store.root()` (operator config) + the literal "lessons" — no
+    // wire data — exactly like the book/glossary seeding above.
+    let lessons_dir = store.root().join("lessons");
+    let have_lessons = std::fs::read_dir(&lessons_dir).is_ok_and(|mut rd| rd.next().is_some()); // nosemgrep
+    if !have_lessons && workspace_lessons.is_dir() {
+        copy_dir_recursive(workspace_lessons, &lessons_dir)?;
     }
 
     // Make sure progress.json has a Current entry; if not, set the first one.
@@ -746,6 +759,78 @@ async fn glossary_handler(
     )
 }
 
+/// Query for the lessons endpoint. `id` is a file STEM, matched against the real
+/// files in the seeded `lessons/` dir — never joined onto a path.
+#[derive(Debug, Deserialize)]
+struct LessonQuery {
+    id: Option<String>,
+}
+
+/// The first `# ` heading in a lesson's markdown, used as its title (falls back
+/// to the `id` if the lesson has none).
+fn lesson_title(markdown: &str, id: &str) -> String {
+    markdown
+        .lines()
+        .find_map(|l| l.strip_prefix("# "))
+        .map_or_else(|| id.to_owned(), |h| h.trim().to_owned())
+}
+
+/// The ordered `.md` lesson files in the seeded `lessons/` dir (filename order =
+/// curriculum order).
+fn lesson_files(state_root: PathBuf) -> Vec<PathBuf> {
+    let dir = Store::at(state_root).root().join("lessons");
+    let mut files: Vec<PathBuf> = std::fs::read_dir(dir)
+        .map(|rd| {
+            rd.flatten()
+                .map(|e| e.path())
+                .filter(|p| p.extension().and_then(|x| x.to_str()) == Some("md"))
+                .collect()
+        })
+        .unwrap_or_default();
+    files.sort();
+    files
+}
+
+/// `GET /api/lessons` — the embedded textbook lessons (the offline reading
+/// material). With no query, returns the ordered lesson list (`id` + `title`);
+/// with `?id=STEM`, returns that lesson's `markdown`, or `{ "lesson": null }` on
+/// a miss.
+///
+/// SECURITY: `id` is matched against the actual file stems in the seeded
+/// `lessons/` dir — never joined onto a filesystem path — so a traversal value
+/// simply finds no match. The lessons dir is server-seeded; no client input
+/// chooses a file.
+async fn lessons_handler(
+    State(state): State<AppState>,
+    Query(q): Query<LessonQuery>,
+) -> impl IntoResponse {
+    let files = lesson_files(state.store_root);
+    let Some(id) = q.id else {
+        let lessons: Vec<serde_json::Value> = files
+            .iter()
+            .filter_map(|p| {
+                let id = p.file_stem()?.to_str()?.to_owned();
+                let md = std::fs::read_to_string(p).ok()?;
+                Some(serde_json::json!({ "id": id, "title": lesson_title(&md, &id) }))
+            })
+            .collect();
+        return Json(serde_json::json!({ "lessons": lessons })).into_response();
+    };
+    let hit = files
+        .iter()
+        .find(|p| p.file_stem().and_then(|s| s.to_str()) == Some(id.as_str()))
+        .and_then(|p| std::fs::read_to_string(p).ok());
+    hit.map_or_else(
+        || Json(serde_json::json!({ "lesson": null })).into_response(),
+        |md| {
+            Json(serde_json::json!({
+                "lesson": { "id": id, "title": lesson_title(&md, &id), "markdown": md }
+            }))
+            .into_response()
+        },
+    )
+}
+
 /// Build the application router. Extracted from [`main`] so the handler contract
 /// (no-leak, op-whitelist, body limit, response headers) is testable end-to-end
 /// via `tower::ServiceExt::oneshot` — no socket bind, no real toolchain run.
@@ -760,6 +845,7 @@ fn build_router(state: AppState, gui_dir: &Path) -> Router {
         .route("/api/roadmap", axum::routing::get(roadmap_handler))
         .route("/api/book", axum::routing::get(book_handler))
         .route("/api/glossary", axum::routing::get(glossary_handler))
+        .route("/api/lessons", axum::routing::get(lessons_handler))
         // Everything else is the static gui/ shell (index.html + vendored xterm).
         .fallback_service(ServeDir::new(gui_dir))
         .layer(map_response(security_headers))
@@ -823,6 +909,7 @@ async fn main() {
     let workspace_exercises = asset_root.join("exercises");
     let workspace_book = asset_root.join("book");
     let workspace_glossary = asset_root.join("glossary");
+    let workspace_lessons = asset_root.join("lessons");
 
     // Writable state/run root: a fixed cache dir under $HOME (exec-ok, off the
     // git tree, never /tmp). Overridable via TS_SERVE_ROOT for the operator.
@@ -847,6 +934,7 @@ async fn main() {
         &workspace_exercises,
         &workspace_book,
         &workspace_glossary,
+        &workspace_lessons,
     ) {
         eprintln!(
             "warning: could not seed exercises into {}: {e}",
@@ -1015,6 +1103,7 @@ mod tests {
             &manifest.join("../../exercises"),
             &manifest.join("../../book"),
             &manifest.join("../../glossary"),
+            &manifest.join("../../lessons"),
         )
         .unwrap();
         let state = AppState {
@@ -1159,6 +1248,49 @@ mod tests {
                 .iter()
                 .any(|c| c["id"] == "ch04-01-what-is-ownership"),
             "ownership chapter is in the TOC"
+        );
+    }
+
+    #[tokio::test]
+    async fn lessons_list_and_fetch_a_lesson() {
+        let (_d, app) = seeded_app();
+        // List: every entry carries an id + non-empty title; a known lesson shows.
+        let res = app.clone().oneshot(get("/api/lessons")).await.unwrap();
+        assert_eq!(res.status(), StatusCode::OK);
+        let v: serde_json::Value = serde_json::from_str(&body_string(res).await).unwrap();
+        let lessons = v["lessons"].as_array().expect("lessons array");
+        assert!(!lessons.is_empty(), "the seeded lessons are listed");
+        assert!(lessons.iter().all(|l| {
+            l["id"].as_str().is_some_and(|s| !s.is_empty())
+                && l["title"].as_str().is_some_and(|s| !s.is_empty())
+        }));
+        let known = "01-bindings-and-immutability";
+        assert!(
+            lessons.iter().any(|l| l["id"] == known),
+            "the first lesson is in the list"
+        );
+        // Fetch one: its markdown comes back.
+        let res = app
+            .clone()
+            .oneshot(get(&format!("/api/lessons?id={known}")))
+            .await
+            .unwrap();
+        let v: serde_json::Value = serde_json::from_str(&body_string(res).await).unwrap();
+        assert!(
+            v["lesson"]["markdown"]
+                .as_str()
+                .is_some_and(|s| s.contains('#')),
+            "the fetched lesson carries its markdown"
+        );
+        // Traversal safety: a path-like id matches no real file stem → null.
+        let res = app
+            .oneshot(get("/api/lessons?id=../../Cargo.toml"))
+            .await
+            .unwrap();
+        let v: serde_json::Value = serde_json::from_str(&body_string(res).await).unwrap();
+        assert!(
+            v["lesson"].is_null(),
+            "a traversal-looking id resolves to no lesson"
         );
     }
 
