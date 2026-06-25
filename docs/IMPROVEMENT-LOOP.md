@@ -303,6 +303,13 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   unedited" for its displayed E0384 block — byte-identical on 1.95.0 EXCEPT 1.95.0 adds a secondary
   `unused_assignments` warning L1 omits, so refreshing that cite is a pedagogy call on the calibration lesson
   (show the warning or not?), not a trivial bump — left as-is. (Review/merge ask under "Open questions for Paul".)
+  **★ In-lesson prev/next navigation** (rust-textbook/main `ad13cb8`, 2026-06-25) — found via a textbook pass:
+  ZERO of the 37 lessons had inter-lesson nav (each ended at Sources), so an offline reader had to bounce back
+  to STUDY-GUIDE between every lesson — the corpus's PRIMARY mode is offline markdown on a phone. Added a
+  consistent footer to every `lessons/NN-*.md`: `[← prev] · [↑ Study Guide] · [next →]`, generated from each
+  lesson's real H1 title + filename (correct by construction), L1 omits prev / L37 omits next, idempotent via a
+  `<!-- lesson-nav -->` sentinel. Pure navigation (no lesson content touched). Verified: **109/109 nav links
+  resolve, 0 broken.** STUDY-GUIDE stays the hub (linked from every footer). Complements the STUDY-GUIDE below.
   **★ `STUDY-GUIDE.md` authored** (rust-textbook/main `26390ec`) — closed a real learner-facing navigation gap:
   the textbook README was builder-facing ("read lessons in order", no index), so a phone learner had no map of
   the 23 lessons / 6 phases / quizzes / cheatsheets / kata. New guide gives the phase-by-phase reading order
