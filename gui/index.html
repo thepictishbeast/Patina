@@ -74,9 +74,16 @@
     border-radius:8px; padding:5px 9px; font-size:14px; transition:.15s; }
   .iconbtn:hover { color:var(--fg); border-color:var(--accent); }
 
-  main { display:grid; grid-template-columns:248px 1fr 320px; grid-template-rows:1fr; height:calc(100vh - 45px); }
+  /* Default: a 2-column practice layout (exercise list + the work area). The
+     supplementary right pane (Diagnostics / Book refs / Tutor) is an "Insights"
+     drawer, hidden until the learner opens it or a run/hint reveals it — so the
+     main page stays focused on reading, predicting, writing and running. */
+  main { display:grid; grid-template-columns:248px 1fr; grid-template-rows:1fr; height:calc(100vh - 45px); }
+  main.show-insights:not(.focus) { grid-template-columns:248px 1fr 340px; }
+  main:not(.show-insights) > .pane:last-child { display:none; }
   main.focus { grid-template-columns:1fr; }
   main.focus > .pane:first-child, main.focus > .pane:last-child { display:none; }
+  #insightsBtn[aria-expanded="true"] { color:var(--fg); background:var(--bg-3); border-color:var(--line); box-shadow:inset 0 -2px 0 var(--accent); }
   .docview { height:calc(100vh - 45px); overflow:auto; padding:22px 26px 60px; max-width:920px; margin:0 auto; }
   .docview h1 { font-size:22px; margin:2px 0 12px; } .docview h2 { font-size:16px; margin:20px 0 8px; }
   .docview h3 { font-size:13.5px; color:var(--fg-dim); letter-spacing:.04em; margin:14px 0 6px; }
@@ -109,7 +116,7 @@
   .bshit-flash { background:rgba(247,76,0,.18); border-radius:4px; transition:background 1.4s ease; }
   .booktoc { list-style:none; padding:0; } .booktoc li { margin:3px 0; }
   .booktoc a { font-size:13.5px; } .booktoc small { margin-left:8px; }
-  .pane { border-right:1px solid var(--line); display:flex; flex-direction:column; min-height:0; }
+  .pane { border-right:1px solid var(--line); display:flex; flex-direction:column; min-height:0; min-width:0; }
   .pane:last-child { border-right:none; }
   .pane h2 { font-size:11px; text-transform:uppercase; letter-spacing:.12em; color:var(--fg-dim);
     margin:0; padding:12px 14px 8px; font-weight:600; }
@@ -275,6 +282,7 @@
       <div class="track"><div class="fill" id="fill"></div></div>
       <span class="pct" id="pct">12 / 40 · 30%</span>
     </div>
+    <button class="iconbtn" id="insightsBtn" title="Show/hide Insights (diagnostics, book refs &amp; tutor)" aria-label="Toggle the Insights panel" aria-expanded="false">▦</button>
     <button class="iconbtn" id="theme" title="Toggle dark/light">🌓</button>
   </header>
 
@@ -446,6 +454,7 @@
           : r('✗ failed') + d(' in ' + out.duration_ms + 'ms — read it top-to-bottom, then fix & re-run');
         term.writeln(''); term.writeln(verdict);
         renderDiag(out);
+        setInsights(true); // a result exists now — surface the Insights drawer
         if (op !== 'explain') showPrediction(out);
         if (mode === 'learn' && op !== 'explain') {
           // Re-arm the gate: each Learn-mode run needs a fresh prediction
@@ -661,6 +670,7 @@
         div.className = 'bref'; div.style.cursor = 'default';
         div.innerHTML = `<span class="c">hint ${h.level}/${h.max_level}${last ? ' · last resort' : ''}</span> ${esc(h.text)}`;
         document.getElementById('hintbox').appendChild(div);
+        setInsights(true); // the hint renders in the Insights drawer — reveal it
         if (last) document.getElementById('hintbtn').disabled = true;
       } catch (_) {}
     }
@@ -1030,6 +1040,7 @@
     const KEYMAP = {
       r: () => runOp('run'), c: () => runOp('check'), h: runHint,
       b: () => showView('book'), t: () => showView('roadmap'), d: () => showView('dashboard'),
+      i: () => setInsights(!document.querySelector('main').classList.contains('show-insights')),
     };
     document.addEventListener('keydown', e => {
       const tag = (e.target.tagName || '').toLowerCase();
@@ -1062,6 +1073,19 @@
       const h = document.documentElement;
       h.dataset.theme = h.dataset.theme === 'dark' ? 'light' : 'dark';
     };
+    // ── Insights drawer: the right pane (Diagnostics / Book refs / Tutor) is
+    // supplementary — the real run output is the centre terminal — so it stays
+    // collapsed until the learner opens it or a Run/Hint surfaces something worth
+    // reading. The choice persists across sessions.
+    function setInsights(on) {
+      document.querySelector('main').classList.toggle('show-insights', on);
+      document.getElementById('insightsBtn')?.setAttribute('aria-expanded', on ? 'true' : 'false');
+      try { localStorage.setItem('ts-insights', on ? '1' : '0'); } catch (_) {}
+      if (typeof refit === 'function') refit();
+    }
+    document.getElementById('insightsBtn').onclick = () =>
+      setInsights(!document.querySelector('main').classList.contains('show-insights'));
+    setInsights((() => { try { return localStorage.getItem('ts-insights') === '1'; } catch (_) { return false; } })());
     // run/check/explain → live POST to the local server, raw output into xterm.
     document.getElementById('runbtn').onclick = () => runOp('run');
     document.getElementById('checkbtn').onclick = () => runOp('check');

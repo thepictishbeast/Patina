@@ -62,6 +62,17 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   per-surface color flag plumbed through Core/command_plan (web on, TUI off).
 
 ### Editor / IDE
+- ◐ **UX density redesign (Paul, 2026-06-25: "UI is extremely dense … tabs + a menu bar … things the user isn't
+  working on shouldn't be on the main page … focus on teaching and practicing rust").** Multi-tick. **Step 1 done
+  (this commit):** the right pane (Diagnostics / Book refs / Tutor) is now a collapsible **Insights drawer** — the
+  default landing is a 2-column practice layout (exercise list + the read→predict→write→run work area), and the
+  supplementary pane is hidden until the learner opens it (header ▦ button, `i` key) or a Run/Hint auto-reveals it
+  (the real run output is the centre terminal, so nothing essential is hidden). State persists in localStorage.
+  **Also fixed a pre-existing horizontal-overflow bug**: `.pane` lacked `min-width:0`, so the grid couldn't shrink
+  below content width and the 3rd column was clipped off-screen at ≤1280px. Verified LIVE (Playwright, 1280×820):
+  collapsed + open states both clean, toggle + persistence work; gui-transform tests pass; **all 16 e2e pass
+  (incl. a11y — zero WCAG A/AA violations — and the tier/diag-jump specs that touch the drawer)**. NEXT steps:
+  move Glossary into its own tab/menu; collapse RECALL + a Settings/detect menu; give the practice pane more room.
 - ◐ **3 modes (Learn/Assist/Dev)** — switcher + persistence + Learn predict-gate DONE
   (`158c997`); legacy header `FREE` badge **removed** (`<pending>`) so the switcher is the sole
   mode authority (verified live: header renders, badge gone, no a11y/contrast change).
