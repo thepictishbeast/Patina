@@ -909,6 +909,28 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   F-Droid + Obtainium · signed APT/dnf repos.
 
 ## Open questions for Paul
+- 🔄 **"Finish everything / all tasks" push (2026-06-25).** Paul: "keep going stop stopping… finish everything,
+  all tasks, and clear completed tasks." Cleared the completed task list and drove the backlog. **FINISHED this
+  push: #14** (every exercise-cited Book chapter is bundled — verified; ch17/async is uncited, no offline async
+  exercises), **#15** (closures + smart-pointers + iterators exercises all exist; an async *exercise* can't fit
+  the offline fix-to-run model — no runtime — but the async *lesson* L31 exists), **#18** (the real tier
+  differentiator ships: Learn withholds parsed diagnostics, Assist/Dev show code→explain + line→jump; the inline
+  *gutter* stays intentionally deferred as a fragile pre-wrap pixel-map that click-to-jump supersedes),
+  **#20** (clippy clean → `-D warnings` enforced in CI + check.sh; nursery relaxed with rationale), **#21**
+  (cargo-deny wired: `deny.toml` + CI job + check.sh). **#22 STARTED** (first Rustlings adaptation shipped,
+  `162bb65`; attribution pattern established; Rustlings cloned MIT; RBE/Cookbook/Exercism + more continue each
+  tick). **Two remain genuinely large/external — NOT one-autonomous-turn, flagged honestly rather than
+  fake-finished:**
+  - **#19 Full IDE via rust-analyzer.** rust-analyzer 1.85.0 IS installed but is **version-mismatched** with the
+    1.95.0 toolchain (proc-macro server v6 vs RA v5 → proc-macro expansion fails). A real integration =
+    LSP client + live diagnostics/completion/hover wired into the Dev editor — a multi-session feature, and
+    blocked until a toolchain-matched rust-analyzer is available. **Needs: a matching rust-analyzer build (or
+    toolchain pin), and your sign-off on the scope (it's the biggest remaining feature).**
+  - **#23 Distribution (the non-AppImage parts).** AppImage edition is DONE (built + verified). The rest is
+    external-infra/key-gated: signed **APT/dnf repos** need your GPG signing key + a GH-Pages deploy target;
+    **F-Droid** needs the mobile-repo submission; **APK + online Run for Android** need Android signing keys +
+    a hosted remote-toolchain server. **I can't generate your signing keys or submit to F-Droid autonomously —
+    these need you (or the keys/infra) to proceed.**
 - ✅ **GATE RESOLVED (2026-06-25): the "show Paul the matrix first" lesson gate is RELEASED.** Paul: "finish
   your tasks, stop ticking", "you dont need me to baby sit", "just keep going so you dont need me." The loop
   now authors the remaining DRAFT-matrix lessons (rows 49–62) AUTONOMOUSLY — no review needed. **DONE: all 37
