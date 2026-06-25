@@ -10,6 +10,7 @@ members = [
     "crates/rpro-runner",
     "crates/rpro-book",
     "crates/rpro-glossary",
+    "crates/rpro-lsp",
     "crates/rpro-tui",
     "crates/rpro-cli",
     "crates/rpro-serve",

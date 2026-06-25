@@ -1,0 +1,20 @@
+[package]
+name = "rpro-lsp"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "LSP client for the rpro-lang LspSpec seam: spawns a language server and runs the JSON-RPC initialize/shutdown handshake to confirm it speaks LSP and report its serverInfo. An effect crate (std::process + stdio); not wasm."
+
+[lints]
+workspace = true
+
+[dependencies]
+rpro-lang = { path = "../rpro-lang" }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+rpro-lang-rust = { path = "../languages/rust" }

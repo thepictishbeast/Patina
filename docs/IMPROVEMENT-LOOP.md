@@ -186,7 +186,20 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   (false alarm, not a code regression).
 - ✅ **Editable-pane syntax highlighting** (`<pending>`): colored `<pre>` overlay behind a
   transparent textarea, reusing highlightRust; always-on. Verified live.
-- ☐ **Full IDE via rust-analyzer** (`LspSpec` defined, unconsumed) — big; Rust FOSS.
+- ◐ **Full IDE via rust-analyzer** (`LspSpec` defined; now CONSUMED) — big; Rust FOSS. Progress:
+  - ✅ **Real LSP client crate `rpro-lsp` (this commit)** — first genuine LSP consumer. `server_info(&LspSpec,
+    timeout)` spawns the server named by the spec and runs the full JSON-RPC handshake (`initialize` →
+    `initialized` → `shutdown` → `exit`) over stdio with `Content-Length` framing, returning the server's
+    reported `ServerInfo { name, version }`. A real handshake is strictly stronger than a `--version` shell-out:
+    it proves the binary *speaks LSP*. **Effect crate** (std::process + stdio) — kept OUT of the wasm pure-core
+    gate (like `rpro-toolchain-local`); server name stays data-driven from `LspSpec` so the seam-grep gate stays
+    green. Bounded by a worker-thread + `recv_timeout` deadline (kills the child on expiry — no hang). Verified:
+    5 deterministic unit tests (framing round-trip, two-message stream, notification-skipping, two protocol-error
+    paths); clippy `-D warnings` + fmt + seam-grep clean; and an opt-in `#[ignore]` e2e ran LIVE against the
+    matched server → `server reported: rust-analyzer 1.95.0`, clean exit, 0.05s.
+  - ☐ NEXT: wire `rpro-lsp` into a surface — first `rpro detect` (replace its `--version` probe with a real
+    handshake), then the streaming client (`didOpen`/`didChange` → `publishDiagnostics`/completion/hover) into
+    the Dev-tier editor. Multi-session; build incrementally.
 
 ### Content / corpus
 - ✅ **#22 — E0005 corpus gap filled** (this commit): added `exercises/05-types-and-matching/05_refutable_let.{rs,toml}`

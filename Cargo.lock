@@ -1188,10 +1188,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "rpro-lsp"
+version = "0.1.0"
+dependencies = [
+ "rpro-lang",
+ "rpro-lang-rust",
+ "serde_json",
+ "thiserror 2.0.18",
+]
+
+[[package]]
 name = "rpro-runner"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "rpro-glossary",
  "rpro-lang",
  "rpro-state",
  "rpro-storage-fs",
