@@ -1,0 +1,32 @@
+id = "error-handling/05_question_mark_option_in_result"
+title = "`?` on an Option inside a Result function"
+difficulty = "intermediate"
+estimated_minutes = 10
+concept = "question-mark-option-vs-result"
+expected_error_code = "E0277"
+solution_outline = """
+`?` propagates failure, but the failure type has to fit the function's return
+type. Here the function returns `Result<String, String>`, while `.last()` gives
+an `Option<&str>` whose failure (`None`) has no error value to carry — so `?`
+can't turn it into the `Err(String)` the signature promises.
+
+Read the compiler's own suggestion: it names the method that converts an
+`Option` into a `Result` by supplying the error to use when the value is `None`.
+Call that method on the `Option` (passing a `String` error message) *before*
+the `?`. Then `?` is operating on a `Result` whose `Err` type matches, and it
+compiles. (`ok_or_else` is the lazy variant if building the error is expensive.)
+
+This is the mirror of the earlier `?` exercise: there `?` propagated an error
+whose type didn't yet convert; here `?` is on the wrong *carrier* (Option, not
+Result) entirely.
+"""
+
+[[book_refs]]
+chapter = "ch09-02-recoverable-errors-with-result"
+anchor = "the-operator-shortcut"
+why = "What `?` does — unwrap the success or return the failure early; the mechanism that only fits when the carried failure matches the function's return type."
+
+[[book_refs]]
+chapter = "ch09-02-recoverable-errors-with-result"
+anchor = "propagating-errors"
+why = "Why `?` needs the enclosing function's return type to be compatible — an Option's None has no error to propagate into a Result, which is the exact mismatch here."
