@@ -127,6 +127,13 @@
      composites the text toward the background and drops it below the 4.5:1
      contrast floor (~3.5:1). --fg-dim holds ~6-7.8:1 on every panel shade. */
   .locked .t{color:var(--fg-dim)} .locked .chip{color:var(--locked)} .skipped .chip{color:var(--skipped)}
+  /* Phase-group headers in the exercise list: a quiet section label so a 60-item
+     list reads as phases (basics / ownership / ...), not one undifferentiated scroll.
+     --fg-dim stays ≥4.5:1 (see note above); aria-hidden since each item's button
+     label already names its full phase/id. */
+  .exphase { font:600 10px var(--ui); letter-spacing:.08em; text-transform:uppercase; color:var(--fg-dim);
+    padding:10px 10px 4px; margin-top:4px; border-top:1px solid var(--line); }
+  .exphase:first-child { border-top:0; margin-top:0; }
 
   /* Recall: the spaced-repetition queue (codes the learner met, to refresh). */
   .recall { margin:6px 8px 12px; border-top:1px solid var(--line); padding-top:9px; }
@@ -491,11 +498,16 @@
     function renderList(data) {
       const box = document.getElementById('exlist');
       const items = (data && data.exercises) || [];
-      box.innerHTML = items.length ? items.map(e => {
+      box.innerHTML = items.length ? items.map((e, i) => {
         const st = e.status || 'locked';
         const sel = st === 'current' ? ' sel' : '';
         const tries = e.attempts ? ` · ${e.attempts} ${e.attempts === 1 ? 'try' : 'tries'}` : '';
-        return `<div class="ex ${st}${sel}" data-id="${esc(e.id)}" role="button" tabindex="0" aria-label="Switch to ${esc(e.id)}. Status: ${st}${tries}"><span class="chip" aria-hidden="true">${CHIP[st] || '•'}</span>`
+        // Emit a phase-group header whenever the id's phase prefix changes
+        // (ids are `<phase>/<name>`, and the list is ordered by phase).
+        const phase = String(e.id).split('/')[0];
+        const prev = i > 0 ? String(items[i - 1].id).split('/')[0] : null;
+        const head = phase !== prev ? `<div class="exphase" aria-hidden="true">${esc(phase.replace(/-/g, ' '))}</div>` : '';
+        return head + `<div class="ex ${st}${sel}" data-id="${esc(e.id)}" role="button" tabindex="0" aria-label="Switch to ${esc(e.id)}. Status: ${st}${tries}"><span class="chip" aria-hidden="true">${CHIP[st] || '•'}</span>`
              + `<span class="t">${esc(e.id)}<small>[${st}]${tries}</small></span></div>`;
       }).join('') : '<div class="ex"><span class="t" style="color:var(--fg-dim)">no exercises</span></div>';
       // The list items LOOK clickable (pointer cursor) — make them switch the
