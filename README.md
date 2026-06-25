@@ -84,14 +84,16 @@ Full run notes, env knobs, and the smoke test: [RUN.md](RUN.md).
 
 ## Content
 
-32 exercises across 9 phases (basics → control-flow → collections → ownership →
-types/matching → modules → generics/traits/lifetimes → concurrency → advanced),
-each a single-file program that fails with a real, rustc-verified error code,
-paired with `.toml` metadata (concept, expected error, book refs, solution
-outline). Plus 23 embedded Rust Book chapters (bundled + seeded; readable in the
-web/TUI Book tab — code listings link out to the live Book). The structured
-lessons are pending (gated on Paul's calibration — see
-[docs/BACKLOG.md](docs/BACKLOG.md)).
+63 exercises across 11 phases (basics → control-flow → collections → ownership →
+types/matching → error handling → modules → generics/traits/lifetimes →
+functional & smart pointers → concurrency → advanced), each a single-file program
+that fails with a real, rustc-verified error code, paired with `.toml` metadata
+(concept, expected error, book refs, solution outline; every concept resolves to a
+glossary term, CI-guarded). Plus 33 embedded Rust Book chapters (bundled + seeded;
+readable in the web/TUI Book tab — code listings link out to the live Book). The
+structured textbook is complete in the companion **rust-textbook** corpus: 37
+lessons (Phase 1 foundations → a multithreaded web-server capstone) plus 11 phase
+reviews, every snippet compile-verified on rustc 1.95.0.
 
 ## Architecture
 
