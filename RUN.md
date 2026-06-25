@@ -99,6 +99,16 @@ exercise view to see live compiler output. Quit with `q`.
   operations (run / check / test / explain) on the server-resolved current
   exercise — it cannot be pointed at arbitrary files or commands.
 
+## Verify everything (one command)
+
+`scripts/check.sh` runs **every CI gate locally** — fmt, clippy, the full test
+suite, doc, the e2e + CLI smokes, GUI-transform tests, exercise integrity, book
+anchors, and the language-seam guard — and prints a pass/fail line per gate. It
+runs them all (doesn't stop at the first failure) and exits nonzero if any fail,
+so it answers "is this branch mergeable?" in one shot. Mirrors
+`.github/workflows/ci.yml` + `seam-gates.yml` (the wasm32 pure-core build is
+skipped unless that target is installed). Needs the Rust toolchain + `node`.
+
 ## Smoke test (end-to-end)
 
 `scripts/smoke.sh [PORT]` builds the server, seeds a throwaway store, starts it on
