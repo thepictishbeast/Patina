@@ -1,0 +1,32 @@
+id = "collections/08_use_after_move_into_fn"
+title = "Passing a Vec to a function moves it"
+difficulty = "beginner"
+estimated_minutes = 9
+concept = "move-semantics"
+expected_error_code = "E0382"
+attribution = "Rustlings (rust-lang/rustlings), MIT — 06_move_semantics, adapted"
+solution_outline = """
+Calling `fill_vec(scores)` passes the vector *by value*, which moves it: after
+the call, `scores` no longer owns anything, so reading it on the next line is
+using a moved value. The compiler names exactly which binding (`scores`) was
+moved and where.
+
+Two honest fixes, depending on what you actually want:
+- If you want to keep the original AND have a filled copy, hand the function a
+  clone: `fill_vec(scores.clone())` — then `scores` is untouched.
+- If you only ever needed the filled one, just don't print the original (or bind
+  the result back: `let scores = fill_vec(scores);`).
+
+The lesson is to notice that a plain function call gives the value away — that's
+ownership moving, not copying.
+"""
+
+[[book_refs]]
+chapter = "ch04-01-what-is-ownership"
+anchor = "ownership-rules"
+why = "The three ownership rules — a value has one owner, and moving it (here, into a function) ends the previous binding's ownership."
+
+[[book_refs]]
+chapter = "ch04-01-what-is-ownership"
+anchor = "variables-and-data-interacting-with-move"
+why = "Exactly this: handing a non-Copy value somewhere moves it, and the old name can't be used afterward."
