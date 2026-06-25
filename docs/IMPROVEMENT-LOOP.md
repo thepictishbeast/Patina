@@ -555,6 +555,15 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   updated content. **★ ALL SURFACES NOW AUDITED SOUND** (web GUI, Book/Roadmap renderer, hint ladder, exercise
   list, glossary chips, book-refs, internal links, CLI, TUI). Recurring lesson: render *code* can be
   well-tested while the *content* it renders silently rots — audit both.
+- ✅ **Top-level README Content section refreshed (`9474881`, 2026-06-25)** — continued the stale-content
+  sweep onto the highest-visibility doc (the first thing any visitor/contributor sees). It badly understated
+  the project: "32 exercises across 9 phases" (actually 63 across 11 — the list even omitted error-handling
+  and functional/smart-pointers), "23 Book chapters" (33), and "structured lessons are pending (gated on
+  Paul's calibration)" — when the gate is released and all 37 lessons + 11 reviews are done. Fixed to current
+  reality. `docs/BACKLOG.md`'s older counts are a HISTORICAL done-log (changelog of what was true per shipped
+  item) → correctly left as-is. **Stale-content sweep now covers the 2 highest-visibility surfaces: the
+  in-app Roadmap tab (last tick) + the top README (this tick).** Lower-visibility docs (ARCHITECTURE.md,
+  DISTRIBUTION.md, etc.) may have drift but aren't learner-facing; a future spot-check, not urgent.
 - ✅ **Runtime-outcome exercise model** (`<pending>`, do-what's-best — not a Paul fork): the model used
   to assume every failure is a COMPILE error. A whole class of core lessons are RUNTIME panics instead
   (RefCell's `BorrowMutError`, integer overflow, `unwrap()` on `None`, index-OOB) — now supported.
