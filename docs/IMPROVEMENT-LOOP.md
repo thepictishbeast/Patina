@@ -922,11 +922,15 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   `3bc47af` collections/09 return-owned-string E0308 · `4eb387a` traits/04 missing-method **E0046 (new code)**;
   attribution pattern set [.rs header + `.toml` `attribution`], Rustlings cloned MIT; RBE/Cookbook/Exercism follow). **Two remain genuinely large/external — NOT one-autonomous-turn, flagged honestly rather than
   fake-finished:**
-  - **#19 Full IDE via rust-analyzer.** rust-analyzer 1.85.0 IS installed but is **version-mismatched** with the
-    1.95.0 toolchain (proc-macro server v6 vs RA v5 → proc-macro expansion fails). A real integration =
-    LSP client + live diagnostics/completion/hover wired into the Dev editor — a multi-session feature, and
-    blocked until a toolchain-matched rust-analyzer is available. **Needs: a matching rust-analyzer build (or
-    toolchain pin), and your sign-off on the scope (it's the biggest remaining feature).**
+  - **#19 Full IDE via rust-analyzer — IN PROGRESS (two blockers cleared, 2026-06-25).** ✅ Installed the
+    **toolchain-matched rust-analyzer 1.95.0** (`rustup component add rust-analyzer`; the system one was 1.85,
+    proc-macro-incompatible with the 1.95 toolchain) — the version-mismatch blocker is gone. ✅ **First
+    consumer of `LspSpec`** (`8f02542`): `rpro detect` now reports the Dev-tier language server
+    (`✓ rust-analyzer 1.95.0 (owns **/*.rs)`) using `lang.lsp()`, data-driven + seam-clean — so "LspSpec
+    defined but unconsumed" no longer holds. **Remaining (genuinely multi-session, not one autonomous turn):**
+    the actual IDE — an LSP client (spawn rust-analyzer, `initialize`/`didOpen`/`didChange`, stream
+    `publishDiagnostics`/completion/hover) wired into the Dev web/TUI editor. That's a substantial async
+    protocol + frontend feature; flagging the scope for you, building it incrementally over ticks.
   - **#23 Distribution.** AppImage DONE. **★ APK DONE + DOWNLOADABLE (2026-06-25):** the Android app builds
     end-to-end (seam cross-compiled for all 4 ABIs + gui/exercises/book bundled → 5.3 MB **debug-signed,
     sideloadable** APK), published at **github.com/thepictishbeast/Tempered-Studio-Mobile/releases/tag/v0.2.0**
