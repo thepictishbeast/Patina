@@ -1,0 +1,29 @@
+id = "collections/09_return_owned_string"
+title = "Returning a String: a literal is only a &str"
+difficulty = "beginner"
+estimated_minutes = 7
+concept = "string-vs-str"
+expected_error_code = "E0308"
+attribution = "Rustlings (rust-lang/rustlings), MIT — 09_strings/strings1, adapted"
+solution_outline = """
+The signature says `-> String` (an owned, growable string), but `"blue"` is a
+string literal, whose type is `&str` (a borrowed view into text baked into the
+program). They are genuinely different types, so the compiler reports a mismatch
+between the declared return type and what the body produces.
+
+The fix is to make an OWNED `String` from the borrowed literal — without touching
+the signature. Two equivalent ways (the book's "creating a new string" section
+shows both): call `.to_string()` on the literal (`"blue".to_string()`), or wrap
+it with `String::from("blue")`. Either produces the `String` the signature
+promised.
+"""
+
+[[book_refs]]
+chapter = "ch08-02-strings"
+anchor = "creating-a-new-string"
+why = "How to make an owned String from a &str literal (`.to_string()` / `String::from`) — exactly the fix here."
+
+[[book_refs]]
+chapter = "ch08-02-strings"
+anchor = "defining-strings"
+why = "Why there are two string types at all: an owned `String` vs a borrowed `&str` — the distinction this error is about."
