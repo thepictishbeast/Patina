@@ -1,0 +1,28 @@
+id = "ownership/07_move_while_borrowed"
+title = "Can't move a value while it's borrowed"
+difficulty = "beginner"
+estimated_minutes = 10
+concept = "move-while-borrowed"
+expected_error_code = "E0505"
+solution_outline = """
+This is the move-twin of the assign-while-borrowed exercise: an active borrow
+freezes the value against *both* reassignment (E0506) and moving (this one,
+E0505). `r` borrows `v`, and the move `let v2 = v;` would invalidate `r` — which
+is still read on the last line — so the compiler rejects it.
+
+The fix is the same lever as the rest of the borrow exercises: a borrow ends at
+its LAST use, not at the end of the block. Reorder so you finish using `r`
+(print it) *before* the `let v2 = v;` move; then nothing borrows `v` at the
+moment it moves. (Alternatively, don't move at all — clone `v`, or have `v2`
+borrow it too — but the point is to see why a live borrow blocks the move.)
+"""
+
+[[book_refs]]
+chapter = "ch04-02-references-and-borrowing"
+anchor = "the-rules-of-references"
+why = "The borrow rules this violates: while any reference to a value exists, the value itself can't be moved out from under it."
+
+[[book_refs]]
+chapter = "ch10-03-lifetime-syntax"
+anchor = "the-borrow-checker"
+why = "Why reordering fixes it — a borrow ends at its last point of USE, so once `r` is done being read, `v` is free to move."
