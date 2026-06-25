@@ -531,6 +531,18 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   bundled in `book/` → no dead "Open in Book reader" buttons (and verify-book-anchors implicitly enforces
   chapter-presence by reading `book/<ch>.md`); (b) all **170 internal markdown links across 105 rust-textbook
   files resolve, 0 broken** (STUDY-GUIDE hub + lesson nav + quizzes/cheatsheets) → textbook nav fully sound.
+- ✅ **CLI audit + `rpro init --refresh` (`8f61ffb`, 2026-06-25)** — first audit of the CLI surface (the
+  terminal learner's path: Termux/SSH). Fresh-install path VERIFIED sound: `rpro init` seeds 63 exercises +
+  33 Book chapters + 58 glossary terms, and the recent concept aliases resolve (`rpro glossary
+  move-while-borrowed` → "borrowing"). But found a real UX wart: `init` only seeds "if absent" (no refresh),
+  so an updating user is stuck on stale content — yet the init footer + empty-list message advertised
+  `rpro init --refresh-all` / `--refresh-exercises` flags **that don't exist** (clap "unexpected argument").
+  Implemented a real `--refresh` that re-seeds all three bundled content types; SAFE because `copy_tree` is a
+  merge-copy (overwrites bundled files, never deletes) → updates/adds content while preserving the user's
+  progress/config AND any exercises they added themselves. Fixed the 3 misleading messages. Verified:
+  stale-store sim (alias removed → "no entry") → `rpro init --refresh` → resolves; rpro-cli 5/5, fmt clean,
+  no new clippy (kept cmd_init <100 lines), seam-guard clean. (TUI not yet audited — it's the other terminal
+  surface; lower priority since it shares the store/glossary/exercise plumbing the CLI just exercised.)
 - ✅ **Runtime-outcome exercise model** (`<pending>`, do-what's-best — not a Paul fork): the model used
   to assume every failure is a COMPILE error. A whole class of core lessons are RUNTIME panics instead
   (RefCell's `BorrowMutError`, integer overflow, `unwrap()` on `None`, index-OOB) — now supported.
