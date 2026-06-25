@@ -71,8 +71,15 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   **Also fixed a pre-existing horizontal-overflow bug**: `.pane` lacked `min-width:0`, so the grid couldn't shrink
   below content width and the 3rd column was clipped off-screen at ≤1280px. Verified LIVE (Playwright, 1280×820):
   collapsed + open states both clean, toggle + persistence work; gui-transform tests pass; **all 16 e2e pass
-  (incl. a11y — zero WCAG A/AA violations — and the tier/diag-jump specs that touch the drawer)**. NEXT steps:
-  move Glossary into its own tab/menu; collapse RECALL + a Settings/detect menu; give the practice pane more room.
+  (incl. a11y — zero WCAG A/AA violations — and the tier/diag-jump specs that touch the drawer)**.
+  **Step 2 done (this commit):** the drawer made the **`Dashboard` vs `Exercise` tab split redundant** (Dashboard =
+  list+centre, Exercise = centre-only/focus) — that overlap was itself the "unintuitive" clutter. Consolidated the
+  two into one clear **`Practice`** tab (tab bar is now **Practice · Book · Roadmap**), and turned the old
+  Exercise-tab "focus" behaviour into a header **◧ Focus toggle** (`f` key) that collapses the exercise-list pane
+  for full-width practice — symmetric with the ▦ Insights drawer, and the two compose (clean CSS matrix over
+  no-list × show-insights, all 4 combos verified). Focus state persists in localStorage. Verified LIVE (Playwright):
+  all 4 layout combos render clean (no overflow); gui-transform + **all 16 e2e still green**. NEXT steps:
+  move Glossary into its own tab/menu; fold RECALL + a Settings/detect menu into the bar; tighter spacing pass.
 - ◐ **3 modes (Learn/Assist/Dev)** — switcher + persistence + Learn predict-gate DONE
   (`158c997`); legacy header `FREE` badge **removed** (`<pending>`) so the switcher is the sole
   mode authority (verified live: header renders, badge gone, no a11y/contrast change).

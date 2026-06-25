@@ -74,16 +74,19 @@
     border-radius:8px; padding:5px 9px; font-size:14px; transition:.15s; }
   .iconbtn:hover { color:var(--fg); border-color:var(--accent); }
 
-  /* Default: a 2-column practice layout (exercise list + the work area). The
-     supplementary right pane (Diagnostics / Book refs / Tutor) is an "Insights"
-     drawer, hidden until the learner opens it or a run/hint reveals it — so the
-     main page stays focused on reading, predicting, writing and running. */
+  /* The practice work area is flanked by two collapsible side panes, so the main
+     page is exactly as focused as the learner wants:
+       · left  = the exercise list (navigation) — collapse with the ◧ Focus button
+       · right = the "Insights" drawer (Diagnostics / Book refs / Tutor), hidden
+                 until opened (▦) or a Run/Hint reveals it.
+     These four tracks cover every list × insights combination. */
   main { display:grid; grid-template-columns:248px 1fr; grid-template-rows:1fr; height:calc(100vh - 45px); }
-  main.show-insights:not(.focus) { grid-template-columns:248px 1fr 340px; }
+  main.show-insights:not(.no-list) { grid-template-columns:248px 1fr 340px; }
+  main.no-list:not(.show-insights) { grid-template-columns:1fr; }
+  main.no-list.show-insights { grid-template-columns:1fr 340px; }
+  main.no-list > .pane:first-child { display:none; }
   main:not(.show-insights) > .pane:last-child { display:none; }
-  main.focus { grid-template-columns:1fr; }
-  main.focus > .pane:first-child, main.focus > .pane:last-child { display:none; }
-  #insightsBtn[aria-expanded="true"] { color:var(--fg); background:var(--bg-3); border-color:var(--line); box-shadow:inset 0 -2px 0 var(--accent); }
+  #insightsBtn[aria-expanded="true"], #focusBtn[aria-pressed="true"] { color:var(--fg); background:var(--bg-3); border-color:var(--line); box-shadow:inset 0 -2px 0 var(--accent); }
   .docview { height:calc(100vh - 45px); overflow:auto; padding:22px 26px 60px; max-width:920px; margin:0 auto; }
   .docview h1 { font-size:22px; margin:2px 0 12px; } .docview h2 { font-size:16px; margin:20px 0 8px; }
   .docview h3 { font-size:13.5px; color:var(--fg-dim); letter-spacing:.04em; margin:14px 0 6px; }
@@ -272,8 +275,7 @@
   <header>
     <div class="brand"><span class="mark">◆</span> Tempered&nbsp;Studio</div>
     <nav class="tabs">
-      <div class="tab active" data-view="dashboard">📊 Dashboard</div>
-      <div class="tab" data-view="exercise">📝 Exercise</div>
+      <div class="tab active" data-view="practice">📝 Practice</div>
       <div class="tab" data-view="book">📖 Book</div>
       <div class="tab" data-view="roadmap">🗒️ Roadmap</div>
     </nav>
@@ -282,6 +284,7 @@
       <div class="track"><div class="fill" id="fill"></div></div>
       <span class="pct" id="pct">12 / 40 · 30%</span>
     </div>
+    <button class="iconbtn" id="focusBtn" title="Focus mode — hide the exercise list for more room" aria-label="Toggle focus mode (hide the exercise list)" aria-pressed="false">◧</button>
     <button class="iconbtn" id="insightsBtn" title="Show/hide Insights (diagnostics, book refs &amp; tutor)" aria-label="Toggle the Insights panel" aria-expanded="false">▦</button>
     <button class="iconbtn" id="theme" title="Toggle dark/light">🌓</button>
   </header>
@@ -930,8 +933,7 @@
         t.setAttribute('aria-selected', on ? 'true' : 'false');
       });
       const m = document.querySelector('main'), d = document.getElementById('docview');
-      m.classList.toggle('focus', view === 'exercise');
-      if (view === 'dashboard' || view === 'exercise') { m.hidden = false; d.hidden = true; refit(); return; }
+      if (view === 'practice') { m.hidden = false; d.hidden = true; refit(); return; }
       m.hidden = true; d.hidden = false;
       if (view === 'roadmap') {
         d.innerHTML = '<p style="color:var(--fg-dim)">loading roadmap…</p>';
@@ -1039,8 +1041,9 @@
     // ── keyboard shortcuts (the footer keybar) — skip while typing in a field ──
     const KEYMAP = {
       r: () => runOp('run'), c: () => runOp('check'), h: runHint,
-      b: () => showView('book'), t: () => showView('roadmap'), d: () => showView('dashboard'),
+      b: () => showView('book'), t: () => showView('roadmap'), p: () => showView('practice'),
       i: () => setInsights(!document.querySelector('main').classList.contains('show-insights')),
+      f: () => setFocusMode(!document.querySelector('main').classList.contains('no-list')),
     };
     document.addEventListener('keydown', e => {
       const tag = (e.target.tagName || '').toLowerCase();
@@ -1086,6 +1089,18 @@
     document.getElementById('insightsBtn').onclick = () =>
       setInsights(!document.querySelector('main').classList.contains('show-insights'));
     setInsights((() => { try { return localStorage.getItem('ts-insights') === '1'; } catch (_) { return false; } })());
+    // ── Focus mode: collapse the exercise-list pane to give the practice work
+    // area the full width (the old "Exercise" tab did this; it's now a toggle so
+    // it composes with the Insights drawer). Persists across sessions.
+    function setFocusMode(on) {
+      document.querySelector('main').classList.toggle('no-list', on);
+      document.getElementById('focusBtn')?.setAttribute('aria-pressed', on ? 'true' : 'false');
+      try { localStorage.setItem('ts-focus', on ? '1' : '0'); } catch (_) {}
+      if (typeof refit === 'function') refit();
+    }
+    document.getElementById('focusBtn').onclick = () =>
+      setFocusMode(!document.querySelector('main').classList.contains('no-list'));
+    setFocusMode((() => { try { return localStorage.getItem('ts-focus') === '1'; } catch (_) { return false; } })());
     // run/check/explain → live POST to the local server, raw output into xterm.
     document.getElementById('runbtn').onclick = () => runOp('run');
     document.getElementById('checkbtn').onclick = () => runOp('check');
