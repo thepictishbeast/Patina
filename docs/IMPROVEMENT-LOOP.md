@@ -543,6 +543,18 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   stale-store sim (alias removed → "no entry") → `rpro init --refresh` → resolves; rpro-cli 5/5, fmt clean,
   no new clippy (kept cmd_init <100 lines), seam-guard clean. (TUI not yet audited — it's the other terminal
   surface; lower priority since it shares the store/glossary/exercise plumbing the CLI just exercised.)
+- ✅ **TUI audit + stale Roadmap refreshed (`d0166c9`, 2026-06-25)** — audited the LAST un-audited surface
+  (the TUI). Its render CODE is sound: **18 TestBackend render tests** across all 5 screens (dashboard ×5,
+  exercise ×6 incl. the `g`-define-concept glossary feature, book ×4, roadmap, inline-markdown ×3), and the
+  `g`-define uses the same glossary the concept-guard now protects. But the audit surfaced a real **content**
+  bug: `docs/ROADMAP.md` (rendered live in BOTH the TUI and web Roadmap tabs) was badly STALE — "39 verified
+  exercises" (actually 63), "23 Book chapters" (33), "concept matrix Phases 1–6" (now 1–9), and an un-checked
+  "[ ] Lesson 1 calibration (needs Paul) → unlocks Lessons 2–8" — i.e. it showed the textbook as barely
+  started when all 37 lessons + 11 reviews are DONE. Refreshed Phase 3 to reality (only open item = the
+  Paul-gated book-listings vendor-vs-link decision). Verified: rpro-tui 35/35; live `/api/roadmap` serves the
+  updated content. **★ ALL SURFACES NOW AUDITED SOUND** (web GUI, Book/Roadmap renderer, hint ladder, exercise
+  list, glossary chips, book-refs, internal links, CLI, TUI). Recurring lesson: render *code* can be
+  well-tested while the *content* it renders silently rots — audit both.
 - ✅ **Runtime-outcome exercise model** (`<pending>`, do-what's-best — not a Paul fork): the model used
   to assume every failure is a COMPILE error. A whole class of core lessons are RUNTIME panics instead
   (RefCell's `BorrowMutError`, integer overflow, `unwrap()` on `None`, index-OOB) — now supported.
