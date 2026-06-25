@@ -392,6 +392,16 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   fix the learner finds: sequence the borrows (a `&mut` ends at its last USE), so only one is ever live →
   `count = 2`. Verified: E0499 emits on 1.95.0, golden_corpus green, verify-exercises **57/57**. Commit
   `003e31b`. 04-ownership now 5 exercises (E0382/E0502/E0515/E0507/E0499 — the borrow-rule set complete).
+  ✅ Added an **error-handling** exercise (2026-06-25) — `05b-error-handling/05_question_mark_option_in_result`
+  (id `error-handling/05_question_mark_option_in_result`, **E0277**, intermediate): `?` used on an `Option`
+  (`.last()`) inside a `Result`-returning fn → "the `?` operator can only be used on `Result`s, not `Option`s,
+  in a function that returns `Result`". The Option/Result `?`-interop confusion — a top beginner stumble — and
+  a DISTINCT frame from the phase's two existing E0277s (02 propagation-needs-From, 04 custom-error-From): here
+  `?` is on the wrong CARRIER (Option, not Result), not a missing trait impl. The real compiler message names
+  the `.ok_or(...)` fix, so the exercise teaches reading the compiler's own suggestion (not spoon-fed in the
+  outline). Reused 02's validated ch09-02 anchors (the-operator-shortcut + propagating-errors). golden_map: 05b
+  = area `error-handling`, beginner|intermediate. Verified: emits E0277 on 1.95.0, golden_corpus green,
+  verify-exercises **58/58**, book anchors 91/91. Commit `3181a73`. 05b now 5 exercises.
 - ✅ **Runtime-outcome exercise model** (`<pending>`, do-what's-best — not a Paul fork): the model used
   to assume every failure is a COMPILE error. A whole class of core lessons are RUNTIME panics instead
   (RefCell's `BorrowMutError`, integer overflow, `unwrap()` on `None`, index-OOB) — now supported.
