@@ -382,6 +382,16 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   golden-corpus (ids unique, area `iterators` ∈ 07b, E####-shaped, concept present) + both emit their claimed
   codes on rustc 1.95.0. Commit `4562dd2` → textbook-integration. TODO: async (ch17, may need its own model
   work); integer-overflow / index-OOB runtime exercises; more closures; grow async in 08-concurrency.
+  ✅ Added an **ownership** exercise (2026-06-25) — `04-ownership/05_double_mut_borrow` (id
+  `ownership/05_double_mut_borrow`, **E0499**, beginner): two simultaneous `&mut count` borrows alive
+  together → "cannot borrow `count` as mutable more than once at a time". This is the PURE form of the
+  borrow rule (one `&mut` at a time), distinct from `02_borrow`'s mixed mut/immut **E0502** — the most
+  pedagogically central phase (the charter's "take ownership slowly") was missing it. golden_map pins
+  04-ownership to area `ownership` + Beginner only, which E0499 fits; reused the validated ch04-02
+  `mutable-references` + `the-borrow-checker` anchors (the Book shows this exact two-`&mut` error). The
+  fix the learner finds: sequence the borrows (a `&mut` ends at its last USE), so only one is ever live →
+  `count = 2`. Verified: E0499 emits on 1.95.0, golden_corpus green, verify-exercises **57/57**. Commit
+  `003e31b`. 04-ownership now 5 exercises (E0382/E0502/E0515/E0507/E0499 — the borrow-rule set complete).
 - ✅ **Runtime-outcome exercise model** (`<pending>`, do-what's-best — not a Paul fork): the model used
   to assume every failure is a COMPILE error. A whole class of core lessons are RUNTIME panics instead
   (RefCell's `BorrowMutError`, integer overflow, `unwrap()` on `None`, index-OOB) — now supported.
