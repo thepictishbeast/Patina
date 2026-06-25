@@ -347,10 +347,17 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   and expect`, `question-mark-option-vs-result` → `the ? operator`, `borrow-must-not-outlive-value` → `no
   dangling references`, iterator pair → `iterating by reference` / `collecting an iterator`,
   `mutable-borrow-needs-mut` → `mutability`. Verified: 0/62 concepts unresolved (was 9), rpro-glossary 3/3,
-  live `/api/glossary?term=move-while-borrowed` → "borrowing" definition. **★ FOLLOW-UP (next-tick, high-value):
-  add a REGRESSION GUARD so this can't recur silently — a check (golden_corpus or verify-exercises) that every
-  exercise `concept` normalizes to a glossary key; the invariant is documented but UN-enforced, which is why it
-  silently rotted across 8 exercises.** That guard is the clean next pick.
+  live `/api/glossary?term=move-while-borrowed` → "borrowing" definition.
+  **★ REGRESSION GUARD ADDED (`36a644b`, 2026-06-25)** — the concept→glossary invariant was documented but
+  UN-enforced (which is why it rotted across 9 exercises). `golden_corpus` now loads the built-in glossary via
+  **rpro-glossary** (added as a dev-dep, so the guard uses the EXACT same case/separator-insensitive lookup the
+  live `/api/glossary` does — no normalization drift) and asserts `gloss.get(concept).is_some()` for every
+  exercise, with an actionable failure pointing at the fix (add the concept as an alias in glossary.toml).
+  Verified: passes on the current 62/62 corpus AND proven to BITE (temporarily breaking one concept fails with
+  the dead-chip message); full rpro-runner suite green, fmt clean. **Now adding a new exercise with an
+  unresolved concept fails `cargo test` loudly instead of shipping a silent dead chip.** This closes the
+  dead-chip class for good (fix + enforcement). NOTE for self when adding exercises: pick a `concept` that
+  already resolves, or add its alias to glossary.toml in the SAME commit — golden_corpus will now enforce it.
   **★ Convergence CONFIRMED + `docs/REVIEW-GUIDE.md` authored** (advisor-directed, after 4 filler ticks): ran a
   saturation pass to prove convergence rather than assume it — **(a) `cargo audit` = 0 vulnerabilities** (236
   deps, exit 0; #21's *corrective* part is a verified no-op, only the CI-enforce gate remains deferred); **(b)
