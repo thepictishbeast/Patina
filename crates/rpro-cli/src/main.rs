@@ -39,7 +39,14 @@ struct Cli {
 enum Cmd {
     /// One-time setup: clone exercises, fetch the book, write
     /// state files at ~/.rustlings-pro/.
-    Init,
+    Init {
+        /// Re-seed the bundled exercises, Book chapters, and glossary even if the
+        /// store already has them — use after updating Tempered Studio to pull in
+        /// new content. Preserves your progress, config, and any exercises you
+        /// added yourself (it merges, never deletes).
+        #[arg(long)]
+        refresh: bool,
+    },
     /// Exercise commands.
     Exercise {
         #[command(subcommand)]
@@ -122,7 +129,7 @@ fn main() -> Result<()> {
     let cli = Cli::parse();
     match cli.cmd {
         None => cmd_default(),
-        Some(Cmd::Init) => cmd_init(),
+        Some(Cmd::Init { refresh }) => cmd_init(refresh),
         Some(Cmd::Exercise { sub }) => match sub {
             ExerciseCmd::List => cmd_exercise_list(),
             ExerciseCmd::Next => cmd_exercise_next(),
@@ -201,11 +208,13 @@ fn cmd_glossary(term: Option<&str>) -> Result<()> {
 // Commands
 // ---------------------------------------------------------------------------
 
-fn cmd_init() -> Result<()> {
-    println!(
-        "{}",
-        style("Rustlings Pro — first-time setup").bold().cyan()
-    );
+fn cmd_init(refresh: bool) -> Result<()> {
+    let title = if refresh {
+        "Rustlings Pro — refreshing bundled content"
+    } else {
+        "Rustlings Pro — first-time setup"
+    };
+    println!("{}", style(title).bold().cyan());
     let store = Store::user().context("locating ~/.rustlings-pro/")?;
     println!("  state directory: {}", style(store.root().display()).dim());
 
@@ -242,7 +251,7 @@ fn cmd_init() -> Result<()> {
     let exercises_dir = store.root().join("exercises");
     let bundled = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../exercises");
     let have_any = rpro_runner::discover(&exercises_dir).is_ok_and(|v| !v.is_empty());
-    if !have_any && bundled.is_dir() {
+    if (refresh || !have_any) && bundled.is_dir() {
         copy_tree(&bundled, &exercises_dir)
             .with_context(|| format!("seeding exercises from {}", bundled.display()))?;
         let n = rpro_runner::discover(&exercises_dir).map_or(0, |v| v.len());
@@ -253,7 +262,7 @@ fn cmd_init() -> Result<()> {
     let book_dir = store.root().join("book");
     let bundled_book = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../book");
     let have_book = rpro_book::Book::load(&book_dir).is_ok_and(|b| !b.chapters.is_empty());
-    if !have_book && bundled_book.is_dir() {
+    if (refresh || !have_book) && bundled_book.is_dir() {
         copy_tree(&bundled_book, &book_dir)
             .with_context(|| format!("seeding book from {}", bundled_book.display()))?;
         if let Ok(b) = rpro_book::Book::load(&book_dir) {
@@ -264,7 +273,7 @@ fn cmd_init() -> Result<()> {
     // (parity with the web seed).
     let gloss_dir = store.root().join("glossary");
     let bundled_gloss = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../glossary");
-    if !gloss_dir.join("glossary.toml").exists() && bundled_gloss.is_dir() {
+    if (refresh || !gloss_dir.join("glossary.toml").exists()) && bundled_gloss.is_dir() {
         copy_tree(&bundled_gloss, &gloss_dir)
             .with_context(|| format!("seeding glossary from {}", bundled_gloss.display()))?;
         if let Ok(g) = rpro_glossary::Glossary::load(&gloss_dir.join("glossary.toml")) {
@@ -304,8 +313,8 @@ fn cmd_init() -> Result<()> {
     println!();
     println!("Next:");
     println!(
-        "  - {} (when v0.1 ships) — fetch exercises + book content",
-        style("rpro init --refresh-all").yellow()
+        "  - {} — re-seed bundled content after updating Tempered Studio",
+        style("rpro init --refresh").yellow()
     );
     println!(
         "  - {} — list what's been imported so far",
@@ -333,8 +342,7 @@ fn cmd_exercise_list() -> Result<()> {
     if exercises.is_empty() {
         println!(
             "{}",
-            style("No exercises yet. Run `rpro init --refresh-exercises` (v0.1) to fetch the set.")
-                .yellow()
+            style("No exercises yet. Run `rpro init` to set up the bundled exercises.").yellow()
         );
         return Ok(());
     }
@@ -700,8 +708,10 @@ fn cmd_exec(id: Option<&str>, op: &RunOp) -> Result<()> {
     if exercises.is_empty() {
         println!(
             "{}",
-            style("No exercises yet. Run `rpro init` (v0.1) to fetch the set, or pass an id.")
-                .yellow()
+            style(
+                "No exercises yet. Run `rpro init` to set up the bundled exercises, or pass an id."
+            )
+            .yellow()
         );
         return Ok(());
     }
