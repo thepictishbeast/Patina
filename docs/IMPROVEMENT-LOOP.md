@@ -508,6 +508,18 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   exercises (E0382/E0502/E0515/E0507/E0499/E0506/E0505). Corpus = **30 distinct codes + 5 runtime panics / 62
   exercises.** Remaining mined codes: E0716 (temporary dropped while borrowed), E0061 (wrong arg count) —
   both more niche/shallow; the high-value borrow/lifetime set is now essentially complete.
+  ✅ Added **basics/07_fn_arg_count** (**E0061**, `e4d1cfb`, 2026-06-25, after two clean audits) — the last
+  genuinely-common missing beginner code: `area(width, height)` called with one argument → "this function
+  takes 2 arguments but 1 argument was supplied". The COUNT companion to `03_fn_arg_type` (E0308, wrong type);
+  the learner picks the 2nd value so no answer is handed. **First exercise added under the new concept→glossary
+  guard** — added its alias (`function-argument-count` → "function argument types") in the SAME commit;
+  golden_corpus passed BECAUSE of that (would've failed otherwise — the guard working on a fresh exercise).
+  Verified: emits E0061, golden_corpus green (incl. concept-resolution), verify-exercises **63/63**, anchors
+  resolve, glossary 3/3. Corpus = **31 distinct codes + 5 runtime panics / 63 exercises.**
+  **Two clean AUDITS this tick (no bug found, good confidence):** (a) all 33 exercise-cited book chapters are
+  bundled in `book/` → no dead "Open in Book reader" buttons (and verify-book-anchors implicitly enforces
+  chapter-presence by reading `book/<ch>.md`); (b) all **170 internal markdown links across 105 rust-textbook
+  files resolve, 0 broken** (STUDY-GUIDE hub + lesson nav + quizzes/cheatsheets) → textbook nav fully sound.
 - ✅ **Runtime-outcome exercise model** (`<pending>`, do-what's-best — not a Paul fork): the model used
   to assume every failure is a COMPILE error. A whole class of core lessons are RUNTIME panics instead
   (RefCell's `BorrowMutError`, integer overflow, `unwrap()` on `None`, index-OOB) — now supported.
