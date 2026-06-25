@@ -161,6 +161,18 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   literal fix is never served at any rung. NOTE for a future tidy (low-value, NOT this tick): a couple phases
   still list out of id-number order by filename byte-sort (control-flow shows 01,02,05,03,04; types 01,02,03,05,04)
   — each area stays contiguous so no duplicate headers; pure sequence polish if ever worth it.
+- ✅ **Book/Roadmap renderer: thematic breaks → `<hr>` (`b35f905`, 2026-06-25)** — audited the two un-examined
+  learner surfaces (Book reader `/api/book`, Roadmap `/api/roadmap`); both render via the hand-rolled `mdToHtml`,
+  which proved impressively complete (code fences, GFM tables, blockquotes, lists, slugged headings, links/
+  emphasis) EXCEPT it had no horizontal-rule handling — a `---` line fell through to `<p>---</p>`. Added a
+  thematic-break rule (3+ of `-`/`*`/`_`, optionally spaced) → `<hr>`, placed BEFORE the list check so a spaced
+  "- - -" isn't parsed as a bullet. Currently DORMANT (no served book/roadmap content uses `---`) but hardens the
+  shared renderer for our `---`-heavy markdown conventions (every lesson footer). Verified LIVE via
+  `browser_evaluate` on `mdToHtml`: ---/***/___/"- - -" → `<hr>`; single "- bullet" still a list; GFM `|---|`
+  separator untouched; full e2e 16/16. **GOTCHA (recorded): e2e specs that exercise the RUN flow (dev-diag-jump,
+  editor-run-shortcut) need rpro-serve started WITH the rustc toolchain on PATH** — `setsid env PATH="$PATH"
+  TS_ASSET_ROOT=… rpro-serve &`; without it `/api/run` can't compile → no diagnostic → those 3 specs fail
+  (false alarm, not a code regression).
 - ✅ **Editable-pane syntax highlighting** (`<pending>`): colored `<pre>` overlay behind a
   transparent textarea, reusing highlightRust; always-on. Verified live.
 - ☐ **Full IDE via rust-analyzer** (`LspSpec` defined, unconsumed) — big; Rust FOSS.
