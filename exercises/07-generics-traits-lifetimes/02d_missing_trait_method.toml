@@ -1,0 +1,29 @@
+id = "traits/04_missing_method"
+title = "Implementing a trait means providing its required methods"
+difficulty = "intermediate"
+estimated_minutes = 9
+concept = "trait-implementation"
+expected_error_code = "E0046"
+attribution = "Rustlings (rust-lang/rustlings), MIT — 15_traits/traits1, adapted"
+solution_outline = """
+A trait is a promise: any type that `impl`s it must provide every method the
+trait declares without a default body. `AppendBar` declares `fn append_bar(self)
+-> Self;` (no default), so an empty `impl AppendBar for String {}` breaks the
+promise — the compiler lists exactly which item is missing.
+
+Fill in the method inside the `impl` block. Its shape is already fixed by the
+trait (`fn append_bar(self) -> Self`), so you only write the body: take the owned
+`self` string and produce a new one with "Bar" on the end. (Two `String`s join
+with `+`, and a `String` plus a `&str` literal also works — but the *what* is
+yours to write; the trait just says the signature.)
+"""
+
+[[book_refs]]
+chapter = "ch10-02-traits"
+anchor = "implementing-a-trait-on-a-type"
+why = "The form of an `impl Trait for Type` block and that it must supply the trait's required methods — exactly what's missing here."
+
+[[book_refs]]
+chapter = "ch10-02-traits"
+anchor = "defining-a-trait"
+why = "Why a trait's method signatures are a contract every implementer must fulfill (unless the trait gives a default body)."
