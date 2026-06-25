@@ -148,6 +148,19 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   also confirmed (NOT bugs): the dev `~/.cache/ts-serve` store held a STALE 32-exercise copy (re-seeded from
   the live 60 — packaged builds bundle fresh, so prod is unaffected); editor drafts are correctly keyed
   per-exercise (`lsKey(id)`).**
+- ✅ **07b exercise order fixed → matches the lesson ramp (`fff1d97`, 2026-06-25)** — the "iterators twice"
+  quirk noted above was a real ordering wart, not just cosmetic: the two later iterator exercises (into_iter
+  E0382, sum E0283) were files `06`/`07`, so byte-sort put them AFTER the smart-pointers block, splitting the
+  iterators area and mismatching the **L27 closures → L28 iterators → L29 smart-pointers** lesson order.
+  `git mv` 06→`02b`, 07→`02c` so all three iterators sort right after `02_collect`, before smart-pointers.
+  IDs live in the tomls (unchanged) → golden_corpus + progress keys unaffected; only the discover/gating
+  ORDER changes, to the correct ramp. Verified: golden_corpus green, verify-exercises 60/60; live
+  /api/exercises → closures → iterators(01,02,03) → smart-pointers; GUI now shows ONE iterators header
+  (Playwright snapshot). Also drove the **hint ladder live (charter audit — PASS, no bug):** attempts==0 →
+  "run it first" (forces a try); then ONE rung earned per attempt (process → error-code → book-sections); the
+  literal fix is never served at any rung. NOTE for a future tidy (low-value, NOT this tick): a couple phases
+  still list out of id-number order by filename byte-sort (control-flow shows 01,02,05,03,04; types 01,02,03,05,04)
+  — each area stays contiguous so no duplicate headers; pure sequence polish if ever worth it.
 - ✅ **Editable-pane syntax highlighting** (`<pending>`): colored `<pre>` overlay behind a
   transparent textarea, reusing highlightRust; always-on. Verified live.
 - ☐ **Full IDE via rust-analyzer** (`LspSpec` defined, unconsumed) — big; Rust FOSS.
