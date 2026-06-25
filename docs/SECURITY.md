@@ -103,10 +103,15 @@ parsing. ✅
   no auth, no secret material is handled, so there is no key-management surface.
 - **Memory safety.** `unsafe_code = "forbid"` across the workspace removes the
   `unsafe`-based class of dependency-triggered UB from first-party code.
-- **Recommendation:** wire `cargo audit` (RustSec advisories) and `cargo deny`
-  (licenses + bans + advisories) into CI so future dependency changes are scanned
-  automatically. `cargo audit` runs locally today; `cargo deny` is not yet
-  installed here — track both alongside the existing `seam-gates.yml`.
+- **`cargo deny` — wired into CI (2026-06-25).** `deny.toml` configures the four
+  axes (advisories, licenses, bans, sources); the FOSS-first license allow-list is
+  derived from `cargo metadata` over the real dependency tree (MIT/Apache-2.0 plus
+  the few AND-clauses that pull in Unicode-3.0 / BSD-3-Clause / Zlib, and one
+  file-level-copyleft MPL-2.0 dep). The **`cargo-deny`** job in `ci.yml` runs
+  `cargo deny check advisories licenses bans sources` on every push via the
+  maintained `EmbarkStudios/cargo-deny-action` (a pinned binary, no compile);
+  `scripts/check.sh` runs it locally when the tool is installed. Together with the
+  always-on `cargo audit` this scans dependency changes automatically.
 
 ## 5. Conclusion
 

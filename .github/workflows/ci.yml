@@ -103,3 +103,15 @@ jobs:
       # its bundled chapter (the web reader scrolls clicked refs to that id).
       # Catches drift when chapters are re-vendored or an anchor is typo'd.
       - run: node scripts/verify-book-anchors.mjs
+
+  cargo-deny:
+    name: cargo-deny (advisories + licenses + sources)
+    runs-on: [self-hosted, linux, x64, plausiden]
+    steps:
+      - uses: actions/checkout@v4
+      # Supply-chain gate (SECURITY.md §4): RustSec advisories, the FOSS-first
+      # license allow-list, banned/duplicate crates, and crate sources — all per
+      # deny.toml. The action downloads a pinned cargo-deny binary (no compile).
+      - uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check advisories licenses bans sources

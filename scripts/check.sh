@@ -70,6 +70,15 @@ else
   printf '  (target not installed: rustup target add wasm32-unknown-unknown)\n'
 fi
 
+# ── supply-chain (deny.toml): advisories + licenses + bans + sources ─────────
+# Guarded on availability — CI runs this via EmbarkStudios/cargo-deny-action.
+if command -v cargo-deny >/dev/null 2>&1; then
+  run "cargo-deny" cargo deny check advisories licenses bans sources
+else
+  printf '\n\033[33m▶ cargo-deny — SKIPPED\033[0m\n'
+  printf '  (not installed: cargo install cargo-deny; CI runs it via the action)\n'
+fi
+
 # ── summary ──────────────────────────────────────────────────────────────────
 printf '\n\033[1m── %d passed, %d failed ──\033[0m\n' "$pass" "$fail"
 if [ "$fail" -ne 0 ]; then
