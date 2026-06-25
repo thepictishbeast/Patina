@@ -919,8 +919,8 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   **#20** (clippy clean → `-D warnings` enforced in CI + check.sh; nursery relaxed with rationale), **#21**
   (cargo-deny wired: `deny.toml` + CI job + check.sh). **#22 IN PROGRESS** (Rustlings adaptations, one/tick:
   `162bb65` collections/07 fill-vec-needs-mut E0596 · `7893bb7` collections/08 use-after-move-into-fn E0382 ·
-  `3bc47af` collections/09 return-owned-string E0308; attribution pattern set [.rs header + `.toml`
-  `attribution`], Rustlings cloned MIT; RBE/Cookbook/Exercism follow). **Two remain genuinely large/external — NOT one-autonomous-turn, flagged honestly rather than
+  `3bc47af` collections/09 return-owned-string E0308 · `4eb387a` traits/04 missing-method **E0046 (new code)**;
+  attribution pattern set [.rs header + `.toml` `attribution`], Rustlings cloned MIT; RBE/Cookbook/Exercism follow). **Two remain genuinely large/external — NOT one-autonomous-turn, flagged honestly rather than
   fake-finished:**
   - **#19 Full IDE via rust-analyzer.** rust-analyzer 1.85.0 IS installed but is **version-mismatched** with the
     1.95.0 toolchain (proc-macro server v6 vs RA v5 → proc-macro expansion fails). A real integration =
