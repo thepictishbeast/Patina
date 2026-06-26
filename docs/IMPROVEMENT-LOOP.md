@@ -335,6 +335,16 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   default (`<details>` not open) yet present; gui-transform tests pass; e2e green (`1 flaky, 15 passed` — the
   `retries:1` fix healed the environmental flake). **The learning materials are now complete: lessons → exercises
   → glossary → Book → quizzes, all offline + on Android.**
+  ✅ **Per-question reveals (`<pending>`, pedagogy upgrade):** the single reveal-all `<details>` only weakly held the
+  *"predict **each** answer before you reveal it"* rule — a learner could reveal all 13 at once. Now `quizToHtml`
+  pairs each `**Q<n>` with its `**A<n>` and tucks **that one answer behind its own inline "Reveal answer — predict
+  first" toggle, right after the question** — so prediction-then-verification happens one question at a time (predict
+  Q, reveal Q, move on). Robust by construction: parses on the `**Q<n>`/`**A<n>` convention (verified regular across
+  all 11 quizzes: 13/13, 10/10, 15/15, 14/14 …), pairs by number, and **falls back to the old reveal-all** if a quiz
+  doesn't match. Provenance note ("Verified on rustc 1.95.0") kept as a quiet footer. gui-only. Verified LIVE
+  (Playwright): phase1 → 13 question blocks, 13 independent collapsed reveals, no reveal-all, each answer present-but-
+  hidden until its toggle opens (A1's `E0384` revealed on click); screenshots read. gui-transform + **full e2e 20/20
+  (+1 flake heals)**.
   **Lesson → quiz cross-link DONE (this commit):** the last lesson of each phase now ends with a
   **"🧠 Finished this phase? Take the self-check quiz →"** link to that phase's quiz, so the quizzes are discoverable
   at the pedagogically right moment (phase end) rather than only via the tab. Mapping is a compact `lessonToQuiz(n)`
