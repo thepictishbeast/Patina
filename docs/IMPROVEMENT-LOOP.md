@@ -140,6 +140,21 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   screenshots read. gui-transform green; **full e2e green (15 passed, 1 known dev-diag-jump flake heals on retry)**.
   NEXT steps: fold RECALL + a Settings/detect menu into the bar; tighter spacing pass; (awaiting Paul on whether
   Book-refs should stay visible while solving vs. living in the Insights drawer).
+- ✅ **Roadmap tab repurposed: dev build-status → the learner's curriculum journey (`<pending>`).** Found via a
+  live look at the beginner's first-run orientation: the `Roadmap` tab was rendering the **project's engineering
+  roadmap** (`/api/roadmap` = `docs/ROADMAP.md`: "Phase 0 — Language seam & engine", "rpro-lang wasm-safe", "CI gates:
+  wasm32 pure-core build") — developer meta, meaningless and confusing to a *learner* clicking "Roadmap" to see their
+  path. Exactly Paul's "things the user isn't working on shouldn't be on the main page … focus on teaching and
+  practicing rust." Repurposed the tab to a **"🗺️ Your Rust journey"** view, built **offline frontend-side** from
+  `/api/lessons`: the 37 lessons grouped into the 11 curriculum stages (Foundations → Control Flow → … → Tooling, via
+  the existing `lessonToQuiz` phase map + a `PHASE_NAMES` table sourced from the cheatsheet titles), each stage a card
+  listing its lessons (→ open the lesson) plus its 📋 Cheatsheet + ❓ Quiz links, with a live progress line (reads the
+  header gauge — "Exercises so far: 16 / 71 · 23%"). Now the learner sees the whole path and can dive into any part.
+  The dev `ROADMAP.md`/`/api/roadmap` stay in the repo (a dev artifact); only the learner-facing tab changed. gui-only
+  (no review-pile growth, no backend change). Verified LIVE (Playwright): 11 stages in curriculum order, all 37 lesson
+  links, every stage has cheatsheet+quiz, progress shown, clicking a lesson opens it + activates the Lessons tab;
+  screenshot read. gui-transform green; **full e2e 21/21 green** (a transient 2-run-test contention failure re-ran
+  clean — my change touches only the roadmap render, not the editor/run paths).
 - ◐ **3 modes (Learn/Assist/Dev)** — switcher + persistence + Learn predict-gate DONE
   (`158c997`); legacy header `FREE` badge **removed** (`<pending>`) so the switcher is the sole
   mode authority (verified live: header renders, badge gone, no a11y/contrast change).

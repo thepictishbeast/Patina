@@ -160,6 +160,15 @@
   .docview .lessoncheat { margin:6px 0; color:var(--fg-dim); font-size:13.5px; }
   .docview .cheatlink { color:var(--accent); font-weight:600; text-decoration:none; }
   .docview .cheatlink:hover { text-decoration:underline; }
+  /* Roadmap tab: the learner's curriculum journey (a card per phase) */
+  .docview .roadintro { color:var(--fg-dim); margin:0 0 18px; max-width:70ch; }
+  .docview .roadphase { margin:0 0 14px; padding:12px 16px; border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:8px; }
+  .docview .roadphase h2 { font-size:15px; margin:0 0 8px; }
+  .docview .roadlessons { margin:0; padding-left:20px; }
+  .docview .roadlessons li { padding:2px 0; font-size:13.5px; }
+  .docview .roadlessons a { color:var(--fg); text-decoration:none; }
+  .docview .roadlessons a:hover { color:var(--accent); text-decoration:underline; }
+  .docview .roadlinks { margin:10px 0 0; font-size:13px; color:var(--fg-dim); }
   .docview .booksearch input { width:100%; box-sizing:border-box; padding:9px 12px; font-size:14px; font-family:var(--ui);
     color:var(--fg); background:var(--bg-2); border:1px solid var(--line); border-radius:8px; margin:6px 0 4px; }
   .docview .booksearch input:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 2px rgba(247,76,0,.18); }
@@ -1133,9 +1142,7 @@
       if (view === 'practice') { m.hidden = false; d.hidden = true; refit(); return; }
       m.hidden = true; d.hidden = false;
       if (view === 'roadmap') {
-        d.innerHTML = '<p style="color:var(--fg-dim)">loading roadmap…</p>';
-        try { const j = await fetch('api/roadmap').then(r => r.json()); d.innerHTML = mdToHtml(j.markdown || ''); }
-        catch (_) { d.innerHTML = '<p>Roadmap unavailable (open via the local server).</p>'; }
+        await renderRoadmap();
       } else if (view === 'book') {
         await renderBook(chapter || null, anchor || null);
       } else if (view === 'glossary') {
@@ -1225,6 +1232,65 @@
         ? back + '<p>Cheatsheet not found.</p>'
         : back + '<div class="bookbody">' + mdToHtml(c.markdown.replace(/<!--[\s\S]*?-->/g, '')) + '</div>';
       d.querySelectorAll('.cheatback').forEach(a => a.onclick = e => { e.preventDefault(); renderCheatsheets(null); });
+      d.scrollTop = 0;
+    }
+
+    // Human-readable curriculum phase names (the learner's journey), keyed by the
+    // shared per-phase id (same ids as quizzes/cheatsheets). Source: the phase
+    // cheatsheet titles.
+    const PHASE_NAMES = {
+      phase1: 'Foundations',
+      phase2: 'Control Flow',
+      phase3: 'Text & Collections',
+      phase4: 'Ownership & Borrowing',
+      phase5: 'Custom Types & Matching',
+      phase6: 'Organizing Code — modules, paths & use',
+      'phase6-generics': 'Generics, Traits & Lifetimes',
+      phase7: 'Functional Features & Smart Pointers',
+      phase8: 'Concurrency — threads & async',
+      phase9: 'Advanced — trait objects, patterns & capstone',
+      tooling: 'Tooling — Tests & Cargo',
+    };
+
+    // The Roadmap tab = the learner's CURRICULUM JOURNEY (NOT the project's build
+    // roadmap, which is a developer artifact and meaningless to a learner). Built
+    // offline from /api/lessons, grouped into the curriculum phases, each stage
+    // linking its lessons + cheatsheet + quiz so the learner sees the whole path
+    // and can dive into any part of it.
+    async function renderRoadmap() {
+      const d = document.getElementById('docview');
+      const head = '<h1>🗺️ Your Rust journey</h1>';
+      d.innerHTML = head + '<p style="color:var(--fg-dim)">loading…</p>';
+      let lessons = [];
+      try { lessons = (await fetch('api/lessons').then(r => r.json())).lessons || []; }
+      catch (_) { d.innerHTML = head + '<p>Roadmap unavailable (open via the local server).</p>'; return; }
+      if (!lessons.length) { d.innerHTML = head + '<p>No lessons seeded — run the server with the bundled lessons/.</p>'; return; }
+      // Group consecutive lessons by phase (lessons arrive in curriculum order).
+      const groups = [];
+      lessons.forEach(l => {
+        const ph = lessonToQuiz(parseInt(l.id, 10));
+        let g = groups[groups.length - 1];
+        if (!g || g.phase !== ph) { g = { phase: ph, name: PHASE_NAMES[ph] || ph, lessons: [] }; groups.push(g); }
+        g.lessons.push(l);
+      });
+      const prog = (document.getElementById('pct')?.textContent || '').trim();
+      const intro = `<p class="roadintro">The whole path, in order — ${lessons.length} lessons across ${groups.length} stages, from your first <code>let</code> binding to a capstone. Read a stage, practice it, then self-check with its quiz.`
+        + (prog ? ` <b>Exercises so far: ${esc(prog)}.</b>` : '') + '</p>';
+      const body = groups.map(g => {
+        const lis = g.lessons.map(l =>
+          `<li><a href="#" class="lessonjump" data-id="${esc(l.id)}">${esc(l.title)}</a></li>`).join('');
+        const links = `<a href="#" class="cheatlink" data-cheat="${esc(g.phase)}">📋 Cheatsheet</a>`
+          + ` · <a href="#" class="quizlink" data-quiz="${esc(g.phase)}">❓ Quiz</a>`;
+        return `<section class="roadphase"><h2>${esc(g.name)}</h2>`
+          + `<ul class="roadlessons">${lis}</ul><p class="roadlinks">${links}</p></section>`;
+      }).join('');
+      d.innerHTML = head + intro + body;
+      d.querySelectorAll('.lessonjump').forEach(a =>
+        a.onclick = e => { e.preventDefault(); showView('lessons', a.dataset.id); });
+      d.querySelectorAll('.cheatlink').forEach(a =>
+        a.onclick = e => { e.preventDefault(); showView('cheatsheets', a.dataset.cheat); });
+      d.querySelectorAll('.quizlink').forEach(a =>
+        a.onclick = e => { e.preventDefault(); showView('quizzes', a.dataset.quiz); });
       d.scrollTop = 0;
     }
 
