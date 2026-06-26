@@ -1013,6 +1013,17 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   error-code *emission* stay in `verify-exercises.sh`; anchors stay in `verify-book-anchors.mjs`.
 - ✅ **Offline-Android Run UX** (`<pending>`): a failed run with an exercise loaded now shows
   a guiding "can't run here — no toolchain; predict/read/study offline" message, not the demo.
+- ✅ **e2e coverage for the navigation surface (`<pending>`)** — the last 3 ticks' navigation work (the `⋯ More`
+  menu, the lesson→cheatsheet companion link, the `?` keys overlay) had **zero dedicated e2e coverage**, despite
+  being central to the UX Paul asked for. (Last tick the suite caught the overlay click-swallow bug only
+  *incidentally*, via unrelated click tests.) New `tests/e2e/navigation.spec.js` (5 tests): the bar shows exactly
+  3 primary tabs with the 4 reference surfaces as menu items; opening `⋯ More` → Book navigates + closes the menu +
+  marks the trigger `active`/the item `aria-current`; Esc closes the menu; a lesson's "📋 this phase's cheat sheet"
+  link is present, targets a real phase id, and opens that sheet (+ lights up More); and `?` opens the shortcuts
+  overlay / Esc closes it **with an explicit regression guard that a closed overlay never intercepts clicks** (a tab
+  click must still land — the exact failure mode of the `[hidden]`-override bug). Test-only (no crates/gui). Verified:
+  the 5 new tests pass in isolation (1.7s) and in the **full suite — 20 passed, 1 known recall-chip flake heals on
+  retry** (16→21 tests). Locks in the navigation against silent regressions in future ticks.
 - ◐ **Clippy hygiene (per-crate)**: **7 crates now clippy-clean** — `rpro-book`, `rpro-lang`, `rpro-lang-rust`
   (per prior ticks; `format_collect`→`fold`, a justified `#[allow(struct_excessive_bools)]` on `EditorAssists`),
   the already-clean `rpro-storage-fs`/`rpro-runner`, plus (`<pending>`) **`rpro-state`** (4 `too_long_first_doc_paragraph`
