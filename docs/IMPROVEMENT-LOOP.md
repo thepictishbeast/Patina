@@ -251,7 +251,18 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
     Dev-tier editor. Multi-session; build incrementally.
 
 ### Content / corpus
-- ✅ **#22 — E0381 corpus gap filled** (this commit): added `exercises/01-basics/08_use_before_init.{rs,toml}`
+- ◐ **Surface the per-phase quizzes (predict-then-verify self-checks)** — backend slice DONE (this commit). The
+  upstream rust-textbook has 11 per-phase quizzes (Questions + Answers, "predict before you look" — exactly the
+  platform's pedagogy) that weren't in the app. Embedded them in `quizzes/` (synced via the now-generalized
+  `scripts/sync-lessons.sh`, which mirrors lessons + quizzes), the serve layer seeds them like book/glossary/lessons,
+  and a new **`GET /api/quizzes`** lists them / returns one's markdown via `?id=STEM`. Refactored the lessons
+  handler into a shared `md_collection(root, subdir, id, list_key, item_key)` so lessons + quizzes share one
+  traversal-safe code path (DRY). Android: `build-apk.sh` (+ apk.yml comment) now syncs `quizzes/` too. Verified:
+  `cargo test -p rpro-serve` 20 pass (incl. a new quizzes list/fetch/traversal test, lessons test still green);
+  clippy `-D warnings` + fmt + seam clean; LIVE curl → 11 quizzes listed, fetch returns markdown, traversal → null,
+  `/api/lessons` regression-free. **NEXT: a GUI surface for quizzes** (a tab or per-phase link), rendering the quiz
+  with the **Answers section collapsed** until the learner has predicted (preserve the self-check pedagogy).
+- ✅ **#22 — E0381 corpus gap filled** (`af455e8`): added `exercises/01-basics/08_use_before_init.{rs,toml}`
   — `let count: i32;` then reading `count` before assigning it (use of a possibly-uninitialized binding). E0381 was
   absent from the corpus; teaches Rust's *definite initialization* (every read proven to follow a write). Predict-
   then-run, no answer-leak; `concept = "binding"` resolves to the glossary "binding" term, and was added to the GUI

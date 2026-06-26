@@ -621,6 +621,7 @@ fn ensure_seeded(
     workspace_book: &Path,
     workspace_glossary: &Path,
     workspace_lessons: &Path,
+    workspace_quizzes: &Path,
 ) -> std::io::Result<()> {
     let store = Store::at(store_root.to_path_buf());
     let ex_dir = store.root().join("exercises");
@@ -658,6 +659,14 @@ fn ensure_seeded(
     let have_lessons = std::fs::read_dir(&lessons_dir).is_ok_and(|mut rd| rd.next().is_some()); // nosemgrep
     if !have_lessons && workspace_lessons.is_dir() {
         copy_dir_recursive(workspace_lessons, &lessons_dir)?;
+    }
+
+    // Same for the per-phase self-check quizzes (predict-then-verify), served via
+    // `/api/quizzes`. Server-fixed dir; nothing from the wire.
+    let quizzes_dir = store.root().join("quizzes");
+    let have_quizzes = std::fs::read_dir(&quizzes_dir).is_ok_and(|mut rd| rd.next().is_some()); // nosemgrep
+    if !have_quizzes && workspace_quizzes.is_dir() {
+        copy_dir_recursive(workspace_quizzes, &quizzes_dir)?;
     }
 
     // Make sure progress.json has a Current entry; if not, set the first one.
@@ -775,11 +784,13 @@ fn lesson_title(markdown: &str, id: &str) -> String {
         .map_or_else(|| id.to_owned(), |h| h.trim().to_owned())
 }
 
-/// The ordered `.md` lesson files in the seeded `lessons/` dir (filename order =
-/// curriculum order).
-fn lesson_files(state_root: PathBuf) -> Vec<PathBuf> {
-    let dir = Store::at(state_root).root().join("lessons");
-    let mut files: Vec<PathBuf> = std::fs::read_dir(dir)
+/// The ordered `.md` files in a seeded content dir (`lessons` / `quizzes`);
+/// filename order = curriculum order.
+fn md_files(root: &Path, subdir: &str) -> Vec<PathBuf> {
+    // `root` is operator config and `subdir` is a server-side literal — no wire
+    // data — so this dir read is not a traversal sink.
+    let dir = Store::at(root.to_path_buf()).root().join(subdir);
+    let mut files: Vec<PathBuf> = std::fs::read_dir(dir) // nosemgrep
         .map(|rd| {
             rd.flatten()
                 .map(|e| e.path())
@@ -791,22 +802,24 @@ fn lesson_files(state_root: PathBuf) -> Vec<PathBuf> {
     files
 }
 
-/// `GET /api/lessons` — the embedded textbook lessons (the offline reading
-/// material). With no query, returns the ordered lesson list (`id` + `title`);
-/// with `?id=STEM`, returns that lesson's `markdown`, or `{ "lesson": null }` on
-/// a miss.
+/// Serve a directory of markdown content (`lessons` / `quizzes`) as JSON: with no
+/// `id`, the ordered list (`id` + `title`); with `?id=STEM`, that file's
+/// `markdown` (or null on a miss). `list_key`/`item_key` name the JSON fields.
 ///
-/// SECURITY: `id` is matched against the actual file stems in the seeded
-/// `lessons/` dir — never joined onto a filesystem path — so a traversal value
-/// simply finds no match. The lessons dir is server-seeded; no client input
-/// chooses a file.
-async fn lessons_handler(
-    State(state): State<AppState>,
-    Query(q): Query<LessonQuery>,
-) -> impl IntoResponse {
-    let files = lesson_files(state.store_root);
-    let Some(id) = q.id else {
-        let lessons: Vec<serde_json::Value> = files
+/// SECURITY: `id` is matched against the actual file stems in the seeded dir —
+/// never joined onto a filesystem path — so a traversal value finds no match.
+/// The content dir is server-seeded; no client input chooses a file.
+fn md_collection(
+    root: &Path,
+    subdir: &str,
+    id: Option<String>,
+    list_key: &str,
+    item_key: &str,
+) -> axum::response::Response {
+    let files = md_files(root, subdir);
+    let mut obj = serde_json::Map::new();
+    let Some(id) = id else {
+        let items: Vec<serde_json::Value> = files
             .iter()
             .filter_map(|p| {
                 let id = p.file_stem()?.to_str()?.to_owned();
@@ -814,21 +827,35 @@ async fn lessons_handler(
                 Some(serde_json::json!({ "id": id, "title": lesson_title(&md, &id) }))
             })
             .collect();
-        return Json(serde_json::json!({ "lessons": lessons })).into_response();
+        obj.insert(list_key.to_owned(), serde_json::Value::Array(items));
+        return Json(serde_json::Value::Object(obj)).into_response();
     };
-    let hit = files
+    let item = files
         .iter()
         .find(|p| p.file_stem().and_then(|s| s.to_str()) == Some(id.as_str()))
-        .and_then(|p| std::fs::read_to_string(p).ok());
-    hit.map_or_else(
-        || Json(serde_json::json!({ "lesson": null })).into_response(),
-        |md| {
-            Json(serde_json::json!({
-                "lesson": { "id": id, "title": lesson_title(&md, &id), "markdown": md }
-            }))
-            .into_response()
-        },
-    )
+        .and_then(|p| std::fs::read_to_string(p).ok())
+        .map_or(
+            serde_json::Value::Null,
+            |md| serde_json::json!({ "id": id, "title": lesson_title(&md, &id), "markdown": md }),
+        );
+    obj.insert(item_key.to_owned(), item);
+    Json(serde_json::Value::Object(obj)).into_response()
+}
+
+/// `GET /api/lessons` — the embedded Patina textbook lessons (offline reading).
+async fn lessons_handler(
+    State(state): State<AppState>,
+    Query(q): Query<LessonQuery>,
+) -> impl IntoResponse {
+    md_collection(&state.store_root, "lessons", q.id, "lessons", "lesson")
+}
+
+/// `GET /api/quizzes` — the per-phase self-check quizzes (predict-then-verify).
+async fn quizzes_handler(
+    State(state): State<AppState>,
+    Query(q): Query<LessonQuery>,
+) -> impl IntoResponse {
+    md_collection(&state.store_root, "quizzes", q.id, "quizzes", "quiz")
 }
 
 /// Build the application router. Extracted from [`main`] so the handler contract
@@ -846,6 +873,7 @@ fn build_router(state: AppState, gui_dir: &Path) -> Router {
         .route("/api/book", axum::routing::get(book_handler))
         .route("/api/glossary", axum::routing::get(glossary_handler))
         .route("/api/lessons", axum::routing::get(lessons_handler))
+        .route("/api/quizzes", axum::routing::get(quizzes_handler))
         // Everything else is the static gui/ shell (index.html + vendored xterm).
         .fallback_service(ServeDir::new(gui_dir))
         .layer(map_response(security_headers))
@@ -910,6 +938,7 @@ async fn main() {
     let workspace_book = asset_root.join("book");
     let workspace_glossary = asset_root.join("glossary");
     let workspace_lessons = asset_root.join("lessons");
+    let workspace_quizzes = asset_root.join("quizzes");
 
     // Writable state/run root: a fixed cache dir under $HOME (exec-ok, off the
     // git tree, never /tmp). Overridable via TS_SERVE_ROOT for the operator.
@@ -935,6 +964,7 @@ async fn main() {
         &workspace_book,
         &workspace_glossary,
         &workspace_lessons,
+        &workspace_quizzes,
     ) {
         eprintln!(
             "warning: could not seed exercises into {}: {e}",
@@ -1104,6 +1134,7 @@ mod tests {
             &manifest.join("../../book"),
             &manifest.join("../../glossary"),
             &manifest.join("../../lessons"),
+            &manifest.join("../../quizzes"),
         )
         .unwrap();
         let state = AppState {
@@ -1291,6 +1322,47 @@ mod tests {
         assert!(
             v["lesson"].is_null(),
             "a traversal-looking id resolves to no lesson"
+        );
+    }
+
+    #[tokio::test]
+    async fn quizzes_list_and_fetch_a_quiz() {
+        let (_d, app) = seeded_app();
+        let res = app.clone().oneshot(get("/api/quizzes")).await.unwrap();
+        assert_eq!(res.status(), StatusCode::OK);
+        let v: serde_json::Value = serde_json::from_str(&body_string(res).await).unwrap();
+        let quizzes = v["quizzes"].as_array().expect("quizzes array");
+        assert!(!quizzes.is_empty(), "the seeded quizzes are listed");
+        assert!(quizzes.iter().all(|q| {
+            q["id"].as_str().is_some_and(|s| !s.is_empty())
+                && q["title"].as_str().is_some_and(|s| !s.is_empty())
+        }));
+        assert!(
+            quizzes.iter().any(|q| q["id"] == "phase1"),
+            "the phase-1 quiz is in the list"
+        );
+        // Fetch one: its markdown (with the Questions section) comes back.
+        let res = app
+            .clone()
+            .oneshot(get("/api/quizzes?id=phase1"))
+            .await
+            .unwrap();
+        let v: serde_json::Value = serde_json::from_str(&body_string(res).await).unwrap();
+        assert!(
+            v["quiz"]["markdown"]
+                .as_str()
+                .is_some_and(|s| s.contains("Questions")),
+            "the fetched quiz carries its markdown"
+        );
+        // Traversal safety: a path-like id matches no real file stem → null.
+        let res = app
+            .oneshot(get("/api/quizzes?id=../../Cargo.toml"))
+            .await
+            .unwrap();
+        let v: serde_json::Value = serde_json::from_str(&body_string(res).await).unwrap();
+        assert!(
+            v["quiz"].is_null(),
+            "a traversal-looking id resolves to no quiz"
         );
     }
 
