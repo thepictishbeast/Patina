@@ -122,6 +122,22 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   attribute's UA `display:none`, so Book/Roadmap had been rendering UNDER the practice view rather than replacing
   it; added `main[hidden] { display:none }`. Verified LIVE: tab renders 58 terms, filter narrows 58→8 on "borrow",
   Book-jump opens the right chapter, view properly replaces practice; gui-transform + **all 16 e2e still green**.
+  **Step 4 done (this commit): the literal "menu bar" — a `⋯ More` menu.** Paul asked for "tabs **and a menu bar**
+  … things the user isn't working on shouldn't be on the main page … focus on teaching and practicing rust." The bar
+  had grown to **7 flat tabs** (Practice · Lessons · Quizzes · Cheatsheets · Book · Glossary · Roadmap) — dense, and
+  on a phone it horizontal-scrolled. Split by role: the **active-learning** surfaces stay as primary tabs (Practice ·
+  Lessons · Quizzes — where you *do* the work), and the **reference/lookup** surfaces (Book · Glossary · Cheatsheets ·
+  Roadmap) fold into a single **`⋯ More ▾` dropdown** — 7 tabs → 3 + a menu. Every capability is retained; the
+  direct `b`/`g`/`s`/`t` keyboard shortcuts still jump straight to each surface (and now light up the More trigger +
+  mark the active item). Accessible menu-button pattern (`aria-haspopup`/`aria-expanded`/`aria-controls`, `role=menu`
+  + `role=menuitem`, ArrowUp/Down nav, Esc + outside-click close, focus returns to the trigger); the tablist stays a
+  pure 3-tab tablist (the menu lives outside it). Re-applied last tick's `[hidden]` lesson: `.menu-list:not([hidden])`
+  so the dropdown's `display:flex` doesn't override the `hidden` attribute. **Bonus:** with only 3 tabs + a menu, the
+  mobile bar now wraps cleanly instead of horizontal-scrolling (dropped `overflow-x:auto`, which also used to clip the
+  dropdown). Verified LIVE (Playwright, desktop + 390×844): trigger renders one line; clicking a menu item navigates +
+  closes the menu + activates More + marks the item `aria-current`; `g`/`b` keys do the same; back to Practice
+  de-activates More; no horizontal overflow at 390 (`scrollWidth==innerWidth==390`); Esc + outside-click close;
+  screenshots read. gui-transform green; **full e2e green (15 passed, 1 known dev-diag-jump flake heals on retry)**.
   NEXT steps: fold RECALL + a Settings/detect menu into the bar; tighter spacing pass; (awaiting Paul on whether
   Book-refs should stay visible while solving vs. living in the Insights drawer).
 - ◐ **3 modes (Learn/Assist/Dev)** — switcher + persistence + Learn predict-gate DONE
