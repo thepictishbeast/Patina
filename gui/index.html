@@ -123,6 +123,13 @@
   .docview .lessonnav { display:flex; flex-wrap:wrap; gap:10px 18px; margin:18px 0 8px; padding-top:14px; border-top:1px solid var(--line); }
   .docview .lessonnav a { color:var(--note); font-weight:600; text-decoration:none; }
   .docview .lessonnav a:hover { text-decoration:underline; }
+  /* Lessons tab: the "Practice this lesson" launcher card */
+  .docview .lessonpractice { margin:20px 0 6px; padding:12px 16px; border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:8px; }
+  .docview .lessonpractice h3 { font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--fg-dim); margin:0 0 8px; }
+  .docview .lessonpractice ul { margin:0; padding:0; list-style:none; }
+  .docview .lessonpractice li { padding:3px 0; font:13px var(--mono); }
+  .docview .practicelink { color:var(--accent); font-weight:600; text-decoration:none; }
+  .docview .practicelink:hover { text-decoration:underline; }
   .docview .booksearch input { width:100%; box-sizing:border-box; padding:9px 12px; font-size:14px; font-family:var(--ui);
     color:var(--fg); background:var(--bg-2); border:1px solid var(--line); border-radius:8px; margin:6px 0 4px; }
   .docview .booksearch input:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 2px rgba(247,76,0,.18); }
@@ -1101,7 +1108,22 @@
           ? '<div class="lessonnav">' + nav.map(n =>
               `<a href="#" class="lessonnavlink" data-href="${esc(n.href)}">${esc(n.label)}</a>`).join('') + '</div>'
           : '';
-        d.innerHTML = back + '<div class="bookbody lessonbody">' + mdToHtml(md) + '</div>' + navHtml;
+        // "Practice this lesson" — the reciprocal of the exercise's "read the
+        // lesson" link: list the exercises whose concept maps to THIS lesson
+        // (via CONCEPT_LESSON), so a learner can read then immediately practice.
+        let practiceHtml = '';
+        try {
+          const exs = await fetch('api/exercises').then(r => r.json());
+          const matches = (exs.exercises || []).filter(e => CONCEPT_LESSON[e.concept] === id);
+          if (matches.length) {
+            practiceHtml = '<div class="lessonpractice"><h3>Practice this lesson</h3><ul>'
+              + matches.map(e =>
+                  `<li><a href="#" class="practicelink" data-id="${esc(e.id)}">${esc(e.id)}</a>`
+                  + `<small> · ${esc(e.status || 'locked')}</small></li>`).join('')
+              + '</ul></div>';
+          }
+        } catch (_) {}
+        d.innerHTML = back + '<div class="bookbody lessonbody">' + mdToHtml(md) + '</div>' + practiceHtml + navHtml;
       }
       d.querySelectorAll('.lessonback').forEach(a => a.onclick = e => { e.preventDefault(); renderLessons(null); });
       // Wire the nav bar: a `.md` href routes to that lesson; the Study Guide link
@@ -1114,7 +1136,24 @@
           renderLessons(href.split('#')[0].split('/').pop().replace(/\.md$/i, ''));
         };
       });
+      d.querySelectorAll('.practicelink').forEach(a =>
+        a.onclick = e => { e.preventDefault(); openExercise(a.dataset.id); });
       d.scrollTop = 0;
+    }
+
+    // Select an exercise (mirroring the list's soft-gate) and jump to Practice —
+    // used by the "Practice this lesson" links so a lesson launches into its katas.
+    async function openExercise(id) {
+      try {
+        let res = await fetch('api/select', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
+        if (res.status === 423) {
+          if (!confirm('“' + id + '” is locked — the earlier exercises build up to it.\nJump ahead anyway?')) return;
+          res = await fetch('api/select', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, force: true }) });
+        }
+        if (res.ok) { await loadState(false); showView('practice'); }
+        else if (res.status === 409) { alert('“' + id + '” is already done — open it from the list and press ↺ Reset to redo it.'); }
+        else { alert('Could not open that exercise.'); }
+      } catch (_) { alert('Offline — could not open that exercise.'); }
     }
 
     // The Glossary tab: a browsable, filterable list of every built-in term

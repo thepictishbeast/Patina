@@ -264,8 +264,16 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   covering all 63 exercise concepts) — no per-toml edits, no Rust, no new endpoint; `showView('lessons', id)` opens
   a specific lesson. Verified LIVE (Playwright): `struct-lifetime` exercise → "📖 read the lesson" → opens "Lesson 26
   — Lifetimes"; gui-transform tests pass; all 16 e2e pass (2 run-based specs flaked on a cold compile, green on warm
-  retry). NEXT (optional): a reciprocal "practice this" link from a lesson to its exercises; move the map to a data
-  file if it grows.
+  retry).
+  **Reciprocal lesson→exercise link DONE (this commit): the read↔practice loop is now fully bidirectional.** Each
+  lesson view ends with a **"Practice this lesson"** card listing the exercises whose concept maps to it (inverse of
+  `CONCEPT_LESSON`, built live from `/api/exercises` which carries `concept` + `status`); clicking one selects that
+  exercise (mirroring the list's soft-gate via the new `openExercise`) and jumps to the Practice tab. Verified LIVE
+  (Playwright): lesson 16 lists its 9 borrow/lifetime exercises; clicking `lifetimes/03_borrow_outlives_value`
+  switched to Practice with that exercise loaded; gui-transform tests pass; all 16 e2e pass (the recurring
+  `dev-diag-jump` cold-compile flake passed on warm retry). **The lessons integration is now complete end-to-end.**
+  NEXT (optional): move `CONCEPT_LESSON` to a data file if it grows; warm the run cache before the e2e suite to kill
+  the recurring cold-compile flake (robustness).
 - ✅ **#22 — E0432 corpus gap filled** (`a0e8f38`): added `exercises/06-modules/05_unresolved_import.{rs,toml}`
   — a `use crate::shape::Circle;` whose module is really spelled `shapes` (an *unresolved import*). E0432 was not
   in the corpus, and `06-modules` was a thin phase (4 → 5). Teaches that a `use` is only a shortcut — the path it
