@@ -327,6 +327,18 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   (`lessonToQuiz(n+1) !== lessonToQuiz(n)`, or n≥37). Verified LIVE (Playwright): lesson 8 → `phase1`, lesson 37 →
   `tooling`, non-last lesson 2 shows no link, clicking opens the right quiz; gui-transform + **e2e green**
   (`1 flaky, 15 passed`). All five surfaces are now mutually cross-linked.
+- ✅ **Lesson → cheatsheet cross-link DONE (`<pending>`) — the 6th surface joins the web.** Cheatsheets were the one
+  study surface reachable ONLY via their tab (the doc above said "five surfaces … cross-linked" — cheatsheets, the
+  6th, were orphaned from the flow). Now every lesson carries a quiet **"📋 Quick reference: this phase's cheat
+  sheet →"** companion link. Key pedagogy distinction from the quiz link: a quiz is an end-of-phase *checkpoint*
+  (last lesson only), but a cheatsheet is a reference you reach for *while* learning — so it shows on **every** lesson
+  of the phase. Zero new mapping: the per-phase cheatsheet ids are **identical** to the quiz ids (`phase1`…/`tooling`),
+  so `lessonToQuiz(n)` already names the cheatsheet (verified: `ls cheatsheets/` == `ls quizzes/`); the link routes
+  via `showView('cheatsheets', id)` (deep-links the single sheet) and lights up the `⋯ More` trigger + marks the item
+  `aria-current`. gui-only (no review-pile growth). Verified LIVE (Playwright): lesson 05 (mid-phase) shows the cheat
+  link → `phase1` but **no** quiz link; lesson 08 (phase-1 end) shows BOTH; clicking opens "Phase 1 Cheatsheet —
+  Foundations" + activates More; screenshot read. gui-transform green; **full e2e 16/16 (2.3s, no flake)**.
+  **All SIX study surfaces are now mutually cross-linked.**
 - ✅ **#22 — E0381 corpus gap filled** (`af455e8`): added `exercises/01-basics/08_use_before_init.{rs,toml}`
   — `let count: i32;` then reading `count` before assigning it (use of a possibly-uninitialized binding). E0381 was
   absent from the corpus; teaches Rust's *definite initialization* (every read proven to follow a write). Predict-

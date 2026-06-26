@@ -157,6 +157,9 @@
   .docview .lessonquiz { margin:14px 0 4px; color:var(--fg-dim); }
   .docview .quizlink { color:var(--accent); font-weight:600; text-decoration:none; }
   .docview .quizlink:hover { text-decoration:underline; }
+  .docview .lessoncheat { margin:6px 0; color:var(--fg-dim); font-size:13.5px; }
+  .docview .cheatlink { color:var(--accent); font-weight:600; text-decoration:none; }
+  .docview .cheatlink:hover { text-decoration:underline; }
   .docview .booksearch input { width:100%; box-sizing:border-box; padding:9px 12px; font-size:14px; font-family:var(--ui);
     color:var(--fg); background:var(--bg-2); border:1px solid var(--line); border-radius:8px; margin:6px 0 4px; }
   .docview .booksearch input:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 2px rgba(247,76,0,.18); }
@@ -1315,11 +1318,22 @@
         const quizHtml = lastOfPhase
           ? `<p class="lessonquiz">🧠 Finished this phase? <a href="#" class="quizlink" data-quiz="${esc(quizId)}">Take the self-check quiz →</a></p>`
           : '';
-        d.innerHTML = back + '<div class="bookbody lessonbody">' + mdToHtml(md) + '</div>' + practiceHtml + quizHtml + navHtml;
+        // Companion quick-reference: the per-phase cheatsheet shares the SAME id
+        // scheme as the quiz (phase1…/tooling), so lessonToQuiz(n) also names this
+        // lesson's cheatsheet. Unlike the quiz (an end-of-phase checkpoint), the
+        // cheatsheet is a reference you reach for WHILE learning — so show it on
+        // every lesson of the phase. (Closes the last cross-link gap: cheatsheets
+        // were reachable only via their tab; now woven into the lesson flow.)
+        const cheatHtml = quizId
+          ? `<p class="lessoncheat">📋 Quick reference: <a href="#" class="cheatlink" data-cheat="${esc(quizId)}">this phase's cheat sheet →</a></p>`
+          : '';
+        d.innerHTML = back + '<div class="bookbody lessonbody">' + mdToHtml(md) + '</div>' + cheatHtml + practiceHtml + quizHtml + navHtml;
       }
       d.querySelectorAll('.lessonback').forEach(a => a.onclick = e => { e.preventDefault(); renderLessons(null); });
       d.querySelectorAll('.quizlink').forEach(a =>
         a.onclick = e => { e.preventDefault(); showView('quizzes', a.dataset.quiz); });
+      d.querySelectorAll('.cheatlink').forEach(a =>
+        a.onclick = e => { e.preventDefault(); showView('cheatsheets', a.dataset.cheat); });
       // Wire the nav bar: a `.md` href routes to that lesson; the Study Guide link
       // returns to the lesson list — all in-app, no page navigation.
       d.querySelectorAll('.lessonnavlink').forEach(a => {
