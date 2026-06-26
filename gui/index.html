@@ -280,6 +280,16 @@
   .footer{position:fixed;bottom:0;left:0;right:0;display:flex;gap:18px;justify-content:center;
     padding:6px;background:var(--bg-2);border-top:1px solid var(--line);font-family:var(--mono);font-size:11px;color:var(--fg-dim)}
   .footer b{color:var(--fg)}
+  .keyshelp { position:fixed; inset:0; background:rgba(0,0,0,.55); align-items:center; justify-content:center; z-index:60; }
+  /* Show ONLY when not [hidden]. An author `display:flex` overrides the UA `[hidden]{display:none}` regardless of specificity, which would leave this full-viewport overlay always painted and swallowing every click. */
+  .keyshelp:not([hidden]) { display:flex; }
+  .keyshelp-card { background:var(--bg-2); border:1px solid var(--line); border-radius:12px; padding:20px 24px; max-width:600px; width:90%; box-shadow:0 12px 44px rgba(0,0,0,.55); }
+  .keyshelp-card h2 { margin:0 0 14px; font-size:16px; }
+  .keyshelp-grid { display:flex; gap:28px; flex-wrap:wrap; }
+  .keyshelp-grid h3 { font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--fg-dim); margin:0 0 8px; }
+  .keyshelp-grid p { margin:5px 0; font-size:13px; }
+  .keyshelp kbd { display:inline-block; min-width:16px; text-align:center; background:var(--bg-3); border:1px solid var(--line); border-radius:5px; padding:1px 6px; font:600 12px var(--mono); margin-right:8px; color:var(--fg); }
+  .keyshelp-foot { margin:16px 0 0; color:var(--fg-dim); font-size:12px; }
   .scroll::-webkit-scrollbar{width:9px}.scroll::-webkit-scrollbar-thumb{background:var(--line);border-radius:9px}
 
   /* Phone-first reflow: the locked learner profile is mobile-first. Below ~760px
@@ -410,7 +420,23 @@
 
   <section class="docview scroll" id="docview" hidden></section>
 
-  <div class="footer"><span><b>r</b> run</span><span><b>c</b> check</span><span><b>h</b> hint</span><span><b>b</b> book</span><span><b>t</b> tasks</span><span><b>?</b> keys</span><span><b>q</b> quit</span></div>
+  <div class="footer"><span><b>r</b> run</span><span><b>c</b> check</span><span><b>h</b> hint</span><span><b>l</b> lessons</span><span><b>b</b> book</span><span><b>?</b> keys</span></div>
+
+  <!-- Keyboard shortcuts overlay, toggled with `?` (Esc / backdrop to close). -->
+  <div class="keyshelp" id="keyshelp" hidden role="dialog" aria-modal="true" aria-label="Keyboard shortcuts">
+    <div class="keyshelp-card">
+      <h2>Keyboard shortcuts</h2>
+      <div class="keyshelp-grid">
+        <div><h3>Do</h3>
+          <p><kbd>r</kbd> Run</p><p><kbd>c</kbd> Check</p><p><kbd>h</kbd> Hint</p></div>
+        <div><h3>Go to</h3>
+          <p><kbd>p</kbd> Practice</p><p><kbd>l</kbd> Lessons</p><p><kbd>z</kbd> Quizzes</p><p><kbd>s</kbd> Cheatsheets</p><p><kbd>b</kbd> Book</p><p><kbd>g</kbd> Glossary</p><p><kbd>t</kbd> Roadmap</p></div>
+        <div><h3>Layout</h3>
+          <p><kbd>f</kbd> Focus (hide list)</p><p><kbd>i</kbd> Insights drawer</p><p><kbd>?</kbd> This help</p></div>
+      </div>
+      <p class="keyshelp-foot">Press <kbd>?</kbd> or <kbd>Esc</kbd> to close. (Shortcuts pause while you're typing in the editor.)</p>
+    </div>
+  </div>
 
   <script src="vendor/xterm/xterm.js"></script>
   <script src="vendor/xterm/addon-fit.js"></script>
@@ -1427,12 +1453,25 @@
       s: () => showView('cheatsheets'),
       i: () => setInsights(!document.querySelector('main').classList.contains('show-insights')),
       f: () => setFocusMode(!document.querySelector('main').classList.contains('no-list')),
+      '?': () => toggleKeysHelp(),
     };
+    function toggleKeysHelp(force) {
+      const el = document.getElementById('keyshelp');
+      if (el) el.hidden = force === undefined ? !el.hidden : !force;
+    }
     document.addEventListener('keydown', e => {
+      // Esc closes the keys-help — only consume it when the help is actually open.
+      if (e.key === 'Escape') {
+        const kh = document.getElementById('keyshelp');
+        if (kh && !kh.hidden) { toggleKeysHelp(false); return; }
+      }
       const tag = (e.target.tagName || '').toLowerCase();
       if (tag === 'textarea' || tag === 'input' || e.metaKey || e.ctrlKey || e.altKey) return;
       const fn = KEYMAP[e.key.toLowerCase()];
       if (fn) { e.preventDefault(); fn(); }
+    });
+    document.getElementById('keyshelp').addEventListener('click', e => {
+      if (e.target.id === 'keyshelp') toggleKeysHelp(false); // backdrop click
     });
 
     // ── a11y: roles + live regions so screen readers track state ──

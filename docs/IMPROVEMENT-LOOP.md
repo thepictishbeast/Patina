@@ -62,6 +62,24 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   per-surface color flag plumbed through Core/command_plan (web on, TUI off).
 
 ### Editor / IDE
+- ✅ **Footer keybar fixed + `?` keyboard-shortcuts overlay** (this commit): the bottom keybar was a stale TUI
+  copy — it advertised `t tasks` / `q quit` (neither exists in the web app: `t`→Roadmap, no `q` handler) and
+  omitted the keys that DO work (`l`/`g`/`z`/`s`/`f`/`i`/`?`). Rewrote it to the truth (`r run · c check · h hint ·
+  l lessons · b book · ? keys`) and added a `?`-triggered modal listing every shortcut, grouped **Do** (run/check/
+  hint) · **Go to** (the 7 tab keys) · **Layout** (Focus/Insights/this-help). Esc or backdrop-click closes; the help
+  toggle and Esc are gated so they never fire while typing in the editor (the existing `isTyping` guard). gui-only.
+  **The e2e suite caught a real bug:** the overlay carried `.keyshelp{display:flex}` with no `[hidden]` guard, and
+  an author `display:` overrides the UA `[hidden]{display:none}` regardless of specificity — so the full-viewport
+  overlay stayed painted on load and **swallowed every click** (13 click-based specs timed out). Fixed by scoping
+  the show rule to `.keyshelp:not([hidden])`. (A `hidden`-property check alone missed it — the attribute WAS set;
+  only computed `display` exposed it.) Verified LIVE (Playwright): computed display is `none` on load,
+  `elementFromPoint` at viewport-center is NOT the overlay (clicks pass through), `?` opens it (`flex`), Esc closes
+  it (`none`); full e2e green (15 passed, 1 known recall-chip flake heals on retry). Discoverability: a learner can
+  now find every shortcut without reading source.
+  - 🧹 **Robustness note (ops, not code):** the long-blamed "browser-launch-under-load" e2e flake was aggravated by
+    **449 orphaned `chromium-shell` processes** (~12.8GB RSS) leaked from weeks of Playwright runs that never reaped
+    their browsers. Reaping them dropped a full e2e run from **5.1m → 31.9s**. Future ticks: if e2e crawls, check
+    `pgrep -c chromium-shell` and reap stale ones (`ps -eo pid=,etimes=,comm= | awk '$3=="chromium-shell" && $2>3600'`).
 - ✅ **Mobile layout fix (Android-first)** (this commit): the recent desktop toggle rules
   (`main.show-insights {…248px 1fr 340px}` / `main.no-list {…}`) have higher CSS specificity than the mobile
   `@media (max-width:760px) main { grid-template-columns:1fr }`, so on a PHONE with the Insights drawer or Focus
