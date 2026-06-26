@@ -130,6 +130,11 @@
   .docview .lessonpractice li { padding:3px 0; font:13px var(--mono); }
   .docview .practicelink { color:var(--accent); font-weight:600; text-decoration:none; }
   .docview .practicelink:hover { text-decoration:underline; }
+  /* Quizzes tab: the collapsible Answers section (predict before you reveal) */
+  .docview .quizanswers { margin:20px 0; border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:8px; }
+  .docview .quizanswers > summary { cursor:pointer; padding:11px 15px; font-weight:600; color:var(--accent); user-select:none; }
+  .docview .quizanswers[open] > summary { border-bottom:1px solid var(--line); }
+  .docview .quizanswers > .bookbody { padding:4px 16px 14px; }
   .docview .booksearch input { width:100%; box-sizing:border-box; padding:9px 12px; font-size:14px; font-family:var(--ui);
     color:var(--fg); background:var(--bg-2); border:1px solid var(--line); border-radius:8px; margin:6px 0 4px; }
   .docview .booksearch input:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 2px rgba(247,76,0,.18); }
@@ -306,6 +311,7 @@
     <nav class="tabs">
       <div class="tab active" data-view="practice">📝 Practice</div>
       <div class="tab" data-view="lessons">🎓 Lessons</div>
+      <div class="tab" data-view="quizzes">❓ Quizzes</div>
       <div class="tab" data-view="book">📖 Book</div>
       <div class="tab" data-view="glossary">📚 Glossary</div>
       <div class="tab" data-view="roadmap">🗒️ Roadmap</div>
@@ -1061,7 +1067,55 @@
         await renderGlossary();
       } else if (view === 'lessons') {
         await renderLessons(chapter || null); // `chapter` doubles as an optional lesson id
+      } else if (view === 'quizzes') {
+        await renderQuizzes(chapter || null);
       }
+    }
+
+    // The Quizzes tab: the per-phase self-check quizzes (served by /api/quizzes).
+    // Each quiz is `## Questions` then `## Answers`; we render the questions and
+    // tuck the answers behind a "Reveal" toggle, so the predict-then-verify rule
+    // (predict every answer before you look) is preserved in the UI.
+    async function renderQuizzes(id) {
+      const d = document.getElementById('docview');
+      if (!id) {
+        d.innerHTML = '<h1>❓ Quizzes</h1><p style="color:var(--fg-dim)">loading…</p>';
+        let data;
+        try { data = await fetch('api/quizzes').then(r => r.json()); }
+        catch (_) { d.innerHTML = '<h1>❓ Quizzes</h1><p>Quizzes unavailable (open via the local server).</p>'; return; }
+        const items = data.quizzes || [];
+        d.innerHTML = '<h1>❓ Quizzes</h1>'
+          + `<p style="color:var(--fg-dim)">Per-phase self-checks — ${items.length} quizzes. PREDICT each answer before you reveal it; then verify. Fully offline.</p>`
+          + (items.length
+            ? '<ul class="booktoc">' + items.map(q =>
+                `<li><a href="#" class="quizjump" data-id="${esc(q.id)}">${esc(q.title)}</a></li>`).join('') + '</ul>'
+            : '<p>no quizzes seeded — run the server with the bundled quizzes/.</p>');
+        d.querySelectorAll('.quizjump').forEach(a =>
+          a.onclick = e => { e.preventDefault(); renderQuizzes(a.dataset.id); });
+        d.scrollTop = 0;
+        return;
+      }
+      d.innerHTML = '<p style="color:var(--fg-dim)">loading quiz…</p>';
+      let q = null;
+      try { q = await fetch('api/quizzes?id=' + encodeURIComponent(id)).then(r => r.json()).then(j => j.quiz); }
+      catch (_) { q = null; }
+      const back = '<p><a href="#" class="quizback">← all quizzes</a></p>';
+      if (!q || !q.markdown) {
+        d.innerHTML = back + '<p>Quiz not found.</p>';
+      } else {
+        const md = q.markdown.replace(/<!--[\s\S]*?-->/g, '');
+        // Split off the Answers section (a `## Answers` heading) so it can be
+        // revealed on demand rather than spoiling the predictions.
+        const m = md.match(/^([\s\S]*?)(\n#{1,3}\s*Answers?\b[\s\S]*)$/i);
+        const questions = m ? mdToHtml(m[1]) : mdToHtml(md);
+        const answers = m
+          ? '<details class="quizanswers"><summary>Reveal answers — predict every question first</summary>'
+            + '<div class="bookbody">' + mdToHtml(m[2]) + '</div></details>'
+          : '';
+        d.innerHTML = back + '<div class="bookbody quizbody">' + questions + '</div>' + answers;
+      }
+      d.querySelectorAll('.quizback').forEach(a => a.onclick = e => { e.preventDefault(); renderQuizzes(null); });
+      d.scrollTop = 0;
     }
 
     // The Lessons tab: the embedded Patina curriculum (the 37 authored,
@@ -1303,7 +1357,7 @@
     const KEYMAP = {
       r: () => runOp('run'), c: () => runOp('check'), h: runHint,
       b: () => showView('book'), t: () => showView('roadmap'), p: () => showView('practice'),
-      g: () => showView('glossary'), l: () => showView('lessons'),
+      g: () => showView('glossary'), l: () => showView('lessons'), z: () => showView('quizzes'),
       i: () => setInsights(!document.querySelector('main').classList.contains('show-insights')),
       f: () => setFocusMode(!document.querySelector('main').classList.contains('no-list')),
     };

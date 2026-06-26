@@ -260,8 +260,15 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   traversal-safe code path (DRY). Android: `build-apk.sh` (+ apk.yml comment) now syncs `quizzes/` too. Verified:
   `cargo test -p rpro-serve` 20 pass (incl. a new quizzes list/fetch/traversal test, lessons test still green);
   clippy `-D warnings` + fmt + seam clean; LIVE curl → 11 quizzes listed, fetch returns markdown, traversal → null,
-  `/api/lessons` regression-free. **NEXT: a GUI surface for quizzes** (a tab or per-phase link), rendering the quiz
-  with the **Answers section collapsed** until the learner has predicted (preserve the self-check pedagogy).
+  `/api/lessons` regression-free.
+  **GUI surface DONE (this commit): a `Quizzes` tab.** Tab bar is now Practice · Lessons · **Quizzes** · Book ·
+  Glossary · Roadmap (`z` key). Lists the 11 quizzes → opens one rendered via `mdToHtml`, splitting on the
+  `## Answers` heading so the **answers sit behind a collapsed `<details>` "Reveal answers — predict every question
+  first"** — the quiz's own predict-then-verify rule, enforced in the UI. Verified LIVE (Playwright): 11 quizzes
+  listed; opening phase1 renders the Questions (Q1… with highlighted code) while the answers stay collapsed by
+  default (`<details>` not open) yet present; gui-transform tests pass; e2e green (`1 flaky, 15 passed` — the
+  `retries:1` fix healed the environmental flake). **The learning materials are now complete: lessons → exercises
+  → glossary → Book → quizzes, all offline + on Android.**
 - ✅ **#22 — E0381 corpus gap filled** (`af455e8`): added `exercises/01-basics/08_use_before_init.{rs,toml}`
   — `let count: i32;` then reading `count` before assigning it (use of a possibly-uninitialized binding). E0381 was
   absent from the corpus; teaches Rust's *definite initialization* (every read proven to follow a write). Predict-
