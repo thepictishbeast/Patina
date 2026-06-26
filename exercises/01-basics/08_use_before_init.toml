@@ -1,0 +1,21 @@
+id = "basics/08_use_before_init"
+title = "Use a binding only after it has a value"
+difficulty = "beginner"
+estimated_minutes = 5
+concept = "binding"
+expected_error_code = "E0381"
+solution_outline = """
+`let count: i32;` declares the binding but never gives it a value, and the very
+next line tries to READ it. Rust requires *definite initialization*: it proves
+every read of a binding happens after the binding was written, which rules out a
+whole class of "uninitialized variable" bugs.
+
+Give `count` a value before the `println!` reads it — either initialize it on the
+spot (`let count: i32 = 0;`, dropping the bare declaration) or assign it on a line
+before the print (`count = 0;`). Either way the read now happens after a write.
+"""
+
+[[book_refs]]
+chapter = "ch03-01-variables-and-mutability"
+anchor = "variables-and-mutability"
+why = "A `let` binding attaches a name to a value — this is where binding a value to a name is introduced, the step skipped here."

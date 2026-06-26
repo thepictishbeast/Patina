@@ -234,6 +234,13 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
     Dev-tier editor. Multi-session; build incrementally.
 
 ### Content / corpus
+- ✅ **#22 — E0381 corpus gap filled** (this commit): added `exercises/01-basics/08_use_before_init.{rs,toml}`
+  — `let count: i32;` then reading `count` before assigning it (use of a possibly-uninitialized binding). E0381 was
+  absent from the corpus; teaches Rust's *definite initialization* (every read proven to follow a write). Predict-
+  then-run, no answer-leak; `concept = "binding"` resolves to the glossary "binding" term, and was added to the GUI
+  `CONCEPT_LESSON` map (→ `01-bindings-and-immutability`) so the exercise's "read the lesson" link works. Verified:
+  `rustc` emits exactly one `error[E0381]`, golden_corpus green, anchors 113/113, and LIVE the exercise loads with
+  its lesson link targeting lesson 01.
 - ◐ **Surface the 37 textbook lessons in the app** (the namesake "rust-textbook → Tempered Studio" integration —
   the authored Patina curriculum was invisible in the GUI; only the Rust Book + per-exercise text were readable).
   **Backend slice DONE (this commit):** the 37 lessons are now **embedded** in `lessons/` (synced from the upstream
