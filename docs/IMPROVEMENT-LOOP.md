@@ -71,8 +71,14 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   untouched (the fix lives inside the phone media query). Verified LIVE at 390×844 (Playwright): the practice view
   and a lesson (with its Practice card + nav) render single-column with **no horizontal overflow**
   (`scrollWidth == viewportWidth == 390`); gui-transform tests pass; all 16 e2e pass (the recurring run-based
-  cold-compile flake — this time `recall-chip` — green on warm retry; **a `globalSetup` that warms the run cache
-  would end this**).
+  flake — this time `recall-chip` — green on warm retry).
+- ✅ **e2e flake fixed: `retries: 1`** (this commit). The recurring first-run-based-spec timeout was NOT a cold
+  compile (a cold `/api/run` is ~0.1s — the run-scratch shares the warm workspace target). It's **environmental**:
+  the first Chromium launch + page load under machine load occasionally exceeds the 30s test timeout. Set
+  `retries: 1` in `tests/e2e/playwright.config.js` — the retry runs with a warm browser and passes, while a genuine
+  regression still fails both attempts (so this heals flakes, not real breaks). Verified: the suite now reports
+  `1 flaky, 15 passed` (green) where it used to report a hard failure. e2e is not a CI gate; this just makes local
+  verification reliable without a manual warm re-run every UI tick.
 - ◐ **UX density redesign (Paul, 2026-06-25: "UI is extremely dense … tabs + a menu bar … things the user isn't
   working on shouldn't be on the main page … focus on teaching and practicing rust").** Multi-tick. **Step 1 done
   (this commit):** the right pane (Diagnostics / Book refs / Tutor) is now a collapsible **Insights drawer** — the
