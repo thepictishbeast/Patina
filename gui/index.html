@@ -169,6 +169,10 @@
   .docview .roadlessons a { color:var(--fg); text-decoration:none; }
   .docview .roadlessons a:hover { color:var(--accent); text-decoration:underline; }
   .docview .roadlinks { margin:10px 0 0; font-size:13px; color:var(--fg-dim); }
+  /* Reverse cross-link: from a reference surface (cheatsheet/quiz) back into the learning flow for that phase */
+  .docview .phaseback { margin:20px 0 4px; padding-top:12px; border-top:1px solid var(--line); color:var(--fg-dim); font-size:13.5px; }
+  .docview .phaseback a { color:var(--accent); font-weight:600; text-decoration:none; }
+  .docview .phaseback a:hover { text-decoration:underline; }
   .docview .booksearch input { width:100%; box-sizing:border-box; padding:9px 12px; font-size:14px; font-family:var(--ui);
     color:var(--fg); background:var(--bg-2); border:1px solid var(--line); border-radius:8px; margin:6px 0 4px; }
   .docview .booksearch input:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 2px rgba(247,76,0,.18); }
@@ -1196,9 +1200,11 @@
           ? '<details class="quizanswers"><summary>Reveal answers — predict every question first</summary>'
             + '<div class="bookbody">' + mdToHtml(m[2]) + '</div></details>'
           : '';
-        d.innerHTML = back + '<div class="bookbody quizbody">' + questions + '</div>' + answers;
+        const backlinks = await phaseBackLinks(id);
+        d.innerHTML = back + '<div class="bookbody quizbody">' + questions + '</div>' + answers + backlinks;
       }
       d.querySelectorAll('.quizback').forEach(a => a.onclick = e => { e.preventDefault(); renderQuizzes(null); });
+      wirePhaseBackLinks(d);
       d.scrollTop = 0;
     }
 
@@ -1228,10 +1234,14 @@
       try { c = await fetch('api/cheatsheets?id=' + encodeURIComponent(id)).then(r => r.json()).then(j => j.cheatsheet); }
       catch (_) { c = null; }
       const back = '<p><a href="#" class="cheatback">← all cheatsheets</a></p>';
-      d.innerHTML = (!c || !c.markdown)
-        ? back + '<p>Cheatsheet not found.</p>'
-        : back + '<div class="bookbody">' + mdToHtml(c.markdown.replace(/<!--[\s\S]*?-->/g, '')) + '</div>';
+      if (!c || !c.markdown) {
+        d.innerHTML = back + '<p>Cheatsheet not found.</p>';
+      } else {
+        const backlinks = await phaseBackLinks(id);
+        d.innerHTML = back + '<div class="bookbody">' + mdToHtml(c.markdown.replace(/<!--[\s\S]*?-->/g, '')) + '</div>' + backlinks;
+      }
       d.querySelectorAll('.cheatback').forEach(a => a.onclick = e => { e.preventDefault(); renderCheatsheets(null); });
+      wirePhaseBackLinks(d);
       d.scrollTop = 0;
     }
 
@@ -1292,6 +1302,40 @@
       d.querySelectorAll('.quizlink').forEach(a =>
         a.onclick = e => { e.preventDefault(); showView('quizzes', a.dataset.quiz); });
       d.scrollTop = 0;
+    }
+
+    // phaseId → that phase's FIRST lesson id (cached). Inverse of the lessonTo
+    // Quiz grouping: the first lesson whose phase matches. Lets a reference
+    // surface point back at where the phase's teaching begins.
+    let _phaseFirstLesson = null;
+    async function firstLessonIdOfPhase(phaseId) {
+      if (!_phaseFirstLesson) {
+        _phaseFirstLesson = {};
+        try {
+          const ls = (await fetch('api/lessons').then(r => r.json())).lessons || [];
+          ls.forEach(l => { const ph = lessonToQuiz(parseInt(l.id, 10)); if (ph && !_phaseFirstLesson[ph]) _phaseFirstLesson[ph] = l.id; });
+        } catch (_) {}
+      }
+      return _phaseFirstLesson[phaseId] || null;
+    }
+
+    // Reverse cross-link footer: from a reference surface (cheatsheet / quiz),
+    // back INTO the learning flow for that phase — so navigation is bidirectional
+    // (lesson↔cheatsheet/quiz, not just one way). `phaseId` is the sheet/quiz id.
+    async function phaseBackLinks(phaseId) {
+      const name = PHASE_NAMES[phaseId];
+      const first = await firstLessonIdOfPhase(phaseId);
+      const study = first
+        ? `<a href="#" class="studyphase" data-lesson="${esc(first)}">📚 Study ${esc(name || 'this phase')}</a>` : '';
+      const practice = `<a href="#" class="practicephase">📝 Practice</a>`;
+      return `<p class="phaseback">Back into learning: ${[study, practice].filter(Boolean).join(' · ')}</p>`;
+    }
+    // Wire the reverse-cross-link footer's links (idempotent; call after render).
+    function wirePhaseBackLinks(d) {
+      d.querySelectorAll('.studyphase').forEach(a =>
+        a.onclick = e => { e.preventDefault(); showView('lessons', a.dataset.lesson); });
+      d.querySelectorAll('.practicephase').forEach(a =>
+        a.onclick = e => { e.preventDefault(); showView('practice'); });
     }
 
     // Lesson number → the per-phase self-check quiz that covers it (each quiz

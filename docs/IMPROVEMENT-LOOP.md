@@ -354,6 +354,18 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   link → `phase1` but **no** quiz link; lesson 08 (phase-1 end) shows BOTH; clicking opens "Phase 1 Cheatsheet —
   Foundations" + activates More; screenshot read. gui-transform green; **full e2e 16/16 (2.3s, no flake)**.
   **All SIX study surfaces are now mutually cross-linked.**
+- ✅ **Reverse cross-link: cheatsheet / quiz → back INTO the phase's learning (`<pending>`).** The web was
+  one-directional out of the reference surfaces: a lesson/roadmap links *to* a phase's cheatsheet & quiz, but a
+  learner viewing a cheatsheet or quiz had only "← all cheatsheets/quizzes" — no path back to *studying or practicing*
+  that phase. Each single cheatsheet/quiz now ends with a **"Back into learning: 📚 Study <Phase> · 📝 Practice"**
+  footer. `📚 Study` deep-links to the phase's **first lesson** (new `firstLessonIdOfPhase` — the inverse of the
+  `lessonToQuiz` grouping, fetched once from `/api/lessons` and cached), labelled with the phase name (`PHASE_NAMES`);
+  `📝 Practice` returns to the exercise view. Shared `phaseBackLinks`/`wirePhaseBackLinks` helpers used by both render
+  paths (DRY). gui-only (no review-pile growth, no backend). Verified LIVE (Playwright): the phase4 cheatsheet →
+  "📚 Study Ownership & Borrowing" targeting `15-ownership-and-moves` (the phase's first lesson) + Practice; the
+  phase1 quiz → "📚 Study Foundations" → `01-bindings-and-immutability`; clicking Study opens the lesson + activates
+  the Lessons tab; screenshot read. gui-transform green; **full e2e 21/21 (no flake)**. **The nav web is now fully
+  bidirectional across all six surfaces.**
 - ✅ **#22 — E0381 corpus gap filled** (`af455e8`): added `exercises/01-basics/08_use_before_init.{rs,toml}`
   — `let count: i32;` then reading `count` before assigning it (use of a possibly-uninitialized binding). E0381 was
   absent from the corpus; teaches Rust's *definite initialization* (every read proven to follow a write). Predict-
