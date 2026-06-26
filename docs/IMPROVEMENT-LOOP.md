@@ -1140,10 +1140,31 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   live: 1 attempt → `--solution`/`--level 3` both give rung 1/3; 2 attempts → rung 2; 3 → rung 3 last-resort.
 
 ### Platform / distribution
+- ✅ **Fresh, downloadable APK shipped — `v0.3.0` (`<pending>`, 2026-06-26).** Paul: *"it will not download from
+  the link you sent anyway."* Root-caused: (a) the only prior release (`v0.2.0`) was **stale** (predates lessons/
+  glossary/quizzes/cheatsheets + the whole UX redesign), and (b) the auto-build is **dead** — the self-hosted runner
+  `[self-hosted, linux, x64, plausiden]` is **offline/deregistered**, so the last **5 `main` pushes' builds are stuck
+  `queued` (8h+)** and never produced a new release. Bypassed the dead runner by **building the APK locally** on the
+  same host (`HOME=/home/paul bash build-apk.sh`, sibling = `Tempered-Studio@textbook-integration` → bundles ALL
+  current work) and publishing it as **`v0.3.0`** via `gh release create` (debug-signed → sideloadable, no keystore).
+  Verified the way Paul would: the release asset downloads **anonymously** (no auth) — `curl -IL` → 302→200,
+  `application/vnd.android.package-archive`, and the downloaded bytes' **sha256 matches the local build exactly**
+  (`d395fb0…`); the APK bundles the live gui (`renderRoadmap`/`moremenu-list`/`lessoncheat`) + 11 cheatsheets + 49
+  lessons/quizzes/glossary files. Mobile `README` download pointer bumped to v0.3.0 (`9758eea`). PushNotification sent
+  with the working link. **⚠ See Open questions: the dead CI runner means future APKs need a manual local build (or
+  Paul reviving the runner).**
 - ☐ Web deploy (GH Pages / server) · online Run for Android (remote rpro-serve) ·
   F-Droid + Obtainium · signed APT/dnf repos.
 
 ## Open questions for Paul
+- ⚠️ **The Android CI runner is DOWN (2026-06-26).** The self-hosted GitHub Actions runner
+  `[self-hosted, linux, x64, plausiden]` that builds the APK (`.github/workflows/apk.yml` on the mobile repo) is
+  **offline/deregistered** — `gh api .../actions/runners` lists none, and the last **5 pushes to mobile `main` are
+  stuck `queued` for 8h+** with no build. I shipped `v0.3.0` this tick by **building locally on the host and
+  publishing via `gh release`** (works, verified downloadable), but that's a manual bypass. **To restore automatic
+  APK builds on every push, the runner needs reviving** (restart the `actions-runner` service on the plausiden host /
+  re-register it) — that's your infra. Until then I can keep building+publishing APKs manually each time the gui
+  changes materially, but it won't happen automatically.
 - 🔄 **"Finish everything / all tasks" push (2026-06-25).** Paul: "keep going stop stopping… finish everything,
   all tasks, and clear completed tasks." Cleared the completed task list and drove the backlog. **FINISHED this
   push: #14** (every exercise-cited Book chapter is bundled — verified; ch17/async is uncited, no offline async
