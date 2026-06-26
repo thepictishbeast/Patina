@@ -622,6 +622,7 @@ fn ensure_seeded(
     workspace_glossary: &Path,
     workspace_lessons: &Path,
     workspace_quizzes: &Path,
+    workspace_cheatsheets: &Path,
 ) -> std::io::Result<()> {
     let store = Store::at(store_root.to_path_buf());
     let ex_dir = store.root().join("exercises");
@@ -667,6 +668,14 @@ fn ensure_seeded(
     let have_quizzes = std::fs::read_dir(&quizzes_dir).is_ok_and(|mut rd| rd.next().is_some()); // nosemgrep
     if !have_quizzes && workspace_quizzes.is_dir() {
         copy_dir_recursive(workspace_quizzes, &quizzes_dir)?;
+    }
+
+    // And the per-phase cheatsheets (quick reference), served via
+    // `/api/cheatsheets`. Server-fixed dir; nothing from the wire.
+    let cheats_dir = store.root().join("cheatsheets");
+    let have_cheats = std::fs::read_dir(&cheats_dir).is_ok_and(|mut rd| rd.next().is_some()); // nosemgrep
+    if !have_cheats && workspace_cheatsheets.is_dir() {
+        copy_dir_recursive(workspace_cheatsheets, &cheats_dir)?;
     }
 
     // Make sure progress.json has a Current entry; if not, set the first one.
@@ -858,6 +867,20 @@ async fn quizzes_handler(
     md_collection(&state.store_root, "quizzes", q.id, "quizzes", "quiz")
 }
 
+/// `GET /api/cheatsheets` — the per-phase quick-reference cheatsheets.
+async fn cheatsheets_handler(
+    State(state): State<AppState>,
+    Query(q): Query<LessonQuery>,
+) -> impl IntoResponse {
+    md_collection(
+        &state.store_root,
+        "cheatsheets",
+        q.id,
+        "cheatsheets",
+        "cheatsheet",
+    )
+}
+
 /// Build the application router. Extracted from [`main`] so the handler contract
 /// (no-leak, op-whitelist, body limit, response headers) is testable end-to-end
 /// via `tower::ServiceExt::oneshot` — no socket bind, no real toolchain run.
@@ -874,6 +897,7 @@ fn build_router(state: AppState, gui_dir: &Path) -> Router {
         .route("/api/glossary", axum::routing::get(glossary_handler))
         .route("/api/lessons", axum::routing::get(lessons_handler))
         .route("/api/quizzes", axum::routing::get(quizzes_handler))
+        .route("/api/cheatsheets", axum::routing::get(cheatsheets_handler))
         // Everything else is the static gui/ shell (index.html + vendored xterm).
         .fallback_service(ServeDir::new(gui_dir))
         .layer(map_response(security_headers))
@@ -939,6 +963,7 @@ async fn main() {
     let workspace_glossary = asset_root.join("glossary");
     let workspace_lessons = asset_root.join("lessons");
     let workspace_quizzes = asset_root.join("quizzes");
+    let workspace_cheatsheets = asset_root.join("cheatsheets");
 
     // Writable state/run root: a fixed cache dir under $HOME (exec-ok, off the
     // git tree, never /tmp). Overridable via TS_SERVE_ROOT for the operator.
@@ -965,6 +990,7 @@ async fn main() {
         &workspace_glossary,
         &workspace_lessons,
         &workspace_quizzes,
+        &workspace_cheatsheets,
     ) {
         eprintln!(
             "warning: could not seed exercises into {}: {e}",
@@ -1135,6 +1161,7 @@ mod tests {
             &manifest.join("../../glossary"),
             &manifest.join("../../lessons"),
             &manifest.join("../../quizzes"),
+            &manifest.join("../../cheatsheets"),
         )
         .unwrap();
         let state = AppState {
@@ -1363,6 +1390,45 @@ mod tests {
         assert!(
             v["quiz"].is_null(),
             "a traversal-looking id resolves to no quiz"
+        );
+    }
+
+    #[tokio::test]
+    async fn cheatsheets_list_and_fetch() {
+        let (_d, app) = seeded_app();
+        let res = app.clone().oneshot(get("/api/cheatsheets")).await.unwrap();
+        assert_eq!(res.status(), StatusCode::OK);
+        let v: serde_json::Value = serde_json::from_str(&body_string(res).await).unwrap();
+        let sheets = v["cheatsheets"].as_array().expect("cheatsheets array");
+        assert!(!sheets.is_empty(), "the seeded cheatsheets are listed");
+        assert!(sheets.iter().all(|c| {
+            c["id"].as_str().is_some_and(|s| !s.is_empty())
+                && c["title"].as_str().is_some_and(|s| !s.is_empty())
+        }));
+        assert!(
+            sheets.iter().any(|c| c["id"] == "phase1"),
+            "the phase-1 cheatsheet is in the list"
+        );
+        let res = app
+            .clone()
+            .oneshot(get("/api/cheatsheets?id=phase1"))
+            .await
+            .unwrap();
+        let v: serde_json::Value = serde_json::from_str(&body_string(res).await).unwrap();
+        assert!(
+            v["cheatsheet"]["markdown"]
+                .as_str()
+                .is_some_and(|s| s.contains('#')),
+            "the fetched cheatsheet carries its markdown"
+        );
+        let res = app
+            .oneshot(get("/api/cheatsheets?id=../../Cargo.toml"))
+            .await
+            .unwrap();
+        let v: serde_json::Value = serde_json::from_str(&body_string(res).await).unwrap();
+        assert!(
+            v["cheatsheet"].is_null(),
+            "a traversal-looking id resolves to no cheatsheet"
         );
     }
 

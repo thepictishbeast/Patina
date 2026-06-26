@@ -251,7 +251,16 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
     Dev-tier editor. Multi-session; build incrementally.
 
 ### Content / corpus
-- ✅ **#22 — E0716 corpus gap filled** (this commit): added
+- ✅ **Cheatsheets — the 6th & final study surface** (this commit). The 11 per-phase quick-reference cheatsheets
+  (condensed syntax per phase, from rust-textbook) are now embedded in `cheatsheets/` (the generalized
+  `sync-lessons.sh` now mirrors lessons+quizzes+cheatsheets), served by **`GET /api/cheatsheets`** (reusing the
+  shared `md_collection` helper — one more thin handler), and surfaced in a **`Cheatsheets` tab** (bar:
+  Practice·Lessons·Quizzes·**Cheatsheets**·Book·Glossary·Roadmap; `s` key) rendered via `mdToHtml`. Bundled in the
+  APK (mobile `build-apk.sh`+apk.yml). Verified: `cargo test -p rpro-serve` 21 pass (new cheatsheets list/fetch/
+  traversal test; lessons+quizzes still green); clippy `-D warnings` + fmt + seam clean; LIVE curl → 11 sheets +
+  lessons/quizzes regression-free; Playwright → tab lists 11, phase1 renders. **All study materials are now in the
+  app: lessons · exercises · glossary · Book · quizzes · cheatsheets — all offline + on Android.**
+- ✅ **#22 — E0716 corpus gap filled** (`66289a6`): added
   `exercises/07-generics-traits-lifetimes/03d_temporary_dropped.{rs,toml}` — `first_word(&String::from("hello
   world"))` keeps a `&str` into a *temporary* `String` that's dropped at the end of the statement (E0716, "temporary
   value dropped while borrowed"). E0716 was absent from the corpus; teaches that a temporary lives only to the end

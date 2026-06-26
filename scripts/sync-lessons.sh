@@ -13,7 +13,7 @@ here="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 root="${1:-${TEXTBOOK:-$here/../rust-textbook}}"
 
 # Each content type is a flat dir of `<id>.md` files mirrored 1:1.
-for kind in lessons quizzes; do
+for kind in lessons quizzes cheatsheets; do
   src="$root/$kind"
   dst="$here/$kind"
   if [ ! -d "$src" ]; then
