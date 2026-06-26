@@ -281,7 +281,12 @@
     header { flex-wrap:wrap; gap:8px 12px; padding:8px 10px; }
     nav.tabs { order:5; width:100%; overflow-x:auto; }
     .gauge { min-width:120px; }
-    main { grid-template-columns:1fr; grid-template-rows:none; height:auto; width:100%; overflow-x:hidden; }
+    /* Force a single stacked column on phones — `!important` so it beats the
+       higher-specificity desktop toggle rules (main.show-insights / main.no-list),
+       which would otherwise keep multi-column grids wider than the viewport and
+       squish the practice text to one character per line. Toggled-away panes stay
+       hidden (their display:none rules are unaffected); shown panes just stack. */
+    main { grid-template-columns:1fr !important; grid-template-rows:none; height:auto; width:100%; overflow-x:hidden; }
     /* let the single column shrink to the viewport (grid 1fr floors at child
        min-content without this) and keep child content from forcing width */
     .pane { min-width:0; border-right:none; border-bottom:1px solid var(--line); }

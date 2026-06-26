@@ -62,6 +62,17 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   per-surface color flag plumbed through Core/command_plan (web on, TUI off).
 
 ### Editor / IDE
+- ✅ **Mobile layout fix (Android-first)** (this commit): the recent desktop toggle rules
+  (`main.show-insights {…248px 1fr 340px}` / `main.no-list {…}`) have higher CSS specificity than the mobile
+  `@media (max-width:760px) main { grid-template-columns:1fr }`, so on a PHONE with the Insights drawer or Focus
+  mode on (persisted in localStorage), the 3-column grid did NOT collapse — it overflowed the viewport and squished
+  the practice text to **one character per line**. Fixed with `grid-template-columns:1fr !important` inside the
+  mobile media query (beats specificity; toggled-away panes stay hidden, shown panes just stack). Desktop is
+  untouched (the fix lives inside the phone media query). Verified LIVE at 390×844 (Playwright): the practice view
+  and a lesson (with its Practice card + nav) render single-column with **no horizontal overflow**
+  (`scrollWidth == viewportWidth == 390`); gui-transform tests pass; all 16 e2e pass (the recurring run-based
+  cold-compile flake — this time `recall-chip` — green on warm retry; **a `globalSetup` that warms the run cache
+  would end this**).
 - ◐ **UX density redesign (Paul, 2026-06-25: "UI is extremely dense … tabs + a menu bar … things the user isn't
   working on shouldn't be on the main page … focus on teaching and practicing rust").** Multi-tick. **Step 1 done
   (this commit):** the right pane (Diagnostics / Book refs / Tutor) is now a collapsible **Insights drawer** — the
