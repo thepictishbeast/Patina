@@ -251,7 +251,15 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
     Dev-tier editor. Multi-session; build incrementally.
 
 ### Content / corpus
-- ◐ **Surface the per-phase quizzes (predict-then-verify self-checks)** — backend slice DONE (this commit). The
+- ✅ **#22 — E0716 corpus gap filled** (this commit): added
+  `exercises/07-generics-traits-lifetimes/03d_temporary_dropped.{rs,toml}` — `first_word(&String::from("hello
+  world"))` keeps a `&str` into a *temporary* `String` that's dropped at the end of the statement (E0716, "temporary
+  value dropped while borrowed"). E0716 was absent from the corpus; teaches that a temporary lives only to the end
+  of its statement, the subtler sibling of `03c`'s named-block E0597. Predict-then-run, no answer-leak; intermediate;
+  `concept = "borrow-must-not-outlive-value"` (already resolves + already in the GUI `CONCEPT_LESSON` map → lesson
+  16, so the "read the lesson" link works with no GUI change). Verified: `rustc` emits exactly one `error[E0716]`,
+  golden_corpus green, anchors 115/115.
+- ◐ **Surface the per-phase quizzes (predict-then-verify self-checks)** — backend slice DONE (`7653832`). The
   upstream rust-textbook has 11 per-phase quizzes (Questions + Answers, "predict before you look" — exactly the
   platform's pedagogy) that weren't in the app. Embedded them in `quizzes/` (synced via the now-generalized
   `scripts/sync-lessons.sh`, which mirrors lessons + quizzes), the serve layer seeds them like book/glossary/lessons,

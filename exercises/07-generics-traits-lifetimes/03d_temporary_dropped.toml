@@ -1,0 +1,29 @@
+id = "lifetimes/04_temporary_dropped"
+title = "A borrow can't outlive a temporary value"
+difficulty = "intermediate"
+estimated_minutes = 9
+concept = "borrow-must-not-outlive-value"
+expected_error_code = "E0716"
+solution_outline = """
+`String::from("hello world")` builds a *temporary* `String` — a value with no
+name. A temporary lives only to the end of the statement it appears in, so this
+`String` is dropped at the end of the `let`, while `word` (a `&str` borrowed from
+it) is still meant to be used on the next line. The compiler reports the
+temporary as "dropped while borrowed".
+
+Fix it WITHOUT touching `first_word`: give the `String` a name so it lives at
+least as long as the borrow. Bind it first —
+  `let sentence = String::from("hello world");`
+  `let word = first_word(&sentence);`
+Now `sentence` outlives `word`, so the reference stays valid.
+"""
+
+[[book_refs]]
+chapter = "ch10-03-lifetime-syntax"
+anchor = "the-borrow-checker"
+why = "The borrow checker rejects a reference that outlives the value it points to — here the unnamed temporary `String`, dropped at the end of the statement."
+
+[[book_refs]]
+chapter = "ch10-03-lifetime-syntax"
+anchor = "lifetime-annotation-syntax"
+why = "Lifetimes describe how long references stay valid — the idea this dropped-temporary error is really about."
