@@ -277,6 +277,13 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   default (`<details>` not open) yet present; gui-transform tests pass; e2e green (`1 flaky, 15 passed` — the
   `retries:1` fix healed the environmental flake). **The learning materials are now complete: lessons → exercises
   → glossary → Book → quizzes, all offline + on Android.**
+  **Lesson → quiz cross-link DONE (this commit):** the last lesson of each phase now ends with a
+  **"🧠 Finished this phase? Take the self-check quiz →"** link to that phase's quiz, so the quizzes are discoverable
+  at the pedagogically right moment (phase end) rather than only via the tab. Mapping is a compact `lessonToQuiz(n)`
+  (contiguous lesson ranges → quiz id, from the quiz intros); the link shows ONLY on a phase's final lesson
+  (`lessonToQuiz(n+1) !== lessonToQuiz(n)`, or n≥37). Verified LIVE (Playwright): lesson 8 → `phase1`, lesson 37 →
+  `tooling`, non-last lesson 2 shows no link, clicking opens the right quiz; gui-transform + **e2e green**
+  (`1 flaky, 15 passed`). All five surfaces are now mutually cross-linked.
 - ✅ **#22 — E0381 corpus gap filled** (`af455e8`): added `exercises/01-basics/08_use_before_init.{rs,toml}`
   — `let count: i32;` then reading `count` before assigning it (use of a possibly-uninitialized binding). E0381 was
   absent from the corpus; teaches Rust's *definite initialization* (every read proven to follow a write). Predict-

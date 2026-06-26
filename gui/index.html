@@ -135,6 +135,9 @@
   .docview .quizanswers > summary { cursor:pointer; padding:11px 15px; font-weight:600; color:var(--accent); user-select:none; }
   .docview .quizanswers[open] > summary { border-bottom:1px solid var(--line); }
   .docview .quizanswers > .bookbody { padding:4px 16px 14px; }
+  .docview .lessonquiz { margin:14px 0 4px; color:var(--fg-dim); }
+  .docview .quizlink { color:var(--accent); font-weight:600; text-decoration:none; }
+  .docview .quizlink:hover { text-decoration:underline; }
   .docview .booksearch input { width:100%; box-sizing:border-box; padding:9px 12px; font-size:14px; font-family:var(--ui);
     color:var(--fg); background:var(--bg-2); border:1px solid var(--line); border-radius:8px; margin:6px 0 4px; }
   .docview .booksearch input:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 2px rgba(247,76,0,.18); }
@@ -1118,6 +1121,23 @@
       d.scrollTop = 0;
     }
 
+    // Lesson number → the per-phase self-check quiz that covers it (each quiz
+    // spans a contiguous lesson range — see the quiz intros).
+    function lessonToQuiz(n) {
+      if (!n) return null;
+      if (n <= 8) return 'phase1';
+      if (n <= 11) return 'phase2';
+      if (n <= 14) return 'phase3';
+      if (n <= 17) return 'phase4';
+      if (n <= 20) return 'phase5';
+      if (n <= 23) return 'phase6';
+      if (n <= 26) return 'phase6-generics';
+      if (n <= 29) return 'phase7';
+      if (n <= 31) return 'phase8';
+      if (n <= 35) return 'phase9';
+      return 'tooling'; // 36–37
+    }
+
     // The Lessons tab: the embedded Patina curriculum (the 37 authored,
     // beginner-tuned lessons), served offline by /api/lessons. With no id it
     // lists the lessons in order; with one it renders that lesson's markdown and
@@ -1183,9 +1203,19 @@
               + '</ul></div>';
           }
         } catch (_) {}
-        d.innerHTML = back + '<div class="bookbody lessonbody">' + mdToHtml(md) + '</div>' + practiceHtml + navHtml;
+        // Self-check: on the LAST lesson of a phase, link to that phase's quiz
+        // (the per-phase quizzes test the whole phase, so prompt at its end).
+        const n = parseInt(id, 10);
+        const quizId = lessonToQuiz(n);
+        const lastOfPhase = quizId && (n >= 37 || lessonToQuiz(n + 1) !== quizId);
+        const quizHtml = lastOfPhase
+          ? `<p class="lessonquiz">🧠 Finished this phase? <a href="#" class="quizlink" data-quiz="${esc(quizId)}">Take the self-check quiz →</a></p>`
+          : '';
+        d.innerHTML = back + '<div class="bookbody lessonbody">' + mdToHtml(md) + '</div>' + practiceHtml + quizHtml + navHtml;
       }
       d.querySelectorAll('.lessonback').forEach(a => a.onclick = e => { e.preventDefault(); renderLessons(null); });
+      d.querySelectorAll('.quizlink').forEach(a =>
+        a.onclick = e => { e.preventDefault(); showView('quizzes', a.dataset.quiz); });
       // Wire the nav bar: a `.md` href routes to that lesson; the Study Guide link
       // returns to the lesson list — all in-app, no page navigation.
       d.querySelectorAll('.lessonnavlink').forEach(a => {
