@@ -3,17 +3,19 @@
 //! Top-level command dispatch. Subcommands:
 //!
 //! ```text
-//! rpro init                   — one-time setup
+//! rpro init                   — one-time setup (seeds exercises, Book, glossary, lessons)
 //! rpro                        — open the TUI dashboard (default)
 //! rpro exercise list          — every exercise with status
 //! rpro exercise next          — jump to next unfinished
 //! rpro exercise hint          — book references for current
-//! rpro book                   — open the TUI book reader
-//! rpro book search <term>     — text search across chapters
+//! rpro run / check / test     — compile / type-check / test an exercise
+//! rpro explain <code>         — explain a diagnostic code in full
+//! rpro book [search <term>]   — open the TUI book reader / text search
+//! rpro lessons [id]           — read the Patina curriculum lessons offline
+//! rpro glossary [term]        — look up a Rust term offline
 //! rpro progress               — completion summary
+//! rpro detect                 — probe the local toolchain
 //! ```
-//!
-//! v0 wires `init` end-to-end and stubs the rest.
 
 #![doc(html_no_source)]
 #![allow(clippy::doc_markdown)]
@@ -88,6 +90,12 @@ enum Cmd {
         /// Term to define (name or alias). Omit to list all terms.
         term: Option<String>,
     },
+    /// Read the Patina curriculum lessons offline. Omit the id to list them all.
+    Lessons {
+        /// Lesson id (e.g. `05` or `05-number-types-and-overflow`; a prefix is
+        /// enough). Omit to list every lesson in order.
+        id: Option<String>,
+    },
 }
 
 #[derive(Subcommand, Debug)]
@@ -148,6 +156,7 @@ fn main() -> Result<()> {
         Some(Cmd::Test { exercise }) => cmd_exec(exercise.as_deref(), &RunOp::Test),
         Some(Cmd::Explain { code }) => cmd_explain(&code),
         Some(Cmd::Glossary { term }) => cmd_glossary(term.as_deref()),
+        Some(Cmd::Lessons { id }) => cmd_lessons(id.as_deref()),
     }
 }
 
@@ -202,6 +211,109 @@ fn cmd_glossary(term: Option<&str>) -> Result<()> {
         },
     }
     Ok(())
+}
+
+/// `.md` file stems in `dir`, sorted (curriculum order = file order). Empty if
+/// the dir is missing.
+fn md_stems(dir: &std::path::Path) -> Vec<String> {
+    let mut v: Vec<String> = std::fs::read_dir(dir) // nosemgrep -- store-owned dir, stems re-matched below
+        .into_iter()
+        .flatten()
+        .flatten()
+        .filter_map(|e| {
+            let p = e.path();
+            (p.extension().and_then(|x| x.to_str()) == Some("md"))
+                .then(|| p.file_stem().and_then(|s| s.to_str()).map(String::from))
+                .flatten()
+        })
+        .collect();
+    v.sort();
+    v
+}
+
+/// The lesson's display title — its first `# ` heading, or the stem as a fallback.
+fn md_title(md: &str, fallback: &str) -> String {
+    md.lines()
+        .find_map(|l| l.strip_prefix("# ").map(|t| t.trim().to_string()))
+        .unwrap_or_else(|| fallback.to_string())
+}
+
+/// `rpro lessons` — read the 37-lesson Patina curriculum offline. With no id it
+/// lists every lesson; with one it prints that lesson (matched by exact stem or
+/// prefix, so a bare number like `05` works — never path-joins raw input).
+fn cmd_lessons(id: Option<&str>) -> Result<()> {
+    let store = Store::user()?;
+    let dir = store.root().join("lessons");
+    let stems = md_stems(&dir);
+    if stems.is_empty() {
+        println!(
+            "{}",
+            style("No lessons yet — run `rpro init` to seed them.").yellow()
+        );
+        return Ok(());
+    }
+    match id {
+        None => {
+            println!(
+                "{}",
+                style("Lessons — the Patina curriculum:").bold().cyan()
+            );
+            for stem in &stems {
+                let title = std::fs::read_to_string(dir.join(format!("{stem}.md")))
+                    .map_or_else(|_| stem.clone(), |md| md_title(&md, stem));
+                println!("  {}  {}", style(stem).dim(), title);
+            }
+            println!();
+            println!(
+                "  {} `{}`",
+                style("Read one:").dim(),
+                style("rpro lessons <id>").bold()
+            );
+        }
+        Some(q) => {
+            // Traversal-safe: only open a lesson whose stem really exists (exact,
+            // else unique-ish prefix). Raw input is never joined to the path.
+            let Some(stem) = stems
+                .iter()
+                .find(|s| s.as_str() == q)
+                .or_else(|| stems.iter().find(|s| s.starts_with(q)))
+            else {
+                println!("{} no lesson {:?}.", style("·").dim(), q);
+                println!(
+                    "  {} `{}`",
+                    style("Browse all:").dim(),
+                    style("rpro lessons").bold()
+                );
+                return Ok(());
+            };
+            let md = std::fs::read_to_string(dir.join(format!("{stem}.md")))
+                .with_context(|| format!("reading lesson {stem}"))?;
+            // HTML comments are authoring notes; drop them so the terminal read is clean.
+            println!("{}", strip_html_comments(&md));
+            println!();
+            println!(
+                "  {} `{}`",
+                style("Now write it:").dim(),
+                style("rpro exercise next").bold()
+            );
+        }
+    }
+    Ok(())
+}
+
+/// Remove `<!-- … -->` blocks (authoring notes) from markdown for terminal display.
+fn strip_html_comments(md: &str) -> String {
+    let mut out = String::with_capacity(md.len());
+    let mut rest = md;
+    while let Some(start) = rest.find("<!--") {
+        out.push_str(&rest[..start]);
+        rest = match rest[start..].find("-->") {
+            Some(end) => &rest[start + end + 3..],
+            None => "", // unterminated: drop the tail
+        };
+    }
+    out.push_str(rest);
+    out
 }
 
 // ---------------------------------------------------------------------------
@@ -279,6 +391,15 @@ fn cmd_init(refresh: bool) -> Result<()> {
         if let Ok(g) = rpro_glossary::Glossary::load(&gloss_dir.join("glossary.toml")) {
             println!("  + seeded {} glossary term(s)", g.all().len());
         }
+    }
+    // Seed the Patina curriculum lessons the same way, so `rpro lessons` works
+    // offline (parity with the web seed + the Book/glossary seeds above).
+    let lessons_dir = store.root().join("lessons");
+    let bundled_lessons = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../lessons");
+    if (refresh || md_stems(&lessons_dir).is_empty()) && bundled_lessons.is_dir() {
+        copy_tree(&bundled_lessons, &lessons_dir)
+            .with_context(|| format!("seeding lessons from {}", bundled_lessons.display()))?;
+        println!("  + seeded {} lesson(s)", md_stems(&lessons_dir).len());
     }
     // Ensure a Current exercise so the first run isn't an empty screen.
     let mut progress = store.load_progress().unwrap_or_default();

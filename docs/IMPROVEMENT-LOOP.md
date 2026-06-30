@@ -1160,6 +1160,19 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   (deeper help comes from trying, not bumping a flag). `--level`/`--solution` help updated to match. The
   cross-surface hint behavior (text + gate + escalation) is now fully consistent across web/CLI. Verified
   live: 1 attempt → `--solution`/`--level 3` both give rung 1/3; 2 attempts → rung 2; 3 → rung 3 last-resort.
+- ✅ **`rpro lessons` — the curriculum reaches the terminal learner (`<pending>`).** Cross-surface gap: the web
+  had all 6 study surfaces, but the CLI only exposed `book`, `glossary`, and `exercises` — a Termux/SSH learner
+  could read the Book and practice but **could not read the 37 lessons**. Added `rpro lessons [id]`: no id lists
+  every lesson (stem + `# `-heading title, in curriculum order); an id prints that lesson's markdown (HTML comments
+  stripped) matched by exact stem **or prefix** so a bare `rpro lessons 05` works. **Traversal-safe** — the id is
+  matched against the real `.md` stems on disk, never path-joined (mirrors the rpro-serve pattern + `// nosemgrep`
+  on the store `read_dir`). `cmd_init` now also seeds `lessons/` from the bundled workspace (parity with the
+  Book/glossary seeds; honoured by `--refresh`). Also refreshed the stale top-of-file subcommand doc (it still said
+  "v0 wires init … stubs the rest" and omitted glossary/detect/run/check/test/explain). Verified: `cargo build`
+  clean, `cargo fmt --all --check` clean, **clippy 0 warnings**, **seam-guard clean** (`*.rs` scope), `cargo test -p
+  rpro-cli` 5/5; LIVE (temp `RPRO_STORE`): `init` seeds 37 lessons, `lessons` lists 37, `lessons 05`/`lessons
+  12-string-vs-str` print the right lesson, bad id → friendly miss. (Quizzes + cheatsheets in the CLI are natural
+  follow-ups.)
 
 ### Platform / distribution
 - ✅ **Fresh, downloadable APK shipped — `v0.3.0` (`<pending>`, 2026-06-26).** Paul: *"it will not download from
