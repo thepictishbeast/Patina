@@ -562,6 +562,31 @@
 
     const statusEl = () => document.getElementById('statusline');
 
+    // ── Native on-device Run result (from the Android Termux bridge) ──
+    // MainActivity.runViaTermux() compiles+runs the code with the phone's real
+    // rustc (via an installed Termux) and calls this back asynchronously.
+    let termuxPending = null;
+    window.__termuxResult = function (cbId, res) {
+      if (cbId !== termuxPending) return; // ignore stale/duplicate
+      termuxPending = null;
+      res = res || {};
+      term.clear();
+      const text = (res.stdout || '') + (res.stderr || '');
+      if (text) term.write(text.replace(/\n/g, '\r\n'));
+      if (res.errmsg) term.writeln('\r\n' + d(res.errmsg));
+      const passed = res.exit === 0;
+      term.writeln('');
+      term.writeln(passed ? g('✓ compiled & ran on-device') + d(' — native rustc via Termux')
+                          : r('✗ exit ' + res.exit) + d(' — read the compiler output above, fix & re-run'));
+      statusEl().textContent = passed ? 'ran on-device ✓' : 'failed (on-device)';
+      try { setInsights(true); } catch (_) {}
+      if (mode === 'learn') { // re-arm the predict gate, like the server path
+        predict = { compiles: null, code: '' };
+        document.querySelectorAll('.pbtn').forEach(x => x.classList.remove('sel'));
+        const pc = document.getElementById('predcode'); if (pc) pc.value = '';
+      }
+    };
+
     // Live path: POST a whitelisted op to the local server and stream the raw
     // output (already ANSI-colored by the toolchain) into the xterm terminal.
     async function runOp(op, extra) {
@@ -633,7 +658,28 @@
         //      compile (e.g. the offline Android app: no on-device Rust toolchain).
         //      Guide the learner; don't dump an unrelated static demo over their work.
         //  (b) nothing loaded (opened via file://, no server at all) → layout preview.
-        if (curExercise) {
+        if (curExercise && window.AndroidSeam && AndroidSeam.runViaTermux && (op === 'run' || op === 'check' || op === 'test')) {
+          // On Android there's no local toolchain — compile NATIVELY on-device via an
+          // installed Termux (real rustc, offline, no server). Result arrives async at
+          // window.__termuxResult. If Termux isn't installed, guide the one-time setup.
+          let termuxOk = false; try { termuxOk = AndroidSeam.termuxInstalled(); } catch (_) {}
+          term.clear();
+          if (termuxOk) {
+            statusEl().textContent = 'compiling on-device…';
+            term.writeln(d('$ ' + op + ' — compiling on-device with native rustc (Termux)…'));
+            termuxPending = 'r' + Date.now();
+            try { AndroidSeam.runViaTermux(editorEl().value, termuxPending); }
+            catch (e2) { term.writeln(r('Termux bridge error') + d(': ' + e2)); statusEl().textContent = 'error'; }
+          } else {
+            term.writeln(r('No on-device compiler yet') + d(' — install Termux to run Rust natively on your phone (offline, no account):'));
+            term.writeln(d('  1. Install Termux  ·  f-droid.org/packages/com.termux'));
+            term.writeln(d('  2. In Termux:  ') + g('pkg install rust'));
+            term.writeln(d('  3. In Termux:  ') + g('echo allow-external-apps=true >> ~/.termux/termux.properties'));
+            term.writeln(d('  Then press Run again — it compiles right here, fully offline.'));
+            term.writeln(d('(Until then: predict the outcome, read the lesson + book, check your guess.)'));
+            statusEl().textContent = 'install Termux for on-device run';
+          }
+        } else if (curExercise) {
           term.clear();
           term.writeln(r("can't run here") + d(' — this build has no Rust toolchain.'));
           term.writeln(d('You can still predict the outcome, read the lesson + book, and check'));
