@@ -62,6 +62,18 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   per-surface color flag plumbed through Core/command_plan (web on, TUI off).
 
 ### Editor / IDE
+- ◐ **Mobile UI overhaul (Paul 2026-06-30: "heavily improve the mobile UI … more beauty … simple and intuitive
+  yet fully capable and powerful").** Pass 1 (`<pending>`): on a phone the editor header was visibly broken — the
+  Learn/Assist/Dev switcher clipped to "Lea" and the "read & edit, then Run" label crammed the reset; the
+  prediction "error code?" input was clipped; touch targets were small. Reworked the `@media(max-width:760px)`
+  block: the editor bar now wraps cleanly (dots+file+reset on row 1, a **full-width segmented Learn/Assist/Dev**
+  switcher on row 2, the noisy label dropped), the prediction input gets its **own full-width row**, and Run/Check/
+  Explain/Hint + the prediction chips + tab/icon buttons are all touch-sized (≥40px). Verified LIVE (Playwright
+  390×844, before/after screenshots): the switcher is fully usable, nothing clipped, desktop untouched (rules are
+  media-query-scoped); gui-transform + **e2e 20/20 (+1 known flake)**. Iterative — more beauty/flow passes to come.
+  Plus a real **app + favicon icon** (Paul-supplied art: a metallic Ferris-crab on a gear-ringed shield with molten
+  cracks): wired the Android adaptive-icon pipeline (mipmap densities + foreground/bg + anydpi-v26 XML, manifest
+  icon/roundIcon) and gui favicons (32/180/192/512 + .ico + theme-color). Bundled into a fresh APK.
 - ✅ **Footer keybar fixed + `?` keyboard-shortcuts overlay** (this commit): the bottom keybar was a stale TUI
   copy — it advertised `t tasks` / `q quit` (neither exists in the web app: `t`→Roadmap, no `q` handler) and
   omitted the keys that DO work (`l`/`g`/`z`/`s`/`f`/`i`/`?`). Rewrote it to the truth (`r run · c check · h hint ·
