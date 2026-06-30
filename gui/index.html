@@ -251,8 +251,17 @@
   .gl-x { margin-left:auto; cursor:pointer; color:var(--fg-dim); padding:0 4px; }
   .gl-x:hover, .gl-x:focus-visible { color:var(--fg); outline:none; }
   .lesson p { line-height:1.6; font-size:14px; color:var(--fg); }
-  .predict { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:10px; font-size:13px; }
+  .predict { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:10px; font-size:13px;
+    border:1px solid transparent; border-radius:12px; padding:4px; transition:all .2s ease; }
   .predict .pl { color:var(--fg-dim); }
+  /* The prediction is a gate — when unanswered, make it impossible to miss. */
+  .predict.needs-answer { border-color:var(--accent); background:rgba(247,76,0,.07);
+    padding:12px 14px; box-shadow:0 0 0 3px rgba(247,76,0,.12); animation:predictPulse 2s ease-in-out infinite; }
+  .predict.needs-answer .pl { color:var(--accent); font-weight:700; }
+  @keyframes predictPulse { 0%,100%{box-shadow:0 0 0 3px rgba(247,76,0,.10)} 50%{box-shadow:0 0 0 5px rgba(247,76,0,.22)} }
+  .predict-prose { font-size:13.5px; }
+  .predict-done { margin:8px 0 2px; padding:9px 14px; border-radius:10px; font-size:13.5px; font-weight:600;
+    color:var(--done); background:rgba(126,211,33,.08); border:1px solid rgba(126,211,33,.3); }
   /* Learn / Assist / Dev mode switcher — Learn is strict (you do the work). */
   .modesw { display:inline-flex; border:1px solid var(--line); border-radius:7px; overflow:hidden; margin-left:10px; vertical-align:middle; }
   .modesw button { font:600 11px var(--ui); padding:2px 9px; background:var(--bg-2); color:var(--fg-dim); border:0; border-right:1px solid var(--line); cursor:pointer; }
@@ -292,6 +301,11 @@
   .run{background:linear-gradient(135deg,var(--accent),var(--accent-soft));color:#fff;border:none;
     padding:9px 16px;border-radius:9px;font-weight:600;cursor:pointer;font-size:13px;box-shadow:0 4px 14px rgba(247,76,0,.35);transition:.15s}
   .run:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(247,76,0,.5)}
+  .run.cta{animation:runReady 1.4s ease-in-out infinite}
+  @keyframes runReady{0%,100%{box-shadow:0 4px 14px rgba(247,76,0,.35)}50%{box-shadow:0 4px 22px rgba(247,76,0,.7)}}
+  /* gated (Learn, no prediction yet): clearly not pressable yet */
+  .run.gated,.ghost.gated{opacity:.4;cursor:not-allowed;filter:grayscale(.4);box-shadow:none;transform:none}
+  .run.gated:hover,.ghost.gated:hover{transform:none;box-shadow:none}
   .ghost{background:var(--bg-2);color:var(--fg);border:1px solid var(--line);padding:9px 14px;border-radius:9px;cursor:pointer;font-size:13px}
 
   /* embedded terminal — a real xterm.js widget */
@@ -302,6 +316,31 @@
   .xterm-host{flex:1;min-height:0;padding:6px 8px}
   .xterm-host .xterm,.xterm-host .xterm-viewport{height:100%!important;background:transparent!important}
   .throbber{color:var(--accent-soft);display:inline-block}
+  .termcopy{background:var(--bg-3);color:var(--fg-dim);border:1px solid var(--line);border-radius:7px;
+    padding:4px 10px;font:600 11.5px var(--mono);cursor:pointer}
+  .termcopy:hover{color:var(--fg);border-color:var(--accent)}
+  /* toast (copy confirmation) */
+  #toast{position:fixed;left:50%;bottom:54px;transform:translateX(-50%) translateY(8px);z-index:80;
+    background:var(--bg-3);color:var(--fg);border:1px solid var(--line);border-radius:9px;padding:8px 16px;
+    font-size:13px;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .18s,transform .18s}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  /* 🩺 Logs view */
+  .docview .logbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:6px 0 12px}
+  .docview .logtabs{display:flex;gap:5px;flex-wrap:wrap}
+  .docview .logtab{background:var(--bg-2);color:var(--fg-dim);border:1px solid var(--line);border-radius:8px;
+    padding:6px 11px;font-size:12.5px;cursor:pointer}
+  .docview .logtab.on{color:var(--fg);border-color:var(--accent);box-shadow:inset 0 -2px 0 var(--accent)}
+  .docview .logtab .logn{opacity:.6;font-size:11px}
+  .docview .logbtn{background:var(--bg-2);color:var(--accent);border:1px solid var(--line);border-radius:8px;
+    padding:6px 12px;font:600 12.5px var(--ui);cursor:pointer}
+  .docview .logbtn:hover{border-color:var(--accent)}
+  .docview .logwrap{border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .docview .logrow{display:grid;grid-template-columns:64px 92px 1fr;gap:8px;padding:8px 12px;
+    border-bottom:1px solid var(--line);font:12px/1.5 var(--mono);white-space:pre-wrap;word-break:break-word}
+  .docview .logrow:last-child{border-bottom:none}
+  .docview .logrow.lv-error{background:rgba(247,76,0,.06)}
+  .docview .logt{color:var(--fg-dim)}.docview .logcat{color:var(--accent-soft)}
+  .docview .logrow.lv-error .logmsg{color:var(--fg)}
 
   .diag { display:flex; align-items:flex-start; gap:9px; padding:10px 14px; border-bottom:1px solid var(--line); font-size:12.5px; }
   .diag .lvl{font-family:var(--mono);font-weight:700}
@@ -411,6 +450,7 @@
           <button class="menuitem" role="menuitem" data-view="glossary">📚 Glossary</button>
           <button class="menuitem" role="menuitem" data-view="cheatsheets">📋 Cheatsheets</button>
           <button class="menuitem" role="menuitem" data-view="roadmap">🗒️ Roadmap</button>
+          <button class="menuitem" role="menuitem" data-view="logs">🩺 Logs</button>
         </div>
       </div>
     </div>
@@ -441,11 +481,11 @@
         <h1 id="lessonTitle">Tempered Studio</h1>
         <div class="sub" id="lessonSub">loading the current exercise…</div>
         <div class="glossbox" id="glossbox" hidden aria-live="polite"></div>
-        <p><b>Predict first:</b> will this <b>pass</b> — compile <i>and</i> run cleanly? If not,
+        <p id="predictProse" class="predict-prose"><b>Predict first:</b> will this <b>pass</b> — compile <i>and</i> run cleanly? If not,
         what goes wrong: a compile <b>error code</b>, or a <b>panic</b> when it runs? Lock your
         guess, then press <b>Run</b> — you'll read the <i>real</i> output, by hand.</p>
         <div class="predict" id="predictbar">
-          <span class="pl">🔮 Lock your prediction:</span>
+          <span class="pl">🔮 Your prediction:</span>
           <!-- data-pred "compiles" = predicts SUCCESS (compiles AND runs clean); the
                label says "passes" since some exercises compile but panic at run time. -->
           <button class="pbtn" data-pred="compiles">passes ✓</button>
@@ -453,6 +493,7 @@
           <input id="predcode" class="pin" placeholder="error code? e.g. E0382 (blank if it panics/passes)" spellcheck="false" autocomplete="off" />
           <span id="predverdict" class="pv"></span>
         </div>
+        <div id="predictDone" class="predict-done" hidden></div>
       </div>
 
       <div class="editor">
@@ -482,7 +523,7 @@
       </div>
 
       <div class="terminal">
-        <div class="tbar"><span class="throbber" id="throb">⠹</span> rpro · embedded terminal — live output from the local server (/api/run)</div>
+        <div class="tbar"><span class="throbber" id="throb">⠹</span> <span class="tbar-lbl">rpro · output</span><span style="flex:1"></span><button class="termcopy" id="termcopy" title="Copy the output (e.g. to share an error)">⧉ copy</button></div>
         <div id="xterm" class="xterm-host"></div>
       </div>
     </section>
@@ -562,6 +603,68 @@
 
     const statusEl = () => document.getElementById('statusline');
 
+    // ── Diagnostics: categorized in-app logs + copy helpers ──────────────────
+    // Paul (2026-06-30): "know every error … separate logs so you don't drown in
+    // noise and can check the relevant ones." Every error (compiler/run, app/device,
+    // ui/script, net/api) lands here — readable + COPYABLE in the 🩺 Logs view.
+    const LOGS = [];
+    const LOG_CATS = { run: 'Run / compiler', app: 'App / device', ui: 'UI / script', net: 'Network / API' };
+    let curView = 'practice', logFilter = 'all';
+    function logEvent(cat, level, msg) {
+      const e = { t: new Date().toISOString().replace('T', ' ').slice(0, 19), cat, level, msg: String(msg == null ? '' : msg) };
+      LOGS.push(e); if (LOGS.length > 600) LOGS.shift();
+      try { if (window.AndroidSeam && AndroidSeam.log) AndroidSeam.log(cat + '/' + level, e.msg); } catch (_) {}
+      if (curView === 'logs') { try { renderLogs(logFilter); } catch (_) {} }
+    }
+    window.__log = logEvent; // the Android bridge pipes native/Termux errors here too
+    window.addEventListener('error', ev => logEvent('ui', 'error',
+      (ev.message || 'script error') + (ev.filename ? '  @ ' + String(ev.filename).replace(/.*\//, '') + ':' + ev.lineno : '')));
+    window.addEventListener('unhandledrejection', ev =>
+      logEvent('ui', 'error', 'unhandled promise: ' + ((ev.reason && (ev.reason.stack || ev.reason.message)) || ev.reason)));
+
+    function toast(msg) {
+      let t = document.getElementById('toast');
+      if (!t) { t = document.createElement('div'); t.id = 'toast'; document.body.appendChild(t); }
+      t.textContent = msg; t.classList.add('show');
+      clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 1400);
+    }
+    async function copyText(s) {
+      s = s == null ? '' : String(s);
+      try { await navigator.clipboard.writeText(s); toast('copied ✓'); return; } catch (_) {}
+      try { if (window.AndroidSeam && AndroidSeam.copyText) { AndroidSeam.copyText(s); toast('copied ✓'); return; } } catch (_) {}
+      try { const ta = document.createElement('textarea'); ta.value = s; ta.style.cssText = 'position:fixed;opacity:0';
+        document.body.appendChild(ta); ta.focus(); ta.select(); document.execCommand('copy'); ta.remove(); toast('copied ✓'); return; } catch (_) {}
+      toast('copy failed');
+    }
+    function termText() { // the terminal's text (visible + scrollback), for Copy
+      try { const b = term.buffer.active, out = [];
+        for (let i = 0; i < b.length; i++) { const ln = b.getLine(i); if (ln) out.push(ln.translateToString(true)); }
+        return out.join('\n').replace(/\n{3,}/g, '\n\n').replace(/\s+$/, '');
+      } catch (_) { return ''; }
+    }
+    function renderLogs(filter) {
+      logFilter = filter || logFilter || 'all';
+      const d = document.getElementById('docview');
+      const tabs = ['all'].concat(Object.keys(LOG_CATS)).map(c => {
+        const n = c === 'all' ? LOGS.length : LOGS.filter(e => e.cat === c).length;
+        return `<button class="logtab${c === logFilter ? ' on' : ''}" data-f="${c}">${esc(c === 'all' ? 'All' : LOG_CATS[c])} <span class="logn">${n}</span></button>`;
+      }).join('');
+      const rows = LOGS.filter(e => logFilter === 'all' || e.cat === logFilter).slice().reverse();
+      const body = rows.length ? rows.map(e =>
+        `<div class="logrow lv-${esc(e.level)}"><span class="logt">${esc(e.t)}</span><span class="logcat">${esc(e.cat)}</span><span class="logmsg">${esc(e.msg)}</span></div>`).join('')
+        : '<p style="color:var(--fg-dim)">Nothing here yet. Errors — compiler · device · UI · network — show up the moment they happen.</p>';
+      const dump = rows.map(e => `[${e.t}] ${e.cat}/${e.level}  ${e.msg}`).join('\n');
+      d.innerHTML = '<h1>🩺 Logs</h1>'
+        + '<p style="color:var(--fg-dim)">Every error, grouped so you can read just the relevant ones — then ⧉ Copy to share it.</p>'
+        + '<div class="logbar"><div class="logtabs">' + tabs + '</div>'
+        + '<span style="flex:1"></span><button class="logbtn" id="logcopy">⧉ Copy</button><button class="logbtn" id="logclear">Clear</button></div>'
+        + '<div class="logwrap">' + body + '</div>';
+      d.querySelectorAll('.logtab').forEach(b => b.onclick = () => renderLogs(b.dataset.f));
+      document.getElementById('logcopy').onclick = () => copyText(dump || '(no entries)');
+      document.getElementById('logclear').onclick = () => { LOGS.length = 0; renderLogs(logFilter); };
+      d.scrollTop = 0;
+    }
+
     // ── Native on-device Run result (from the Android Termux bridge) ──
     // MainActivity.runViaTermux() compiles+runs the code with the phone's real
     // rustc (via an installed Termux) and calls this back asynchronously.
@@ -575,15 +678,27 @@
       if (text) term.write(text.replace(/\n/g, '\r\n'));
       if (res.errmsg) term.writeln('\r\n' + d(res.errmsg));
       const passed = res.exit === 0;
+      const blob = (text + ' ' + (res.errmsg || '')).toLowerCase();
+      // Surface the #1 setup gotcha with the exact one-time fix.
+      if (blob.includes('allow-external-apps')) {
+        term.writeln(''); term.writeln(r('Termux needs one more setting') + d(' — run these in Termux, then press Run again:'));
+        term.writeln('  ' + g('echo "allow-external-apps=true" >> ~/.termux/termux.properties'));
+        term.writeln('  ' + g('termux-reload-settings'));
+        logEvent('app', 'error', 'Termux allow-external-apps not enabled — needs the two setup lines + termux-reload-settings.');
+      } else {
+        logEvent('run', passed ? 'info' : 'error',
+          passed ? 'on-device run OK' : 'on-device run failed (exit ' + res.exit + ')\n' + text + (res.errmsg ? '\n' + res.errmsg : ''));
+      }
       term.writeln('');
       term.writeln(passed ? g('✓ compiled & ran on-device') + d(' — native rustc via Termux')
-                          : r('✗ exit ' + res.exit) + d(' — read the compiler output above, fix & re-run'));
+                          : r('✗ exit ' + res.exit) + d(' — read the output above; tap ⧉ copy to share it'));
       statusEl().textContent = passed ? 'ran on-device ✓' : 'failed (on-device)';
       try { setInsights(true); } catch (_) {}
       if (mode === 'learn') { // re-arm the predict gate, like the server path
         predict = { compiles: null, code: '' };
         document.querySelectorAll('.pbtn').forEach(x => x.classList.remove('sel'));
         const pc = document.getElementById('predcode'); if (pc) pc.value = '';
+        updateRunGate();
       }
     };
 
@@ -641,6 +756,7 @@
           predict = { compiles: null, code: '' };
           document.querySelectorAll('.pbtn').forEach(x => x.classList.remove('sel'));
           const pc = document.getElementById('predcode'); if (pc) pc.value = '';
+          updateRunGate();
         }
         statusEl().textContent = out.passed ? 'passed' : 'failed';
         // Refresh the list/gauge/attempts after every run; if a pass advanced
@@ -653,6 +769,7 @@
           statusEl().textContent = 'advanced ✓';
         }
       } catch (e) {
+        logEvent('net', 'info', 'local /api/run unavailable (' + (e && e.message || e) + ') — routing to on-device path');
         // The run fetch failed. Two cases:
         //  (a) an exercise IS loaded — the seam served it, but this surface can't
         //      compile (e.g. the offline Android app: no on-device Rust toolchain).
@@ -802,6 +919,38 @@
       // Diagnostics are a tier feature — re-render the last run so switching tiers
       // updates the panel immediately (Learn withholds it; Assist/Dev show it).
       if (lastOut) renderDiag(lastOut);
+      updateRunGate();
+    }
+
+    // Run/Check are GATED in Learn until a prediction is locked (active recall).
+    // Make that obvious: disable the buttons + spotlight the question; once answered,
+    // collapse the prompt to a compact confirmation and light up Run. (Paul 2026-06-30:
+    // "it forces me to answer … disable the run button until the question is answered …
+    // make the questions stand out … should disappear once satisfied.")
+    function updateRunGate() {
+      const answered = predict.compiles !== null;
+      const gated = (mode === 'learn' && !answered);
+      ['runbtn', 'checkbtn'].forEach(id => {
+        const b = document.getElementById(id);
+        if (!b) return;
+        b.disabled = gated;
+        b.classList.toggle('gated', gated);
+        if (gated) b.title = 'Answer the prediction above to unlock Run';
+      });
+      const runb = document.getElementById('runbtn');
+      if (runb) runb.classList.toggle('cta', mode === 'learn' && answered);
+      const pb = document.getElementById('predictbar');
+      if (pb) pb.classList.toggle('needs-answer', gated);
+      const prose = document.getElementById('predictProse');
+      if (prose) prose.style.display = (mode === 'learn' && !answered) ? '' : 'none';
+      const done = document.getElementById('predictDone');
+      if (done) {
+        if (mode === 'learn' && answered) {
+          done.hidden = false;
+          done.textContent = '✓ Predicted: ' + (predict.compiles ? 'passes' : 'fails')
+            + (predict.code ? ' (' + predict.code + ')' : '') + ' — now press Run to see the real result.';
+        } else { done.hidden = true; }
+      }
     }
 
     // Compare the learner's locked prediction against the real result.
@@ -971,6 +1120,7 @@
       document.querySelectorAll('.pbtn').forEach(b => b.classList.remove('sel'));
       const pc = document.getElementById('predcode'); if (pc) pc.value = '';
       const pv = document.getElementById('predverdict'); if (pv) pv.textContent = '';
+      try { updateRunGate(); } catch (_) {}
       document.getElementById('lessonTitle').textContent = j.title || j.exercise;
       const mins = j.estimated_minutes ? ` · ~${j.estimated_minutes} min` : '';
       // The concept is a tappable glossary chip — tap it for a plain-language,
@@ -1208,8 +1358,9 @@
       flushQuote();
       return html;
     }
-    const MENU_VIEWS = ['book', 'glossary', 'cheatsheets', 'roadmap'];
+    const MENU_VIEWS = ['book', 'glossary', 'cheatsheets', 'roadmap', 'logs'];
     async function showView(view, chapter, anchor) {
+      curView = view;
       document.querySelectorAll('.tab[data-view]').forEach(t => {
         const on = t.dataset.view === view;
         t.classList.toggle('active', on);
@@ -1239,6 +1390,8 @@
         await renderQuizzes(chapter || null);
       } else if (view === 'cheatsheets') {
         await renderCheatsheets(chapter || null);
+      } else if (view === 'logs') {
+        renderLogs(logFilter);
       }
     }
 
@@ -1906,14 +2059,16 @@
       }
     });
     document.getElementById('resetbtn').onclick = () => { editorEl().value = curOriginal; markEdited(); editorEl().focus(); };
+    document.getElementById('termcopy')?.addEventListener('click', () => copyText(termText()));
     document.getElementById('hintbtn').onclick = runHint;
     // predict-first: lock a compiles/fails guess (+ optional error code) before Run
     document.querySelectorAll('.pbtn').forEach(b => b.onclick = () => {
       document.querySelectorAll('.pbtn').forEach(x => x.classList.remove('sel'));
       b.classList.add('sel');
       predict.compiles = b.dataset.pred === 'compiles';
+      updateRunGate();
     });
-    document.getElementById('predcode').addEventListener('input', e => { predict.code = e.target.value; });
+    document.getElementById('predcode').addEventListener('input', e => { predict.code = e.target.value; updateRunGate(); });
     // Mode switcher (Learn / Assist / Dev) + restore the saved mode.
     document.querySelectorAll('#modesw button').forEach(b => b.onclick = () => setMode(b.dataset.mode));
     setMode(mode);
