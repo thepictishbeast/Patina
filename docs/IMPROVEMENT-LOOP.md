@@ -1172,6 +1172,7 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   (deeper help comes from trying, not bumping a flag). `--level`/`--solution` help updated to match. The
   cross-surface hint behavior (text + gate + escalation) is now fully consistent across web/CLI. Verified
   live: 1 attempt → `--solution`/`--level 3` both give rung 1/3; 2 attempts → rung 2; 3 → rung 3 last-resort.
+- ✅ **v0.4 declutter #1 — IDE-first: Insights drawer collapsed by default (`a5afc9b`, 2026-07-02).** Paul: *"way too congested and noisy … focus on the task and the IDE mostly."* The Diagnostics/Book-refs/Tutor panels used to stack on the main screen permanently (a Run auto-opened them AND persisted). Now the main view = task + IDE (exercise → editor → Run/Check → terminal); Insights is collapsed by default, auto-opens **transiently** after a Run/Hint, and pins across sessions only via the explicit ▦ toggle. `setInsights(on,pin)` + renderCurrent collapse-on-new-exercise. Verified LIVE (390×840): clean default (screenshot), transient auto-open, ▦ pins. e2e 35/35. **NO APK — batching to v0.4** ([[release-cadence-and-v04]]); web/desktop live now.
 - ✅ **Full CI-mirror verification + 2 rustdoc-warning fixes (`3d5966f`, 2026-07-02).** Ran `scripts/check.sh` (the
   complete gate set — fmt, clippy -D warnings, test, doc, e2e smoke, exercise integrity, cli smoke, gui-transforms,
   book anchors, language-seam guard, wasm32 build) to confirm this session's ~20 changes are green end-to-end:
