@@ -301,7 +301,8 @@ struct MdSurface {
     name: &'static str,
     /// Heading shown when listing all items.
     list_title: &'static str,
-    /// Singular noun for the "no <noun> …" not-found line.
+    /// Singular noun for the "no `<noun>` …" not-found line (backticked so
+    /// rustdoc reads it as code, not an HTML tag).
     noun: &'static str,
     /// Label + command printed after printing one item (the "what next" nudge).
     footer_label: &'static str,

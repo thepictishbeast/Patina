@@ -2,7 +2,7 @@
 //!
 //! Loads plain-language Rust term definitions from a flat `glossary.toml` and
 //! looks them up by name or alias (case- and separator-insensitive). It is pure
-//! data + a map — no markdown parsing, no search index (unlike [`rpro_book`]).
+//! data + a map — no markdown parsing, no search index (unlike `rpro_book`).
 //! Shared by every surface (web/CLI/TUI) so one term map is the single source of
 //! truth a learner can consult offline, with no LLM.
 
