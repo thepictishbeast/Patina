@@ -19,6 +19,10 @@
   still previews. No pty — a single JSON request/response. Implements docs/UX.md.
 -->
 <link rel="stylesheet" href="vendor/xterm/xterm.css" />
+<!-- Bundled Noto Color Emoji (OFL) — local()-gated @font-face so systems WITH a
+     system emoji font never download it; fontless FOSS-desktop builds still get
+     full color emoji instead of tofu boxes. (Paul: bundle everything.) -->
+<link rel="stylesheet" href="vendor/emoji/noto-emoji.css" />
 <style>
   :root {
     --accent: #f74c00;          /* Ferris orange */
