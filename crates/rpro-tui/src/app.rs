@@ -15,17 +15,20 @@ pub enum Tab {
     Lessons,
     /// The embedded Rust Book reader.
     Book,
+    /// The per-phase quick-reference cheatsheets.
+    Cheatsheets,
     /// Roadmap / tasks.
     Roadmap,
 }
 
 impl Tab {
     /// Every tab, in display order.
-    pub const ALL: [Self; 5] = [
+    pub const ALL: [Self; 6] = [
         Self::Dashboard,
         Self::Exercise,
         Self::Lessons,
         Self::Book,
+        Self::Cheatsheets,
         Self::Roadmap,
     ];
 
@@ -37,6 +40,7 @@ impl Tab {
             Self::Exercise => "Exercise",
             Self::Lessons => "Lessons",
             Self::Book => "Book",
+            Self::Cheatsheets => "Cheatsheets",
             Self::Roadmap => "Roadmap",
         }
     }
@@ -49,7 +53,8 @@ impl Tab {
             Self::Exercise => 1,
             Self::Lessons => 2,
             Self::Book => 3,
-            Self::Roadmap => 4,
+            Self::Cheatsheets => 4,
+            Self::Roadmap => 5,
         }
     }
 
@@ -197,6 +202,7 @@ mod tests {
         assert_eq!(Tab::Dashboard.next(), Tab::Exercise);
         assert_eq!(Tab::Exercise.next(), Tab::Lessons);
         assert_eq!(Tab::Lessons.next(), Tab::Book);
+        assert_eq!(Tab::Book.next(), Tab::Cheatsheets);
         assert_eq!(Tab::Roadmap.next(), Tab::Dashboard); // wraps
         assert_eq!(Tab::Dashboard.prev(), Tab::Roadmap); // wraps
         assert_eq!(Tab::Lessons.prev(), Tab::Exercise);

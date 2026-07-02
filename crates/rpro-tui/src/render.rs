@@ -585,12 +585,13 @@ pub fn render_book(f: &mut Frame, app: &App, book: &Book) {
     );
 }
 
-/// A curriculum lesson for the Lessons reader: a display title + its markdown.
+/// A titled markdown document for the list+body readers (Lessons / Cheatsheets):
+/// a display title + its markdown body.
 #[derive(Debug, Clone)]
-pub struct Lesson {
+pub struct MdDoc {
     /// First `# ` heading (or the file stem) — the list label.
     pub title: String,
-    /// The lesson body (HTML comments already stripped by the loader).
+    /// The body (HTML comments already stripped by the loader).
     pub markdown: String,
 }
 
@@ -635,23 +636,24 @@ fn markdown_body_lines(md: &str, app: &App) -> Vec<Line<'static>> {
         .collect()
 }
 
-/// Render the Lessons tab — the Patina curriculum. Mirrors the Book reader: a
-/// title list (left / stacked when narrow) and the selected lesson's body
-/// (right, scrollable). Read a lesson, then switch to Exercise to write it.
-pub fn render_lessons(f: &mut Frame, app: &App, lessons: &[Lesson]) {
+/// Shared list+body reader for the titled-markdown tabs (Lessons / Cheatsheets),
+/// modelled on the Book reader: a title list (left / stacked when narrow) and the
+/// selected doc's body (right, scrollable). `label` names the tab; `empty` is the
+/// hint shown when nothing's seeded.
+fn render_md_reader(f: &mut Frame, app: &App, docs: &[MdDoc], label: &str, empty: &str) {
     let area = f.area();
     let rows = Layout::vertical([Constraint::Length(3), Constraint::Min(0)]).split(area);
     f.render_widget(tab_bar(app), rows[0]);
 
-    if lessons.is_empty() {
+    if docs.is_empty() {
         f.render_widget(
-            Paragraph::new("\n  No lessons yet — run `rpro init` to seed the Patina curriculum.")
-                .block(Block::bordered().title(" Lessons ")),
+            Paragraph::new(format!("\n  {empty}"))
+                .block(Block::bordered().title(format!(" {label} "))),
             rows[1],
         );
         return;
     }
-    let sel = app.selected.min(lessons.len() - 1);
+    let sel = app.selected.min(docs.len() - 1);
 
     let body = if App::is_narrow(area.width) {
         Layout::vertical([Constraint::Length(7), Constraint::Min(0)]).split(rows[1])
@@ -659,12 +661,12 @@ pub fn render_lessons(f: &mut Frame, app: &App, lessons: &[Lesson]) {
         Layout::horizontal([Constraint::Percentage(38), Constraint::Percentage(62)]).split(rows[1])
     };
 
-    let items: Vec<ListItem> = lessons
+    let items: Vec<ListItem> = docs
         .iter()
-        .map(|l| ListItem::new(l.title.clone()))
+        .map(|d| ListItem::new(d.title.clone()))
         .collect();
     let list = List::new(items)
-        .block(Block::bordered().title(format!(" Lessons ({}) ", lessons.len())))
+        .block(Block::bordered().title(format!(" {label} ({}) ", docs.len())))
         .highlight_style(
             Style::new()
                 .fg(app.theme.accent)
@@ -675,13 +677,37 @@ pub fn render_lessons(f: &mut Frame, app: &App, lessons: &[Lesson]) {
     state.select(Some(sel));
     f.render_stateful_widget(list, body[0], &mut state);
 
-    let lines = markdown_body_lines(&lessons[sel].markdown, app);
+    let lines = markdown_body_lines(&docs[sel].markdown, app);
     f.render_widget(
         Paragraph::new(lines)
             .wrap(Wrap { trim: false })
             .scroll((app.scroll, 0))
-            .block(Block::bordered().title(format!(" {}  (PgUp/PgDn) ", lessons[sel].title))),
+            .block(Block::bordered().title(format!(" {}  (PgUp/PgDn) ", docs[sel].title))),
         body[1],
+    );
+}
+
+/// Render the Lessons tab — the Patina curriculum. Read a lesson, then switch to
+/// Exercise to write it.
+pub fn render_lessons(f: &mut Frame, app: &App, lessons: &[MdDoc]) {
+    render_md_reader(
+        f,
+        app,
+        lessons,
+        "Lessons",
+        "No lessons yet — run `rpro init` to seed the Patina curriculum.",
+    );
+}
+
+/// Render the Cheatsheets tab — the per-phase quick-reference sheets. Pure
+/// reference (unlike quizzes, which stay web/CLI so the predict-then-reveal holds).
+pub fn render_cheatsheets(f: &mut Frame, app: &App, sheets: &[MdDoc]) {
+    render_md_reader(
+        f,
+        app,
+        sheets,
+        "Cheatsheets",
+        "No cheatsheets yet — run `rpro init` to seed them.",
     );
 }
 
@@ -830,12 +856,12 @@ mod tests {
         let mut app = App::new(Theme::dark(), true);
         app.tab = crate::app::Tab::Lessons;
         let lessons = vec![
-            Lesson {
+            MdDoc {
                 title: "Lesson 1 - Bindings".into(),
                 markdown: "# Lesson 1 - Bindings\n\nA let statement binds a name to a value."
                     .into(),
             },
-            Lesson {
+            MdDoc {
                 title: "Lesson 2 - Mutability".into(),
                 markdown: "# Lesson 2\n\nUse mut to allow change.".into(),
             },
@@ -856,6 +882,42 @@ mod tests {
         term.draw(|f| render_lessons(f, &app, &[])).unwrap();
         let s = buf_text(&term);
         assert!(s.contains("No lessons yet"), "empty hint missing:\n{s}");
+        assert!(s.contains("rpro init"), "seed hint missing:\n{s}");
+    }
+
+    #[test]
+    fn cheatsheets_tab_lists_titles_and_renders_the_selected_body() {
+        let mut app = App::new(Theme::dark(), true);
+        app.tab = crate::app::Tab::Cheatsheets;
+        let sheets = vec![MdDoc {
+            title: "Phase 1 Cheatsheet".into(),
+            markdown: "# Phase 1 Cheatsheet\n\nlet binds; mut allows change.".into(),
+        }];
+        let mut term = Terminal::new(TestBackend::new(90, 20)).unwrap();
+        term.draw(|f| render_cheatsheets(f, &app, &sheets)).unwrap();
+        let s = buf_text(&term);
+        assert!(
+            s.contains("Cheatsheets (1)"),
+            "list header/count missing:\n{s}"
+        );
+        assert!(
+            s.contains("Phase 1 Cheatsheet"),
+            "sheet title missing:\n{s}"
+        );
+        assert!(
+            s.contains("allows change"),
+            "selected sheet body missing:\n{s}"
+        );
+    }
+
+    #[test]
+    fn cheatsheets_tab_handles_empty_state() {
+        let mut app = App::new(Theme::dark(), true);
+        app.tab = crate::app::Tab::Cheatsheets;
+        let mut term = Terminal::new(TestBackend::new(80, 12)).unwrap();
+        term.draw(|f| render_cheatsheets(f, &app, &[])).unwrap();
+        let s = buf_text(&term);
+        assert!(s.contains("No cheatsheets yet"), "empty hint missing:\n{s}");
         assert!(s.contains("rpro init"), "seed hint missing:\n{s}");
     }
 
