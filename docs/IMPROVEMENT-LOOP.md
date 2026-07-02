@@ -1172,6 +1172,11 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   (deeper help comes from trying, not bumping a flag). `--level`/`--solution` help updated to match. The
   cross-surface hint behavior (text + gate + escalation) is now fully consistent across web/CLI. Verified
   live: 1 attempt → `--solution`/`--level 3` both give rung 1/3; 2 attempts → rung 2; 3 → rung 3 last-resort.
+- ✅ **Offline-integrity e2e guard for the #1 charter promise (`7727f0e`, 2026-07-02).** Audited `gui/index.html` —
+  zero external resources (no CDN/web-fonts/remote scripts; pdf.js's only https strings are comments/bug links). New
+  `offline.spec.js` locks it: exercises lessons/quizzes/glossary/book/library while listening on every network
+  request, FAILS on any non-local origin (data:/blob: allowed). Catches a future CDN `<link>`/`<script>` before it
+  silently breaks offline use. Full suite **28/28**. Test-only — no app change, no release.
 - ✅ **Quiz completion tracking — the last untracked surface (#31, `0ed0275`, v0.3.10, 2026-07-02).** Lessons had
   read-tracking + Continue; the per-phase self-check quizzes had none. A quiz is now "done" once EVERY answer has
   been revealed (predict-then-verify — the honest self-check signal); mirrors lessons exactly (✓ + "N of M done" on
