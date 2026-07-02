@@ -1172,6 +1172,21 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   (deeper help comes from trying, not bumping a flag). `--level`/`--solution` help updated to match. The
   cross-surface hint behavior (text + gate + escalation) is now fully consistent across web/CLI. Verified
   live: 1 attempt → `--solution`/`--level 3` both give rung 1/3; 2 attempts → rung 2; 3 → rung 3 last-resort.
+- ✅ **`rpro quizzes` + `rpro cheatsheets` — full offline CLI curriculum parity (`52205d2`, 2026-07-02).** The
+  natural follow-up to `rpro lessons`: terminal/Termux/SSH learners now get the SAME reference surfaces the
+  web/mobile GUI has. Generalized `cmd_lessons` into a shared **traversal-safe `MdSurface`** helper (list-or-print
+  a bundled markdown surface by exact-or-prefix stem; raw input never path-joined — two `// nosemgrep` on the
+  store-owned `dir.join`s) + thin `cmd_quizzes`/`cmd_cheatsheets` wrappers. `rpro init` now seeds `quizzes/` +
+  `cheatsheets/` (11 each) alongside lessons. Verified LIVE: init seeds 11+11; `quizzes` lists, `quizzes phase1`
+  prints; bad/`../..` ids fall back safely. clippy 0, 5 tests, seam-guard + fmt clean.
+- ✅ **Offline book Library — 9 original FOSS PDFs + pdf.js reader (`3876c39`/mobile `cf3c021`, v0.3.5, 2026-07-02).**
+  Paul: *"list all the textbooks unaltered in their original PDFs so they can be viewed offline."* New **📚 Library**
+  (⋯ More): 9 license-clean books (TRPL, Comprehensive Rust, Reference, Nomicon, Cargo Book, Edition Guide, Embedded,
+  Design Patterns, Rustc Dev Guide) read **fully offline** via a vendored, trimmed **pdf.js v6.1.200** (Apache-2.0).
+  Opens full-screen via top-level nav (server CSP `frame-ancestors 'none'` + `X-Frame-Options DENY` block iframing —
+  kept; top-level nav is fine; device Back returns). Static under `gui/` → served by both desktop ServeDir + the
+  mobile WebView interceptor (added `.mjs`/`.wasm`/`.pdf`/… MIME). Verified LIVE: TRPL renders 524pp with outline/
+  search/zoom, 0 errors; e2e 21/21. APK v0.3.5 published + verified + emailed (polished HTML).
 - ✅ **`rpro lessons` — the curriculum reaches the terminal learner (`<pending>`).** Cross-surface gap: the web
   had all 6 study surfaces, but the CLI only exposed `book`, `glossary`, and `exercises` — a Termux/SSH learner
   could read the Book and practice but **could not read the 37 lessons**. Added `rpro lessons [id]`: no id lists
