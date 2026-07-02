@@ -76,6 +76,7 @@ fn run_tui(store: &Store, book: &Book, start_tab: Tab, start_selected: usize) ->
     app.selected = start_selected;
     let mut dash = dashboard_data(store);
     let mut ex = exercise_view_data(store);
+    let lessons = lessons_data(store); // curriculum is static for the session
     let store_root = store.root().to_path_buf();
 
     enable_raw_mode()?;
@@ -90,6 +91,7 @@ fn run_tui(store: &Store, book: &Book, start_tab: Tab, start_selected: usize) ->
         loop {
             let list_len = match app.tab {
                 Tab::Dashboard => dash.up_next.len(),
+                Tab::Lessons => lessons.len(),
                 Tab::Book => book.chapters.len(),
                 Tab::Exercise | Tab::Roadmap => 0,
             };
@@ -124,6 +126,7 @@ fn run_tui(store: &Store, book: &Book, start_tab: Tab, start_selected: usize) ->
             terminal.draw(|f| match app.tab {
                 Tab::Dashboard => render::render_dashboard(f, &app, &dash),
                 Tab::Exercise => render::render_exercise(f, &app, &ex),
+                Tab::Lessons => render::render_lessons(f, &app, &lessons),
                 Tab::Book => render::render_book(f, &app, book),
                 Tab::Roadmap => render::render_roadmap(f, &app, ROADMAP_MD),
             })?;
@@ -288,6 +291,52 @@ fn exercise_view_data(store: &Store) -> render::ExerciseViewData {
             ..Default::default()
         },
     )
+}
+
+/// Load the bundled Patina lessons for the Lessons tab: every `*.md` in the
+/// store's `lessons/` dir, in filename order, titled by its first `# ` heading
+/// (or the file stem), with authoring HTML comments stripped for a clean read.
+/// Defensive: a missing/empty dir yields an empty list (the tab shows a hint).
+fn lessons_data(store: &Store) -> Vec<render::Lesson> {
+    let dir = store.root().join("lessons");
+    let mut files: Vec<std::path::PathBuf> = std::fs::read_dir(&dir) // nosemgrep -- store-owned dir
+        .into_iter()
+        .flatten()
+        .flatten()
+        .map(|e| e.path())
+        .filter(|p| p.extension().and_then(|x| x.to_str()) == Some("md"))
+        .collect();
+    files.sort();
+    files
+        .iter()
+        .filter_map(|p| {
+            let md = std::fs::read_to_string(p).ok()?;
+            let stem = p.file_stem().and_then(|s| s.to_str()).unwrap_or("lesson");
+            let title = md
+                .lines()
+                .find_map(|l| l.strip_prefix("# ").map(|t| t.trim().to_string()))
+                .unwrap_or_else(|| stem.to_string());
+            Some(render::Lesson {
+                title,
+                markdown: strip_html_comments(&md),
+            })
+        })
+        .collect()
+}
+
+/// Remove `<!-- … -->` authoring notes from markdown for a clean terminal read.
+fn strip_html_comments(md: &str) -> String {
+    let mut out = String::with_capacity(md.len());
+    let mut rest = md;
+    while let Some(start) = rest.find("<!--") {
+        out.push_str(&rest[..start]);
+        rest = match rest[start..].find("-->") {
+            Some(end) => &rest[start + end + 3..],
+            None => "", // unterminated: drop the tail
+        };
+    }
+    out.push_str(rest);
+    out
 }
 
 /// Write the language scaffold for `code` into `dir` (creating parents).

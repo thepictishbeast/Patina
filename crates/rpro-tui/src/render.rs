@@ -575,9 +575,32 @@ pub fn render_book(f: &mut Frame, app: &App, book: &Book) {
         why: String::new(),
     });
     let md = chapter.display_markdown(&url);
+    let lines = markdown_body_lines(&md, app);
+    f.render_widget(
+        Paragraph::new(lines)
+            .wrap(Wrap { trim: false })
+            .scroll((app.scroll, 0))
+            .block(Block::bordered().title(format!(" {}  (PgUp/PgDn) ", ids[sel]))),
+        body[1],
+    );
+}
+
+/// A curriculum lesson for the Lessons reader: a display title + its markdown.
+#[derive(Debug, Clone)]
+pub struct Lesson {
+    /// First `# ` heading (or the file stem) — the list label.
+    pub title: String,
+    /// The lesson body (HTML comments already stripped by the loader).
+    pub markdown: String,
+}
+
+/// Render a markdown body to styled TUI lines — shared by the Book + Lessons
+/// readers: headings tinted+bold, blockquote callouts as a muted left rail,
+/// code-fence bodies tinted (the fence lines themselves hidden), and prose with
+/// inline markdown resolved (no raw `_`/`**`/`` ` ``/`[]()` markers leaking).
+fn markdown_body_lines(md: &str, app: &App) -> Vec<Line<'static>> {
     let mut in_code = false;
-    let lines: Vec<Line> = md
-        .lines()
+    md.lines()
         .filter_map(|raw| {
             let t = raw.trim_start();
             if t.starts_with("```") {
@@ -598,8 +621,6 @@ pub fn render_book(f: &mut Frame, app: &App, book: &Book) {
                         .add_modifier(Modifier::BOLD),
                 )))
             } else if let Some(b) = t.strip_prefix("> ").or_else(|| (t == ">").then_some("")) {
-                // Blockquote (the Book's many Note/Warning callouts): a muted,
-                // marked left rail instead of a literal `>`. ASCII-safe rail.
                 let rail = if app.ascii { "| " } else { "▏ " };
                 Some(Line::from(Span::styled(
                     format!("{rail}{b}"),
@@ -608,17 +629,58 @@ pub fn render_book(f: &mut Frame, app: &App, book: &Book) {
                         .add_modifier(Modifier::ITALIC),
                 )))
             } else {
-                // Prose line: render inline markdown as styled spans (no raw
-                // `_`/`**`/`` ` ``/`[]()` markers leaking into the reader).
                 Some(Line::from(inline_spans(raw, &app.theme)))
             }
         })
+        .collect()
+}
+
+/// Render the Lessons tab — the Patina curriculum. Mirrors the Book reader: a
+/// title list (left / stacked when narrow) and the selected lesson's body
+/// (right, scrollable). Read a lesson, then switch to Exercise to write it.
+pub fn render_lessons(f: &mut Frame, app: &App, lessons: &[Lesson]) {
+    let area = f.area();
+    let rows = Layout::vertical([Constraint::Length(3), Constraint::Min(0)]).split(area);
+    f.render_widget(tab_bar(app), rows[0]);
+
+    if lessons.is_empty() {
+        f.render_widget(
+            Paragraph::new("\n  No lessons yet — run `rpro init` to seed the Patina curriculum.")
+                .block(Block::bordered().title(" Lessons ")),
+            rows[1],
+        );
+        return;
+    }
+    let sel = app.selected.min(lessons.len() - 1);
+
+    let body = if App::is_narrow(area.width) {
+        Layout::vertical([Constraint::Length(7), Constraint::Min(0)]).split(rows[1])
+    } else {
+        Layout::horizontal([Constraint::Percentage(38), Constraint::Percentage(62)]).split(rows[1])
+    };
+
+    let items: Vec<ListItem> = lessons
+        .iter()
+        .map(|l| ListItem::new(l.title.clone()))
         .collect();
+    let list = List::new(items)
+        .block(Block::bordered().title(format!(" Lessons ({}) ", lessons.len())))
+        .highlight_style(
+            Style::new()
+                .fg(app.theme.accent)
+                .add_modifier(Modifier::BOLD),
+        )
+        .highlight_symbol("▸ ");
+    let mut state = ListState::default();
+    state.select(Some(sel));
+    f.render_stateful_widget(list, body[0], &mut state);
+
+    let lines = markdown_body_lines(&lessons[sel].markdown, app);
     f.render_widget(
         Paragraph::new(lines)
             .wrap(Wrap { trim: false })
             .scroll((app.scroll, 0))
-            .block(Block::bordered().title(format!(" {}  (PgUp/PgDn) ", ids[sel]))),
+            .block(Block::bordered().title(format!(" {}  (PgUp/PgDn) ", lessons[sel].title))),
         body[1],
     );
 }
@@ -749,6 +811,52 @@ mod tests {
         assert!(text.contains("30%"), "gauge pct missing:\n{text}");
         assert!(text.contains("ownership/01_move"), "current id missing");
         assert!(text.contains("ownership/02_clone"), "up-next missing");
+    }
+
+    fn buf_text(term: &Terminal<TestBackend>) -> String {
+        let buf = term.backend().buffer();
+        let mut s = String::new();
+        for y in 0..buf.area.height {
+            for x in 0..buf.area.width {
+                s.push_str(buf[(x, y)].symbol());
+            }
+            s.push('\n');
+        }
+        s
+    }
+
+    #[test]
+    fn lessons_tab_lists_titles_and_renders_the_selected_body() {
+        let mut app = App::new(Theme::dark(), true);
+        app.tab = crate::app::Tab::Lessons;
+        let lessons = vec![
+            Lesson {
+                title: "Lesson 1 - Bindings".into(),
+                markdown: "# Lesson 1 - Bindings\n\nA let statement binds a name to a value."
+                    .into(),
+            },
+            Lesson {
+                title: "Lesson 2 - Mutability".into(),
+                markdown: "# Lesson 2\n\nUse mut to allow change.".into(),
+            },
+        ];
+        let mut term = Terminal::new(TestBackend::new(90, 20)).unwrap();
+        term.draw(|f| render_lessons(f, &app, &lessons)).unwrap();
+        let s = buf_text(&term);
+        assert!(s.contains("Lessons (2)"), "list header/count missing:\n{s}");
+        assert!(s.contains("Lesson 1"), "first lesson title missing:\n{s}");
+        assert!(s.contains("binds"), "selected lesson body missing:\n{s}");
+    }
+
+    #[test]
+    fn lessons_tab_handles_empty_state() {
+        let mut app = App::new(Theme::dark(), true);
+        app.tab = crate::app::Tab::Lessons;
+        let mut term = Terminal::new(TestBackend::new(80, 12)).unwrap();
+        term.draw(|f| render_lessons(f, &app, &[])).unwrap();
+        let s = buf_text(&term);
+        assert!(s.contains("No lessons yet"), "empty hint missing:\n{s}");
+        assert!(s.contains("rpro init"), "seed hint missing:\n{s}");
     }
 
     #[test]

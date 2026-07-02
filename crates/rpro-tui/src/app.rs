@@ -11,6 +11,8 @@ pub enum Tab {
     Dashboard,
     /// The exercise view (raw compiler output + diagnostics).
     Exercise,
+    /// The Patina curriculum — the authored beginner lessons.
+    Lessons,
     /// The embedded Rust Book reader.
     Book,
     /// Roadmap / tasks.
@@ -19,7 +21,13 @@ pub enum Tab {
 
 impl Tab {
     /// Every tab, in display order.
-    pub const ALL: [Self; 4] = [Self::Dashboard, Self::Exercise, Self::Book, Self::Roadmap];
+    pub const ALL: [Self; 5] = [
+        Self::Dashboard,
+        Self::Exercise,
+        Self::Lessons,
+        Self::Book,
+        Self::Roadmap,
+    ];
 
     /// The tab's display title.
     #[must_use]
@@ -27,6 +35,7 @@ impl Tab {
         match self {
             Self::Dashboard => "Dashboard",
             Self::Exercise => "Exercise",
+            Self::Lessons => "Lessons",
             Self::Book => "Book",
             Self::Roadmap => "Roadmap",
         }
@@ -38,8 +47,9 @@ impl Tab {
         match self {
             Self::Dashboard => 0,
             Self::Exercise => 1,
-            Self::Book => 2,
-            Self::Roadmap => 3,
+            Self::Lessons => 2,
+            Self::Book => 3,
+            Self::Roadmap => 4,
         }
     }
 
@@ -185,8 +195,11 @@ mod tests {
     #[test]
     fn tabs_cycle_and_wrap() {
         assert_eq!(Tab::Dashboard.next(), Tab::Exercise);
+        assert_eq!(Tab::Exercise.next(), Tab::Lessons);
+        assert_eq!(Tab::Lessons.next(), Tab::Book);
         assert_eq!(Tab::Roadmap.next(), Tab::Dashboard); // wraps
         assert_eq!(Tab::Dashboard.prev(), Tab::Roadmap); // wraps
+        assert_eq!(Tab::Lessons.prev(), Tab::Exercise);
         // ALL indices line up
         for (i, t) in Tab::ALL.iter().enumerate() {
             assert_eq!(t.index(), i);
