@@ -280,8 +280,8 @@
 
   .center { display:flex; flex-direction:column; min-height:0; }
   .lesson { padding:16px 20px; overflow:auto; }
-  .lesson h1 { font-size:20px; margin:0 0 6px; }
-  .lesson .sub { color:var(--fg-dim); font-size:13px; margin-bottom:14px; }
+  .lesson h1 { font-size:19px; margin:0 0 4px; line-height:1.25; }
+  .lesson .sub { color:var(--fg-dim); font-size:12.5px; margin-bottom:9px; }
   /* concept chip → tap for a glossary definition */
   .gloss { color:var(--accent-soft); border-bottom:1px dotted var(--accent-soft); cursor:pointer; }
   .lesson-link { color:var(--note); font-weight:600; text-decoration:none; }
@@ -306,7 +306,7 @@
     padding:12px 14px; box-shadow:0 0 0 3px rgba(247,76,0,.12); animation:predictPulse 2s ease-in-out infinite; }
   .predict.needs-answer .pl { color:var(--accent); font-weight:700; }
   @keyframes predictPulse { 0%,100%{box-shadow:0 0 0 3px rgba(247,76,0,.10)} 50%{box-shadow:0 0 0 5px rgba(247,76,0,.22)} }
-  .predict-prose { font-size:13.5px; }
+  .predict-prose { font-size:13px; margin:2px 0 0; color:var(--fg-dim); }
   .predict-done { margin:8px 0 2px; padding:9px 14px; border-radius:10px; font-size:13.5px; font-weight:600;
     color:var(--done); background:rgba(126,211,33,.08); border:1px solid rgba(126,211,33,.3); }
   /* Learn / Assist / Dev mode switcher — Learn is strict (you do the work). */
@@ -547,9 +547,7 @@
         <h1 id="lessonTitle">Tempered Studio</h1>
         <div class="sub" id="lessonSub">loading the current exercise…</div>
         <div class="glossbox" id="glossbox" hidden aria-live="polite"></div>
-        <p id="predictProse" class="predict-prose"><b>Predict first:</b> will this <b>pass</b> — compile <i>and</i> run cleanly? If not,
-        what goes wrong: a compile <b>error code</b>, or a <b>panic</b> when it runs? Lock your
-        guess, then press <b>Run</b> — you'll read the <i>real</i> output, by hand.</p>
+        <p id="predictProse" class="predict-prose"><b>Predict first</b> — will it <b>pass</b>, or <b>fail</b> with a compile <b>error code</b> or a runtime <b>panic</b>? Lock your guess, then <b>Run</b>.</p>
         <div class="predict" id="predictbar">
           <span class="pl">🔮 Your prediction:</span>
           <!-- data-pred "compiles" = predicts SUCCESS (compiles AND runs clean); the
