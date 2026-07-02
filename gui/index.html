@@ -170,6 +170,9 @@
   .docview .lessoncheat { margin:6px 0; color:var(--fg-dim); font-size:13.5px; }
   .docview .cheatlink { color:var(--accent); font-weight:600; text-decoration:none; }
   .docview .cheatlink:hover { text-decoration:underline; }
+  .docview .lessonbook { margin:6px 0; color:var(--fg-dim); font-size:13.5px; }
+  .docview .booklink { color:var(--accent); font-weight:600; text-decoration:none; }
+  .docview .booklink:hover { text-decoration:underline; }
   /* Roadmap tab: the learner's curriculum journey (a card per phase) */
   .docview .roadintro { color:var(--fg-dim); margin:0 0 18px; max-width:70ch; }
   .docview .roadphase { margin:0 0 14px; padding:12px 16px; border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:8px; }
@@ -1633,8 +1636,10 @@
         }).join('');
         const nRead = g.lessons.filter(l => read.has(l.id)).length;
         const badge = nRead ? `<span class="readbadge">${nRead}/${g.lessons.length} read${nRead === g.lessons.length ? ' ✓' : ''}</span>` : '';
+        const bk = phaseBook(g.phase);
         const links = `<a href="#" class="cheatlink" data-cheat="${esc(g.phase)}">📋 Cheatsheet</a>`
-          + ` · <a href="#" class="quizlink" data-quiz="${esc(g.phase)}">❓ Quiz</a>`;
+          + ` · <a href="#" class="quizlink" data-quiz="${esc(g.phase)}">❓ Quiz</a>`
+          + ` · <a href="#" class="booklink" data-file="${esc(bk.file)}">📖 ${esc(bk.short)}</a>`;
         return `<section class="roadphase"><h2>${esc(g.name)}${badge}</h2>`
           + `<ul class="roadlessons">${lis}</ul><p class="roadlinks">${links}</p></section>`;
       }).join('');
@@ -1645,6 +1650,8 @@
         a.onclick = e => { e.preventDefault(); showView('cheatsheets', a.dataset.cheat); });
       d.querySelectorAll('.quizlink').forEach(a =>
         a.onclick = e => { e.preventDefault(); showView('quizzes', a.dataset.quiz); });
+      d.querySelectorAll('.booklink').forEach(a =>
+        a.onclick = e => { e.preventDefault(); showView('library', a.dataset.file); });
       d.scrollTop = 0;
     }
 
@@ -1712,6 +1719,15 @@
       if (n <= 35) return 'phase9';
       return 'tooling'; // 36–37
     }
+
+    // Each curriculum phase's companion book in the offline 📚 Library — the
+    // original text that covers this phase in depth. The beginner path tracks
+    // "The Book" (TRPL); the tooling phase maps to The Cargo Book. This weaves
+    // the Library INTO the learning flow (#32) instead of leaving it a separate
+    // shelf: every lesson + Journey stage points at where to read deeper offline.
+    const DEFAULT_BOOK = { file: 'the-rust-programming-language.pdf', short: 'The Rust Programming Language' };
+    const PHASE_BOOK = { tooling: { file: 'the-cargo-book.pdf', short: 'The Cargo Book' } };
+    function phaseBook(phaseId) { return PHASE_BOOK[phaseId] || DEFAULT_BOOK; }
 
     // The Lessons tab: the embedded Patina curriculum (the 37 authored,
     // beginner-tuned lessons), served offline by /api/lessons. With no id it
@@ -1799,7 +1815,14 @@
         const cheatHtml = quizId
           ? `<p class="lessoncheat">📋 Quick reference: <a href="#" class="cheatlink" data-cheat="${esc(quizId)}">this phase's cheat sheet →</a></p>`
           : '';
-        d.innerHTML = back + '<div class="bookbody lessonbody">' + mdToHtml(md) + '</div>' + cheatHtml + practiceHtml + quizHtml + navHtml;
+        // Companion original text: link to the phase's book in the offline Library,
+        // so a curious learner can read the same topic in depth (#32 — books woven
+        // into the lesson flow, not a separate shelf). Read fully offline.
+        const bk = phaseBook(quizId);
+        const bookHtml = quizId
+          ? `<p class="lessonbook">📖 Read deeper: <a href="#" class="booklink" data-file="${esc(bk.file)}">${esc(bk.short)} (offline) →</a></p>`
+          : '';
+        d.innerHTML = back + '<div class="bookbody lessonbody">' + mdToHtml(md) + '</div>' + cheatHtml + bookHtml + practiceHtml + quizHtml + navHtml;
         markLessonRead(id); // reading it = progress (✓ in the list + Journey counts)
       }
       d.querySelectorAll('.lessonback').forEach(a => a.onclick = e => { e.preventDefault(); renderLessons(null); });
@@ -1807,6 +1830,8 @@
         a.onclick = e => { e.preventDefault(); showView('quizzes', a.dataset.quiz); });
       d.querySelectorAll('.cheatlink').forEach(a =>
         a.onclick = e => { e.preventDefault(); showView('cheatsheets', a.dataset.cheat); });
+      d.querySelectorAll('.booklink').forEach(a =>
+        a.onclick = e => { e.preventDefault(); showView('library', a.dataset.file); });
       // Wire the nav bar: a `.md` href routes to that lesson; the Study Guide link
       // returns to the lesson list — all in-app, no page navigation.
       d.querySelectorAll('.lessonnavlink').forEach(a => {
