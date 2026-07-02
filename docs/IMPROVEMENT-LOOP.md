@@ -1172,6 +1172,13 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   (deeper help comes from trying, not bumping a flag). `--level`/`--solution` help updated to match. The
   cross-surface hint behavior (text + gate + escalation) is now fully consistent across web/CLI. Verified
   live: 1 attempt → `--solution`/`--level 3` both give rung 1/3; 2 attempts → rung 2; 3 → rung 3 last-resort.
+- ✅ **CLI glossary substring-search fallback + content-integrity audit (`aedc467`, 2026-07-02).** `rpro glossary <q>`
+  was exact/alias only — a near-miss dead-ended into a 116-line dump. Now a miss falls back to a substring search over
+  names/aliases/definitions (parity with the web filter), listing related term names (capped 15 + "… and N more").
+  Verified LIVE: exact/alias unchanged; "memory" → 5 related (was a dead miss); gibberish → clean miss; rpro-cli 5/5.
+  **Content-integrity audit this tick (rustc 1.95.0):** `scripts/verify-exercises.sh` **71/71** (every exercise still
+  emits its taught error code / panic) + `scripts/verify-book-anchors.mjs` **115/115** anchors resolve — zero drift;
+  both already gated in check.sh + CI. The teaching content is verifiably correct end-to-end. CLI only — no APK.
 - ✅ **TUI Cheatsheets tab — completes reference parity (#31/#32, `de04988`, 2026-07-02).** Follows the Lessons tab:
   the per-phase quick-reference sheets are now a browsable TUI tab (…·Book·Cheatsheets·Roadmap), so a Termux/SSH
   learner has the sheet at hand while solving. Pure reference — quizzes stay web/CLI-only ON PURPOSE so the predict-
