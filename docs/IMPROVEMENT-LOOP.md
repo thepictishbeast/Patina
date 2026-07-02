@@ -1172,6 +1172,14 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   (deeper help comes from trying, not bumping a flag). `--level`/`--solution` help updated to match. The
   cross-surface hint behavior (text + gate + escalation) is now fully consistent across web/CLI. Verified
   live: 1 attempt → `--solution`/`--level 3` both give rung 1/3; 2 attempts → rung 2; 3 → rung 3 last-resort.
+- ✅ **The Tutor reacts to your run — no more static question (#31, `f82bda5`, v0.3.11, 2026-07-02).** Directly
+  closes Paul's feedback: *"there is no answer to the question it asks; the questions should disappear once it's
+  satisfied."* The Tutor was one hard-coded prompt forever; now `renderTutor(passed, code)` (wired after renderDiag
+  + the Termux path, reset per exercise) gives 4 states — pre-run predict prompt; **✓ Solved** (acknowledge + move
+  on); failed-Learn → "read the terminal, first error" (NEVER reveals the code — Learn's by-hand tier); failed-
+  Assist/Dev → names the real E-code + asks what it means. Still strictly guide-only (never the fix). Verified LIVE
+  (390×844): all 4 states; Assist E0384 references the code (screenshot); Learn never leaks it. +tutor.spec.js,
+  suite **29/29**. APK v0.3.11 published + verified + emailed.
 - ✅ **Offline-integrity e2e guard for the #1 charter promise (`7727f0e`, 2026-07-02).** Audited `gui/index.html` —
   zero external resources (no CDN/web-fonts/remote scripts; pdf.js's only https strings are comments/bug links). New
   `offline.spec.js` locks it: exercises lessons/quizzes/glossary/book/library while listening on every network
