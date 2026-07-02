@@ -1172,6 +1172,13 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   (deeper help comes from trying, not bumping a flag). `--level`/`--solution` help updated to match. The
   cross-surface hint behavior (text + gate + escalation) is now fully consistent across web/CLI. Verified
   live: 1 attempt → `--solution`/`--level 3` both give rung 1/3; 2 attempts → rung 2; 3 → rung 3 last-resort.
+- ✅ **Book cross-links deep-link to the exact chapter (#32, `866608e`, v0.3.9, 2026-07-02).** Upgraded the
+  phase→book weave from "open at page 1" to a real chapter deep-link (pdf.js `#page=N`) that also names the chapter.
+  Extracted real TRPL page numbers from the PDF outline (pypdf in a scratch venv) and mapped each phase → its
+  chapter (Ownership→p65 Understanding Ownership, Generics→p174, Concurrency→p336, Tooling→The Cargo Book, …).
+  `renderLibrary(file, page)` appends `#page=N`; lesson link reads 'TRPL — "Understanding Ownership" (offline)';
+  Journey shows the chapter name. Verified LIVE: clicking Ownership opens TRPL at p65 (Chapter 4, screenshot);
+  lesson 15 link carries p65. gui-transform + e2e green. APK v0.3.9 published + verified + emailed.
 - ✅ **"Continue" — one-tap resume to your first unread lesson (#31, `9962fbe`, v0.3.8, 2026-07-02).** Turns the
   lesson read-tracking into navigation: the Lessons list leads with a CTA — "▶ Start — Lesson 1" (fresh), "▶
   Continue — Lesson N" (first UNREAD), or "✓ read all 37 — revisit" (done, no button). One tap resumes where you
