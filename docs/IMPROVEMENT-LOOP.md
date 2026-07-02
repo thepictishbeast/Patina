@@ -1432,4 +1432,7 @@ changes. **Throttle agent fan-out** — concurrent heavy workflows hit the rate 
   (Paul's explicit ask — highest-value *unblocked* content feature, task #24); G2 Learn/
   Assist/Dev under-differentiated (#18); G3 lessons Phases 2-9 (blocked, #16/#17); G4
   content interactivity exercise-only (#17/#24); G5 functional/advanced exercises thin
-  (blocked, #14/#15); G6 editor pane clips framing comments (#25).
+  (blocked, #14/#15); G6 editor pane clips framing comments (#25).- ✅ **v0.4 beauty #2 — glyph robustness + predict-input polish (`666bc74`, 2026-07-02).** (a) The UI leans on emoji affordances but the font stack had no emoji fallback → tofu □ boxes on any host without a system emoji font (this box + lean Linux desktops the AppImage/.deb/.rpm ships to). Added a shared `--emoji` fallback appended to `--ui`/`--mono` (per-glyph fallback keeps text in the UI font, emoji resolve to the OS font on Win/Mac/Android/most-Linux). (b) The predict error-code input was a fixed 150px that truncated its placeholder; now flex-fills its row (328px) with a fitting placeholder + accent focus border. Verified LIVE + e2e green. NO APK — batching to v0.4.
+
+### Open question for Paul — emoji font bundling
+The `--emoji` fallback fixes emoji on systems that HAVE an emoji font (Win/Mac/Android/most-Linux). A **bare-minimal Linux desktop** (no Noto Color Emoji) still shows □ boxes. To fully fix the FOSS desktop builds we'd **bundle** an emoji font: **Noto Emoji monochrome** (~0.5MB woff2, OFL — clean but loses color: green ✓, orange 🦀) or **Noto Color Emoji / Twemoji** (~10MB, full color, bloats the APK). Which tradeoff? (Default if no answer: leave the system-font dependency — most real users are fine.)
