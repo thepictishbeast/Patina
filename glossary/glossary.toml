@@ -420,3 +420,24 @@ aliases = ["slices", "slice type"]
 definition = "A slice is a reference to a contiguous run of elements WITHIN a collection — part of an array, vector, or string — rather than the whole thing, written with a range like `&v[1..4]`. It borrows the data instead of owning a copy, so it is cheap, and while a slice is alive the collection it points into cannot be changed (that borrow rule is what makes slices safe). A general slice has the type `&[T]`; a slice of a string is the special case `&str`. A slice also remembers its length, so it always knows where it ends."
 book_chapter = "ch04-03-slices"
 source = "The Rust Book, ch.4.3 \"The Slice Type\""
+
+[[term]]
+name = "Copy"
+aliases = ["copy", "copy type", "copy trait", "copy semantics", "stack copy"]
+definition = "`Copy` marks a type whose values are duplicated automatically instead of moved. The small, fixed-size types that live entirely on the stack — the integer, float, `bool`, and `char` types, and tuples of only those — are `Copy`: after `let b = a;` you can still use `a`, because `b` received its own independent copy. Types that own data elsewhere (such as `String` or a vector) are NOT `Copy`; assigning one moves ownership instead, which is why the original name can no longer be used afterward. This is the reason some values stay usable after assignment and others do not."
+book_chapter = "ch04-01-what-is-ownership"
+source = "The Rust Book, ch.4.1 \"What is Ownership?\" (Stack-Only Data: Copy)"
+
+[[term]]
+name = "Clone"
+aliases = ["clone", "cloning", ".clone()", "deep copy"]
+definition = "`Clone` is for making an explicit, complete copy of a value when the type does not copy automatically. Writing `let b = a.clone();` gives `b` its own separate data and leaves `a` fully usable — where a plain `let b = a;` would have moved `a` for a type that owns heap data. Because cloning can be real work (it may duplicate a whole collection or string), it is spelled out with `.clone()` rather than happening silently: the cost is made visible on purpose so you choose it deliberately."
+book_chapter = "ch04-01-what-is-ownership"
+source = "The Rust Book, ch.4.1 \"What is Ownership?\" (Ways Variables and Data Interact: Clone)"
+
+[[term]]
+name = "dereference"
+aliases = ["dereference", "dereferencing", "deref", "star operator", "* operator"]
+definition = "Dereferencing follows a reference to reach the value it points at, written with a leading `*` (as in `*r`). A reference such as `&x` is a borrow that lets you use a value without owning it; putting `*` in front of the reference gives you the underlying value itself. Many everyday uses need no explicit `*` because the compiler inserts it for you — for example when you call a method through a reference — but you write it yourself when you need the value rather than the reference, such as doing arithmetic or a comparison through one."
+book_chapter = "ch04-02-references-and-borrowing"
+source = "The Rust Book, ch.4.2 \"References and Borrowing\""
