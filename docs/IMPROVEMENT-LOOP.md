@@ -1172,6 +1172,13 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   (deeper help comes from trying, not bumping a flag). `--level`/`--solution` help updated to match. The
   cross-surface hint behavior (text + gate + escalation) is now fully consistent across web/CLI. Verified
   live: 1 attempt → `--solution`/`--level 3` both give rung 1/3; 2 attempts → rung 2; 3 → rung 3 last-resort.
+- ✅ **Reading-experience typography pass (#31, `9cbfbd9`, v0.3.7, 2026-07-02).** Reading (lessons/book/quizzes/
+  glossary/library) is the platform's core and had never had a type pass. Scoped to `.docview`/`.bookbody` (the
+  practice editor untouched): comfortable **~72ch measure** (column caps at 780px, was 920 — centres on desktop,
+  full-width on phones); clearer **heading hierarchy** (h1 22→25px/700 tighter tracking, h2 16→17.5px/600 with more
+  air); **prose rhythm** (body 14.6px, line-height 1.7, real 13px paragraph spacing); **code** blocks get a border +
+  padding, inline chips a hair more. Verified LIVE: lesson reads cleanly at 390×844 (screenshot); column capped+
+  centred at 1200px (780/left 210); Library still lists 9. gui-transform + e2e 21/21. APK v0.3.7 published+emailed.
 - ✅ **Books woven into the learning path (#32, `3fbc4a0`, v0.3.6, 2026-07-02).** The offline 📚 Library was
   reachable only via ⋯ More — a detached shelf. Added a `PHASE_BOOK` map (each curriculum phase → the text that
   covers it: beginner path → TRPL, tooling → The Cargo Book) and a companion **"📖 Read deeper: <Book> (offline)"**
