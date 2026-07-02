@@ -347,6 +347,17 @@
   .docview .logrow.lv-error{background:rgba(247,76,0,.06)}
   .docview .logt{color:var(--fg-dim)}.docview .logcat{color:var(--accent-soft)}
   .docview .logrow.lv-error .logmsg{color:var(--fg)}
+  /* 📚 Library */
+  .docview .liblist-ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+  .docview .libopen{display:block;padding:14px 16px;border:1px solid var(--line);border-radius:12px;
+    background:var(--bg-2);text-decoration:none;transition:.15s}
+  .docview .libopen:hover{border-color:var(--accent);transform:translateY(-1px);box-shadow:var(--shadow)}
+  .docview .libttl{display:block;color:var(--fg);font-weight:700;font-size:15px}
+  .docview .libblurb{display:block;color:var(--fg-dim);font-size:13px;margin-top:3px}
+  .docview .liblic{display:block;color:var(--accent-soft);font-size:11.5px;margin-top:5px;font-family:var(--mono)}
+  .docview .pdfframe{width:100%;height:82vh;border:1px solid var(--line);border-radius:10px;background:#fff}
+  .docview .libback{margin:0 0 10px}
+  .docview .libback a{color:var(--accent);text-decoration:none;font-weight:600}
 
   .diag { display:flex; align-items:flex-start; gap:9px; padding:10px 14px; border-bottom:1px solid var(--line); font-size:12.5px; }
   .diag .lvl{font-family:var(--mono);font-weight:700}
@@ -470,6 +481,7 @@
           <button class="menuitem" role="menuitem" data-view="book">📖 Book</button>
           <button class="menuitem" role="menuitem" data-view="glossary">📚 Glossary</button>
           <button class="menuitem" role="menuitem" data-view="cheatsheets">📋 Cheatsheets</button>
+          <button class="menuitem" role="menuitem" data-view="library">📚 Library</button>
           <button class="menuitem" role="menuitem" data-view="roadmap">🗒️ Roadmap</button>
           <button class="menuitem" role="menuitem" data-view="logs">🩺 Logs</button>
         </div>
@@ -683,6 +695,36 @@
       d.querySelectorAll('.logtab').forEach(b => b.onclick = () => renderLogs(b.dataset.f));
       document.getElementById('logcopy').onclick = () => copyText(dump || '(no entries)');
       document.getElementById('logclear').onclick = () => { LOGS.length = 0; renderLogs(logFilter); };
+      d.scrollTop = 0;
+    }
+
+    // ── 📚 Library: the original FOSS Rust books, bundled + read fully OFFLINE ──
+    // (Paul 2026-06-30: "list all the textbooks unaltered in their original PDFs
+    // so they can be viewed offline.") Rendered via the vendored pdf.js viewer —
+    // WebView can't display a PDF inline, and pdf.js works with zero network.
+    let _libCache = null;
+    async function renderLibrary(file) {
+      const d = document.getElementById('docview');
+      if (file) { // open one book full-screen in the offline pdf.js viewer.
+        // Full-page navigation (NOT an iframe): the server's global CSP sets
+        // frame-ancestors 'none' + X-Frame-Options DENY (kept for security), which
+        // blocks embedding — but top-level nav is fine. Device/browser Back returns.
+        location.href = 'vendor/pdfjs/web/viewer.html?file=' + encodeURIComponent('/library/' + file);
+        return;
+      }
+      d.innerHTML = '<h1>📚 Library</h1><p style="color:var(--fg-dim)">loading…</p>';
+      if (!_libCache) { try { _libCache = await fetch('library/manifest.json').then(r => r.json()); } catch (_) { _libCache = { books: [] }; } }
+      const books = (_libCache && _libCache.books) || [];
+      d.innerHTML = '<h1>📚 Library</h1>'
+        + `<p style="color:var(--fg-dim)">The original Rust books, bundled unaltered and readable <b>fully offline</b> — ${books.length} titles. No network, no account.</p>`
+        + (books.length
+          ? '<ul class="liblist-ul">' + books.map(b =>
+              `<li><a href="#" class="libopen" data-file="${esc(b.file)}"><span class="libttl">${esc(b.title)}</span>`
+              + `<small class="libblurb">${esc(b.blurb || '')}</small>`
+              + `<small class="liblic">${esc(b.license)} · ${esc(b.source)}</small></a></li>`).join('') + '</ul>'
+          : '<p>No books bundled. (Run the server / install the app with the library.)</p>');
+      d.querySelectorAll('.libopen').forEach(a =>
+        a.onclick = e => { e.preventDefault(); showView('library', a.dataset.file); });
       d.scrollTop = 0;
     }
 
@@ -1389,7 +1431,7 @@
       flushQuote();
       return html;
     }
-    const MENU_VIEWS = ['book', 'glossary', 'cheatsheets', 'roadmap', 'logs'];
+    const MENU_VIEWS = ['book', 'glossary', 'cheatsheets', 'library', 'roadmap', 'logs'];
     async function showView(view, chapter, anchor) {
       curView = view;
       document.querySelectorAll('.tab[data-view]').forEach(t => {
@@ -1423,6 +1465,8 @@
         await renderCheatsheets(chapter || null);
       } else if (view === 'logs') {
         renderLogs(logFilter);
+      } else if (view === 'library') {
+        await renderLibrary(chapter || null);
       }
     }
 

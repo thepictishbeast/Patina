@@ -1,0 +1,14 @@
+{
+  "note": "Original FOSS Rust books, bundled unaltered for fully-offline reading (Paul 2026-06-30). Rendered from the upstream mdBook sources; each is redistributable under the license shown.",
+  "books": [
+    { "file": "the-rust-programming-language.pdf", "title": "The Rust Programming Language", "blurb": "“The Book” — the official, canonical introduction to Rust.", "license": "MIT / Apache-2.0", "source": "rust-lang/book" },
+    { "file": "comprehensive-rust.pdf", "title": "Comprehensive Rust", "blurb": "Google’s intensive multi-day Rust course.", "license": "Apache-2.0", "source": "google/comprehensive-rust" },
+    { "file": "the-rust-reference.pdf", "title": "The Rust Reference", "blurb": "The primary reference for the Rust language.", "license": "MIT / Apache-2.0", "source": "rust-lang/reference" },
+    { "file": "the-rustonomicon.pdf", "title": "The Rustonomicon", "blurb": "The dark arts of unsafe Rust.", "license": "MIT / Apache-2.0", "source": "rust-lang/nomicon" },
+    { "file": "the-cargo-book.pdf", "title": "The Cargo Book", "blurb": "Cargo, Rust’s build tool and package manager.", "license": "MIT / Apache-2.0", "source": "rust-lang/cargo" },
+    { "file": "the-edition-guide.pdf", "title": "The Edition Guide", "blurb": "How Rust editions work and how to migrate.", "license": "MIT / Apache-2.0", "source": "rust-lang/edition-guide" },
+    { "file": "the-embedded-rust-book.pdf", "title": "The Embedded Rust Book", "blurb": "Rust on bare-metal and microcontrollers.", "license": "MIT / Apache-2.0 / CC-BY-SA", "source": "rust-embedded/book" },
+    { "file": "rust-design-patterns.pdf", "title": "Rust Design Patterns", "blurb": "Idioms, patterns, and anti-patterns.", "license": "MPL-2.0", "source": "rust-unofficial/patterns" },
+    { "file": "rustc-dev-guide.pdf", "title": "Rustc Dev Guide", "blurb": "How the Rust compiler itself works (advanced).", "license": "MIT / Apache-2.0", "source": "rust-lang/rustc-dev-guide" }
+  ]
+}
