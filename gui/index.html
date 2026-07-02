@@ -592,8 +592,7 @@
       <h2>Book refs for this exercise</h2>
       <div id="brefs"></div>
       <h2>Tutor</h2>
-      <div class="bref" style="cursor:default">💡 What did your prediction say, and what does the <code>--&gt;</code> line point at?
-        <small>(I guide — I never type your fix. Press <b>Hint</b> to climb the ladder.)</small></div>
+      <div id="tutorbox" class="bref" style="cursor:default"></div>
       <div id="hintbox"></div>
     </section>
   </main>
@@ -782,6 +781,7 @@
                           : r('✗ exit ' + res.exit) + d(' — read the output above; tap ⧉ copy to share it'));
       statusEl().textContent = passed ? 'ran on-device ✓' : 'failed (on-device)';
       try { setInsights(true); } catch (_) {}
+      renderTutor(passed, ''); // Termux output is raw (no parsed code) → by-hand phrasing
       if (mode === 'learn') { // re-arm the predict gate, like the server path
         predict = { compiles: null, code: '' };
         document.querySelectorAll('.pbtn').forEach(x => x.classList.remove('sel'));
@@ -836,9 +836,9 @@
           ? g('✓ passed') + d(' in ' + out.duration_ms + 'ms')
           : r('✗ failed') + d(' in ' + out.duration_ms + 'ms — read it top-to-bottom, then fix & re-run');
         term.writeln(''); term.writeln(verdict);
-        renderDiag(out);
+        renderDiag(out); // sets lastCode (Assist/Dev only; '' in Learn — by-hand)
         setInsights(true); // a result exists now — surface the Insights drawer
-        if (op !== 'explain') showPrediction(out);
+        if (op !== 'explain') { showPrediction(out); renderTutor(out.passed, lastCode); }
         if (mode === 'learn' && op !== 'explain') {
           // Re-arm the gate: each Learn-mode run needs a fresh prediction
           // (re-predict on retry — the verdict above stays visible as feedback).
@@ -1208,10 +1208,11 @@
         return;
       }
       curExercise = j.exercise; curOriginal = j.code || '';
-      // fresh exercise → reset the hint ladder
+      // fresh exercise → reset the hint ladder + the Tutor prompt (no run yet)
       hintLevel = 0;
       const hb = document.getElementById('hintbox'); if (hb) hb.innerHTML = '';
       const hbtn = document.getElementById('hintbtn'); if (hbtn) hbtn.disabled = false;
+      renderTutor(null); // back to the pre-run prompt for the new exercise
       // fresh exercise → reset the prediction
       predict = { compiles: null, code: '' };
       document.querySelectorAll('.pbtn').forEach(b => b.classList.remove('sel'));
@@ -1268,6 +1269,29 @@
 
     // Diagnostics pane from a run: prefer structured diagnostics, else scrape
     // error codes from the raw output (and prefill Explain with the first one).
+    // The Tutor reacts to your LAST run instead of asking the same static
+    // question forever (Paul: "there is no answer to the question it asks; the
+    // questions should disappear once it's satisfied"). Still strictly guide-only
+    // — it NEVER types the fix, and in Learn mode it never reveals the error code
+    // (you find that by hand; `code` is '' there). `passed` null = no run yet.
+    function renderTutor(passed, code) {
+      const el = document.getElementById('tutorbox');
+      if (!el) return;
+      const guide = ' <small>(I guide — I never type your fix. Press <b>Hint</b> to climb the ladder.)</small>';
+      if (passed === true) {
+        el.innerHTML = '✓ <b>Solved</b> — it compiles and runs. In one sentence, what was the bug?'
+          + ' Then it’s on to the next exercise. <small>(No hint needed — you did it.)</small>';
+      } else if (passed === false) {
+        el.innerHTML = code
+          ? '🔴 The compiler says <code>' + esc(code) + '</code> — open it in Diagnostics for the full write-up.'
+            + ' In your own words, what is it complaining about?' + guide
+          : '🔴 The compiler rejected it. Read the terminal top-to-bottom — the <b>first</b> error is the one to fix.'
+            + ' What is that first line pointing at?' + guide;
+      } else {
+        el.innerHTML = '💡 What did your prediction say, and what does the <code>--&gt;</code> line point at?' + guide;
+      }
+    }
+
     function renderDiag(out) {
       const box = document.getElementById('diag');
       // Diagnostics are a TIER feature. Reset the remembered code each call so it
