@@ -1172,6 +1172,13 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   (deeper help comes from trying, not bumping a flag). `--level`/`--solution` help updated to match. The
   cross-surface hint behavior (text + gate + escalation) is now fully consistent across web/CLI. Verified
   live: 1 attempt → `--solution`/`--level 3` both give rung 1/3; 2 attempts → rung 2; 3 → rung 3 last-resort.
+- ✅ **a11y: extended the axe audit to the content views + fixed a real contrast defect (`2e6b50d`, 2026-07-02 — web
+  now; APK batched).** The a11y spec covered only the main view; extended it to the Lessons list, an open lesson, the
+  Library list, and the Book TOC (all built this session). It immediately caught a defect I'd introduced: the
+  Continue/Start CTA was white on the bright `--accent` #f74c00 (~3.5:1, below AA 4.5:1). (The Run button dodges the
+  check only via its gradient bg — a blind spot, not compliance.) Fixed to the darker brand orange #b7410e (white =
+  5.56:1, passes AA in BOTH themes; still a prominent on-brand button). All 4 view audits 0 critical/serious; full
+  suite **31/31**. Verified the CTA still looks good at 390×844.
 - ✅ **Mobile Check = fast type-check (#30/#31, gui `63c480e` / mobile `40cc3ff`, v0.3.12, 2026-07-02).** Directly
   addresses Paul's "compiling takes a long time." Mobile Check was routing to the SAME full compile+link+run as Run.
   Now the run handler passes the op to `runViaTermux(code, cbId, op)` and the bridge branches: **check → `rustc
