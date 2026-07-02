@@ -1172,6 +1172,11 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   (deeper help comes from trying, not bumping a flag). `--level`/`--solution` help updated to match. The
   cross-surface hint behavior (text + gate + escalation) is now fully consistent across web/CLI. Verified
   live: 1 attempt → `--solution`/`--level 3` both give rung 1/3; 2 attempts → rung 2; 3 → rung 3 last-resort.
+- ✅ **"Continue" — one-tap resume to your first unread lesson (#31, `9962fbe`, v0.3.8, 2026-07-02).** Turns the
+  lesson read-tracking into navigation: the Lessons list leads with a CTA — "▶ Start — Lesson 1" (fresh), "▶
+  Continue — Lesson N" (first UNREAD), or "✓ read all 37 — revisit" (done, no button). One tap resumes where you
+  left off. Verified LIVE (390×844): fresh→Start@L1, 3-read→Continue@L4 (+ "3 of 37 read" badge + ✓ marks),
+  all-read→note; click opens + marks read. gui-transform + e2e green. APK v0.3.8 published + verified + emailed.
 - ✅ **Reading-experience typography pass (#31, `9cbfbd9`, v0.3.7, 2026-07-02).** Reading (lessons/book/quizzes/
   glossary/library) is the platform's core and had never had a type pass. Scoped to `.docview`/`.bookbody` (the
   practice editor untouched): comfortable **~72ch measure** (column caps at 780px, was 920 — centres on desktop,
