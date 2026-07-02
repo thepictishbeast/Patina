@@ -49,6 +49,12 @@
   html[data-theme="light"] {
     --bg:#f6f7f9; --bg-2:#ffffff; --bg-3:#eef1f5; --line:#dde3ea;
     --fg:#1b2330; --fg-dim:#5b6776; --accent:#b7410e; --shadow:0 6px 24px rgba(0,0,0,.10);
+    /* The STATUS palette needs light variants too: the dark-tuned greens/blues
+       (#36c46b, #5aa9ff…) are ~2.5–3:1 on white — axe flagged them serious.
+       These deepened values clear WCAG AA (≥4.5:1) for small text on --bg-2. */
+    --done:#1a7f37; --current:#0e7490; --note:#0a66c2;
+    --error:#c62828; --warn:#9a6700; --skipped:#9a6700;
+    --accent-soft:#c44000; /* .excount text + the Run gradient's far stop: 4.99:1 on white */
     --tok-k:#b7410e; --tok-s:#2e7d32; --tok-c:#6b7884; --tok-n:#6f42c1; --tok-t:#0a66c2; --tok-m:#9a6700;
   }
   * { box-sizing: border-box; }
@@ -388,7 +394,9 @@
   .terminal { margin:0 20px 18px; border:1px solid var(--line); border-radius:var(--radius); background:#0a0d12;
     box-shadow:var(--shadow); display:flex; flex-direction:column; height:240px; overflow:hidden; }
   .terminal .tbar{display:flex;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid var(--line);
-    font-family:var(--mono);font-size:11.5px;color:var(--fg-dim);flex:0 0 auto}
+    /* FIXED color, not var(--fg-dim): the terminal keeps its dark background in
+       BOTH themes, so light-theme fg-dim (#5b6776) failed contrast on it. */
+    font-family:var(--mono);font-size:11.5px;color:#9aa7b4;flex:0 0 auto}
   .xterm-host{flex:1;min-height:0;padding:6px 8px}
   .xterm-host .xterm,.xterm-host .xterm-viewport{height:100%!important;background:transparent!important}
   .throbber{color:var(--accent-soft);display:inline-block}
@@ -2307,10 +2315,17 @@
     // (Exercise-list clicks are wired in renderList → POST /api/select, which also
     // rebuilds the list; the old init-time visual-only `.sel` toggle here was dead
     // code after that landed.)
+    // Theme toggle — PERSISTED: the choice used to reset to dark on every reload
+    // (the toggle flipped the attribute but never saved it).
     document.getElementById('theme').onclick = () => {
       const h = document.documentElement;
       h.dataset.theme = h.dataset.theme === 'dark' ? 'light' : 'dark';
+      try { localStorage.setItem('ts-theme', h.dataset.theme); } catch (_) {}
     };
+    try {
+      const saved = localStorage.getItem('ts-theme');
+      if (saved === 'light' || saved === 'dark') document.documentElement.dataset.theme = saved;
+    } catch (_) {}
     // ── Insights drawer: the right pane (Diagnostics / Book refs / Tutor) is
     // supplementary — the real run output is the centre terminal — so it stays
     // collapsed until the learner opens it or a Run/Hint surfaces something worth
