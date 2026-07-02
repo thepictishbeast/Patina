@@ -1222,6 +1222,7 @@
       const hb = document.getElementById('hintbox'); if (hb) hb.innerHTML = '';
       const hbtn = document.getElementById('hintbtn'); if (hbtn) hbtn.disabled = false;
       renderTutor(null); // back to the pre-run prompt for the new exercise
+      setInsights(insightsPinned()); // collapse the drawer for a clean IDE (unless pinned)
       // fresh exercise → reset the prediction
       predict = { compiles: null, code: '' };
       document.querySelectorAll('.pbtn').forEach(b => b.classList.remove('sel'));
@@ -2173,7 +2174,7 @@
       b: () => showView('book'), t: () => showView('roadmap'), p: () => showView('practice'),
       g: () => showView('glossary'), l: () => showView('lessons'), z: () => showView('quizzes'),
       s: () => showView('cheatsheets'),
-      i: () => setInsights(!document.querySelector('main').classList.contains('show-insights')),
+      i: () => setInsights(!document.querySelector('main').classList.contains('show-insights'), true),
       f: () => setFocusMode(!document.querySelector('main').classList.contains('no-list')),
       '?': () => toggleKeysHelp(),
     };
@@ -2225,15 +2226,23 @@
     // supplementary — the real run output is the centre terminal — so it stays
     // collapsed until the learner opens it or a Run/Hint surfaces something worth
     // reading. The choice persists across sessions.
-    function setInsights(on) {
+    // The Insights drawer (Diagnostics / Book refs / Tutor) stays COLLAPSED by
+    // default so the main screen is just the task + the IDE (Paul's "focus on the
+    // IDE, don't show everything at once"). Only an explicit ▦ toggle PINS it open
+    // across sessions; the auto-open after a Run/Hint is transient — it surfaces
+    // that result, then a new exercise resets to the clean IDE.
+    function insightsPinned() {
+      try { return localStorage.getItem('ts-insights') === '1'; } catch (_) { return false; }
+    }
+    function setInsights(on, pin) {
       document.querySelector('main').classList.toggle('show-insights', on);
       document.getElementById('insightsBtn')?.setAttribute('aria-expanded', on ? 'true' : 'false');
-      try { localStorage.setItem('ts-insights', on ? '1' : '0'); } catch (_) {}
+      if (pin) { try { localStorage.setItem('ts-insights', on ? '1' : '0'); } catch (_) {} }
       if (typeof refit === 'function') refit();
     }
     document.getElementById('insightsBtn').onclick = () =>
-      setInsights(!document.querySelector('main').classList.contains('show-insights'));
-    setInsights((() => { try { return localStorage.getItem('ts-insights') === '1'; } catch (_) { return false; } })());
+      setInsights(!document.querySelector('main').classList.contains('show-insights'), true);
+    setInsights(insightsPinned());
     // ── Focus mode: collapse the exercise-list pane to give the practice work
     // area the full width (the old "Exercise" tab did this; it's now a toggle so
     // it composes with the Insights drawer). Persists across sessions.
