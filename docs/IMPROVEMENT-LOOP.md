@@ -1172,6 +1172,14 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   (deeper help comes from trying, not bumping a flag). `--level`/`--solution` help updated to match. The
   cross-surface hint behavior (text + gate + escalation) is now fully consistent across web/CLI. Verified
   live: 1 attempt → `--solution`/`--level 3` both give rung 1/3; 2 attempts → rung 2; 3 → rung 3 last-resort.
+- ✅ **Mobile Check = fast type-check (#30/#31, gui `63c480e` / mobile `40cc3ff`, v0.3.12, 2026-07-02).** Directly
+  addresses Paul's "compiling takes a long time." Mobile Check was routing to the SAME full compile+link+run as Run.
+  Now the run handler passes the op to `runViaTermux(code, cbId, op)` and the bridge branches: **check → `rustc
+  --edition 2021 --emit=metadata main.rs`** (type-check only — no codegen, link, or run), run/test → the prefer-
+  dynamic compile+run. Verified LOCALLY (rustc 1.95.0): metadata emits the IDENTICAL diagnostics (same E0384), no
+  binary, and is ~1.8× faster than compile+link / ~2.8× vs compile+run (a bigger absolute win on a slow phone). Also
+  the correct semantics (Check never runs). Verdict/status now say "type-checks ✓" vs "ran"; a 2-arg overload keeps
+  older-gui calls working. gui-transform + e2e green; APK builds (Java compiles); v0.3.12 published + verified + emailed.
 - ✅ **CLI glossary substring-search fallback + content-integrity audit (`aedc467`, 2026-07-02).** `rpro glossary <q>`
   was exact/alias only — a near-miss dead-ended into a 116-line dump. Now a miss falls back to a substring search over
   names/aliases/definitions (parity with the web filter), listing related term names (capped 15 + "… and N more").
