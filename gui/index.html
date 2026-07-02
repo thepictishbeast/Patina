@@ -282,8 +282,11 @@
      --fg-dim stays ≥4.5:1 (see note above); aria-hidden since each item's button
      label already names its full phase/id. */
   .exphase { font:600 10px var(--ui); letter-spacing:.08em; text-transform:uppercase; color:var(--fg-dim);
-    padding:10px 10px 4px; margin-top:4px; border-top:1px solid var(--line); }
+    padding:10px 10px 4px; margin-top:4px; border-top:1px solid var(--line);
+    display:flex; align-items:baseline; justify-content:space-between; gap:8px; }
   .exphase:first-child { border-top:0; margin-top:0; }
+  .exphasecount { font-family:var(--mono); font-size:9.5px; font-weight:400; letter-spacing:0; color:var(--fg-dim); }
+  .exphasecount.done { color:var(--done); }
 
   /* Recall: the spaced-repetition queue (codes the learner met, to refresh). */
   .recall { margin:6px 8px 12px; border-top:1px solid var(--line); padding-top:9px; }
@@ -969,6 +972,14 @@
         ttl.innerHTML = 'Exercises <span class="excount">' + done + '/' + items.length + ' ✓</span>'
           + '<span class="excaret" aria-hidden="true">▾</span>';
       }
+      // Per-phase progress for the group headers (done/total), mirroring the
+      // stage counts in the Lessons list — see how far you are within each topic.
+      const phaseStats = {};
+      items.forEach(e => {
+        const p = String(e.id).split('/')[0];
+        (phaseStats[p] = phaseStats[p] || { done: 0, total: 0 }).total++;
+        if (e.status === 'done') phaseStats[p].done++;
+      });
       box.innerHTML = items.length ? items.map((e, i) => {
         const st = e.status || 'locked';
         const sel = st === 'current' ? ' sel' : '';
@@ -977,7 +988,11 @@
         // (ids are `<phase>/<name>`, and the list is ordered by phase).
         const phase = String(e.id).split('/')[0];
         const prev = i > 0 ? String(items[i - 1].id).split('/')[0] : null;
-        const head = phase !== prev ? `<div class="exphase" aria-hidden="true">${esc(phase.replace(/-/g, ' '))}</div>` : '';
+        const ps = phaseStats[phase];
+        const head = phase !== prev
+          ? `<div class="exphase" aria-hidden="true">${esc(phase.replace(/-/g, ' '))}`
+            + `<span class="exphasecount${ps.done === ps.total ? ' done' : ''}">${ps.done}/${ps.total}${ps.done === ps.total ? ' ✓' : ''}</span></div>`
+          : '';
         return head + `<div class="ex ${st}${sel}" data-id="${esc(e.id)}" role="button" tabindex="0" aria-label="Switch to ${esc(e.id)}. Status: ${st}${tries}"><span class="chip" aria-hidden="true">${CHIP[st] || '•'}</span>`
              + `<span class="t">${esc(e.id)}<small>[${st}]${tries}</small></span></div>`;
       }).join('') : '<div class="ex"><span class="t" style="color:var(--fg-dim)">no exercises</span></div>';
