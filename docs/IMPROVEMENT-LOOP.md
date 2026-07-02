@@ -1172,8 +1172,15 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   (deeper help comes from trying, not bumping a flag). `--level`/`--solution` help updated to match. The
   cross-surface hint behavior (text + gate + escalation) is now fully consistent across web/CLI. Verified
   live: 1 attempt → `--solution`/`--level 3` both give rung 1/3; 2 attempts → rung 2; 3 → rung 3 last-resort.
+- ✅ **Journey quiz-done ✓ + validated the mobile-progression gap architecture (`<gui>`, v0.3.13, 2026-07-02).** The
+  Journey showed per-phase lesson read-counts but not quiz completion; added a green ✓ next to each phase's Quiz link
+  when its quiz is done (quizDoneSet) — each stage now shows lessons + read badge + quiz ✓ + book chapter at a glance.
+  Verified LIVE (390×844): none→0 ✓, phase1+phase4→✓ on exactly those. **Also confirmed** the mobile-progression gap
+  (#35) is a genuine multi-part feature: the mobile seam is a **JNI shared-Rust lib** (`libtempered_seam.so`) and
+  `/api/exercises` carries no code — so client-side switch/advance needs a Rust seam change + `.so` rebuild + on-device
+  test. Correctly deferred to Paul. **v0.3.13 shipped** — batch-released this + the a11y contrast fix; e2e 35/35.
 - ✅ **a11y: extended the axe audit to the content views + fixed a real contrast defect (`2e6b50d`, 2026-07-02 — web
-  now; APK batched).** The a11y spec covered only the main view; extended it to the Lessons list, an open lesson, the
+  now; APK batched — RELEASED in v0.3.13).** The a11y spec covered only the main view; extended it to the Lessons list, an open lesson, the
   Library list, and the Book TOC (all built this session). It immediately caught a defect I'd introduced: the
   Continue/Start CTA was white on the bright `--accent` #f74c00 (~3.5:1, below AA 4.5:1). (The Run button dodges the
   check only via its gradient bg — a blind spot, not compliance.) Fixed to the darker brand orange #b7410e (white =
