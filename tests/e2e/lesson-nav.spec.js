@@ -55,6 +55,38 @@ test.describe('Lessons: type-to-filter', () => {
   });
 });
 
+test.describe('Quizzes: completion tracking', () => {
+  test('revealing every answer marks the quiz done (✓ + count on the list)', async ({ page }) => {
+    await page.goto('/');
+    await page.evaluate(() => localStorage.removeItem('ts-quizzes-done'));
+    await page.locator('.tab[data-view="quizzes"]').click();
+    await expect(page.locator('.readbadge')).toHaveCount(0); // nothing done yet
+    await page.locator('.quizjump').first().click();
+    // Wait for the quiz (async fetch) to actually render before counting.
+    await expect(page.locator('.quizanswers').first()).toBeVisible();
+    // Reveal every answer (predict-then-verify) — that's what "done" means.
+    const summaries = page.locator('.quizanswers > summary');
+    const n = await summaries.count();
+    expect(n).toBeGreaterThan(0);
+    for (let i = 0; i < n; i++) await summaries.nth(i).click();
+    // Back to the list → ✓ + "1 of M done".
+    await page.locator('.quizback').click();
+    await expect(page.locator('.readbadge')).toContainText(/1 of \d+ done/);
+    await expect(page.locator('.booktoc li.read .readmark').first()).toBeVisible();
+  });
+
+  test('a partially-revealed quiz is NOT marked done', async ({ page }) => {
+    await page.goto('/');
+    await page.evaluate(() => localStorage.removeItem('ts-quizzes-done'));
+    await page.locator('.tab[data-view="quizzes"]').click();
+    await page.locator('.quizjump').first().click();
+    await expect(page.locator('.quizanswers').first()).toBeVisible();
+    await page.locator('.quizanswers > summary').first().click(); // reveal only one
+    await page.locator('.quizback').click();
+    await expect(page.locator('.readbadge')).toHaveCount(0); // still nothing done
+  });
+});
+
 test.describe('Books woven into the path (chapter deep-links)', () => {
   test('a lesson carries a book cross-link with a real chapter page', async ({ page }) => {
     await page.goto('/');

@@ -1543,11 +1543,15 @@
         try { data = await fetch('api/quizzes').then(r => r.json()); }
         catch (_) { d.innerHTML = '<h1>❓ Quizzes</h1><p>Quizzes unavailable (open via the local server).</p>'; return; }
         const items = data.quizzes || [];
-        d.innerHTML = '<h1>❓ Quizzes</h1>'
+        const done = quizDoneSet();
+        const nDone = items.filter(q => done.has(q.id)).length;
+        d.innerHTML = '<h1>❓ Quizzes' + (nDone ? `<span class="readbadge">${nDone} of ${items.length} done</span>` : '') + '</h1>'
           + `<p style="color:var(--fg-dim)">Per-phase self-checks — ${items.length} quizzes. PREDICT each answer before you reveal it; then verify. Fully offline.</p>`
           + (items.length
-            ? '<ul class="booktoc">' + items.map(q =>
-                `<li><a href="#" class="quizjump" data-id="${esc(q.id)}">${esc(q.title)}</a></li>`).join('') + '</ul>'
+            ? '<ul class="booktoc">' + items.map(q => {
+                const isDone = done.has(q.id);
+                return `<li${isDone ? ' class="read"' : ''}>${isDone ? '<span class="readmark">✓</span>' : ''}<a href="#" class="quizjump" data-id="${esc(q.id)}">${esc(q.title)}</a></li>`;
+              }).join('') + '</ul>'
             : '<p>no quizzes seeded — run the server with the bundled quizzes/.</p>');
         d.querySelectorAll('.quizjump').forEach(a =>
           a.onclick = e => { e.preventDefault(); renderQuizzes(a.dataset.id); });
@@ -1565,6 +1569,13 @@
         const md = q.markdown.replace(/<!--[\s\S]*?-->/g, '');
         const backlinks = await phaseBackLinks(id);
         d.innerHTML = back + quizToHtml(md) + backlinks;
+        // Completion: mark the quiz done once EVERY answer has been revealed
+        // (predicted, then verified). Surfaces as ✓ + count on the list.
+        const reveals = [...d.querySelectorAll('.quizanswers')];
+        if (reveals.length) {
+          const check = () => { if (reveals.every(x => x.open)) markQuizDone(id); };
+          reveals.forEach(x => x.addEventListener('toggle', check));
+        }
       }
       d.querySelectorAll('.quizback').forEach(a => a.onclick = e => { e.preventDefault(); renderQuizzes(null); });
       wirePhaseBackLinks(d);
@@ -1721,6 +1732,19 @@
       try {
         const s = readLessonSet();
         if (!s.has(id)) { s.add(id); localStorage.setItem('ts-lessons-read', JSON.stringify([...s])); }
+      } catch (_) {}
+    }
+    // Quiz completion — a quiz counts as "done" once every answer has been
+    // revealed (predicted, then verified). Same shape as lesson read-tracking:
+    // surfaces as ✓ + "N of M done" on the Quizzes list.
+    function quizDoneSet() {
+      try { return new Set(JSON.parse(localStorage.getItem('ts-quizzes-done') || '[]')); }
+      catch (_) { return new Set(); }
+    }
+    function markQuizDone(id) {
+      try {
+        const s = quizDoneSet();
+        if (!s.has(id)) { s.add(id); localStorage.setItem('ts-quizzes-done', JSON.stringify([...s])); }
       } catch (_) {}
     }
 
