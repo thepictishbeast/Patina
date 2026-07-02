@@ -57,7 +57,7 @@
     height:100vh; overflow:hidden; -webkit-font-smoothing:antialiased;
   }
   header {
-    display:flex; align-items:center; gap:18px; padding:10px 16px;
+    display:flex; align-items:center; gap:18px; padding:10px 16px; position:relative;
     background:linear-gradient(180deg,var(--bg-2),var(--bg)); border-bottom:1px solid var(--line);
   }
   .brand { display:flex; align-items:center; gap:9px; font-weight:700; font-size:16px; letter-spacing:.2px; }
@@ -459,7 +459,15 @@
     /* 3 tabs + the ⋯ More menu fit a phone row now, so wrap instead of
        horizontal-scroll (scrolling also clips the dropdown via overflow). */
     .navwrap { order:5; width:100%; flex-wrap:wrap; margin-left:0; }
-    .gauge { min-width:120px; }
+    /* The inline progress bar is a useless ~15px sliver in the cramped phone
+       header (the % text eats the width). Promote it to a full-width 3px progress
+       line pinned along the header's bottom edge — visible + a nice progress cue —
+       and keep just the % text inline. */
+    .gauge { min-width:0; gap:0; }
+    .gauge .track { position:absolute; left:0; right:0; bottom:0; width:auto; height:3px;
+      border:0; border-radius:0; background:transparent; }
+    .gauge .fill { border-radius:0; }
+    .gauge .pct { min-width:0; }
     /* Force a single stacked column on phones — `!important` so it beats the
        higher-specificity desktop toggle rules (main.show-insights / main.no-list),
        which would otherwise keep multi-column grids wider than the viewport and
