@@ -181,8 +181,11 @@
   .docview .booklink { color:var(--accent); font-weight:600; text-decoration:none; }
   .docview .booklink:hover { text-decoration:underline; }
   /* One-tap resume: jump to your first unread lesson. */
+  /* #b7410e (the darker brand orange) not var(--accent): white on the bright
+     dark-theme accent is only ~3.5:1; on #b7410e it's 5.56:1 — passes WCAG AA in
+     both themes. (The Run button dodges this axe check only via its gradient bg.) */
   .docview .continuecta { display:inline-block; margin:6px 0 16px; padding:11px 20px; border:none;
-    border-radius:10px; background:var(--accent); color:#fff; font:600 14.5px/1.2 inherit; cursor:pointer;
+    border-radius:10px; background:#b7410e; color:#fff; font:600 14.5px/1.2 inherit; cursor:pointer;
     max-width:100%; text-align:left; transition:filter .15s, transform .15s; }
   .docview .continuecta:hover { filter:brightness(1.08); transform:translateY(-1px); }
   .docview .allread { margin:6px 0 16px; color:var(--done); font-weight:600; }
