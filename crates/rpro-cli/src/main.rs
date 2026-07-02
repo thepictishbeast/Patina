@@ -3,7 +3,7 @@
 //! Top-level command dispatch. Subcommands:
 //!
 //! ```text
-//! rpro init                   — one-time setup (seeds exercises, Book, glossary, lessons)
+//! rpro init                   — one-time setup (seeds exercises, Book, glossary, lessons, quizzes, cheatsheets)
 //! rpro                        — open the TUI dashboard (default)
 //! rpro exercise list          — every exercise with status
 //! rpro exercise next          — jump to next unfinished
@@ -12,6 +12,8 @@
 //! rpro explain <code>         — explain a diagnostic code in full
 //! rpro book [search <term>]   — open the TUI book reader / text search
 //! rpro lessons [id]           — read the Patina curriculum lessons offline
+//! rpro quizzes [id]           — read the per-phase self-check quizzes offline
+//! rpro cheatsheets [id]       — read the per-phase cheatsheets offline
 //! rpro glossary [term]        — look up a Rust term offline
 //! rpro progress               — completion summary
 //! rpro detect                 — probe the local toolchain
@@ -96,6 +98,16 @@ enum Cmd {
         /// enough). Omit to list every lesson in order.
         id: Option<String>,
     },
+    /// Read the per-phase self-check quizzes offline. Omit the id to list them all.
+    Quizzes {
+        /// Quiz id (e.g. `phase1`; a prefix is enough). Omit to list every quiz.
+        id: Option<String>,
+    },
+    /// Read the per-phase cheatsheets offline. Omit the id to list them all.
+    Cheatsheets {
+        /// Cheatsheet id (e.g. `phase1`; a prefix is enough). Omit to list all.
+        id: Option<String>,
+    },
 }
 
 #[derive(Subcommand, Debug)]
@@ -157,6 +169,8 @@ fn main() -> Result<()> {
         Some(Cmd::Explain { code }) => cmd_explain(&code),
         Some(Cmd::Glossary { term }) => cmd_glossary(term.as_deref()),
         Some(Cmd::Lessons { id }) => cmd_lessons(id.as_deref()),
+        Some(Cmd::Quizzes { id }) => cmd_quizzes(id.as_deref()),
+        Some(Cmd::Cheatsheets { id }) => cmd_cheatsheets(id.as_deref()),
     }
 }
 
@@ -238,27 +252,62 @@ fn md_title(md: &str, fallback: &str) -> String {
         .unwrap_or_else(|| fallback.to_string())
 }
 
-/// `rpro lessons` — read the 37-lesson Patina curriculum offline. With no id it
-/// lists every lesson; with one it prints that lesson (matched by exact stem or
-/// prefix, so a bare number like `05` works — never path-joins raw input).
-fn cmd_lessons(id: Option<&str>) -> Result<()> {
+/// A read-only markdown study surface exposed to the terminal learner
+/// (`lessons` / `quizzes` / `cheatsheets`). All three share one traversal-safe
+/// list-or-print flow; only the labels differ.
+struct MdSurface {
+    /// Store subdir + the `rpro <cmd>` name (they match).
+    name: &'static str,
+    /// Heading shown when listing all items.
+    list_title: &'static str,
+    /// Singular noun for the "no <noun> …" not-found line.
+    noun: &'static str,
+    /// Label + command printed after printing one item (the "what next" nudge).
+    footer_label: &'static str,
+    footer_cmd: &'static str,
+}
+
+const LESSONS: MdSurface = MdSurface {
+    name: "lessons",
+    list_title: "Lessons — the Patina curriculum:",
+    noun: "lesson",
+    footer_label: "Now write it:",
+    footer_cmd: "rpro exercise next",
+};
+const QUIZZES: MdSurface = MdSurface {
+    name: "quizzes",
+    list_title: "Quizzes — per-phase self-checks (predict every answer, then reveal):",
+    noun: "quiz",
+    footer_label: "Back to studying:",
+    footer_cmd: "rpro lessons",
+};
+const CHEATSHEETS: MdSurface = MdSurface {
+    name: "cheatsheets",
+    list_title: "Cheatsheets — per-phase quick reference:",
+    noun: "cheatsheet",
+    footer_label: "Practice it:",
+    footer_cmd: "rpro exercise next",
+};
+
+/// List-or-print a bundled markdown study surface, fully offline. With no id it
+/// lists every item; with one it prints that item (matched by exact stem or
+/// prefix, so a bare number like `05` works — raw input is never path-joined).
+fn cmd_md_surface(s: &MdSurface, id: Option<&str>) -> Result<()> {
     let store = Store::user()?;
-    let dir = store.root().join("lessons");
+    let dir = store.root().join(s.name);
     let stems = md_stems(&dir);
     if stems.is_empty() {
         println!(
             "{}",
-            style("No lessons yet — run `rpro init` to seed them.").yellow()
+            style(format!("No {} yet — run `rpro init` to seed them.", s.name)).yellow()
         );
         return Ok(());
     }
     match id {
         None => {
-            println!(
-                "{}",
-                style("Lessons — the Patina curriculum:").bold().cyan()
-            );
+            println!("{}", style(s.list_title).bold().cyan());
             for stem in &stems {
+                // nosemgrep -- stem ∈ store-owned md_stems(dir); never raw input
                 let title = std::fs::read_to_string(dir.join(format!("{stem}.md")))
                     .map_or_else(|_| stem.clone(), |md| md_title(&md, stem));
                 println!("  {}  {}", style(stem).dim(), title);
@@ -267,38 +316,49 @@ fn cmd_lessons(id: Option<&str>) -> Result<()> {
             println!(
                 "  {} `{}`",
                 style("Read one:").dim(),
-                style("rpro lessons <id>").bold()
+                style(format!("rpro {} <id>", s.name)).bold()
             );
         }
         Some(q) => {
-            // Traversal-safe: only open a lesson whose stem really exists (exact,
+            // Traversal-safe: only open an item whose stem really exists (exact,
             // else unique-ish prefix). Raw input is never joined to the path.
             let Some(stem) = stems
                 .iter()
-                .find(|s| s.as_str() == q)
-                .or_else(|| stems.iter().find(|s| s.starts_with(q)))
+                .find(|st| st.as_str() == q)
+                .or_else(|| stems.iter().find(|st| st.starts_with(q)))
             else {
-                println!("{} no lesson {:?}.", style("·").dim(), q);
+                println!("{} no {} {:?}.", style("·").dim(), s.noun, q);
                 println!(
                     "  {} `{}`",
                     style("Browse all:").dim(),
-                    style("rpro lessons").bold()
+                    style(format!("rpro {}", s.name)).bold()
                 );
                 return Ok(());
             };
+            // nosemgrep -- stem was just matched against store-owned stems above
             let md = std::fs::read_to_string(dir.join(format!("{stem}.md")))
-                .with_context(|| format!("reading lesson {stem}"))?;
+                .with_context(|| format!("reading {} {stem}", s.noun))?;
             // HTML comments are authoring notes; drop them so the terminal read is clean.
             println!("{}", strip_html_comments(&md));
             println!();
             println!(
                 "  {} `{}`",
-                style("Now write it:").dim(),
-                style("rpro exercise next").bold()
+                style(s.footer_label).dim(),
+                style(s.footer_cmd).bold()
             );
         }
     }
     Ok(())
+}
+
+fn cmd_lessons(id: Option<&str>) -> Result<()> {
+    cmd_md_surface(&LESSONS, id)
+}
+fn cmd_quizzes(id: Option<&str>) -> Result<()> {
+    cmd_md_surface(&QUIZZES, id)
+}
+fn cmd_cheatsheets(id: Option<&str>) -> Result<()> {
+    cmd_md_surface(&CHEATSHEETS, id)
 }
 
 /// Remove `<!-- … -->` blocks (authoring notes) from markdown for terminal display.
@@ -400,6 +460,19 @@ fn cmd_init(refresh: bool) -> Result<()> {
         copy_tree(&bundled_lessons, &lessons_dir)
             .with_context(|| format!("seeding lessons from {}", bundled_lessons.display()))?;
         println!("  + seeded {} lesson(s)", md_stems(&lessons_dir).len());
+    }
+    // Seed the per-phase quizzes + cheatsheets the same way, so `rpro quizzes` /
+    // `rpro cheatsheets` work offline (parity with the web seed + lessons above).
+    for (sub, label) in [("quizzes", "quiz"), ("cheatsheets", "cheatsheet")] {
+        let dir = store.root().join(sub);
+        let bundled = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../..")
+            .join(sub);
+        if (refresh || md_stems(&dir).is_empty()) && bundled.is_dir() {
+            copy_tree(&bundled, &dir)
+                .with_context(|| format!("seeding {sub} from {}", bundled.display()))?;
+            println!("  + seeded {} {label}(s)", md_stems(&dir).len());
+        }
     }
     // Ensure a Current exercise so the first run isn't an empty screen.
     let mut progress = store.load_progress().unwrap_or_default();
