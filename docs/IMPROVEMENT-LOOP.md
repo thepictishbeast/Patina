@@ -1172,6 +1172,13 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   (deeper help comes from trying, not bumping a flag). `--level`/`--solution` help updated to match. The
   cross-surface hint behavior (text + gate + escalation) is now fully consistent across web/CLI. Verified
   live: 1 attempt → `--solution`/`--level 3` both give rung 1/3; 2 attempts → rung 2; 3 → rung 3 last-resort.
+- ✅ **TUI Lessons tab — the curriculum reaches the dashboard (#31/#32, `d6842ef`, 2026-07-02).** The `rpro` TUI had
+  Dashboard/Exercise/Book/Roadmap but not the 37 Patina lessons — a Termux/SSH learner couldn't read one without
+  dropping to `rpro lessons`. Added a 5th tab modelled on the Book reader: title list + selected lesson's markdown
+  (scrollable), Tab/j/k/PgUp-PgDn nav. Extracted a shared `markdown_body_lines()` from render_book (same styling),
+  reused by `render_lessons`; `lessons_data()` loader (store/lessons/*.md, sorted, `# `-title, HTML-comments
+  stripped). +2 TestBackend tests + the cycle test. rpro-tui 37/37, clippy/fmt/seam clean, Book reader unchanged.
+  CLI/TUI only — no APK.
 - ✅ **The Tutor reacts to your run — no more static question (#31, `f82bda5`, v0.3.11, 2026-07-02).** Directly
   closes Paul's feedback: *"there is no answer to the question it asks; the questions should disappear once it's
   satisfied."* The Tutor was one hard-coded prompt forever; now `renderTutor(passed, code)` (wired after renderDiag
