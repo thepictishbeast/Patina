@@ -180,6 +180,7 @@
   .docview .lessonbook { margin:6px 0; color:var(--fg-dim); font-size:13.5px; }
   .docview .booklink { color:var(--accent); font-weight:600; text-decoration:none; }
   .docview .booklink:hover { text-decoration:underline; }
+  .docview .qzdone { color:var(--done); font-weight:700; }
   /* One-tap resume: jump to your first unread lesson. */
   /* #b7410e (the darker brand orange) not var(--accent): white on the bright
      dark-theme accent is only ~3.5:1; on #b7410e it's 5.56:1 — passes WCAG AA in
@@ -1693,6 +1694,7 @@
       const intro = `<p class="roadintro">The whole path, in order — ${lessons.length} lessons across ${groups.length} stages, from your first <code>let</code> binding to a capstone. Read a stage, practice it, then self-check with its quiz.`
         + (prog ? ` <b>Exercises so far: ${esc(prog)}.</b>` : '') + '</p>';
       const read = readLessonSet();
+      const quizDone = quizDoneSet(); // show a ✓ on a phase whose quiz is complete
       const body = groups.map(g => {
         const lis = g.lessons.map(l => {
           const isRead = read.has(l.id);
@@ -1702,7 +1704,7 @@
         const badge = nRead ? `<span class="readbadge">${nRead}/${g.lessons.length} read${nRead === g.lessons.length ? ' ✓' : ''}</span>` : '';
         const bk = phaseBook(g.phase);
         const links = `<a href="#" class="cheatlink" data-cheat="${esc(g.phase)}">📋 Cheatsheet</a>`
-          + ` · <a href="#" class="quizlink" data-quiz="${esc(g.phase)}">❓ Quiz</a>`
+          + ` · <a href="#" class="quizlink" data-quiz="${esc(g.phase)}">❓ Quiz${quizDone.has(g.phase) ? ' <span class="qzdone">✓</span>' : ''}</a>`
           + ` · <a href="#" class="booklink" data-file="${esc(bk.file)}" data-page="${esc(bk.page)}">📖 ${esc(bk.chapter || bk.short)}</a>`;
         return `<section class="roadphase"><h2>${esc(g.name)}${badge}</h2>`
           + `<ul class="roadlessons">${lis}</ul><p class="roadlinks">${links}</p></section>`;
