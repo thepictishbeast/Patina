@@ -1172,6 +1172,12 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   (deeper help comes from trying, not bumping a flag). `--level`/`--solution` help updated to match. The
   cross-surface hint behavior (text + gate + escalation) is now fully consistent across web/CLI. Verified
   live: 1 attempt → `--solution`/`--level 3` both give rung 1/3; 2 attempts → rung 2; 3 → rung 3 last-resort.
+- ✅ **Type-to-filter the lessons list (#31, `9137617`, 2026-07-02 — web now; APK batched).** With 37 lessons, a
+  filter box (shown once the list passes a handful) narrows to a topic instantly. Case-insensitive title substring,
+  a "no lessons match" note, clear restores all; coexists with the Continue CTA + ✓ read marks. Verified LIVE
+  (390×844): "own"→2 matches, "loop"→1, gibberish→0+note, clear→37. gui-transform + e2e green (19 passed, 2 pre-
+  existing real-run flakes retry-passed). **Release cadence note:** 6 APKs cut this session (v0.3.4–v0.3.9); this
+  minor change is batched into the next notable release to avoid inbox spam — web/desktop have it live now.
 - ✅ **Book cross-links deep-link to the exact chapter (#32, `866608e`, v0.3.9, 2026-07-02).** Upgraded the
   phase→book weave from "open at page 1" to a real chapter deep-link (pdf.js `#page=N`) that also names the chapter.
   Extracted real TRPL page numbers from the PDF outline (pypdf in a scratch venv) and mapped each phase → its
