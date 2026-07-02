@@ -186,6 +186,12 @@
     max-width:100%; text-align:left; transition:filter .15s, transform .15s; }
   .docview .continuecta:hover { filter:brightness(1.08); transform:translateY(-1px); }
   .docview .allread { margin:6px 0 16px; color:var(--done); font-weight:600; }
+  /* Type-to-filter the lesson list. */
+  .docview .lessonfilter { width:100%; box-sizing:border-box; margin:0 0 14px; padding:9px 13px;
+    border:1px solid var(--line); border-radius:9px; background:var(--bg-2); color:var(--fg); font:14px inherit; }
+  .docview .lessonfilter:focus { outline:none; border-color:var(--accent); }
+  .docview .lessonfilter::placeholder { color:var(--fg-dim); }
+  .docview .lessonnomatch { color:var(--fg-dim); }
   /* Roadmap tab: the learner's curriculum journey (a card per phase) */
   .docview .roadintro { color:var(--fg-dim); margin:0 0 18px; max-width:70ch; }
   .docview .roadphase { margin:0 0 14px; padding:12px 16px; border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:8px; }
@@ -1784,18 +1790,34 @@
               ? `<button class="continuecta" data-id="${esc(firstUnread.id)}">▶ ${nRead ? 'Continue' : 'Start'} — ${esc(firstUnread.title)}</button>`
               : `<p class="allread">✓ You’ve read all ${items.length} lessons — pick any below to revisit.</p>`)
           : '';
+        // A type-to-filter box (only worth showing past a handful of lessons) —
+        // find a topic instantly instead of scrolling the whole curriculum.
+        const filter = items.length > 8
+          ? `<input class="lessonfilter" type="search" placeholder="🔍 Filter lessons…" aria-label="Filter lessons by title" autocomplete="off">`
+          : '';
         d.innerHTML = '<h1>🎓 Lessons' + (nRead ? `<span class="readbadge">${nRead} of ${items.length} read</span>` : '') + '</h1>'
           + `<p style="color:var(--fg-dim)">The Patina curriculum — ${items.length} lessons for absolute beginners. Read a lesson, then switch to Practice to write it. Fully offline.</p>`
-          + cta
+          + cta + filter
           + (items.length
             ? '<ul class="booktoc">' + items.map(l => {
                 const isRead = read.has(l.id);
-                return `<li${isRead ? ' class="read"' : ''}>${isRead ? '<span class="readmark">✓</span>' : ''}<a href="#" class="lessonjump" data-id="${esc(l.id)}">${esc(l.title)}</a></li>`;
-              }).join('') + '</ul>'
+                return `<li${isRead ? ' class="read"' : ''} data-title="${esc(l.title.toLowerCase())}">${isRead ? '<span class="readmark">✓</span>' : ''}<a href="#" class="lessonjump" data-id="${esc(l.id)}">${esc(l.title)}</a></li>`;
+              }).join('') + '</ul><p class="lessonnomatch" hidden>No lessons match — clear the filter to see them all.</p>'
             : '<p>no lessons seeded — run the server with the bundled lessons/.</p>');
         d.querySelector('.continuecta')?.addEventListener('click', function () { renderLessons(this.dataset.id); });
         d.querySelectorAll('.lessonjump').forEach(a =>
           a.onclick = e => { e.preventDefault(); renderLessons(a.dataset.id); });
+        const fi = d.querySelector('.lessonfilter');
+        if (fi) {
+          const lis = [...d.querySelectorAll('.booktoc li')];
+          const nm = d.querySelector('.lessonnomatch');
+          fi.addEventListener('input', () => {
+            const q = fi.value.trim().toLowerCase();
+            let shown = 0;
+            lis.forEach(li => { const m = !q || li.dataset.title.includes(q); li.hidden = !m; if (m) shown++; });
+            if (nm) nm.hidden = shown !== 0;
+          });
+        }
         d.scrollTop = 0;
         return;
       }
