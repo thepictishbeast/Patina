@@ -1172,6 +1172,13 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   (deeper help comes from trying, not bumping a flag). `--level`/`--solution` help updated to match. The
   cross-surface hint behavior (text + gate + escalation) is now fully consistent across web/CLI. Verified
   live: 1 attempt → `--solution`/`--level 3` both give rung 1/3; 2 attempts → rung 2; 3 → rung 3 last-resort.
+- ✅ **Quiz completion tracking — the last untracked surface (#31, `0ed0275`, v0.3.10, 2026-07-02).** Lessons had
+  read-tracking + Continue; the per-phase self-check quizzes had none. A quiz is now "done" once EVERY answer has
+  been revealed (predict-then-verify — the honest self-check signal); mirrors lessons exactly (✓ + "N of M done" on
+  the list, reusing readbadge/read styles). Partial reveals don't count. +2 e2e tests. Verified LIVE (390×844):
+  reveal all 13 of Phase 1 → "1 of 11 done" + ✓; one → not done. Full suite **27/27**. **v0.3.10 shipped** —
+  BATCHED the pending lessons type-to-filter (`9137617`) with this into one APK + one email (cadence discipline).
+  Now lessons/quizzes track + book/glossary search → the offline loop is progress-aware & searchable end-to-end.
 - ✅ **e2e regression guard for lesson-nav (`1e95fd9`, 2026-07-02).** The Continue/Start CTA, type-to-filter, and
   book chapter deep-links shipped this session with ZERO coverage (localStorage-/render-driven — the kind a stray
   refactor breaks silently; we've regressed nav before). New `lesson-nav.spec.js` (4 tests): Continue CTA
