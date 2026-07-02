@@ -197,7 +197,13 @@
   .pane { border-right:1px solid var(--line); display:flex; flex-direction:column; min-height:0; min-width:0; }
   .pane:last-child { border-right:none; }
   .pane h2 { font-size:11px; text-transform:uppercase; letter-spacing:.12em; color:var(--fg-dim);
-    margin:0; padding:12px 14px 8px; font-weight:600; }
+    margin:0; padding:12px 14px 8px; font-weight:600; display:flex; align-items:center; gap:8px; }
+  .excount { color:var(--accent-soft); font-weight:700; letter-spacing:0; text-transform:none; }
+  .excaret { display:none; } /* only meaningful on phones (accordion) */
+  /* lesson read-tracking ✓ marks */
+  .docview .booktoc li.read a, .docview .roadlessons li.read a { color:var(--fg-dim); }
+  .docview li.read .readmark { color:var(--done); margin-right:5px; }
+  .docview .readbadge { color:var(--fg-dim); font-size:12px; font-weight:400; margin-left:8px; }
 
   .exlist { overflow:auto; padding:0 8px 12px; }
   .ex { display:flex; align-items:center; gap:9px; padding:9px 10px; border-radius:9px; cursor:pointer;
@@ -400,7 +406,22 @@
     .exlist { max-height:34vh; }
     .editor textarea { min-height:220px; max-height:60vh; }
     .terminal { height:200px; }
-    .footer { position:static; flex-wrap:wrap; gap:10px 16px; }
+    /* Keyboard-shortcut bar is meaningless on touch — pure noise on a phone. */
+    .footer { display:none; }
+    /* Progressive disclosure: the 71-item exercise list collapses to one tappable
+       header row (with your progress) so the exercise itself comes first. */
+    /* Focus mode (no-list) is a DESKTOP layout toggle — if it persisted from a
+       desktop session it must not delete the exercise pane on a phone, where the
+       accordion below is the collapse mechanism. */
+    main.no-list > .pane:first-child { display:flex; }
+    main > .pane:first-child h2 { cursor:pointer; }
+    main > .pane:first-child:not(.open) .exlist,
+    main > .pane:first-child:not(.open) .recall { display:none !important; }
+    .excaret { display:inline-block; margin-left:auto; transition:transform .2s ease; }
+    main > .pane:first-child.open .excaret { transform:rotate(180deg); }
+    /* The terminal folds to its title bar until there's real output. */
+    .terminal.tcollapsed { height:auto; }
+    .terminal.tcollapsed .xterm-host { display:none; }
 
     /* ── Phone polish (Paul 2026-06-30: beautiful · simple · intuitive · capable) ── */
     .center { padding-bottom:6px; }
@@ -673,6 +694,7 @@
       if (cbId !== termuxPending) return; // ignore stale/duplicate
       termuxPending = null;
       res = res || {};
+      expandTerminal();
       term.clear();
       const text = (res.stdout || '') + (res.stderr || '');
       if (text) term.write(text.replace(/\n/g, '\r\n'));
@@ -720,6 +742,7 @@
       const btns = ['runbtn','checkbtn','explainbtn'].map(id=>document.getElementById(id));
       btns.forEach(x=>x && (x.disabled=true));
       statusEl().textContent = op + '…';
+      expandTerminal(); // output is coming — unfold the phone's collapsed terminal
       term.clear();
       term.writeln(d('$ ' + op + ' — running on the local server…'));
       try {
@@ -824,6 +847,14 @@
     function renderList(data) {
       const box = document.getElementById('exlist');
       const items = (data && data.exercises) || [];
+      // Header shows progress at a glance; on phones it's the accordion handle
+      // for the collapsed list (progressive disclosure — exercise first, list on tap).
+      const ttl = document.getElementById('exTitle');
+      if (ttl && items.length) {
+        const done = items.filter(e => e.status === 'done').length;
+        ttl.innerHTML = 'Exercises <span class="excount">' + done + '/' + items.length + ' ✓</span>'
+          + '<span class="excaret" aria-hidden="true">▾</span>';
+      }
       box.innerHTML = items.length ? items.map((e, i) => {
         const st = e.status || 'locked';
         const sel = st === 'current' ? ' sel' : '';
@@ -1550,12 +1581,17 @@
       const prog = (document.getElementById('pct')?.textContent || '').trim();
       const intro = `<p class="roadintro">The whole path, in order — ${lessons.length} lessons across ${groups.length} stages, from your first <code>let</code> binding to a capstone. Read a stage, practice it, then self-check with its quiz.`
         + (prog ? ` <b>Exercises so far: ${esc(prog)}.</b>` : '') + '</p>';
+      const read = readLessonSet();
       const body = groups.map(g => {
-        const lis = g.lessons.map(l =>
-          `<li><a href="#" class="lessonjump" data-id="${esc(l.id)}">${esc(l.title)}</a></li>`).join('');
+        const lis = g.lessons.map(l => {
+          const isRead = read.has(l.id);
+          return `<li${isRead ? ' class="read"' : ''}>${isRead ? '<span class="readmark">✓</span>' : ''}<a href="#" class="lessonjump" data-id="${esc(l.id)}">${esc(l.title)}</a></li>`;
+        }).join('');
+        const nRead = g.lessons.filter(l => read.has(l.id)).length;
+        const badge = nRead ? `<span class="readbadge">${nRead}/${g.lessons.length} read${nRead === g.lessons.length ? ' ✓' : ''}</span>` : '';
         const links = `<a href="#" class="cheatlink" data-cheat="${esc(g.phase)}">📋 Cheatsheet</a>`
           + ` · <a href="#" class="quizlink" data-quiz="${esc(g.phase)}">❓ Quiz</a>`;
-        return `<section class="roadphase"><h2>${esc(g.name)}</h2>`
+        return `<section class="roadphase"><h2>${esc(g.name)}${badge}</h2>`
           + `<ul class="roadlessons">${lis}</ul><p class="roadlinks">${links}</p></section>`;
       }).join('');
       d.innerHTML = head + intro + body;
@@ -1602,6 +1638,20 @@
         a.onclick = e => { e.preventDefault(); showView('practice'); });
     }
 
+    // Lesson read-tracking (localStorage) — visible progress beyond the exercise
+    // gauge: ✓ on read lessons in the Lessons list + per-stage counts on the
+    // Journey. Reading a lesson marks it; nothing to configure.
+    function readLessonSet() {
+      try { return new Set(JSON.parse(localStorage.getItem('ts-lessons-read') || '[]')); }
+      catch (_) { return new Set(); }
+    }
+    function markLessonRead(id) {
+      try {
+        const s = readLessonSet();
+        if (!s.has(id)) { s.add(id); localStorage.setItem('ts-lessons-read', JSON.stringify([...s])); }
+      } catch (_) {}
+    }
+
     // Lesson number → the per-phase self-check quiz that covers it (each quiz
     // spans a contiguous lesson range — see the quiz intros).
     function lessonToQuiz(n) {
@@ -1632,11 +1682,15 @@
         try { data = await fetch('api/lessons').then(r => r.json()); }
         catch (_) { d.innerHTML = '<h1>🎓 Lessons</h1><p>Lessons unavailable (open via the local server).</p>'; return; }
         const items = data.lessons || [];
-        d.innerHTML = '<h1>🎓 Lessons</h1>'
+        const read = readLessonSet();
+        const nRead = items.filter(l => read.has(l.id)).length;
+        d.innerHTML = '<h1>🎓 Lessons' + (nRead ? `<span class="readbadge">${nRead} of ${items.length} read</span>` : '') + '</h1>'
           + `<p style="color:var(--fg-dim)">The Patina curriculum — ${items.length} lessons for absolute beginners. Read a lesson, then switch to Practice to write it. Fully offline.</p>`
           + (items.length
-            ? '<ul class="booktoc">' + items.map(l =>
-                `<li><a href="#" class="lessonjump" data-id="${esc(l.id)}">${esc(l.title)}</a></li>`).join('') + '</ul>'
+            ? '<ul class="booktoc">' + items.map(l => {
+                const isRead = read.has(l.id);
+                return `<li${isRead ? ' class="read"' : ''}>${isRead ? '<span class="readmark">✓</span>' : ''}<a href="#" class="lessonjump" data-id="${esc(l.id)}">${esc(l.title)}</a></li>`;
+              }).join('') + '</ul>'
             : '<p>no lessons seeded — run the server with the bundled lessons/.</p>');
         d.querySelectorAll('.lessonjump').forEach(a =>
           a.onclick = e => { e.preventDefault(); renderLessons(a.dataset.id); });
@@ -1702,6 +1756,7 @@
           ? `<p class="lessoncheat">📋 Quick reference: <a href="#" class="cheatlink" data-cheat="${esc(quizId)}">this phase's cheat sheet →</a></p>`
           : '';
         d.innerHTML = back + '<div class="bookbody lessonbody">' + mdToHtml(md) + '</div>' + cheatHtml + practiceHtml + quizHtml + navHtml;
+        markLessonRead(id); // reading it = progress (✓ in the list + Journey counts)
       }
       d.querySelectorAll('.lessonback').forEach(a => a.onclick = e => { e.preventDefault(); renderLessons(null); });
       d.querySelectorAll('.quizlink').forEach(a =>
@@ -2060,6 +2115,32 @@
     });
     document.getElementById('resetbtn').onclick = () => { editorEl().value = curOriginal; markEdited(); editorEl().focus(); };
     document.getElementById('termcopy')?.addEventListener('click', () => copyText(termText()));
+
+    // ── phone progressive disclosure: exercise-list accordion + folded terminal ──
+    const isPhone = () => window.matchMedia('(max-width:760px)').matches;
+    (() => {
+      const pane = document.querySelector('main > .pane:first-child');
+      const ttl = document.getElementById('exTitle');
+      if (pane && ttl) {
+        ttl.setAttribute('role', 'button');
+        ttl.setAttribute('tabindex', '0');
+        const toggle = () => { if (!isPhone()) return; pane.classList.toggle('open');
+          ttl.setAttribute('aria-expanded', pane.classList.contains('open') ? 'true' : 'false'); };
+        ttl.addEventListener('click', toggle);
+        ttl.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
+      }
+      // terminal starts folded on phones (no output yet); tap the bar to peek
+      const t = document.querySelector('.terminal');
+      if (t && isPhone()) t.classList.add('tcollapsed');
+      t?.querySelector('.tbar')?.addEventListener('click', e => {
+        if (e.target.id === 'termcopy' || !isPhone()) return;
+        t.classList.toggle('tcollapsed'); try { refit(); } catch (_) {}
+      });
+    })();
+    function expandTerminal() {
+      const t = document.querySelector('.terminal');
+      if (t && t.classList.contains('tcollapsed')) { t.classList.remove('tcollapsed'); try { refit(); } catch (_) {} }
+    }
     document.getElementById('hintbtn').onclick = runHint;
     // predict-first: lock a compiles/fails guess (+ optional error code) before Run
     document.querySelectorAll('.pbtn').forEach(b => b.onclick = () => {

@@ -16,8 +16,9 @@ test.describe('⋯ More menu (reference surfaces)', () => {
     await expect(page.locator('.tab[data-view="lessons"]')).toBeVisible();
     await expect(page.locator('.tab[data-view="quizzes"]')).toBeVisible();
     // The reference surfaces are NOT tabs — they're menu items.
+    // (book, glossary, cheatsheets, roadmap + the 🩺 Logs diagnostics view)
     await expect(page.locator('.tab[data-view="book"]')).toHaveCount(0);
-    await expect(page.locator('#moremenu-list .menuitem')).toHaveCount(4);
+    await expect(page.locator('#moremenu-list .menuitem')).toHaveCount(5);
   });
 
   test('opening the menu and choosing Book navigates + closes + marks the trigger active', async ({ page }) => {
