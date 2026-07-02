@@ -1172,6 +1172,13 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   (deeper help comes from trying, not bumping a flag). `--level`/`--solution` help updated to match. The
   cross-surface hint behavior (text + gate + escalation) is now fully consistent across web/CLI. Verified
   live: 1 attempt → `--solution`/`--level 3` both give rung 1/3; 2 attempts → rung 2; 3 → rung 3 last-resort.
+- ✅ **Books woven into the learning path (#32, `3fbc4a0`, v0.3.6, 2026-07-02).** The offline 📚 Library was
+  reachable only via ⋯ More — a detached shelf. Added a `PHASE_BOOK` map (each curriculum phase → the text that
+  covers it: beginner path → TRPL, tooling → The Cargo Book) and a companion **"📖 Read deeper: <Book> (offline)"**
+  link on every lesson footer + every Journey stage (beside the existing cheatsheet/quiz cross-links). Clicking
+  opens the correct PDF in the offline pdf.js reader. The path now reads as one material: lesson ↔ cheatsheet ↔
+  quiz ↔ book. Verified LIVE (desktop + 390×844): 11 Journey book links (10 TRPL + tooling→Cargo), lesson link
+  opens the right book (0 errors); gui-transform + e2e green. APK v0.3.6 published + verified + emailed (HTML).
 - ✅ **`rpro quizzes` + `rpro cheatsheets` — full offline CLI curriculum parity (`52205d2`, 2026-07-02).** The
   natural follow-up to `rpro lessons`: terminal/Termux/SSH learners now get the SAME reference surfaces the
   web/mobile GUI has. Generalized `cmd_lessons` into a shared **traversal-safe `MdSurface`** helper (list-or-print
