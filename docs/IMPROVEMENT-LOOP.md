@@ -1172,6 +1172,12 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   (deeper help comes from trying, not bumping a flag). `--level`/`--solution` help updated to match. The
   cross-surface hint behavior (text + gate + escalation) is now fully consistent across web/CLI. Verified
   live: 1 attempt → `--solution`/`--level 3` both give rung 1/3; 2 attempts → rung 2; 3 → rung 3 last-resort.
+- ✅ **TUI Cheatsheets tab — completes reference parity (#31/#32, `de04988`, 2026-07-02).** Follows the Lessons tab:
+  the per-phase quick-reference sheets are now a browsable TUI tab (…·Book·Cheatsheets·Roadmap), so a Termux/SSH
+  learner has the sheet at hand while solving. Pure reference — quizzes stay web/CLI-only ON PURPOSE so the predict-
+  then-reveal holds (a static TUI render would just show answers). DRY refactor: `Lesson`→`MdDoc`, extracted
+  `render_md_reader()` (render_lessons/render_cheatsheets are thin wrappers), `lessons_data`→`md_docs(store, subdir)`
+  for both dirs; Book reader untouched. +2 TestBackend tests → rpro-tui **39/39**, clippy/fmt/seam clean. CLI/TUI only.
 - ✅ **TUI Lessons tab — the curriculum reaches the dashboard (#31/#32, `d6842ef`, 2026-07-02).** The `rpro` TUI had
   Dashboard/Exercise/Book/Roadmap but not the 37 Patina lessons — a Termux/SSH learner couldn't read one without
   dropping to `rpro lessons`. Added a 5th tab modelled on the Book reader: title list + selected lesson's markdown
