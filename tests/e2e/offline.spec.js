@@ -15,9 +15,9 @@ test('the app makes ZERO external network requests (fully offline)', async ({ pa
   await page.goto('/');
 
   // Exercise every surface that could pull a resource.
-  await page.locator('.tab[data-view="lessons"]').click();
+  await page.evaluate(() => showView('lessons'));
   await page.locator('.lessonjump').first().click();            // renders a lesson (+ its book/cheat links)
-  await page.locator('.tab[data-view="quizzes"]').click();
+  await page.evaluate(() => showView('quizzes'));
   await page.locator('.quizjump').first().click();              // renders a quiz
   await page.evaluate(() => showView('glossary'));              // 116-term glossary
   await expect(page.locator('.gloss-term').first()).toBeVisible();

@@ -11,7 +11,7 @@ test.describe('Lessons: Continue / Start resume CTA', () => {
   test('Start when fresh → Continue to first unread → opens the lesson', async ({ page }) => {
     await page.goto('/');
     await page.evaluate(() => localStorage.removeItem('ts-lessons-read'));
-    await page.locator('.tab[data-view="lessons"]').click();
+    await page.evaluate(() => showView('lessons'));
     const cta = page.locator('.continuecta');
     await expect(cta).toBeVisible();
     await expect(cta).toContainText('▶ Start'); // nothing read yet
@@ -20,7 +20,7 @@ test.describe('Lessons: Continue / Start resume CTA', () => {
     // Mark the first lesson read, then re-render (leave + return to the tab).
     await page.evaluate((id) => localStorage.setItem('ts-lessons-read', JSON.stringify([id])), firstId);
     await page.locator('.tab[data-view="practice"]').click();
-    await page.locator('.tab[data-view="lessons"]').click();
+    await page.evaluate(() => showView('lessons'));
     await expect(cta).toContainText('▶ Continue'); // now resumes, not starts
     await expect(cta).not.toHaveAttribute('data-id', firstId); // points past the read one
     // Clicking it opens a lesson (the "← all lessons" back link appears).
@@ -32,7 +32,7 @@ test.describe('Lessons: Continue / Start resume CTA', () => {
 test.describe('Lessons: type-to-filter', () => {
   test('narrows the list, shows a no-match note, and clears back to all', async ({ page }) => {
     await page.goto('/');
-    await page.locator('.tab[data-view="lessons"]').click();
+    await page.evaluate(() => showView('lessons'));
     const filter = page.locator('.lessonfilter');
     await expect(filter).toBeVisible();
     const items = page.locator('.booktoc li');
@@ -59,7 +59,7 @@ test.describe('Quizzes: completion tracking', () => {
   test('revealing every answer marks the quiz done (✓ + count on the list)', async ({ page }) => {
     await page.goto('/');
     await page.evaluate(() => localStorage.removeItem('ts-quizzes-done'));
-    await page.locator('.tab[data-view="quizzes"]').click();
+    await page.evaluate(() => showView('quizzes'));
     await expect(page.locator('.readbadge')).toHaveCount(0); // nothing done yet
     await page.locator('.quizjump').first().click();
     // Wait for the quiz (async fetch) to actually render before counting.
@@ -78,7 +78,7 @@ test.describe('Quizzes: completion tracking', () => {
   test('a partially-revealed quiz is NOT marked done', async ({ page }) => {
     await page.goto('/');
     await page.evaluate(() => localStorage.removeItem('ts-quizzes-done'));
-    await page.locator('.tab[data-view="quizzes"]').click();
+    await page.evaluate(() => showView('quizzes'));
     await page.locator('.quizjump').first().click();
     await expect(page.locator('.quizanswers').first()).toBeVisible();
     await page.locator('.quizanswers > summary').first().click(); // reveal only one
@@ -90,7 +90,7 @@ test.describe('Quizzes: completion tracking', () => {
 test.describe('Books woven into the path (chapter deep-links)', () => {
   test('a lesson carries a book cross-link with a real chapter page', async ({ page }) => {
     await page.goto('/');
-    await page.locator('.tab[data-view="lessons"]').click();
+    await page.evaluate(() => showView('lessons'));
     await page.locator('.lessonjump').first().click();
     const book = page.locator('.lessonbook .booklink');
     await expect(book).toBeVisible();
@@ -100,8 +100,7 @@ test.describe('Books woven into the path (chapter deep-links)', () => {
 
   test('the Journey shows per-phase chapter book links with pages', async ({ page }) => {
     await page.goto('/');
-    await page.locator('#moreBtn').click();
-    await page.locator('.menuitem[data-view="roadmap"]').click();
+    await page.evaluate(() => showView('roadmap'));
     const links = page.locator('.roadphase .booklink');
     await expect(links.first()).toBeVisible();
     await expect(links.first()).toHaveAttribute('data-page', /^\d+$/);

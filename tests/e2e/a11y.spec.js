@@ -39,7 +39,7 @@ test('a11y: no critical or serious violations on the main view', async ({ page }
 test('a11y: Lessons list + an open lesson', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
-  await page.locator('.tab[data-view="lessons"]').click();
+  await page.evaluate(() => showView('lessons'));
   await page.locator('.continuecta, .booktoc li').first().waitFor();
   expect(await blockingViolations(page, 'lessons-list'), 'lessons list').toEqual([]);
   await page.locator('.lessonjump').first().click();
@@ -66,7 +66,7 @@ test('a11y: Book table of contents', async ({ page }) => {
 test('a11y: Quizzes list', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
-  await page.locator('.tab[data-view="quizzes"]').click();
+  await page.evaluate(() => showView('quizzes'));
   await page.locator('.quizjump').first().waitFor();
   expect(await blockingViolations(page, 'quizzes'), 'quizzes list').toEqual([]);
 });

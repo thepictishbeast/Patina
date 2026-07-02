@@ -1,66 +1,60 @@
-// E2E for the navigation surface added across recent ticks — it had ZERO
-// dedicated coverage even though it's now central to the UX:
-//   1. the ⋯ More menu (reference surfaces folded out of the tab bar),
-//   2. the lesson → phase-cheatsheet companion link (6th surface cross-link),
-//   3. the ? keyboard-shortcuts overlay (and the regression that it must NOT
-//      swallow clicks when closed — an author display:flex once overrode the
-//      [hidden] attribute and covered the whole viewport).
+// E2E for the IDE-first navigation (Paul 2026-07-02: "focus on the task and the
+// IDE mostly with a way to quickly access … learning materials"). The top bar is
+// exactly TWO tabs — Practice (the IDE) and 📚 Learn (a hub for every learning
+// surface + progress). The old Lessons/Quizzes tabs + ⋯ More menu are gone; their
+// destinations live in the hub. Also guards the ? shortcut overlay's click-through.
 const { test, expect } = require('@playwright/test');
 
-test.describe('⋯ More menu (reference surfaces)', () => {
-  test('the bar shows 3 primary tabs; reference surfaces live in the menu', async ({ page }) => {
+test.describe('IDE-first nav: Practice + the 📚 Learn hub', () => {
+  test('exactly two tabs; the old tabs + More menu are gone', async ({ page }) => {
     await page.goto('/');
-    // Exactly the active-learning surfaces are primary tabs.
-    await expect(page.locator('.tab[data-view]')).toHaveCount(3);
+    await expect(page.locator('.tabs .tab[data-view]')).toHaveCount(2);
     await expect(page.locator('.tab[data-view="practice"]')).toBeVisible();
-    await expect(page.locator('.tab[data-view="lessons"]')).toBeVisible();
-    await expect(page.locator('.tab[data-view="quizzes"]')).toBeVisible();
-    // The reference surfaces are NOT tabs — they're menu items.
-    // (book, glossary, cheatsheets, 📚 Library, roadmap, 🩺 Logs)
-    await expect(page.locator('.tab[data-view="book"]')).toHaveCount(0);
-    await expect(page.locator('#moremenu-list .menuitem')).toHaveCount(6);
+    await expect(page.locator('.tab[data-view="learn"]')).toBeVisible();
+    // consolidated away:
+    await expect(page.locator('.tab[data-view="lessons"]')).toHaveCount(0);
+    await expect(page.locator('.tab[data-view="quizzes"]')).toHaveCount(0);
+    await expect(page.locator('#moreBtn')).toHaveCount(0);
   });
 
-  test('opening the menu and choosing Book navigates + closes + marks the trigger active', async ({ page }) => {
+  test('the Learn hub lists every surface + progress; a card navigates and keeps Learn active', async ({ page }) => {
     await page.goto('/');
-    const list = page.locator('#moremenu-list');
-    await expect(list).toBeHidden();
-    await page.locator('#moreBtn').click();
-    await expect(list).toBeVisible();
-    await expect(page.locator('#moreBtn')).toHaveAttribute('aria-expanded', 'true');
-    await page.locator('#moremenu-list .menuitem[data-view="book"]').click();
-    // navigated to the doc view, menu closed, trigger reflects the active reference view
-    await expect(list).toBeHidden();
-    await expect(page.locator('#docview')).toBeVisible();
-    await expect(page.locator('#moreBtn')).toHaveClass(/active/);
-    await expect(page.locator('.menuitem[data-view="book"]')).toHaveAttribute('aria-current', 'true');
-  });
+    await page.locator('.tab[data-view="learn"]').click();
+    // hub: progress line + the surface cards
+    await expect(page.locator('.hubprog')).toContainText(/exercises/);
+    const cards = page.locator('.hubcard');
+    await expect(cards).toHaveCount(8); // lessons, journey, study guide, quizzes, cheatsheets, book, glossary, library
+    await expect(page.locator('.hubcard[data-view="lessons"]')).toBeVisible();
+    await expect(page.locator('.hubcard[data-view="book"]')).toBeVisible();
+    await expect(page.locator('.hubcard[data-view="library"]')).toBeVisible();
+    await expect(page.locator('.tab[data-view="learn"]')).toHaveClass(/active/);
 
-  test('Escape closes the open menu', async ({ page }) => {
-    await page.goto('/');
-    await page.locator('#moreBtn').click();
-    await expect(page.locator('#moremenu-list')).toBeVisible();
-    await page.locator('#moremenu-list .menuitem').first().focus();
-    await page.keyboard.press('Escape');
-    await expect(page.locator('#moremenu-list')).toBeHidden();
+    // a card opens its surface; the Learn tab stays active (it's a Learn sub-view)
+    await page.locator('.hubcard[data-view="glossary"]').click();
+    await expect(page.locator('.gloss-term').first()).toBeVisible();
+    await expect(page.locator('.tab[data-view="learn"]')).toHaveClass(/active/);
+
+    // Practice returns to the IDE
+    await page.locator('.tab[data-view="practice"]').click();
+    await expect(page.locator('main')).toBeVisible();
+    await expect(page.locator('.tab[data-view="practice"]')).toHaveClass(/active/);
   });
 });
 
 test.describe('lesson → phase cheatsheet cross-link', () => {
   test('a lesson carries a working "this phase\'s cheat sheet" companion link', async ({ page }) => {
     await page.goto('/');
-    await page.locator('.tab[data-view="lessons"]').click();
-    // open the first lesson from the list
+    await page.locator('.tab[data-view="learn"]').click();
+    await page.locator('.hubcard[data-view="lessons"]').click();
     await expect(page.locator('.lessonjump').first()).toBeVisible();
     await page.locator('.lessonjump').first().click();
-    // the companion cheat link is present and targets a real phase id
     const cheat = page.locator('.cheatlink');
     await expect(cheat).toBeVisible();
     await expect(cheat).toHaveAttribute('data-cheat', /^(phase\d|phase6-generics|tooling)$/);
-    // clicking it opens a single cheatsheet (the "← all cheatsheets" back link appears)
     await cheat.click();
     await expect(page.locator('.cheatback')).toBeVisible();
-    await expect(page.locator('#moreBtn')).toHaveClass(/active/); // cheatsheets is a menu view
+    // cheatsheets is a Learn sub-view → the Learn tab stays lit
+    await expect(page.locator('.tab[data-view="learn"]')).toHaveClass(/active/);
   });
 });
 
@@ -69,12 +63,9 @@ test.describe('? keyboard-shortcuts overlay', () => {
     await page.goto('/');
     const help = page.locator('#keyshelp');
     await expect(help).toBeHidden();
-    // Regression guard: a closed overlay must not intercept clicks. If it covered
-    // the viewport (the old [hidden]-override bug), this tab click would time out.
-    await page.locator('.tab[data-view="lessons"]').click();
+    // Regression guard: a closed overlay must not intercept clicks.
+    await page.locator('.tab[data-view="learn"]').click();
     await expect(page.locator('#docview')).toBeVisible();
-    // open via the '?' shortcut, then close with Escape. type('?') reliably
-    // yields a keydown with key === '?' (Shift+/ can vary by mapping).
     await page.keyboard.type('?');
     await expect(help).toBeVisible();
     await expect(help).toContainText(/shortcut/i);
