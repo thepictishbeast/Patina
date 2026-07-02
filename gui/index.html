@@ -1825,6 +1825,22 @@
     const DEFAULT_BOOK = PHASE_BOOK.phase1;
     function phaseBook(phaseId) { return PHASE_BOOK[phaseId] || DEFAULT_BOOK; }
 
+    // The curriculum Study Guide — a top-level "how to work through this" doc
+    // (bundled at gui/study-guide.md, read fully offline). Reachable from every
+    // lesson's nav footer ("Study Guide"); renders in the docview like a lesson.
+    async function renderStudyGuide() {
+      const d = document.getElementById('docview');
+      d.innerHTML = '<p style="color:var(--fg-dim)">loading study guide…</p>';
+      let md = '';
+      try { md = await fetch('study-guide.md').then(r => r.text()); } catch (_) {}
+      d.innerHTML = '<p><a href="#" class="lessonback">← all lessons</a></p>'
+        + (md ? '<div class="bookbody">' + mdToHtml(md) + '</div>'
+              : '<p>Study guide unavailable.</p>');
+      d.querySelectorAll('.lessonback').forEach(a =>
+        a.onclick = e => { e.preventDefault(); renderLessons(null); });
+      d.scrollTop = 0;
+    }
+
     // The Lessons tab: the embedded Patina curriculum (the 37 authored,
     // beginner-tuned lessons), served offline by /api/lessons. With no id it
     // lists the lessons in order; with one it renders that lesson's markdown and
@@ -1956,12 +1972,12 @@
       d.querySelectorAll('.booklink').forEach(a =>
         a.onclick = e => { e.preventDefault(); showView('library', a.dataset.file, a.dataset.page); });
       // Wire the nav bar: a `.md` href routes to that lesson; the Study Guide link
-      // returns to the lesson list — all in-app, no page navigation.
+      // renders the curriculum study guide — all in-app, no page navigation.
       d.querySelectorAll('.lessonnavlink').forEach(a => {
         const href = a.dataset.href || '';
         a.onclick = e => {
           e.preventDefault();
-          if (/STUDY-GUIDE/i.test(href)) { renderLessons(null); return; }
+          if (/STUDY-GUIDE/i.test(href)) { renderStudyGuide(); return; }
           renderLessons(href.split('#')[0].split('/').pop().replace(/\.md$/i, ''));
         };
       });
