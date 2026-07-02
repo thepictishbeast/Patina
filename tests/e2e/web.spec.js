@@ -34,7 +34,12 @@ test.describe('Tempered Studio web flow', () => {
     // Pin a COMPILE-ERROR exercise so the parsed-code path is deterministic: some
     // exercises compile but panic at run time (runtime-outcome model) and so carry
     // no E-code in Diagnostics. 01_immutable_assign fails to compile (E0384).
-    await request.post('/api/select', { data: { id: 'basics/01_immutable_assign', force: true } });
+    // MUST land: force bypasses Locked but NOT Done (409 "reset to practise") —
+    // against a polluted store this select silently failed and the test ran some
+    // other exercise (a runtime-panic one has no E-code). Assert the pin so a
+    // state problem fails HERE, not as a misleading Diagnostics "flake".
+    const sel = await request.post('/api/select', { data: { id: 'basics/01_immutable_assign', force: true } });
+    expect(sel.ok(), 'pin-select basics/01 must succeed (run against a FRESH store — scripts/e2e.sh)').toBeTruthy();
     await page.goto('/');
     await expect(page.locator('#exTitle')).toContainText(/\S/);
     // Learn mode (the default) is "by-hand errors only" (Paul's tier decision): it is

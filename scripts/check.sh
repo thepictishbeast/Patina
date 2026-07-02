@@ -37,6 +37,7 @@ run "clippy (-D warnings)" cargo clippy --workspace --all-targets --locked -- -D
 run "test" cargo test --workspace --locked
 run "doc" cargo doc --workspace --no-deps --locked
 run "e2e smoke" bash scripts/smoke.sh
+run "browser e2e (isolated store)" bash scripts/e2e.sh
 run "exercise integrity" bash scripts/verify-exercises.sh
 run "cli smoke" bash scripts/smoke-cli.sh
 run "gui transforms" node scripts/test-gui.mjs

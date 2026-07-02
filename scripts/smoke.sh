@@ -37,8 +37,12 @@ echo "-- build --"
 cargo build -p rpro-serve --offline 2>/dev/null || cargo build -p rpro-serve
 
 echo "-- start server (loopback only, seeded fresh) --"
+# Resolve the binary the way cargo does: CARGO_TARGET_DIR when set, ./target
+# otherwise. Hardcoding ./target once launched a TWO-WEEK-STALE fossil server
+# on hosts that build into a cache dir — the smoke quietly tested old code.
+SRV_BIN="${CARGO_TARGET_DIR:-$ROOT_DIR/target}/debug/rpro-serve"
 PORT="$PORT" TS_SERVE_ROOT="$STATE" CARGO_TERM_COLOR=always \
-  ./target/debug/rpro-serve >"$STATE/server.log" 2>&1 &
+  "$SRV_BIN" >"$STATE/server.log" 2>&1 &
 SRV_PID=$!
 curl -s --retry-connrefused --retry 30 --retry-delay 1 -o /dev/null "$BASE/" \
   || { fail "server never came up"; cat "$STATE/server.log"; exit 1; }
@@ -72,14 +76,18 @@ assert "expected_error_code" not in d, "LEAK: expected_error_code in /api/curren
 print("  ok   — /api/current renders the exercise, no answer leaked")
 ' || fail "/api/current no-leak"
 
-# 4. hint ladder: level 1 must not contain a solution outline
+# 4. hint ladder: on a FRESH store (0 attempts) the force-attempt gate holds —
+#    level 0 + the "run it first" nudge, and never a solution outline. (The old
+#    assertion expected level 1 here; that was the pre-gate contract, kept alive
+#    only because this script was accidentally testing a stale binary.)
 curl -s "$BASE/api/hint?level=1" | python3 -c '
 import sys, json
 d = json.load(sys.stdin)
 t = (d.get("text") or "").lower()
-assert d.get("level") == 1, "level 1 not returned"
-assert "solution outline" not in t, "LEAK: level-1 hint contains the solution"
-print("  ok   — hint L1 guides without revealing the solution")
+assert d.get("level") == 0, "gate broken: hint unlocked with zero attempts"
+assert "run it first" in t, "gate nudge text missing"
+assert "solution outline" not in t, "LEAK: gated hint contains the solution"
+print("  ok   — hint gate holds at 0 attempts (no rung, no leak)")
 ' || fail "hint ladder gating"
 
 # 5. a real op runs end-to-end (check compiles the current exercise)

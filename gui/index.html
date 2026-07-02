@@ -750,9 +750,20 @@
         return out.join('\n').replace(/\n{3,}/g, '\n\n').replace(/\s+$/, '');
       } catch (_) { return ''; }
     }
+    // Stale-render guard: navigating while a view's fetch is still in flight must
+    // not let the OLD render clobber the NEW view (fast taps; slower stores — the
+    // race that flipped a fresh quiz list back to a late-arriving lesson). Every
+    // renderer paints into a FRESH #docview node; a stale async continuation still
+    // holds the previous, now-DETACHED node and paints it harmlessly off-DOM.
+    function freshDocview() {
+      const old = document.getElementById('docview');
+      const d = old.cloneNode(false); // same id/attrs (incl. hidden state), no children
+      old.replaceWith(d);
+      return d;
+    }
     function renderLogs(filter) {
       logFilter = filter || logFilter || 'all';
-      const d = document.getElementById('docview');
+      const d = freshDocview();
       const tabs = ['all'].concat(Object.keys(LOG_CATS)).map(c => {
         const n = c === 'all' ? LOGS.length : LOGS.filter(e => e.cat === c).length;
         return `<button class="logtab${c === logFilter ? ' on' : ''}" data-f="${c}">${esc(c === 'all' ? 'All' : LOG_CATS[c])} <span class="logn">${n}</span></button>`;
@@ -779,7 +790,7 @@
     // WebView can't display a PDF inline, and pdf.js works with zero network.
     let _libCache = null;
     async function renderLibrary(file, page) {
-      const d = document.getElementById('docview');
+      const d = freshDocview();
       if (file) { // open one book full-screen in the offline pdf.js viewer.
         // Full-page navigation (NOT an iframe): the server's global CSP sets
         // frame-ancestors 'none' + X-Frame-Options DENY (kept for security), which
@@ -1632,7 +1643,7 @@
     // Each quiz is `## Questions` then `## Answers`; `quizToHtml` pairs each
     // question with its own reveal so predict-then-verify holds per question.
     async function renderQuizzes(id) {
-      const d = document.getElementById('docview');
+      const d = freshDocview();
       if (!id) {
         d.innerHTML = '<h1>❓ Quizzes</h1><p style="color:var(--fg-dim)">loading…</p>';
         let data;
@@ -1681,7 +1692,7 @@
     // The Cheatsheets tab: the per-phase quick-reference sheets (/api/cheatsheets).
     // Plain markdown reference — no answers to hide, so just render it.
     async function renderCheatsheets(id) {
-      const d = document.getElementById('docview');
+      const d = freshDocview();
       if (!id) {
         d.innerHTML = '<h1>📋 Cheatsheets</h1><p style="color:var(--fg-dim)">loading…</p>';
         let data;
@@ -1738,7 +1749,7 @@
     // linking its lessons + cheatsheet + quiz so the learner sees the whole path
     // and can dive into any part of it.
     async function renderRoadmap() {
-      const d = document.getElementById('docview');
+      const d = freshDocview();
       const head = '<h1>🗺️ Your Rust journey</h1>';
       d.innerHTML = head + '<p style="color:var(--fg-dim)">loading…</p>';
       let lessons = [];
@@ -1892,7 +1903,7 @@
     // the main screen can stay the task + the IDE (Paul's IDE-first direction).
     // Everything here was previously scattered across two tabs + a ⋯ More menu.
     async function renderLearnHub() {
-      const d = document.getElementById('docview');
+      const d = freshDocview();
       d.innerHTML = '<h1>📚 Learn</h1><p style="color:var(--fg-dim)">loading…</p>';
       let lessons = [], quizzes = [], exDone = 0, exTotal = 0;
       try { lessons = (await fetch('api/lessons').then(r => r.json())).lessons || []; } catch (_) {}
@@ -1934,7 +1945,7 @@
     // (bundled at gui/study-guide.md, read fully offline). Reachable from every
     // lesson's nav footer ("Study Guide"); renders in the docview like a lesson.
     async function renderStudyGuide() {
-      const d = document.getElementById('docview');
+      const d = freshDocview();
       d.innerHTML = '<p style="color:var(--fg-dim)">loading study guide…</p>';
       let md = '';
       try { md = await fetch('study-guide.md').then(r => r.text()); } catch (_) {}
@@ -1974,7 +1985,7 @@
       return html;
     }
     async function renderLessons(id) {
-      const d = document.getElementById('docview');
+      const d = freshDocview();
       if (!id) {
         d.innerHTML = '<h1>🎓 Lessons</h1><p style="color:var(--fg-dim)">loading…</p>';
         let data;
@@ -2134,7 +2145,7 @@
     // a learner read the whole vocabulary, and jump from any term to its Book
     // chapter. Pure offline reference; no internet, no LLM.
     async function renderGlossary() {
-      const d = document.getElementById('docview');
+      const d = freshDocview();
       d.innerHTML = '<p style="color:var(--fg-dim)">loading glossary…</p>';
       let terms = [];
       try {
@@ -2198,7 +2209,7 @@
     }
 
     async function renderBook(chapter, anchor, term) {
-      const d = document.getElementById('docview');
+      const d = freshDocview();
       const refs = curBookRefs || [];
       const quick = refs.length
         ? '<p style="color:var(--fg-dim)">For this exercise: '

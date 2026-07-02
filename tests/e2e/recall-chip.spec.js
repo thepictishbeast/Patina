@@ -11,10 +11,14 @@ test('a passed exercise adds an actionable RECALL chip that explains on activati
   // pass the exercise (Assist = no predict-gate) so its code is recorded as "overcome"
   await page.goto('/');
   await expect(page.locator('#editorCode')).toBeVisible();
-  await page.evaluate((id) => fetch('api/select', {
+  // MUST land (force bypasses Locked but NOT Done): on a polluted store this
+  // 409'd silently and the FIX below then ran against whatever exercise was
+  // current — quietly PASSING it and advancing the real store's progress.
+  const selOk = await page.evaluate((id) => fetch('api/select', {
     method: 'POST', headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ id, force: true }),
-  }), EX);
+  }).then((r) => r.ok), EX);
+  expect(selOk, 'pin-select basics/01 must succeed (run against a FRESH store — scripts/e2e.sh)').toBeTruthy();
   await page.goto('/');
   await page.locator('#modesw button[data-mode="assist"]').click();
   await page.locator('#editorCode').evaluate((el, v) => { el.value = v; }, FIX);
