@@ -719,13 +719,15 @@
     // so they can be viewed offline.") Rendered via the vendored pdf.js viewer —
     // WebView can't display a PDF inline, and pdf.js works with zero network.
     let _libCache = null;
-    async function renderLibrary(file) {
+    async function renderLibrary(file, page) {
       const d = document.getElementById('docview');
       if (file) { // open one book full-screen in the offline pdf.js viewer.
         // Full-page navigation (NOT an iframe): the server's global CSP sets
         // frame-ancestors 'none' + X-Frame-Options DENY (kept for security), which
         // blocks embedding — but top-level nav is fine. Device/browser Back returns.
-        location.href = 'vendor/pdfjs/web/viewer.html?file=' + encodeURIComponent('/library/' + file);
+        // A page (#page=N) deep-links straight to the phase's chapter.
+        const frag = page ? '#page=' + encodeURIComponent(page) : '';
+        location.href = 'vendor/pdfjs/web/viewer.html?file=' + encodeURIComponent('/library/' + file) + frag;
         return;
       }
       d.innerHTML = '<h1>📚 Library</h1><p style="color:var(--fg-dim)">loading…</p>';
@@ -1482,7 +1484,7 @@
       } else if (view === 'logs') {
         renderLogs(logFilter);
       } else if (view === 'library') {
-        await renderLibrary(chapter || null);
+        await renderLibrary(chapter || null, anchor || null);
       }
     }
 
@@ -1652,7 +1654,7 @@
         const bk = phaseBook(g.phase);
         const links = `<a href="#" class="cheatlink" data-cheat="${esc(g.phase)}">📋 Cheatsheet</a>`
           + ` · <a href="#" class="quizlink" data-quiz="${esc(g.phase)}">❓ Quiz</a>`
-          + ` · <a href="#" class="booklink" data-file="${esc(bk.file)}">📖 ${esc(bk.short)}</a>`;
+          + ` · <a href="#" class="booklink" data-file="${esc(bk.file)}" data-page="${esc(bk.page)}">📖 ${esc(bk.chapter || bk.short)}</a>`;
         return `<section class="roadphase"><h2>${esc(g.name)}${badge}</h2>`
           + `<ul class="roadlessons">${lis}</ul><p class="roadlinks">${links}</p></section>`;
       }).join('');
@@ -1664,7 +1666,7 @@
       d.querySelectorAll('.quizlink').forEach(a =>
         a.onclick = e => { e.preventDefault(); showView('quizzes', a.dataset.quiz); });
       d.querySelectorAll('.booklink').forEach(a =>
-        a.onclick = e => { e.preventDefault(); showView('library', a.dataset.file); });
+        a.onclick = e => { e.preventDefault(); showView('library', a.dataset.file, a.dataset.page); });
       d.scrollTop = 0;
     }
 
@@ -1738,8 +1740,25 @@
     // "The Book" (TRPL); the tooling phase maps to The Cargo Book. This weaves
     // the Library INTO the learning flow (#32) instead of leaving it a separate
     // shelf: every lesson + Journey stage points at where to read deeper offline.
-    const DEFAULT_BOOK = { file: 'the-rust-programming-language.pdf', short: 'The Rust Programming Language' };
-    const PHASE_BOOK = { tooling: { file: 'the-cargo-book.pdf', short: 'The Cargo Book' } };
+    // Each phase → the exact companion chapter in the offline Library, with the
+    // real PDF page (extracted from the book's outline) so the reader DEEP-LINKS
+    // straight to that chapter instead of page 1. Beginner path → "The Book"
+    // (TRPL) chapters; the tooling phase → The Cargo Book.
+    const _TRPL = 'the-rust-programming-language.pdf', _TRPLn = 'The Rust Programming Language';
+    const PHASE_BOOK = {
+      phase1: { file: _TRPL, short: _TRPLn, chapter: 'Common Programming Concepts', page: 38 },
+      phase2: { file: _TRPL, short: _TRPLn, chapter: 'Common Programming Concepts', page: 38 },
+      phase3: { file: _TRPL, short: _TRPLn, chapter: 'Common Collections', page: 141 },
+      phase4: { file: _TRPL, short: _TRPLn, chapter: 'Understanding Ownership', page: 65 },
+      phase5: { file: _TRPL, short: _TRPLn, chapter: 'Enums and Pattern Matching', page: 107 },
+      phase6: { file: _TRPL, short: _TRPLn, chapter: 'Packages, Crates, and Modules', page: 122 },
+      'phase6-generics': { file: _TRPL, short: _TRPLn, chapter: 'Generic Types, Traits, and Lifetimes', page: 174 },
+      phase7: { file: _TRPL, short: _TRPLn, chapter: 'Iterators and Closures', page: 262 },
+      phase8: { file: _TRPL, short: _TRPLn, chapter: 'Fearless Concurrency', page: 336 },
+      phase9: { file: _TRPL, short: _TRPLn, chapter: 'Object-Oriented Programming Features', page: 394 },
+      tooling: { file: 'the-cargo-book.pdf', short: 'The Cargo Book', chapter: '', page: 1 },
+    };
+    const DEFAULT_BOOK = PHASE_BOOK.phase1;
     function phaseBook(phaseId) { return PHASE_BOOK[phaseId] || DEFAULT_BOOK; }
 
     // The Lessons tab: the embedded Patina curriculum (the 37 authored,
@@ -1842,8 +1861,9 @@
         // so a curious learner can read the same topic in depth (#32 — books woven
         // into the lesson flow, not a separate shelf). Read fully offline.
         const bk = phaseBook(quizId);
+        const bkLabel = bk.chapter ? `${bk.short} — “${bk.chapter}”` : bk.short;
         const bookHtml = quizId
-          ? `<p class="lessonbook">📖 Read deeper: <a href="#" class="booklink" data-file="${esc(bk.file)}">${esc(bk.short)} (offline) →</a></p>`
+          ? `<p class="lessonbook">📖 Read deeper: <a href="#" class="booklink" data-file="${esc(bk.file)}" data-page="${esc(bk.page)}">${esc(bkLabel)} (offline) →</a></p>`
           : '';
         d.innerHTML = back + '<div class="bookbody lessonbody">' + mdToHtml(md) + '</div>' + cheatHtml + bookHtml + practiceHtml + quizHtml + navHtml;
         markLessonRead(id); // reading it = progress (✓ in the list + Journey counts)
@@ -1854,7 +1874,7 @@
       d.querySelectorAll('.cheatlink').forEach(a =>
         a.onclick = e => { e.preventDefault(); showView('cheatsheets', a.dataset.cheat); });
       d.querySelectorAll('.booklink').forEach(a =>
-        a.onclick = e => { e.preventDefault(); showView('library', a.dataset.file); });
+        a.onclick = e => { e.preventDefault(); showView('library', a.dataset.file, a.dataset.page); });
       // Wire the nav bar: a `.md` href routes to that lesson; the Study Guide link
       // returns to the lesson list — all in-app, no page navigation.
       d.querySelectorAll('.lessonnavlink').forEach(a => {
