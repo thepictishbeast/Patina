@@ -62,3 +62,27 @@ test('a11y: Book table of contents', async ({ page }) => {
   await page.locator('.booktoc li, .bookjump').first().waitFor();
   expect(await blockingViolations(page, 'book-toc'), 'book toc').toEqual([]);
 });
+
+test('a11y: Quizzes list', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+  await page.locator('.tab[data-view="quizzes"]').click();
+  await page.locator('.quizjump').first().waitFor();
+  expect(await blockingViolations(page, 'quizzes'), 'quizzes list').toEqual([]);
+});
+
+test('a11y: Glossary (search + term cards)', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+  await page.evaluate(() => showView('glossary'));
+  await page.locator('.gloss-term').first().waitFor();
+  expect(await blockingViolations(page, 'glossary'), 'glossary').toEqual([]);
+});
+
+test('a11y: Journey / roadmap', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+  await page.evaluate(() => showView('roadmap'));
+  await page.locator('.roadphase').first().waitFor();
+  expect(await blockingViolations(page, 'roadmap'), 'roadmap').toEqual([]);
+});

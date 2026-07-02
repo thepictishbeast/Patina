@@ -1311,6 +1311,16 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   F-Droid + Obtainium · signed APT/dnf repos.
 
 ## Open questions for Paul
+- ⚠️ **Mobile exercise PROGRESSION doesn't work offline (design decision, 2026-07-02).** On the phone there's no
+  writable server: the WebView seam serves `/api/exercises` + `/api/current` **read-only** and `/api/select`/run
+  return null; the Termux run-result handler (`window.__termuxResult`) doesn't record a pass or advance. Net effect:
+  a mobile learner can RUN the seeded "current" exercise but **can't switch exercises or auto-advance** through the
+  71-exercise curriculum — they're pinned to one. **Two ways forward, your call:** (a) accept that mobile = reading
+  (lessons/book/library) + free-form snippet-running, and the structured 71-exercise progression lives on desktop/CLI
+  (then I'd soften the mobile exercise UI to match); or (b) build a **client-side progress layer** (localStorage
+  overlay: mark done + advance on a passing on-device run, switch exercises locally) so the full loop works offline.
+  (b) is a real feature I can build but can only fully verify **on-device** — needs your steer + a phone test. Flagged
+  now rather than half-fixed blind.
 - ⚠️ **The Android CI runner is DOWN (2026-06-26).** The self-hosted GitHub Actions runner
   `[self-hosted, linux, x64, plausiden]` that builds the APK (`.github/workflows/apk.yml` on the mobile repo) is
   **offline/deregistered** — `gh api .../actions/runners` lists none, and the last **5 pushes to mobile `main` are
