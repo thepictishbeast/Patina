@@ -1172,6 +1172,13 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   (deeper help comes from trying, not bumping a flag). `--level`/`--solution` help updated to match. The
   cross-surface hint behavior (text + gate + escalation) is now fully consistent across web/CLI. Verified
   live: 1 attempt → `--solution`/`--level 3` both give rung 1/3; 2 attempts → rung 2; 3 → rung 3 last-resort.
+- ✅ **Full CI-mirror verification + 2 rustdoc-warning fixes (`3d5966f`, 2026-07-02).** Ran `scripts/check.sh` (the
+  complete gate set — fmt, clippy -D warnings, test, doc, e2e smoke, exercise integrity, cli smoke, gui-transforms,
+  book anchors, language-seam guard, wasm32 build) to confirm this session's ~20 changes are green end-to-end:
+  **11/11 gates pass — "branch is mergeable"** (cargo-deny skipped, not installed; CI runs it). The doc gate surfaced
+  2 rustdoc warnings, fixed: rpro-cli's MdSurface doc wrote "no <noun>" (rustdoc parsed as an unclosed HTML tag →
+  backticked); rpro-glossary linked `[`rpro_book`]` (not a dep → broken intra-doc link → dropped the brackets).
+  `cargo doc` now warning-free. Milestone: the whole platform is verified-green after the session's work.
 - ✅ **Journey quiz-done ✓ + validated the mobile-progression gap architecture (`<gui>`, v0.3.13, 2026-07-02).** The
   Journey showed per-phase lesson read-counts but not quiz completion; added a green ✓ next to each phase's Quiz link
   when its quiz is done (quizDoneSet) — each stage now shows lessons + read badge + quiz ✓ + book chapter at a glance.
