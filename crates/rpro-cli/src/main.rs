@@ -204,12 +204,53 @@ fn cmd_glossary(term: Option<&str>) -> Result<()> {
         }
         Some(q) => match glossary.get(q) {
             None => {
-                println!("{} no glossary entry for {:?}.", style("·").dim(), q);
-                println!(
-                    "  {} `{}`",
-                    style("Browse all:").dim(),
-                    style("rpro glossary").bold()
-                );
+                // Exact/alias lookup missed — fall back to a substring search over
+                // names, aliases and definitions (the web glossary filters the same
+                // way), so all 116 terms stay discoverable from the terminal instead
+                // of a bare miss + a 116-line dump.
+                let needle = q.to_lowercase();
+                let hits: Vec<&str> = glossary
+                    .all()
+                    .iter()
+                    .filter(|t| {
+                        t.name.to_lowercase().contains(&needle)
+                            || t.definition.to_lowercase().contains(&needle)
+                            || t.aliases.iter().any(|a| a.to_lowercase().contains(&needle))
+                    })
+                    .map(|t| t.name.as_str())
+                    .collect();
+                if hits.is_empty() {
+                    println!("{} no glossary entry for {:?}.", style("·").dim(), q);
+                    println!(
+                        "  {} `{}`",
+                        style("Browse all:").dim(),
+                        style("rpro glossary").bold()
+                    );
+                } else {
+                    println!(
+                        "{} no exact entry for {:?} — {} related term{}:",
+                        style("·").dim(),
+                        q,
+                        hits.len(),
+                        if hits.len() == 1 { "" } else { "s" }
+                    );
+                    let shown = hits.len().min(15);
+                    for name in &hits[..shown] {
+                        println!("  {}", style(name).bold());
+                    }
+                    if hits.len() > shown {
+                        println!(
+                            "  {}",
+                            style(format!("… and {} more", hits.len() - shown)).dim()
+                        );
+                    }
+                    println!();
+                    println!(
+                        "  {} `{}`",
+                        style("Define one:").dim(),
+                        style("rpro glossary <term>").bold()
+                    );
+                }
             }
             Some(t) => {
                 println!("{}", style(&t.name).bold().cyan());
