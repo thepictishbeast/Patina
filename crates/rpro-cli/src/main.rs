@@ -861,6 +861,36 @@ fn cmd_progress() -> Result<()> {
     let pct = (done * 100).checked_div(total).unwrap_or(0);
     println!("{}", style("Rustlings Pro — progress").bold().cyan());
     println!("  {done} / {total} done ({pct}%)");
+    // Per-phase breakdown (parity with the web/mobile lists, which show a done/total
+    // count per topic): group exercises by their `<phase>/` id prefix, in curriculum
+    // order, so you see where you stand within each topic — not just the grand total.
+    let mut phases: Vec<(String, u32, u32)> = Vec::new();
+    for ex in &exercises {
+        let phase = ex.meta.id.split('/').next().unwrap_or("").to_string();
+        let is_done = progress
+            .entries
+            .get(&ex.meta.id)
+            .is_some_and(|e| e.status == ExerciseStatus::Done);
+        if let Some(entry) = phases.iter_mut().find(|(p, _, _)| *p == phase) {
+            entry.2 += 1;
+            entry.1 += u32::from(is_done);
+        } else {
+            phases.push((phase, u32::from(is_done), 1));
+        }
+    }
+    if !phases.is_empty() {
+        println!();
+        for (phase, phase_done, phase_total) in &phases {
+            let count = format!("{phase_done}/{phase_total}");
+            let count = if phase_done == phase_total {
+                style(format!("{count} ✓")).green()
+            } else {
+                style(count).dim()
+            };
+            println!("  {:<20} {count}", phase.replace('-', " "));
+        }
+        println!();
+    }
     let remaining: u32 = exercises
         .iter()
         .filter(|ex| {
