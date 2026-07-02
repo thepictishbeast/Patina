@@ -1172,6 +1172,11 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   (deeper help comes from trying, not bumping a flag). `--level`/`--solution` help updated to match. The
   cross-surface hint behavior (text + gate + escalation) is now fully consistent across web/CLI. Verified
   live: 1 attempt → `--solution`/`--level 3` both give rung 1/3; 2 attempts → rung 2; 3 → rung 3 last-resort.
+- ✅ **e2e regression guard for lesson-nav (`1e95fd9`, 2026-07-02).** The Continue/Start CTA, type-to-filter, and
+  book chapter deep-links shipped this session with ZERO coverage (localStorage-/render-driven — the kind a stray
+  refactor breaks silently; we've regressed nav before). New `lesson-nav.spec.js` (4 tests): Continue CTA
+  Start→Continue→opens; filter narrows/no-match/clears; lesson `.booklink` has a real `data-page`; Journey has
+  per-phase chapter links. Full suite **25/25 green** (was 21). Test-only — no app change, no release.
 - ✅ **Type-to-filter the lessons list (#31, `9137617`, 2026-07-02 — web now; APK batched).** With 37 lessons, a
   filter box (shown once the list passes a handful) narrows to a topic instantly. Case-insensitive title substring,
   a "no lessons match" note, clear restores all; coexists with the Continue CTA + ✓ read marks. Verified LIVE
