@@ -164,6 +164,39 @@ check(idMatch && /^[a-z0-9_-]*$/.test(idMatch[1]), 'slug id is attribute-safe ([
 check(mdToHtml('### The API of Mutex<T>').includes('id="the-api-of-mutext"'),
       'angle-bracket heading slug strips entities (Mutex<T> → the-api-of-mutext)');
 
+// 10. The read→practice loop's integrity: EVERY exercise concept must resolve
+// through CONCEPT_LESSON to a lesson file that exists, or that exercise loses
+// its "📖 read the lesson" link SILENTLY (the same rot the concept→glossary
+// guard in golden_corpus.rs exists for — this is its lesson-side twin; the map
+// is hand-maintained JS that nothing else checks).
+{
+  const { readdirSync } = await import('node:fs');
+  const root = join(here, '..');
+  const block = (html.match(/const CONCEPT_LESSON = \{([\s\S]*?)\};/) || [])[1];
+  check(!!block, 'CONCEPT_LESSON map present in the gui');
+  const mapping = Object.fromEntries(
+    [...(block || '').matchAll(/'([^']+)':\s*'([^']+)'/g)].map(m => [m[1], m[2]]));
+  const lessons = new Set(readdirSync(join(root, 'lessons'))
+    .filter(f => f.endsWith('.md')).map(f => f.slice(0, -3)));
+  const concepts = new Set();
+  for (const phase of readdirSync(join(root, 'exercises'))) {
+    let files = [];
+    try { files = readdirSync(join(root, 'exercises', phase)).filter(f => f.endsWith('.toml')); }
+    catch { continue; } // non-dir entry
+    for (const f of files) {
+      const m = readFileSync(join(root, 'exercises', phase, f), 'utf8').match(/^concept\s*=\s*"([^"]+)"/m);
+      if (m) concepts.add(m[1]);
+    }
+  }
+  check(concepts.size >= 60, `found the exercise concept corpus (${concepts.size})`);
+  const unmapped = [...concepts].filter(c => !(c in mapping)).sort();
+  check(unmapped.length === 0,
+    'every exercise concept has a lesson link' + (unmapped.length ? ` — UNMAPPED: ${unmapped.join(', ')}` : ''));
+  const dangling = Object.entries(mapping).filter(([, t]) => !lessons.has(t)).sort();
+  check(dangling.length === 0,
+    'every CONCEPT_LESSON target exists in lessons/' + (dangling.length ? ` — DANGLING: ${dangling.map(([c, t]) => `${c}→${t}`).join(', ')}` : ''));
+}
+
 console.log('');
 if (fails === 0) console.log('GUI TRANSFORM TESTS PASS ✓');
 else { console.log('GUI TRANSFORM TESTS FAILED: ' + fails); process.exit(1); }
