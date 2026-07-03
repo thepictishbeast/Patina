@@ -22,16 +22,19 @@ lean hard on the earlier ones.
 
 ## Your loop for each topic
 
-1. **Read the lesson** (Lessons tab) — the idea, in plain language.
-2. **Practice it** (Practice tab) — predict, then run the matching exercise; read
+1. **Read the lesson** (📚 Learn → Lessons) — the idea, in plain language.
+2. **Practice it** (📝 Practice tab) — predict, then run the matching exercise; read
    the real error; fix it; run again.
 3. **Self-check** with the phase **quiz** — predict every answer before you reveal it.
 4. Keep the phase **cheatsheet** open for quick reference while you work.
 5. **Read deeper** in the bundled book — every lesson links to the exact chapter
    of *The Rust Programming Language* (or The Cargo Book) in the offline Library.
 
-The **Journey** tab shows the whole path by stage with your progress; the Lessons
-tab has a **Continue** button that jumps you to your first unread lesson.
+The app keeps the main screen to just the task and the editor. Everything else
+lives one tap away in the **📚 Learn** hub: the lessons (grouped by stage, with a
+**Continue** button that jumps to your first unread one), the quizzes and
+cheatsheets, the offline book and Library, the glossary, and **Your Rust
+Journey** — the whole path by stage, with your progress.
 
 ## The path, stage by stage
 
