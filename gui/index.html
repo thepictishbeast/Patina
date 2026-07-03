@@ -2424,7 +2424,14 @@
     };
     try {
       const saved = localStorage.getItem('ts-theme');
-      if (saved === 'light' || saved === 'dark') document.documentElement.dataset.theme = saved;
+      if (saved === 'light' || saved === 'dark') {
+        document.documentElement.dataset.theme = saved; // an explicit choice always wins
+      } else if (window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches) {
+        // FIRST visit, no saved choice: follow the OS preference instead of
+        // forcing dark on light-mode users. (The 🌓 toggle still saves an
+        // explicit choice, which takes precedence forever after.)
+        document.documentElement.dataset.theme = 'light';
+      }
     } catch (_) {}
     // ── Insights drawer: the right pane (Diagnostics / Book refs / Tutor) is
     // supplementary — the real run output is the centre terminal — so it stays

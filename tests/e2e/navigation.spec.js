@@ -58,6 +58,27 @@ test.describe('lesson → phase cheatsheet cross-link', () => {
   });
 });
 
+test.describe('theme: OS preference on first visit, explicit choice wins after', () => {
+  test('a light-mode OS gets the light theme with no saved choice', async ({ page }) => {
+    await page.emulateMedia({ colorScheme: 'light' });
+    await page.goto('/');
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  });
+
+  test('a saved choice beats the OS preference', async ({ page }) => {
+    await page.emulateMedia({ colorScheme: 'light' });
+    await page.addInitScript(() => { try { localStorage.setItem('ts-theme', 'dark'); } catch (e) {} });
+    await page.goto('/');
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  });
+
+  test('a dark-mode OS keeps the dark default', async ({ page }) => {
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await page.goto('/');
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  });
+});
+
 test.describe('? keyboard-shortcuts overlay', () => {
   test('? opens the overlay and Escape closes it; it never blocks clicks when closed', async ({ page }) => {
     await page.goto('/');
