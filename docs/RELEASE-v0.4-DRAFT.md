@@ -61,6 +61,11 @@ and the 🌓 toggle persists.
 
 ## Under the hood (quality you'll feel, not see)
 
+- The complete learner loop is verified END-TO-END on a fresh store:
+  predict-gate → run → verdict → hint rung 1 (earned, never given) → Assist
+  re-render → red gutter mark matching the L# jump → edit clears marks →
+  fix → pass → advance → the error joins the RECALL queue. Every seam held.
+
 - Browser e2e runs on an **isolated throwaway store** — the suite can never
   touch a real learner's progress again — and is deterministic (43/43 twice
   consecutively, ~13s).
