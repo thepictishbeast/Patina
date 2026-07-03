@@ -3,7 +3,7 @@
 > **STATUS: DRAFT — do not publish.** Maintained by the improvement loop so the
 > v0.4 cut is a one-step job whenever Paul calls it. Everything below is already
 > merged on `textbook-integration` (web/CLI/TUI) and `main` (mobile), verified by
-> the full CI mirror (baseline `f7978f2`, 12/12 gates). The batch policy is
+> the full CI mirror (baseline `22e8abe`, 12/12 gates, 2026-07-03). The batch policy is
 > Paul's: no releases between v0.3.14 and one great v0.4.
 
 ## The headline: the screen is yours now

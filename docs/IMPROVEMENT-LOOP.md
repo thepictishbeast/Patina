@@ -1,6 +1,6 @@
 # Improvement Loop — toward the greatest Rust learning platform
 
-> **✅ RELEASE-READINESS BASELINE (textbook-integration `f7978f2`, verified 2026-07-03).** Full CI mirror green — 12/12 gates (fmt, clippy -D warnings, tests, doc, smoke, browser-e2e on an isolated store, exercise integrity 71/71, cli smoke, gui transforms, book anchors 115/115, seam guard, deny/wasm) — after the v0.4-track work: IDE-first nav + Learn hub, slim header, bundled emoji, stage grouping, per-phase counts (web/CLI), glossary 61, light-theme AA both-theme audits, deterministic e2e, TUI quizzes gate, mobile offline (lessons/quizzes/glossary/hints) + v0.3.14. Branch is mergeable.
+> **✅ RELEASE-READINESS BASELINE (textbook-integration `22e8abe`, verified 2026-07-03).** Full CI mirror 12/12 green 24 commits after the previous baseline — now including: TUI quizzes gate, concept→lesson guard, desktop audit fixes (emoji-first + digit-hijack), study-guide refresh, gzip serving, editor line-number gutter + error marks (hlLines, 9 transform checks), Enter-to-Run, mobile offline Explain + current asset sync, live release-build. End-to-end learner walkthrough clean. Branch is mergeable — this IS the v0.4 candidate.
 > health pass, all green: `cargo build --workspace` clean; **`cargo test --workspace` all pass (0 failed,
 > ~137 tests across all 12 crates)**; `cargo fmt --all --check` clean; `verify-exercises.sh` 63/63;
 > `verify-book-anchors.mjs` all resolve; `golden_corpus` green (incl. the concept→glossary guard). Clippy:
