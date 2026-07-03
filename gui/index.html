@@ -35,13 +35,16 @@
     --done: #36c46b; --current: #2bb6d6; --locked: #6b7280;
     --skipped: #e0b020; --error: #ff5c5c; --warn: #e0b020; --note: #5aa9ff;
     --bg: #0e1116; --bg-2: #161b22; --bg-3: #1d2430; --line: #2a3340;
-    /* Emoji fallbacks (appended after the generic family) let the UI glyphs 📝🔮✓
-       render via whatever emoji font the OS ships — Win/Mac/Android/most Linux —
-       instead of tofu boxes. Bare-minimal Linux desktops still need a bundled
-       font (flagged to Paul); this fixes the common case for free. */
+    /* Emoji families FIRST, not last: every listed font is emoji-only (and the
+       bundled Noto faces are unicode-range-gated to emoji blocks), so letters
+       can never match them — but emoji always do. When they trailed the list,
+       Chromium left elements painted BEFORE the font chunk arrived stuck on
+       monochrome tofu (the 📝 Practice tab) even after load; leading order
+       makes the emoji font authoritative — verified by pixel probe
+       (0 → 92 colored px on the stuck tab). */
     --emoji: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", "Twemoji Mozilla", "Android Emoji", "EmojiOne Color";
-    --fg: #e6edf3; --fg-dim: #9aa7b4; --mono: ui-monospace, "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace, var(--emoji);
-    --ui: system-ui, -apple-system, "Segoe UI", Roboto, Inter, sans-serif, var(--emoji);
+    --fg: #e6edf3; --fg-dim: #9aa7b4; --mono: var(--emoji), ui-monospace, "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
+    --ui: var(--emoji), system-ui, -apple-system, "Segoe UI", Roboto, Inter, sans-serif;
     --radius: 12px; --shadow: 0 6px 24px rgba(0,0,0,.35);
     /* syntax-highlight palette for rendered (read-only) Rust code blocks */
     --tok-k:#ff7a3c; --tok-s:#7ec97e; --tok-c:#6b7884; --tok-n:#d2a8ff; --tok-t:#5aa9ff; --tok-m:#e0b020;
@@ -352,7 +355,9 @@
   .pbtn[data-pred="compiles"].sel { border-color:var(--done); box-shadow:inset 0 -2px 0 var(--done); color:var(--fg); }
   .pbtn[data-pred="fails"].sel { border-color:var(--error); box-shadow:inset 0 -2px 0 var(--error); color:var(--fg); }
   .pin { background:var(--bg-2); color:var(--fg); border:1px solid var(--line); border-radius:8px;
-    padding:5px 8px; font-family:var(--mono); font-size:12px; flex:1 1 160px; min-width:120px; outline:none; }
+    padding:5px 8px; font-family:var(--mono); font-size:12px; flex:1 1 160px; min-width:120px;
+    max-width:420px; /* fills a phone row, but doesn't sprawl ~1000px on desktop */
+    outline:none; }
   .pin:focus { border-color:var(--accent); }
   .pv { font-size:12.5px; font-weight:600; }
   .editor { margin:0 20px 14px; border:1px solid var(--line); border-radius:var(--radius); background:var(--bg-2);
