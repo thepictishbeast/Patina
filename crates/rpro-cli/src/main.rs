@@ -334,6 +334,25 @@ const CHEATSHEETS: MdSurface = MdSurface {
 /// List-or-print a bundled markdown study surface, fully offline. With no id it
 /// lists every item; with one it prints that item (matched by exact stem or
 /// prefix, so a bare number like `05` works — raw input is never path-joined).
+/// The curriculum stage a lesson number belongs to — the SAME thresholds the
+/// web's lessonToQuiz()/PHASE_NAMES use, so `rpro lessons` groups its list the
+/// way the web and TUI show the path (11 stages, not a flat 37-item dump).
+const fn lesson_stage(n: u32) -> &'static str {
+    match n {
+        0..=8 => "Foundations",
+        9..=11 => "Control Flow",
+        12..=14 => "Text & Collections",
+        15..=17 => "Ownership & Borrowing",
+        18..=20 => "Custom Types & Matching",
+        21..=23 => "Organizing Code",
+        24..=26 => "Generics, Traits & Lifetimes",
+        27..=29 => "Functional & Smart Pointers",
+        30..=31 => "Concurrency",
+        32..=35 => "Advanced",
+        _ => "Tooling",
+    }
+}
+
 fn cmd_md_surface(s: &MdSurface, id: Option<&str>) -> Result<()> {
     let store = Store::user()?;
     let dir = store.root().join(s.name);
@@ -348,7 +367,23 @@ fn cmd_md_surface(s: &MdSurface, id: Option<&str>) -> Result<()> {
     match id {
         None => {
             println!("{}", style(s.list_title).bold().cyan());
+            // Lessons group under their curriculum stage (parity with web/TUI);
+            // quizzes/cheatsheets are already one-per-phase, so they stay flat.
+            let mut last_stage: Option<&'static str> = None;
             for stem in &stems {
+                if s.name == "lessons" {
+                    let n: u32 = stem
+                        .chars()
+                        .take_while(char::is_ascii_digit)
+                        .collect::<String>()
+                        .parse()
+                        .unwrap_or(0);
+                    let stage = lesson_stage(n);
+                    if last_stage != Some(stage) {
+                        last_stage = Some(stage);
+                        println!("\n  {}", style(stage).bold());
+                    }
+                }
                 // nosemgrep -- stem ∈ store-owned md_stems(dir); never raw input
                 let title = std::fs::read_to_string(dir.join(format!("{stem}.md")))
                     .map_or_else(|_| stem.clone(), |md| md_title(&md, stem));
@@ -1380,5 +1415,29 @@ mod tests {
             "book_refs with no bundled chapter:\n{}",
             broken.join("\n")
         );
+    }
+
+    #[test]
+    fn lesson_stage_thresholds_match_the_curriculum() {
+        // Mirrors the web's lessonToQuiz()/PHASE_NAMES thresholds — if the
+        // curriculum regroups, BOTH must move together.
+        assert_eq!(super::lesson_stage(1), "Foundations");
+        assert_eq!(super::lesson_stage(8), "Foundations");
+        assert_eq!(super::lesson_stage(9), "Control Flow");
+        assert_eq!(super::lesson_stage(24), "Generics, Traits & Lifetimes");
+        assert_eq!(super::lesson_stage(35), "Advanced");
+        assert_eq!(super::lesson_stage(36), "Tooling");
+        assert_eq!(super::lesson_stage(37), "Tooling");
+        // Every bundled lesson (01…37) lands in SOME stage without panicking,
+        // and the stage sequence is monotone (never returns to an earlier one).
+        let mut seen: Vec<&str> = Vec::new();
+        for n in 1..=37 {
+            let s = super::lesson_stage(n);
+            if seen.last() != Some(&s) {
+                assert!(!seen.contains(&s), "stage {s} repeats non-contiguously");
+                seen.push(s);
+            }
+        }
+        assert_eq!(seen.len(), 11, "the path has 11 stages");
     }
 }
