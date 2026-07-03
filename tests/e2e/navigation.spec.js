@@ -77,6 +77,15 @@ test.describe('theme: OS preference on first visit, explicit choice wins after',
     await page.goto('/');
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   });
+
+  test('Android (seam present) ignores the OS preference — deterministic dark', async ({ page }) => {
+    // The WebView's prefers-color-scheme reporting is undefined without
+    // DayNight config, so the phone app must not gamble on it.
+    await page.emulateMedia({ colorScheme: 'light' });
+    await page.addInitScript(() => { window.AndroidSeam = { marker: true }; });
+    await page.goto('/');
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  });
 });
 
 test.describe('? keyboard-shortcuts overlay', () => {

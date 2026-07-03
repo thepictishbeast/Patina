@@ -2426,10 +2426,14 @@
       const saved = localStorage.getItem('ts-theme');
       if (saved === 'light' || saved === 'dark') {
         document.documentElement.dataset.theme = saved; // an explicit choice always wins
-      } else if (window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches) {
+      } else if (!window.AndroidSeam
+                 && window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches) {
         // FIRST visit, no saved choice: follow the OS preference instead of
         // forcing dark on light-mode users. (The 🌓 toggle still saves an
         // explicit choice, which takes precedence forever after.)
+        // NOT on Android: the WebView's prefers-color-scheme reporting is
+        // undefined without DayNight/darkening config (this app sets none),
+        // so the phone app stays deterministically dark unless toggled.
         document.documentElement.dataset.theme = 'light';
       }
     } catch (_) {}
