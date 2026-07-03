@@ -38,29 +38,43 @@ predict, run, diagnose, and fix:
 diagnostics, and a per-language adapter (`rpro-lang-rust`) speaks the toolchain —
 so the engine never hard-codes `cargo`/`rustc`.
 
-## Three surfaces, one shared core
+## Four surfaces, one shared core
 
-All run **fully offline** against your local Rust toolchain — no telemetry, no CDN.
+All run **fully offline** — no telemetry, no CDN, no account, no AI required.
 Progress (`~/.rustlings-pro/`) is shared, so what you do in one surface shows in the others.
 
 - **Web** (`rpro-serve`) — a loopback-only [axum] server + a single-file GUI
-  (vendored xterm.js, no CDN): editable code pane, predict-first bar, Run/Check/
-  Explain, a hint ladder, click-a-diagnostic-to-explain, and a "↻ Recall" spaced-
-  repetition queue. Binds `127.0.0.1` only; the op surface is a closed
-  whitelist; it never sends the page the answer. See [docs/SECURITY.md](docs/SECURITY.md).
-- **CLI** (`rpro`) — `init`, `exercise list/next/hint/skip/reset`, `run/check/test`,
-  `explain`, `book`, `progress`.
+  (vendored xterm.js, no CDN), gzip-served. **IDE-first**: two tabs — 📝 Practice
+  (the task + an editor with line numbers, syntax highlight, and red gutter marks
+  on diagnostic lines) and 📚 Learn (one hub for lessons, quizzes, cheatsheets,
+  the Book, a 9-book PDF library, the glossary, and Your Rust Journey, with
+  per-stage progress). Predict-first gate, Run/Check/Explain, an earned hint
+  ladder, click-a-diagnostic-to-explain, jump-to-line, a "↻ Recall" spaced-
+  repetition queue, and dark/light themes (WCAG-AA in both, CI-audited). Binds
+  `127.0.0.1` only; the op surface is a closed whitelist; it never sends the
+  page the answer. See [docs/SECURITY.md](docs/SECURITY.md).
+- **Android** ([Tempered-Studio-Mobile]) — the same GUI in a WebView with an
+  on-device seam (JNI): the full curriculum offline, and **native compiling on
+  the phone's real `rustc`** via an installed [Termux] (no server, no cloud).
+- **CLI** (`rpro`) — `init`, `exercise list/next/hint/skip/reset`, `run/check/
+  test`, `explain`, `book`, `glossary`, `lessons`, `quizzes`, `cheatsheets`,
+  `progress` (with a per-phase breakdown).
 - **TUI** (`rpro` dashboard) — [ratatui] dashboard, exercise view (raw output +
-  diagnostics), book reader, roadmap, with the same hint ladder + Recall panel.
+  diagnostics), Lessons, Quizzes (answers stay hidden until you reveal them),
+  Book reader, Cheatsheets, Journey — same hint ladder + Recall.
 
-- **Book references on every exercise.** Stuck? The hint ladder points at the
-  specific chapter of [*The Rust Book*][book] that explains the concept, never
-  the fix — it climbs concept → expected error → solution outline (last resort).
+**Three editor tiers** — *Learn* (strict: predict before Run, raw errors only,
+you do the work), *Assist* (parsed diagnostics alongside the raw output), *Dev*
+(editor assists). **The hint ladder never hands the solution**: it climbs
+concept → expected error code → back to the source ([*The Rust Book*][book]
+chapter that teaches the concept) — the fix is always yours to write.
 
 [rustlings]: https://github.com/rust-lang/rustlings
 [book]: https://doc.rust-lang.org/book/
 [axum]: https://github.com/tokio-rs/axum
 [ratatui]: https://ratatui.rs/
+[Tempered-Studio-Mobile]: https://github.com/thepictishbeast/Tempered-Studio-Mobile
+[Termux]: https://f-droid.org/packages/com.termux
 
 ## Quick start
 
@@ -84,16 +98,24 @@ Full run notes, env knobs, and the smoke test: [RUN.md](RUN.md).
 
 ## Content
 
-63 exercises across 11 phases (basics → control-flow → collections → ownership →
-types/matching → error handling → modules → generics/traits/lifetimes →
-functional & smart pointers → concurrency → advanced), each a single-file program
-that fails with a real, rustc-verified error code, paired with `.toml` metadata
-(concept, expected error, book refs, solution outline; every concept resolves to a
-glossary term, CI-guarded). Plus 33 embedded Rust Book chapters (bundled + seeded;
-readable in the web/TUI Book tab — code listings link out to the live Book). The
-structured textbook is complete in the companion **rust-textbook** corpus: 37
-lessons (Phase 1 foundations → a multithreaded web-server capstone) plus 11 phase
-reviews, every snippet compile-verified on rustc 1.95.0.
+**71 exercises** across 15 topics (basics → control-flow → collections →
+ownership → types/matching → error handling → modules → generics → traits →
+lifetimes → closures → iterators → smart pointers → concurrency → advanced),
+each a single-file program with a real, rustc-verified outcome (a compile error
+code or a runtime panic), paired with `.toml` metadata — concept, expected
+outcome, book refs. Every concept resolves to a glossary term AND to its
+lesson, both CI-guarded.
+
+The **Patina textbook is bundled and served in-app**: 37 lessons (first `let`
+binding → a multithreaded web-server capstone, grouped into 11 stages), 11
+predict-then-reveal quizzes, 11 per-phase cheatsheets, a 61-term plain-language
+glossary, a Study Guide with a "when you finish" arc — every snippet
+compile-verified on rustc 1.95.0, authored in the companion **rust-textbook**
+repo and kept in lockstep. Plus 33 embedded Rust Book chapters (web/TUI Book
+tab) and a fully-offline **Library of 9 complete books** (PDF, pdf.js): TRPL,
+Comprehensive Rust, the Reference, the Rustonomicon, the Cargo Book, the
+Edition Guide, the Embedded Book, Rust Design Patterns, and the Rustc Dev
+Guide.
 
 ## Architecture
 
@@ -119,11 +141,17 @@ grep gate that keeps toolchain names out of the neutral layers.
 
 ## Status & verification
 
-94 unit/integration tests + an end-to-end smoke (API + serving contract) + the
-seam/wasm CI gates, all green; a cited security review with one fix landed; a
-verified packaging pipeline. The current state is tabulated in
-[docs/AUDIT.md](docs/AUDIT.md). Per the AVP-2 disclaimer at the top, none of this
-is a certification of safety — it is what is implemented and checked so far.
+A 12-gate CI mirror (`scripts/check.sh`), all green at the current baseline:
+rustfmt, clippy `-D warnings`, the workspace test suite, rustdoc, an API/serving
+smoke, a **50-test Playwright browser suite run against an isolated throwaway
+store** (deterministic — it can never touch a real learner's progress), exercise
+integrity (71/71 outcomes re-verified against the real toolchain), CLI smoke,
+GUI transform tests (XSS-safety by construction, cross-link guards), book-anchor
+resolution, the language-seam grep gate, and the wasm32 pure-core build. Both
+themes are axe-audited (WCAG 2 A/AA) on every view. A cited security review with
+one fix landed. The current state is tabulated in [docs/AUDIT.md](docs/AUDIT.md).
+Per the AVP-2 disclaimer at the top, none of this is a certification of safety —
+it is what is implemented and checked so far.
 
 ## License
 
