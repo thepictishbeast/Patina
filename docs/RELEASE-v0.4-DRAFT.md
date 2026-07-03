@@ -36,8 +36,9 @@ screen to **the task and the editor**, and puts everything else one tap away:
 
 - **Mobile serves everything on-device**: lessons, quizzes, cheatsheets, the
   61-term glossary (Copy, Clone and dereference joined it), and — new since
-  v0.3.14 — the **hint ladder**, running the same gate as the desktop: no hint
-  until you've genuinely tried, one rung per attempt, never the solution.
+  v0.3.14 — the **hint ladder** (same gate as desktop: no hint until you've genuinely
+  tried, one rung per attempt, never the solution) and **Explain** — 
+  `rustc --explain` runs on-device through the Termux bridge.
 - **Bundled color emoji** (Noto Color Emoji, OFL, ~2MB of unicode-range-gated
   subsets): no more tofu boxes on systems without an emoji font, still zero
   network requests.
