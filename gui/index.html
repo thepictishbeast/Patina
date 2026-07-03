@@ -2571,6 +2571,13 @@
       updateRunGate();
     });
     document.getElementById('predcode').addEventListener('input', e => { predict.code = e.target.value; updateRunGate(); });
+    // Enter in the error-code box = Run — the natural finishing gesture after
+    // typing a guess. Only once the pass/fail half is locked: the gate stays
+    // authoritative (with no outcome picked, Enter does nothing and the pulsing
+    // prompt keeps asking for the prediction).
+    document.getElementById('predcode').addEventListener('keydown', e => {
+      if (e.key === 'Enter' && predict.compiles !== null) { e.preventDefault(); runOp('run'); }
+    });
     // Mode switcher (Learn / Assist / Dev) + restore the saved mode.
     document.querySelectorAll('#modesw button').forEach(b => b.onclick = () => setMode(b.dataset.mode));
     setMode(mode);

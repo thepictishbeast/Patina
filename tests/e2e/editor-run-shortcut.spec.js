@@ -35,6 +35,21 @@ test.describe('editor Run shortcut (Ctrl/Cmd+Enter)', () => {
       .toContainText(/failed|passed/, { timeout: 30_000 });
   });
 
+  test('Enter in the error-code box runs — but only once the outcome is locked', async ({ page, request }) => {
+    await request.post('/api/select', { data: { id: EX, force: true } });
+    await page.goto('/'); // Learn is the default mode
+    await expect(page.locator('#editorCode')).toBeVisible();
+    // Type a code guess but pick NO outcome: Enter must be a no-op (gate holds).
+    await page.locator('#predcode').fill('E0384');
+    await page.locator('#predcode').press('Enter');
+    await expect(page.locator('#runbtn'), 'still gated with no outcome picked').toBeDisabled();
+    // Lock the outcome; now Enter from the same box fires the run.
+    await page.locator('.pbtn[data-pred="fails"]').click();
+    await page.locator('#predcode').press('Enter');
+    await expect(page.locator('#statusline'), 'Enter finishes the prediction gesture')
+      .toContainText(/failed|passed/, { timeout: 30_000 });
+  });
+
   test('Ctrl+Enter does not insert a newline in the editor (Dev)', async ({ page, request }) => {
     await request.post('/api/select', { data: { id: EX, force: true } });
     await page.goto('/');
