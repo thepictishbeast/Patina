@@ -91,7 +91,11 @@ and the 🌓 toggle persists.
 3. `HOME=/home/paul TS_SIBLING=… bash build-apk.sh` (re-syncs all assets),
    verify versionName + content in the APK (`aapt dump badging`, `unzip -l`).
 4. `gh release create v0.4.0` with the APK + sha256 — RELEASE url, not an
-   Actions artifact.
+   Actions artifact. Name the asset **`tempered-studio.apk`** (STABLE, no
+   version stamp) so `/releases/latest/download/tempered-studio.apk` works
+   forever — then update the mobile README's download button to that one-tap
+   URL (see the comment there; its old version-stamped link rotted 5 releases
+   back). Keep the version in the release TITLE/tag, sha256 in the notes.
 5. One email to william@plausiden.com via
    `/home/paul/.claude/tempered-email.sh`, verify `status=sent`.
 6. Update this file's status line to RELEASED + tick the loop doc.
