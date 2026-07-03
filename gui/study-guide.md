@@ -71,3 +71,26 @@ Start in **Learn** and stay there until the by-hand loop feels natural.
 
 There's no substitute for typing it yourself and reading what the compiler tells
 you. That's the whole game. Have fun — and don't stop.
+
+## When you finish the path
+
+Lesson 37 done and the exercises green is real fluency in the language's core.
+Where to go next — all offline, all already in this app:
+
+- **Clear your Recall queue.** Those ↻ codes are the errors you once hit. When
+  you can explain each one from memory before tapping it, it's yours for good.
+- **Redo what you skipped or struggled with.** ↺ Reset an exercise and write it
+  cold — the second attempt teaches more than the first.
+- **Read whole books, not excerpts.** The Library carries nine complete works.
+  *Rust Design Patterns* is the natural next read (how experienced Rust is
+  actually written); *The Rust Reference* is your precision lookup from now on;
+  *The Rustonomicon* is there when `unsafe` stops being a keyword you avoid and
+  becomes one you need. *The Embedded Rust Book* opens a whole direction if
+  hardware calls to you.
+- **Build something you actually want.** A small CLI tool, a file organizer, a
+  game — `cargo new` and go. The compiler will push back; that's the same loop
+  you've been practicing, just without the training rails. You know how to read
+  it now.
+
+The habit you built here — predict, run, read the real output by hand — was
+never about these 71 exercises. It's how you'll learn everything after them.

@@ -138,6 +138,11 @@ a flag deep in the compiler? Tell me, and I'll shape the wrap-up review.
   excerpts are configuration (not compiled), and the publish/profile behaviours are Cargo/
   crates.io tooling described as commands.
 
+**The path ends here — the habit doesn't.** You can now read what the
+compiler says and act on it, which is the only skill the rest of Rust asks
+for. The Study Guide's *When you finish the path* section has your next
+moves — all offline, all already on this device.
+
 ---
 
 <!-- lesson-nav -->
