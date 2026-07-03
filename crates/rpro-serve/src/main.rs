@@ -35,6 +35,8 @@ use axum::middleware::map_response;
 use axum::response::{IntoResponse, Json, Response};
 use axum::routing::post;
 use serde::{Deserialize, Serialize};
+use tower_http::compression::predicate::{NotForContentType, Predicate};
+use tower_http::compression::{CompressionLayer, DefaultPredicate};
 use tower_http::services::ServeDir;
 
 use rpro_core::Core;
@@ -900,6 +902,18 @@ fn build_router(state: AppState, gui_dir: &Path) -> Router {
         .route("/api/cheatsheets", axum::routing::get(cheatsheets_handler))
         // Everything else is the static gui/ shell (index.html + vendored xterm).
         .fallback_service(ServeDir::new(gui_dir))
+        // gzip compressible responses (the ~164 KB single-file shell → ~40 KB;
+        // JSON likewise). PDFs are EXCLUDED on purpose: they're pre-compressed,
+        // and pdf.js loads the Library books with Range requests — compression
+        // would break the 206 chunking and force 12 MB full downloads. woff2 is
+        // already Brotli inside; compressing it just burns CPU.
+        .layer(
+            CompressionLayer::new().compress_when(
+                DefaultPredicate::new()
+                    .and(NotForContentType::new("application/pdf"))
+                    .and(NotForContentType::new("font/woff2")),
+            ),
+        )
         .layer(map_response(security_headers))
         // Defence-in-depth: cap the request body before it is parsed.
         .layer(DefaultBodyLimit::max(MAX_BODY_BYTES))

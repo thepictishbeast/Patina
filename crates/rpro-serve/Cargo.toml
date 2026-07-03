@@ -28,7 +28,10 @@ pollster = { workspace = true }
 
 axum = "0.7.9"
 tokio = { version = "1.52", features = ["rt-multi-thread", "macros", "net"] }
-tower-http = { version = "0.6", features = ["fs"] }
+# compression-gzip: the single-file gui shell is ~164 KB of HTML/JS — it was
+# shipped UNCOMPRESSED on every load. gzip cuts it ~4×; JSON similarly. (No
+# brotli: flate2 is light and permissive, and gzip captures most of the win.)
+tower-http = { version = "0.6", features = ["fs", "compression-gzip"] }
 
 [lints]
 workspace = true
