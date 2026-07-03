@@ -13,6 +13,9 @@ pub enum Tab {
     Exercise,
     /// The Patina curriculum — the authored beginner lessons.
     Lessons,
+    /// The per-phase self-check quizzes — predict-then-reveal: answers stay
+    /// hidden until explicitly revealed, so the terminal never leaks them.
+    Quizzes,
     /// The embedded Rust Book reader.
     Book,
     /// The per-phase quick-reference cheatsheets.
@@ -23,10 +26,11 @@ pub enum Tab {
 
 impl Tab {
     /// Every tab, in display order.
-    pub const ALL: [Self; 6] = [
+    pub const ALL: [Self; 7] = [
         Self::Dashboard,
         Self::Exercise,
         Self::Lessons,
+        Self::Quizzes,
         Self::Book,
         Self::Cheatsheets,
         Self::Roadmap,
@@ -39,6 +43,7 @@ impl Tab {
             Self::Dashboard => "Dashboard",
             Self::Exercise => "Exercise",
             Self::Lessons => "Lessons",
+            Self::Quizzes => "Quizzes",
             Self::Book => "Book",
             Self::Cheatsheets => "Cheatsheets",
             Self::Roadmap => "Roadmap",
@@ -52,9 +57,10 @@ impl Tab {
             Self::Dashboard => 0,
             Self::Exercise => 1,
             Self::Lessons => 2,
-            Self::Book => 3,
-            Self::Cheatsheets => 4,
-            Self::Roadmap => 5,
+            Self::Quizzes => 3,
+            Self::Book => 4,
+            Self::Cheatsheets => 5,
+            Self::Roadmap => 6,
         }
     }
 
@@ -75,6 +81,9 @@ impl Tab {
 pub const NARROW_COLS: u16 = 50;
 
 /// The running TUI application state.
+// The bools are independent UI flags (ascii, running, quit, quiz reveal), not an
+// encoded state machine — the excessive-bools refactor hint doesn't apply.
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, Clone)]
 pub struct App {
     /// The active screen.
@@ -98,6 +107,10 @@ pub struct App {
     /// Hint-ladder rung currently revealed on the exercise view (0 = none).
     /// Sticky to the current exercise; reset to 0 only when the exercise changes.
     pub hint_level: u8,
+    /// Quizzes tab: the selected quiz's Answers section is revealed. Predict-
+    /// then-reveal — OFF by default and reset whenever the selection or tab
+    /// changes, so answers never carry over to an unpredicted quiz.
+    pub quiz_revealed: bool,
 }
 
 impl App {
@@ -118,6 +131,7 @@ impl App {
             list_len: 0,
             scroll: 0,
             hint_level: 0,
+            quiz_revealed: false,
         }
     }
 
@@ -126,6 +140,7 @@ impl App {
         self.tab = self.tab.next();
         self.selected = 0;
         self.scroll = 0;
+        self.quiz_revealed = false;
     }
 
     /// Move to the previous tab.
@@ -133,6 +148,12 @@ impl App {
         self.tab = self.tab.prev();
         self.selected = 0;
         self.scroll = 0;
+        self.quiz_revealed = false;
+    }
+
+    /// Toggle the selected quiz's Answers section (the `a` key on Quizzes).
+    pub const fn toggle_quiz_reveal(&mut self) {
+        self.quiz_revealed = !self.quiz_revealed;
     }
 
     /// Scroll the active pane down by `STEP` lines.
@@ -156,19 +177,23 @@ impl App {
     }
 
     /// Move selection down one row (clamped at the bottom); resets scroll so a
-    /// newly selected item (e.g. a book chapter) starts at the top.
+    /// newly selected item (e.g. a book chapter) starts at the top. Also re-hides
+    /// quiz answers: a reveal never carries over to an unpredicted quiz.
     pub const fn select_next(&mut self) {
         if self.list_len > 0 && self.selected + 1 < self.list_len {
             self.selected += 1;
             self.scroll = 0;
+            self.quiz_revealed = false;
         }
     }
 
-    /// Move selection up one row (clamped at the top); resets scroll.
+    /// Move selection up one row (clamped at the top); resets scroll (and quiz
+    /// reveal, as in [`Self::select_next`]).
     pub const fn select_prev(&mut self) {
         if self.selected > 0 {
             self.selected -= 1;
             self.scroll = 0;
+            self.quiz_revealed = false;
         }
     }
 
@@ -201,15 +226,33 @@ mod tests {
     fn tabs_cycle_and_wrap() {
         assert_eq!(Tab::Dashboard.next(), Tab::Exercise);
         assert_eq!(Tab::Exercise.next(), Tab::Lessons);
-        assert_eq!(Tab::Lessons.next(), Tab::Book);
+        assert_eq!(Tab::Lessons.next(), Tab::Quizzes);
+        assert_eq!(Tab::Quizzes.next(), Tab::Book);
         assert_eq!(Tab::Book.next(), Tab::Cheatsheets);
         assert_eq!(Tab::Roadmap.next(), Tab::Dashboard); // wraps
         assert_eq!(Tab::Dashboard.prev(), Tab::Roadmap); // wraps
         assert_eq!(Tab::Lessons.prev(), Tab::Exercise);
+        assert_eq!(Tab::Book.prev(), Tab::Quizzes);
         // ALL indices line up
         for (i, t) in Tab::ALL.iter().enumerate() {
             assert_eq!(t.index(), i);
         }
+    }
+
+    #[test]
+    fn quiz_reveal_toggles_and_resets_on_navigation() {
+        let mut a = app();
+        a.set_list_len(3);
+        assert!(!a.quiz_revealed, "answers start hidden (predict first)");
+        a.toggle_quiz_reveal();
+        assert!(a.quiz_revealed);
+        // Moving to another quiz re-hides answers — no carry-over to an
+        // unpredicted quiz.
+        a.select_next();
+        assert!(!a.quiz_revealed, "selection change must re-hide answers");
+        a.toggle_quiz_reveal();
+        a.next_tab();
+        assert!(!a.quiz_revealed, "tab change must re-hide answers");
     }
 
     #[test]

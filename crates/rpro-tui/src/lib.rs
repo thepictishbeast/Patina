@@ -77,6 +77,7 @@ fn run_tui(store: &Store, book: &Book, start_tab: Tab, start_selected: usize) ->
     let mut dash = dashboard_data(store);
     let mut ex = exercise_view_data(store);
     let lessons = md_docs(store, "lessons"); // curriculum is static for the session
+    let quizzes = md_docs(store, "quizzes");
     let cheatsheets = md_docs(store, "cheatsheets");
     let store_root = store.root().to_path_buf();
 
@@ -93,6 +94,7 @@ fn run_tui(store: &Store, book: &Book, start_tab: Tab, start_selected: usize) ->
             let list_len = match app.tab {
                 Tab::Dashboard => dash.up_next.len(),
                 Tab::Lessons => lessons.len(),
+                Tab::Quizzes => quizzes.len(),
                 Tab::Book => book.chapters.len(),
                 Tab::Cheatsheets => cheatsheets.len(),
                 Tab::Exercise | Tab::Roadmap => 0,
@@ -129,6 +131,7 @@ fn run_tui(store: &Store, book: &Book, start_tab: Tab, start_selected: usize) ->
                 Tab::Dashboard => render::render_dashboard(f, &app, &dash),
                 Tab::Exercise => render::render_exercise(f, &app, &ex),
                 Tab::Lessons => render::render_lessons(f, &app, &lessons),
+                Tab::Quizzes => render::render_quizzes(f, &app, &quizzes),
                 Tab::Book => render::render_book(f, &app, book),
                 Tab::Cheatsheets => render::render_cheatsheets(f, &app, &cheatsheets),
                 Tab::Roadmap => render::render_roadmap(f, &app, ROADMAP_MD),
@@ -144,6 +147,11 @@ fn run_tui(store: &Store, book: &Book, start_tab: Tab, start_selected: usize) ->
                             KeyCode::Up | KeyCode::Char('k') => app.select_prev(),
                             KeyCode::PageDown | KeyCode::Char(' ') => app.scroll_down(),
                             KeyCode::PageUp => app.scroll_up(),
+                            // Quizzes: reveal/hide the Answers section (predict-
+                            // then-verify — answers start hidden on every quiz).
+                            KeyCode::Char('a') if app.tab == Tab::Quizzes => {
+                                app.toggle_quiz_reveal();
+                            }
                             KeyCode::Char('r' | 'c')
                                 if app.tab == Tab::Exercise && run_rx.is_none() =>
                             {

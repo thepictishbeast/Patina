@@ -711,6 +711,106 @@ pub fn render_cheatsheets(f: &mut Frame, app: &App, sheets: &[MdDoc]) {
     );
 }
 
+/// The questions half of a quiz: everything BEFORE its `## Answers` heading
+/// (every bundled quiz has exactly one). `None` when the doc has no Answers
+/// section — then there's nothing to gate and the full doc is safe to show.
+fn quiz_questions_only(md: &str) -> Option<&str> {
+    md.lines()
+        .scan(0usize, |pos, line| {
+            let at = *pos;
+            *pos += line.len() + 1; // +1 for the newline
+            Some((at, line))
+        })
+        .find(|(_, line)| line.trim_start().starts_with("## Answers"))
+        .map(|(at, _)| &md[..at])
+}
+
+/// Render the Quizzes tab — the per-phase self-checks, with the platform's
+/// predict-then-verify rule ENFORCED in the terminal: the `## Answers` section
+/// is withheld until the learner presses `a` (and re-hides on every quiz/tab
+/// change). This is why quizzes stayed off the TUI until now — a plain reader
+/// would have dumped the answer key right under the questions.
+pub fn render_quizzes(f: &mut Frame, app: &App, quizzes: &[MdDoc]) {
+    let empty = "No quizzes yet — run `rpro init` to seed them.";
+    if quizzes.is_empty() || app.selected >= quizzes.len() {
+        render_md_reader(f, app, quizzes, "Quizzes", empty);
+        return;
+    }
+    let sel = &quizzes[app.selected];
+    let hide_hint = if app.ascii {
+        "> [locked] Answers hidden — predict EVERY question first, then press `a` to reveal."
+    } else {
+        "> 🔒 Answers hidden — predict EVERY question first, then press `a` to reveal."
+    };
+    let gated: MdDoc = match (app.quiz_revealed, quiz_questions_only(&sel.markdown)) {
+        // Hidden (the default): questions only, plus the reveal instruction.
+        (false, Some(q)) => MdDoc {
+            title: format!("{} — answers hidden [a]", sel.title),
+            markdown: format!("{q}\n{hide_hint}"),
+        },
+        // Revealed: the full doc, with a way back.
+        (true, Some(_)) => MdDoc {
+            title: format!("{} — answers shown [a]", sel.title),
+            markdown: format!("{}\n> Press `a` to hide the answers again.", sel.markdown),
+        },
+        // No Answers section — nothing to gate.
+        (_, None) => sel.clone(),
+    };
+    // Swap the gated doc in for the selection, then reuse the shared reader so
+    // Quizzes behaves exactly like Lessons/Cheatsheets (list + body + scroll).
+    let docs: Vec<MdDoc> = quizzes
+        .iter()
+        .enumerate()
+        .map(|(i, d)| {
+            if i == app.selected {
+                gated.clone()
+            } else {
+                d.clone()
+            }
+        })
+        .collect();
+    render_md_reader(f, app, &docs, "Quizzes", empty);
+}
+
+#[cfg(test)]
+mod quiz_gate_tests {
+    use super::quiz_questions_only;
+
+    #[test]
+    fn splits_at_the_answers_heading() {
+        let md = "# Quiz\n\n**Q1** …?\n\n---\n\n## Answers\n\n**A1** the answer.\n";
+        let q = quiz_questions_only(md).expect("has an Answers heading");
+        assert!(q.contains("**Q1**"), "questions kept");
+        assert!(!q.contains("## Answers"), "heading excluded");
+        assert!(!q.contains("**A1**"), "ANSWERS MUST NOT LEAK");
+    }
+
+    #[test]
+    fn no_answers_section_means_nothing_to_gate() {
+        assert!(quiz_questions_only("# Doc\njust prose\n").is_none());
+    }
+
+    #[test]
+    fn every_bundled_quiz_gates() {
+        // The real corpus: each bundled quiz must have the one Answers heading
+        // the gate keys on — otherwise the TUI would silently show its key.
+        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../quizzes");
+        let mut seen = 0;
+        for e in std::fs::read_dir(dir).expect("quizzes/ exists").flatten() {
+            let p = e.path();
+            if p.extension().and_then(|x| x.to_str()) != Some("md") {
+                continue;
+            }
+            let md = std::fs::read_to_string(&p).unwrap();
+            let q = quiz_questions_only(&md)
+                .unwrap_or_else(|| panic!("{p:?} has no `## Answers` heading"));
+            assert!(!q.contains("## Answers"));
+            seen += 1;
+        }
+        assert!(seen >= 11, "expected the full quiz corpus, saw {seen}");
+    }
+}
+
 /// Render the roadmap.
 ///
 /// The tab bar over a styled list parsed from a checkbox-markdown string
@@ -824,14 +924,16 @@ mod tests {
             up_next: vec!["ownership/02_clone".into()],
             ..Default::default()
         };
-        let text = screen_text(80, 20, &data);
+        // 100 cols: the tab bar grew to 7 tabs (Quizzes joined), which no longer
+        // fits 80 — the LAST tab title was clipping, not missing.
+        let text = screen_text(100, 20, &data);
         assert!(
             text.contains("Tempered Studio"),
             "brand title missing:\n{text}"
         );
         assert!(
-            text.contains("Dashboard") && text.contains("Roadmap"),
-            "tabs missing"
+            text.contains("Dashboard") && text.contains("Quizzes") && text.contains("Roadmap"),
+            "tabs missing:\n{text}"
         );
         assert!(text.contains("12/40"), "gauge counts missing");
         assert!(text.contains("30%"), "gauge pct missing:\n{text}");
