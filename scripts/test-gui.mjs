@@ -56,7 +56,8 @@ const deps = [
   "const RS_PRIM = /^(?:i8|i16|i32|i64|i128|isize|u8|u16|u32|u64|u128|usize|f32|f64|bool|char|str)$/;",
 ].join('\n');
 const moduleSrc = deps + '\n' + grabFn('highlightRust') + '\n' + grabFn('mdToHtml') +
-  '\nexport { esc, highlightRust, mdToHtml };\n';
+  '\n' + grabFn('hlLines') +
+  '\nexport { esc, highlightRust, mdToHtml, hlLines };\n';
 
 const dir = mkdtempSync(join(tmpdir(), 'ts-gui-'));
 const modPath = join(dir, 'gui-extract.mjs');
@@ -64,7 +65,7 @@ writeFileSync(modPath, moduleSrc);
 let mod;
 try { mod = await import(pathToFileURL(modPath).href); }
 finally { rmSync(dir, { recursive: true, force: true }); }
-const { esc, highlightRust, mdToHtml } = mod;
+const { esc, highlightRust, mdToHtml, hlLines } = mod;
 
 let fails = 0;
 const ok = m => console.log('  ok   — ' + m);
@@ -164,7 +165,39 @@ check(idMatch && /^[a-z0-9_-]*$/.test(idMatch[1]), 'slug id is attribute-safe ([
 check(mdToHtml('### The API of Mutex<T>').includes('id="the-api-of-mutext"'),
       'angle-bracket heading slug strips entities (Mutex<T> → the-api-of-mutext)');
 
-// 10. The read→practice loop's integrity: EVERY exercise concept must resolve
+// 10. hlLines — the line-number splitter behind the editor gutter. The
+// tokenizer emits spans that CROSS newlines (block comments, multi-line
+// strings); hlLines must repair the split so every per-line block is
+// tag-balanced, or the overlay renders garbage and misaligns the caret.
+{
+  const cl = (h) => h.match(/<span class="cl">/g)?.length ?? 0;
+  // Per split segment, the `.cl` wrapper's own opener was consumed by the split
+  // but its CLOSER remains → a balanced line has closes = inner opens + 1.
+  const balanced = (h) => h.split('<span class="cl">').slice(1).every(seg =>
+    (seg.match(/<\/span>/g) || []).length === (seg.match(/<span /g) || []).length + 1);
+  const three = hlLines('let a = 1;\nlet b = 2;\nlet c = 3;');
+  check(cl(three) === 3, 'hlLines: one .cl block per logical line');
+  const blockComment = hlLines('/* one\n   two */\nlet x = 1;');
+  check(cl(blockComment) === 3, 'hlLines: block comment still one .cl per line');
+  check(balanced(blockComment), 'hlLines: spans repaired across a multi-line block comment');
+  check(blockComment.split('<span class="cl">')[2].includes('tok-c'),
+        'hlLines: the reopened continuation line keeps the comment class');
+  const mlString = hlLines('let s = "one\ntwo";');
+  check(balanced(mlString), 'hlLines: spans repaired across a multi-line string');
+  const withEmpty = hlLines('let a = 1;\n\nlet b = 2;');
+  check(cl(withEmpty) === 3 && withEmpty.includes('​'),
+        'hlLines: an empty line keeps a row (ZWSP), not a collapsed block');
+  // XSS-safety is inherited: stripping ALL spans + the ZWSP returns the input,
+  // so hlLines (like highlightRust) never alters a character of the code.
+  const rt = 'fn main() {\n    let x = "a<b>&c";\n}';
+  const stripped = hlLines(rt)
+    .replace(/<span class="[^"]*">/g, '').replace(/<\/span>/g, '')
+    .split('​').join('')
+    .split('\n').join(''); // .cl blocks carry no \n — lines are block-separated
+  check(stripped === esc(rt).split('\n').join(''), 'hlLines: strip-everything round-trips (XSS-safe by construction)');
+}
+
+// 11. The read→practice loop's integrity: EVERY exercise concept must resolve
 // through CONCEPT_LESSON to a lesson file that exists, or that exercise loses
 // its "📖 read the lesson" link SILENTLY (the same rot the concept→glossary
 // guard in golden_corpus.rs exists for — this is its lesson-side twin; the map
