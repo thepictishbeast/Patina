@@ -825,7 +825,7 @@
     // MainActivity.runViaTermux() compiles+runs the code with the phone's real
     // rustc (via an installed Termux) and calls this back asynchronously.
     let termuxPending = null;
-    let termuxOp = 'run'; // which op fired the pending Termux call (run/check/test)
+    let termuxOp = 'run'; // which op fired the pending Termux call (run/check/test/explain)
     window.__termuxResult = function (cbId, res) {
       if (cbId !== termuxPending) return; // ignore stale/duplicate
       termuxPending = null;
@@ -848,6 +848,15 @@
           passed ? 'on-device run OK' : 'on-device run failed (exit ' + res.exit + ')\n' + text + (res.errmsg ? '\n' + res.errmsg : ''));
       }
       term.writeln('');
+      // Explain output is REFERENCE text (rustc --explain), not a run — no
+      // pass/fail verdict, no tutor, no predict re-arm.
+      if (termuxOp === 'explain') {
+        term.writeln(passed ? g('— rustc --explain, on-device via Termux —')
+                            : r('✗ explain failed') + d(' — is that a real diagnostic code (e.g. E0382)?'));
+        statusEl().textContent = passed ? 'explained ✓' : 'explain failed';
+        try { setInsights(true); } catch (_) {}
+        return;
+      }
       // Check type-checks only (no run) — reflect that in the verdict, not "ran".
       const okMsg = termuxOp === 'check' ? '✓ type-checks — no errors' : '✓ compiled & ran on-device';
       term.writeln(passed ? g(okMsg) + d(' — native rustc via Termux')
@@ -937,19 +946,31 @@
         //      compile (e.g. the offline Android app: no on-device Rust toolchain).
         //      Guide the learner; don't dump an unrelated static demo over their work.
         //  (b) nothing loaded (opened via file://, no server at all) → layout preview.
-        if (curExercise && window.AndroidSeam && AndroidSeam.runViaTermux && (op === 'run' || op === 'check' || op === 'test')) {
-          // On Android there's no local toolchain — compile NATIVELY on-device via an
-          // installed Termux (real rustc, offline, no server). Result arrives async at
-          // window.__termuxResult. If Termux isn't installed, guide the one-time setup.
+        if (curExercise && window.AndroidSeam && AndroidSeam.runViaTermux
+            && (op === 'run' || op === 'check' || op === 'test' || op === 'explain')) {
+          // On Android there's no local toolchain — compile (or `rustc --explain`)
+          // NATIVELY on-device via an installed Termux (real rustc, offline, no
+          // server). Result arrives async at window.__termuxResult. If Termux
+          // isn't installed, guide the one-time setup.
           let termuxOk = false; try { termuxOk = AndroidSeam.termuxInstalled(); } catch (_) {}
           term.clear();
           if (termuxOk) {
             termuxOp = op;
-            statusEl().textContent = op === 'check' ? 'type-checking on-device…' : 'compiling on-device…';
-            term.writeln(d('$ ' + op + (op === 'check' ? ' — type-checking' : ' — compiling') + ' on-device with native rustc (Termux)…'));
+            // For explain, the stdin payload is the DIAGNOSTIC CODE (E0382…),
+            // not the editor source — sanitized here AND in Java AND in bash.
+            const stdin = op === 'explain'
+              ? String((extra && extra.code) || '').replace(/[^A-Za-z0-9]/g, '')
+              : editorEl().value;
+            if (op === 'explain' && !stdin) {
+              term.writeln(r('no diagnostic code to explain')); statusEl().textContent = 'error'; return;
+            }
+            statusEl().textContent = op === 'explain' ? 'explaining on-device…'
+              : op === 'check' ? 'type-checking on-device…' : 'compiling on-device…';
+            term.writeln(d('$ ' + op + (op === 'explain' ? ' — rustc --explain ' + stdin
+              : op === 'check' ? ' — type-checking' : ' — compiling') + ' on-device with native rustc (Termux)…'));
             termuxPending = 'r' + Date.now();
             // Pass the op so Check does a fast type-check (rustc --emit=metadata, no run).
-            try { AndroidSeam.runViaTermux(editorEl().value, termuxPending, op); }
+            try { AndroidSeam.runViaTermux(stdin, termuxPending, op); }
             catch (e2) { term.writeln(r('Termux bridge error') + d(': ' + e2)); statusEl().textContent = 'error'; }
           } else {
             term.writeln(r('No on-device compiler yet') + d(' — install Termux to run Rust natively on your phone (offline, no account):'));
