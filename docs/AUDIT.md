@@ -3,32 +3,41 @@
 Single source of truth for "is Tempered Studio tested?" Re-run the commands below
 to reproduce; every number here is from a clean run, not recall.
 
-> As of `textbook-integration` HEAD. Refresh when crates, gates, or the smoke
-> contract change.
+> As of `textbook-integration` (v0.4 candidate, re-verified 2026-07-03). Refresh
+> when crates, gates, or the smoke contract change.
 
 ## Summary
 
 | Area | Status |
 |---|---|
-| Workspace build + unit/integration tests | ✅ **122 passing, 0 failing** |
+| Workspace build + unit/integration tests | ✅ **154 passing, 0 failing** |
 | seam-grep gate (language-seam purity) | ✅ CLEAN |
 | wasm32 pure-core gate | ✅ builds |
 | E2E smoke (web server contract) | ✅ **18/18** |
-| Curriculum integrity (every exercise emits its taught error) | ✅ **32/32** (`scripts/verify-exercises.sh`) |
+| **Browser E2E (Playwright, isolated throwaway store)** | ✅ **50/50, deterministic** (`scripts/e2e.sh`) |
+| **a11y: axe-core WCAG 2 A/AA, every view, BOTH themes** | ✅ **16/16 view-audits** (in the browser suite) |
+| Curriculum integrity (every exercise emits its taught outcome) | ✅ **71/71** (`scripts/verify-exercises.sh`) |
 | CLI E2E (`rpro` init/list/check/explain/book-search/hint/next/progress) | ✅ **10/10** (`scripts/smoke-cli.sh`) |
-| Web GUI pure transforms (`mdToHtml`, `highlightRust` — incl. XSS invariant) + app-script parse-check | ✅ **40/40** (`scripts/test-gui.mjs`) |
-| Book-ref anchor integrity (every `anchor` resolves to a chapter heading slug) | ✅ **51/51** (`scripts/verify-book-anchors.mjs`) |
+| Web GUI pure transforms (`mdToHtml`, `highlightRust`, `hlLines` — incl. XSS invariants) + app-script parse-check + concept→lesson guard | ✅ **53/53** (`scripts/test-gui.mjs`) |
+| Book-ref anchor integrity (every `anchor` resolves to a chapter heading slug) | ✅ **115/115** (`scripts/verify-book-anchors.mjs`) |
 | Security review + dependency audit | ✅ `docs/SECURITY.md` (posture sound) |
 | Packaging pipeline | ✅ verified by inspection (`docs/DISTRIBUTION.md`) |
 | `unsafe` code | ✅ **0** (`unsafe_code = "forbid"` workspace-wide) |
-| Browser E2E (Playwright) / Lighthouse a11y | ⏳ CI-gated (needs a headless browser) |
 
-## Automated gates (CI: `.github/workflows/`)
+## Automated gates (local mirror: `scripts/check.sh` — 12 gates; CI: `.github/workflows/`)
 
 - **`seam-gates.yml`** — (a) `wasm32-pure-core`: the pure crates compile to
   `wasm32-unknown-unknown`; (b) `seam-grep`: no toolchain/error-code literals leak
   outside `crates/languages/`.
-- **`ci.yml`** — `fmt`, `clippy`, `test`, `doc`, **`e2e smoke`** (`scripts/smoke.sh`), **`exercise integrity`** (`scripts/verify-exercises.sh` — compiles all 32 exercises, asserts each emits its taught error code), **`cli smoke`** (`scripts/smoke-cli.sh` — drives the real `rpro` binary against an isolated `RPRO_STORE`), **`gui transforms`** (`scripts/test-gui.mjs` — pins the web GUI's pure transforms: `esc`→`mdToHtml` and `highlightRust`, incl. the highlighter's XSS-safety invariant), **`book anchors`** (`scripts/verify-book-anchors.mjs` — every exercise book_ref `anchor` resolves to a chapter heading slug) — on every push/PR.
+- **`ci.yml`** — `fmt`, `clippy -D warnings`, `test`, `doc`, **`e2e smoke`**
+  (`scripts/smoke.sh`), **`browser e2e`** (`scripts/e2e.sh` — spawns rpro-serve on
+  a THROWAWAY store so mutating specs can never touch a real learner's progress;
+  the binary is resolved via `CARGO_TARGET_DIR` so it always tests the current
+  build), **`exercise integrity`** (`scripts/verify-exercises.sh` — compiles all
+  71 exercises, asserts each emits its taught error code or runtime panic),
+  **`cli smoke`**, **`gui transforms`** (`scripts/test-gui.mjs` — the page's pure
+  transforms incl. two XSS-safety-by-construction invariants, plus the
+  concept→lesson cross-link guard), **`book anchors`** — on every push/PR.
 - **`release.yml`** — tag-triggered `.deb` + `.rpm` packaging (verified; see
   DISTRIBUTION.md).
 
@@ -40,77 +49,72 @@ RUSTC=$TC/rustc $TC/cargo build --offline --target wasm32-unknown-unknown \
 grep -rnE '\b(cargo|rustc|rust-analyzer|clippy|rustfmt)\b|doc\.rust-lang|E0[0-9]{3}' \
   crates/ --include='*.rs' | grep -vE '///|//!' | grep -v 'clippy::' | grep -v 'crates/languages/'
 bash scripts/smoke.sh           # builds, seeds, serves, asserts the contract
-RUSTC=$TC/rustc bash scripts/verify-exercises.sh   # every exercise emits its taught error code
+bash scripts/e2e.sh             # the 50-test Playwright suite on an isolated store
+RUSTC=$TC/rustc bash scripts/verify-exercises.sh   # every exercise emits its taught outcome
 bash scripts/smoke-cli.sh       # drives the real `rpro` binary (isolated RPRO_STORE)
-node scripts/test-gui.mjs       # web GUI pure transforms (mdToHtml + highlightRust XSS invariant)
-node scripts/verify-book-anchors.mjs   # every exercise book_ref anchor resolves to a chapter heading
+node scripts/test-gui.mjs       # web GUI pure transforms + cross-link guards
+node scripts/verify-book-anchors.mjs   # every exercise book_ref anchor resolves
 ```
 
-## Test inventory (122 unit/integration)
+## Test inventory (154 workspace unit/integration, per-crate lib counts below)
 
 | Crate | Tests | Covers |
 |---|---|---|
-| `rpro-state` | 28 | progress (incl. skip/reset/**select** — single-Current invariant + done-count preserved), Leitner review + `fold_run`, exercise meta + hint ladder, tutor scaffolding, annotations/bookmarks/config |
-| `rpro-tui` | 29 | dashboard + Recall panel, exercise view + hint panel, book reader (incl. mdBook-directive cleanup + blockquote rail + **inline markdown → styled spans**: `` `code` ``/bold/italic/links, no raw markers, intraword-`_` safe) + roadmap render, tab/scroll/selection model (TestBackend) |
-| `rpro-serve` | 17 | op-whitelist, no-answer-leak, `sanitize_code`, status mapping + **router oneshot tests**: /api/current no-leak, unknown-op→400, oversized-body→413, /api/review shape, security headers, hint L1 no-leak, **book TOC + chapter fetch + traversal-is-a-miss + `?q=` search (ranked hits, blank→empty)**, **/api/select switch + unknown-id→400 + done→409** |
-| `rpro-book` | 12 | chapter loading + `clean_mdbook_source` (directive→link-out, hidden-line drop, `##`-unescape, fence normalize, non-rust passthrough) + `title()` + **`search()`** (counts, frequency ordering, case-insensitive, blank→empty, snippet marker-strip/truncate) |
-| `rpro-lang-rust` | 7 | the Rust `Language` seam impl (incl. `book_ref_url`) |
-| `rpro-runner` | 7 | discovery, `primary_error_code`, `record_run` (tempfile integration) |
+| `rpro-tui` | 43 | dashboard + Recall panel, exercise view + hint panel, Lessons/Cheatsheets md readers, **Quizzes with the predict-then-reveal gate (answers withheld until `a`; the split NEVER leaks an answer; corpus-asserted: all 11 bundled quizzes carry the gate heading)**, book reader + roadmap, tab/scroll/selection model (TestBackend) |
+| `rpro-state` | 30 | progress (skip/reset/select — single-Current invariant), Leitner review + `fold_run`, exercise meta + the 3-rung hint ladder (never the solution), tutor scaffolding, annotations/bookmarks/config |
+| `rpro-serve` | 21 | op-whitelist, no-answer-leak, `sanitize_code`, router oneshot tests: no-leak, 400/413, review shape, security headers, hint L1 no-leak + force-attempt gate, book TOC/chapter/traversal-miss/search, select 400/409 |
+| `rpro-book` | 12 | chapter loading + `clean_mdbook_source` + `title()` + `search()` |
+| `rpro-lang-rust` | 9 | the Rust `Language` seam impl (incl. `book_ref_url`) |
+| `rpro-runner` | 8 | discovery, `primary_error_code`, `record_run` + the golden-corpus invariants (ids unique, every concept resolves to a glossary term) |
 | `rpro-core` | 6 | the run engine |
-| `rpro-storage-fs` | 6 | on-disk store round-trips + `resolve_user_root` (RPRO_STORE override → home fallback) |
-| `rpro-toolchain-local` | 5 | local process exec (incl. run-timeout: runaway-kill + pipe-drain deadlock-avoidance) |
-| `rpro-cli` | 5 | CLI helper logic: current-exercise resolution, `resolve_exercise` precedence (explicit id → current → first; unknown id errors), `write_if_missing` no-overwrite, `copy_tree` seeding (files + nested subdirs); **+ data invariant: every exercise `book_ref` resolves to a bundled chapter** |
+| `rpro-cli` | 6 | resolution precedence, seeding helpers, book_ref→chapter invariant, `lesson_stage` thresholds (monotone, 11 stages — mirrors the web grouping) |
+| `rpro-storage-fs` | 6 | on-disk store round-trips + `resolve_user_root` |
+| `rpro-toolchain-local` | 5 | local process exec (runaway-kill + pipe-drain deadlock-avoidance) |
+
+## Browser E2E — `scripts/e2e.sh` (50/50, deterministic)
+
+Spawns rpro-serve against a fresh throwaway store (never the live one — a
+previous setup pointed the suite at the live server and its mutating specs
+silently advanced real learner progress; see the isolated-store rationale in
+the script header). Covers: the IDE-first navigation + 📚 Learn hub, the
+predict-first gate (incl. Enter-to-Run and Ctrl/Cmd+Enter honoring it),
+tier differentiation (Learn withholds parsed diagnostics; Assist surfaces the
+code + jump-to-line + red gutter marks that clear on edit; Learn never marks),
+the RECALL chip lifecycle, lesson/quiz/cheatsheet navigation with progress
+tracking, offline purity (ZERO external requests across every surface), theme
+defaults (OS preference on first visit, saved choice wins, Android stays
+deterministic), and axe-core WCAG 2 A/AA audits of every view in BOTH themes.
 
 ## E2E — `scripts/smoke.sh` (18/18)
 
 Builds the server, seeds a throwaway store, serves on loopback, asserts: static
-index + vendored xterm served; 32 exercises seeded in learning order with the
-first current; `/api/current` leaks neither solution nor expected error; the L1
-hint never reveals the solution; a real `/api/run` executes; **the success path
-end-to-end** — a correct fix for the first exercise compiles, runs, passes, and
-advances the learner to the next (the app's core payoff, through the real
-toolchain); **`explain` returns the real `rustc --explain` write-up** for a code
-(the "diagnose by hand" payoff); `/api/review` is internally consistent (`len(due)+mastered==tracked`,
-now with the overcome code tracked after the pass); an over-limit body → 413;
-the embedded Book TOC seeds (≥10 chapters); a chapter fetch returns cleaned
-markdown (no raw mdBook directives, listings linked out); and **3 adversarial
-book-traversal probes** (`../../etc/passwd`, percent-encoded, `/etc/passwd`) each
-miss the chapter map and return null — never a file from disk; **`/api/book?q=`
-full-text search returns ranked hits** (the same `rpro_book::Book::search` the
-CLI uses); and `POST /api/select` switches the current exercise (validated
-against discovered ids, unknown id → 400).
+index + vendored xterm served; 71 exercises seeded in learning order with the
+first current; `/api/current` leaks neither solution nor expected error; the
+hint gate holds at 0 attempts (level 0, "run it first", no leak); a real
+`/api/run` executes; the success path end-to-end (fix → compile → pass →
+advance); `explain` returns the real `rustc --explain` write-up; `/api/review`
+internal consistency; over-limit body → 413; the embedded Book TOC seeds; a
+chapter fetch returns cleaned markdown; 3 adversarial book-traversal probes
+each miss; `?q=` full-text search returns ranked hits; `POST /api/select`
+validates ids.
 
-This is the committed E2E coverage of the **API + serving contract**. The same
-guarantees (no-leak, op-whitelist→400, oversized-body→413, security headers) are
-*also* now asserted at the unit level via `tower::ServiceExt::oneshot` against the
-extracted `build_router`, so they run in the standard test gate, not only this
-bash script. The bash smoke doesn't run a browser; the **security-critical pure
-page JS** (`mdToHtml`/`highlightRust`) is now covered headless by
-`scripts/test-gui.mjs` (the XSS strip-spans invariant), so the remaining
-Playwright gap is the page's *interactive* JS (DOM wiring, event handlers,
-localStorage), not its sanitisation logic.
+## Formerly-open items — now closed
 
-## Open items (browser-tooling-gated, tracked as CI tasks)
-
-- **G63 — Playwright E2E** (drive the real page: editor, Run/Hint buttons,
-  localStorage, predicted-vs-actual). The npm registry is reachable here, but no
-  headless browser is installed and such a test only reproduces in a
-  browser-equipped CI job — so it belongs in CI, not the offline sandbox. The
-  app-side a11y/keyboard wiring it would exercise is already unit-covered in
-  `rpro-tui` and present in `gui/` (ARIA roles, aria-live, keyboard handlers).
-- **G65 — Lighthouse a11y/perf audit** of the web GUI. The a11y *implementation*
-  shipped (keyboard nav + ARIA + phone reflow); the Lighthouse *score* needs a
-  headless browser → same CI-task disposition as G63.
-
-These mirror how `clippy` is handled: the toolchain/tooling isn't installable in
-this sandbox, so the check lives in CI rather than being run here.
+- **G63 — Playwright E2E**: ✅ shipped as `scripts/e2e.sh` (50 tests, isolated
+  store, deterministic; a `check.sh` gate). The old note said it needed a
+  browser-equipped CI job; the local Playwright Chromium covers it here too.
+- **G65 — a11y audit**: ✅ the substance shipped as axe-core WCAG 2 A/AA audits
+  of every view in both themes, permanently gated (found + fixed 43 serious
+  contrast violations in the light theme). A Lighthouse *performance* score
+  specifically remains unmeasured — though the two big levers landed (gzip
+  serving: the 164 KB shell ships as 48 KB; release-build binary).
 
 ## Conclusion
 
-For everything runnable in this environment, **#12 is green and comprehensive**:
-122 tests, both seam/wasm gates, an 18-assertion E2E smoke (incl. the success
-path: fix → run → pass → advance, the Book reader's path-traversal guarantee,
-and full-text search), a cited security review with one fix landed,
-and a verified packaging pipeline — all reproducible from the commands above. The
-only outstanding audit pieces (Playwright, Lighthouse) require a headless browser
-and are tracked as CI tasks, not in-sandbox gaps.
+For everything runnable in this environment, the audit is **green and
+comprehensive**: 154 workspace tests, the 50-test deterministic browser suite
+with both-theme a11y audits, both seam/wasm gates, an 18-assertion server
+smoke (incl. the success path and traversal guarantees), 71/71 exercise
+integrity, 115/115 book anchors, 53 GUI-transform checks with two
+XSS-by-construction invariants, a cited security review with one fix landed,
+and a verified packaging pipeline — all reproducible from the commands above.
