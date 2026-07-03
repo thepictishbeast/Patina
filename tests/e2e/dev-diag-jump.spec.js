@@ -44,6 +44,33 @@ test.describe('Assist/Dev diagnostic jump-to-line', () => {
     expect(sel.selected.length, 'a non-empty line was selected').toBeGreaterThan(0);
   });
 
+  test('the gutter marks the diagnostic line red — and an edit clears it', async ({ page, request }) => {
+    await runInAssist(page, request);
+    const lineNo = parseInt(await page.locator('.diag .jumpline').first().getAttribute('data-line'), 10);
+    // The .cl block at that 1-based index carries the err mark (red number).
+    const errIndexes = await page.evaluate(() => {
+      const cls = [...document.querySelectorAll('#editorHL .cl')];
+      return cls.flatMap((el, i) => el.classList.contains('err') ? [i + 1] : []);
+    });
+    expect(errIndexes, 'the flagged line number is marked in the gutter').toContain(lineNo);
+    // Editing the buffer invalidates the marks (they describe the OLD code).
+    await page.locator('#editorCode').evaluate((el) => {
+      el.value = '// edited\n' + el.value;
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await expect(page.locator('#editorHL .cl.err'), 'edit clears stale marks').toHaveCount(0);
+  });
+
+  test('Learn never marks the gutter (by-hand stays by-hand)', async ({ page, request }) => {
+    await request.post('/api/select', { data: { id: EX, force: true } });
+    await page.goto('/'); // Learn is the default mode
+    await expect(page.locator('#editorCode')).toBeVisible();
+    await page.locator('.pbtn[data-pred="fails"]').click();
+    await page.locator('#runbtn').click();
+    await expect(page.locator('#statusline')).toContainText(/failed|passed/, { timeout: 30_000 });
+    await expect(page.locator('#editorHL .cl.err')).toHaveCount(0);
+  });
+
   test('the diagnostic row is not itself an interactive control (no nested buttons)', async ({ page, request }) => {
     await runInAssist(page, request);
     // The clickable bits are the inner .diagcode / .jumpline spans; the row div

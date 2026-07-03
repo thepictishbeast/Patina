@@ -195,6 +195,13 @@ check(mdToHtml('### The API of Mutex<T>').includes('id="the-api-of-mutext"'),
     .split('​').join('')
     .split('\n').join(''); // .cl blocks carry no \n — lines are block-separated
   check(stripped === esc(rt).split('\n').join(''), 'hlLines: strip-everything round-trips (XSS-safe by construction)');
+  // Gutter error marks: an optional Set of 1-based lines flags `.cl err` —
+  // exactly those lines, nothing else.
+  const marked = hlLines('a\nb\nc', new Set([2]));
+  check((marked.match(/<span class="cl err">/g) || []).length === 1
+        && marked.split('<span class="cl')[2].startsWith(' err'),
+        'hlLines: marks flag exactly the given 1-based line');
+  check(!hlLines('a\nb\nc').includes('cl err'), 'hlLines: no marks → no err classes');
 }
 
 // 11. The read→practice loop's integrity: EVERY exercise concept must resolve

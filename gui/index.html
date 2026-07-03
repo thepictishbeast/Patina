@@ -394,6 +394,10 @@
   .editor #editorHL .cl::before { content:counter(line); display:inline-block; width:30px;
     margin-left:-38px; margin-right:8px; text-align:right;
     color:var(--fg-dim); opacity:.55; font-size:11px; }
+  /* A line the last run's diagnostics flagged (Assist/Dev): its NUMBER turns
+     error-red — the visual "error ↔ line" bridge next to the L# jump links.
+     Learn never sets marks (by-hand); edits clear them (stale). */
+  .editor #editorHL .cl.err::before { color:var(--error); opacity:1; font-weight:700; }
   .editor .editwrap textarea { display:block; width:100%; position:relative; z-index:1; outline:none;
     background:transparent; color:transparent; caret-color:var(--fg); -webkit-text-fill-color:transparent;
     resize:vertical; min-height:300px; max-height:60vh; }
@@ -1126,10 +1130,13 @@
     // when a line leaves a span open, close it and REOPEN the same class on the
     // next line. Empty lines get a zero-width space so their block keeps one
     // row of height (an empty block would collapse and shift every line below).
-    function hlLines(code) {
+    // `marks` (optional Set of 1-based line numbers) flags lines the last run's
+    // diagnostics pointed at \u2014 their gutter numbers render in error red
+    // (Assist/Dev only; Learn never populates it \u2014 by-hand stays by-hand).
+    function hlLines(code, marks) {
       const html = highlightRust(esc(code));
       let open = null; // class of the span the previous line left unclosed
-      return html.split('\n').map(line => {
+      return html.split('\n').map((line, i) => {
         let s = (open ? '<span class="' + open + '">' : '') + line;
         const opens = (s.match(/<span /g) || []).length;
         const closes = (s.match(/<\/span>/g) || []).length;
@@ -1141,15 +1148,19 @@
         } else {
           open = null;
         }
-        return '<span class="cl">' + (s || '\u200b') + '</span>'; // ZWSP keeps an empty line's row height
+        const cls = marks && marks.has(i + 1) ? 'cl err' : 'cl';
+        return '<span class="' + cls + '">' + (s || '\u200b') + '</span>'; // ZWSP keeps an empty line's row height
       }).join('');
     }
     // Paint the syntax-highlight overlay from the editor buffer (esc-first, so the
     // XSS-safe highlightRust only adds fixed-class spans) and mirror the scroll.
+    // Gutter error marks: the lines the last run's diagnostics flagged (see
+    // renderDiag). Cleared on edit — a changed buffer makes them stale.
+    let diagMarks = new Set();
     function syncHL() {
       const ed = editorEl(), hl = editorHL();
       if (!hl) return;
-      hl.innerHTML = hlLines(ed.value);
+      hl.innerHTML = hlLines(ed.value, diagMarks);
       hl.scrollTop = ed.scrollTop;
       hl.scrollLeft = ed.scrollLeft;
     }
@@ -1279,6 +1290,7 @@
       const ed = editorEl(), st = document.getElementById('editstate');
       if (st) st.textContent = (ed.value !== curOriginal) ? 'edited ✏️ (Run to test your fix)' : 'read & edit, then Run';
       if (curExercise) { try { localStorage.setItem(lsKey(curExercise), ed.value); } catch (_) {} }
+      diagMarks = new Set(); // editing invalidates the last run's line marks
       syncHL();
     }
 
@@ -1451,6 +1463,9 @@
       // Diagnostics are a TIER feature. Reset the remembered code each call so it
       // reflects only the current run (never lingering across runs or modes).
       lastCode = '';
+      // Gutter marks reset per call too: Learn's early return below leaves them
+      // EMPTY (by-hand stays by-hand); Assist/Dev repopulate from the spans.
+      diagMarks = new Set();
       // Learn = "by-hand errors only" (Paul's tier decision): withhold the parsed,
       // clickable Diagnostics panel — the learner reads the raw terminal output and
       // finds the error code themselves. Assist/Dev get the parsed panel below.
@@ -1459,6 +1474,7 @@
       if (mode === 'learn') {
         box.innerHTML = '<div class="diag note"><span class="lvl">[i]</span>'
           + '<span class="msg">read it by hand<small>the compiler output is in the terminal above — find the error code yourself (switch to Assist to have it parsed)</small></span></div>';
+        syncHL(); // repaint with the (empty) marks — clears any Assist leftovers
         return;
       }
       let rows = [];
@@ -1467,6 +1483,7 @@
           const lvl = String(dg.level || 'note').toLowerCase();
           const cls = lvl.startsWith('err') ? 'error' : (lvl.startsWith('warn') ? 'warn' : 'note');
           const lineNo = dg.span && Number.isInteger(dg.span.line) ? dg.span.line : null;
+          if (lineNo && cls !== 'note') diagMarks.add(lineNo); // red gutter number (see hlLines)
           if (cls === 'error' && dg.code) lastCode = lastCode || dg.code;
           // The code is a button → Explain it. The line number is a button → jump
           // the editor caret to that line (char-offset based via setSelectionRange,
@@ -1491,6 +1508,7 @@
         else if (!rows.length) rows = ['<div class="diag note"><span class="lvl">[i]</span><span class="msg">see terminal<small>read the raw output by hand</small></span></div>'];
       }
       box.innerHTML = rows.join('');
+      syncHL(); // repaint the gutter with this run's marks
     }
 
     // Fetch the real list + current exercise and render them; if the server is
