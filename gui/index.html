@@ -18,7 +18,6 @@
   disk (file://) with no server, it falls back to a static demo so the layout
   still previews. No pty — a single JSON request/response. Implements docs/UX.md.
 -->
-<link rel="stylesheet" href="vendor/xterm/xterm.css" />
 <!-- Bundled Noto Color Emoji (OFL) — local()-gated @font-face so systems WITH a
      system emoji font never download it; fontless FOSS-desktop builds still get
      full color emoji instead of tofu boxes. (Paul: bundle everything.) -->
@@ -446,8 +445,13 @@
     /* FIXED color, not var(--fg-dim): the terminal keeps its dark background in
        BOTH themes, so light-theme fg-dim (#5b6776) failed contrast on it. */
     font-family:var(--mono);font-size:11.5px;color:#9aa7b4;flex:0 0 auto}
-  .xterm-host{flex:1;min-height:0;padding:6px 8px}
-  .xterm-host .xterm,.xterm-host .xterm-viewport{height:100%!important;background:transparent!important}
+  .conout{flex:1;min-height:0;margin:0;padding:8px 10px;overflow:auto;overscroll-behavior:contain;
+    font:12.5px/1.5 var(--mono);color:#e6e6e6;background:transparent;white-space:pre-wrap;
+    overflow-wrap:anywhere;-webkit-user-select:text;user-select:text;-webkit-overflow-scrolling:touch}
+  /* FIXED bright colours (the console bg is always #000, even in light theme —
+     theme vars would flip dark here and fail contrast). Match the old xterm theme. */
+  .conout .con-r{color:#ff6b6b} .conout .con-g{color:#36c46b}
+  .conout .con-b{color:#5aa9ff} .conout .con-d{color:#9aa7b4}
   .throbber{color:var(--accent-soft);display:inline-block}
   .termcopy{background:var(--bg-3);color:var(--fg-dim);border:1px solid var(--line);border-radius:7px;
     padding:4px 10px;font:600 11.5px var(--mono);cursor:pointer}
@@ -458,11 +462,7 @@
   .tfold{background:none;border:none;color:var(--fg-dim);cursor:pointer;font-size:12px;line-height:1;padding:3px 5px;margin-right:1px;border-radius:5px}
   .tfold:hover{color:var(--fg);background:var(--bg-3)}
   .terminal.tcollapsed{height:auto}
-  .terminal.tcollapsed .xterm-host{display:none}
-  /* Console scrolls itself — no chaining to the whole app (Paul) — and its width
-     is clamped so a re-fit wraps long compiler lines instead of clipping right. */
-  .terminal .xterm-viewport{overscroll-behavior:contain}
-  .xterm-host{overflow:hidden;max-width:100%}
+  .terminal.tcollapsed .conout{display:none}
   /* Native-Run one-time-setup card (Termux allow-external-apps) */
   .tmxsetup{position:relative;margin:0 20px 14px;padding:14px 16px;border:1px solid var(--accent);
     border-radius:var(--radius);background:rgba(247,76,0,.06);box-shadow:var(--shadow),inset 0 1px 0 var(--edge-hi)}
@@ -587,7 +587,7 @@
        min-content without this) and keep child content from forcing width */
     .pane { min-width:0; border-right:none; border-bottom:1px solid var(--line); }
     .center, .lesson, .editor, .terminal, .runrow, .predict { min-width:0; max-width:100%; }
-    .editor pre, .editor textarea, .xterm-host { max-width:100%; }
+    .editor pre, .editor textarea, .conout { max-width:100%; }
     .pane:last-child { border-bottom:none; }
     .exlist { max-height:34vh; }
     .editor textarea { min-height:220px; max-height:60vh; }
@@ -607,7 +607,7 @@
     main > .pane:first-child.open .excaret { transform:rotate(180deg); }
     /* The terminal folds to its title bar until there's real output. */
     .terminal.tcollapsed { height:auto; }
-    .terminal.tcollapsed .xterm-host { display:none; }
+    .terminal.tcollapsed .conout { display:none; }
 
     /* ── Phone polish (Paul 2026-06-30: beautiful · simple · intuitive · capable) ── */
     .center { padding-bottom:6px; }
@@ -744,7 +744,7 @@
 
       <div class="terminal">
         <div class="tbar"><button class="tfold" id="tfold" type="button" title="Collapse / expand the output" aria-label="Collapse or expand the output">▾</button><span class="throbber" id="throb">⠹</span> <span class="tbar-lbl">rpro · output</span><span style="flex:1"></span><button class="termcopy" id="termcopy" title="Copy the output (e.g. to share an error)">⧉ copy</button></div>
-        <div id="xterm" class="xterm-host"></div>
+        <pre id="conout" class="conout" tabindex="0" aria-label="Compiler output — select any text to copy"></pre>
       </div>
     </section>
 
@@ -782,22 +782,35 @@
     </div>
   </div>
 
-  <script src="vendor/xterm/xterm.js"></script>
-  <script src="vendor/xterm/addon-fit.js"></script>
   <script>
     // ── Real xterm.js terminal — renders true ANSI, like live rpro output ──
     const C = { fg:'#e6e6e6', bg:'#000000', green:'#36c46b', red:'#ff5c5c',
                 blue:'#5aa9ff', dim:'#9aa7b4', accent:'#ff7a3c' };
-    const term = new Terminal({
-      convertEol:true, cursorBlink:true, fontSize:12.5, scrollback:1000,
-      fontFamily:'ui-monospace, "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace',
-      theme:{ background:C.bg, foreground:C.fg, brightGreen:C.green, red:C.red, blue:C.blue }
-    });
-    const fit = new FitAddon.FitAddon();
-    term.loadAddon(fit);
-    term.open(document.getElementById('xterm'));
-    const refit = () => { try { fit.fit(); } catch (_) {} };
-    refit(); window.addEventListener('resize', refit);
+    // A native, SELECTABLE <pre> console instead of the xterm canvas (Paul: select
+    // text — not just copy-all — no "window in a window", no right-side cutoff, and
+    // scroll it without scrolling the app). conRender maps the ANSI our g/r/d/b
+    // helpers (and any toolchain colour) emit onto safe spans; all other text is
+    // HTML-escaped. A <pre> is text-selectable, wraps, and scrolls itself.
+    const conEl = () => document.getElementById('conout');
+    function conRender(s) {
+      s = String(s).replace(/\r/g, '');
+      let html = '', open = 0, last = 0, m;
+      const re = /\x1b\[([0-9;]*)m/g, CLS = { '32': 'con-g', '31': 'con-r', '34': 'con-b' };
+      while ((m = re.exec(s))) {
+        html += esc(s.slice(last, m.index)); last = re.lastIndex;
+        if (open) { html += '</span>'; open = 0; }
+        const code = m[1], cls = CLS[code] || (code.indexOf('38;2;') === 0 ? 'con-d' : '');
+        if (cls) { html += '<span class="' + cls + '">'; open = 1; }
+      }
+      html += esc(s.slice(last)); if (open) html += '</span>';
+      return html;
+    }
+    const term = {
+      write(s) { const e = conEl(); if (!e) return; e.insertAdjacentHTML('beforeend', conRender(s)); e.scrollTop = e.scrollHeight; },
+      writeln(s) { this.write(s + '\n'); },
+      clear() { const e = conEl(); if (e) e.innerHTML = ''; },
+    };
+    const refit = () => {}; // no canvas to fit
 
     // ANSI helpers
     const g=s=>`\x1b[32m${s}\x1b[0m`, r=s=>`\x1b[31m${s}\x1b[0m`,
@@ -872,11 +885,9 @@
       el.hidden = false;
     }
     function hideRunError() { const el = document.getElementById('runError'); if (el) el.hidden = true; }
-    function termText() { // the terminal's text (visible + scrollback), for Copy
-      try { const b = term.buffer.active, out = [];
-        for (let i = 0; i < b.length; i++) { const ln = b.getLine(i); if (ln) out.push(ln.translateToString(true)); }
-        return out.join('\n').replace(/\n{3,}/g, '\n\n').replace(/\s+$/, '');
-      } catch (_) { return ''; }
+    function termText() { // the console text, for the ⧉ Copy-all button
+      const e = conEl();
+      return e ? e.textContent.replace(/\n{3,}/g, '\n\n').replace(/\s+$/, '') : '';
     }
     // Stale-render guard: navigating while a view's fetch is still in flight must
     // not let the OLD render clobber the NEW view (fast taps; slower stores — the
