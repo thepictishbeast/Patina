@@ -1,0 +1,1 @@
+{"name":"cm-build","private":true,"version":"1.0.0","dependencies":{"@codemirror/autocomplete":"^6.20.3","@codemirror/commands":"^6.10.4","@codemirror/lang-rust":"^6.0.2","@codemirror/language":"^6.12.4","@codemirror/state":"^6.7.0","@codemirror/view":"^6.43.5","@lezer/highlight":"^1.2.3","esbuild":"^0.28.1"}}
