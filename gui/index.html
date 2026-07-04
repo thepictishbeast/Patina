@@ -494,6 +494,24 @@
     background:var(--bg-3);color:var(--fg);border:1px solid var(--line);border-radius:9px;padding:8px 16px;
     font-size:13px;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .18s,transform .18s}
   #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  /* ephemeral celebration popup on completing an exercise — animates in, then
+     auto-dismisses (Paul: a temporary congrats popup that frees the space a
+     permanent banner would take). Non-interactive so it never blocks a tap. */
+  #celebrate{position:fixed;left:50%;top:60px;transform:translateX(-50%) scale(.7);z-index:90;
+    pointer-events:none;opacity:0;background:var(--bg-2);border:1px solid var(--done);border-radius:14px;
+    padding:13px 22px;box-shadow:0 14px 44px rgba(0,0,0,.45);text-align:center;max-width:86vw}
+  #celebrate .cg-h{font-size:17px;font-weight:800;color:var(--done)}
+  #celebrate .cg-s{font-size:12.5px;color:var(--fg-dim);margin-top:3px}
+  #celebrate.show{animation:celebpop 2.6s ease forwards}
+  @keyframes celebpop{
+    0%{opacity:0;transform:translateX(-50%) scale(.7)}
+    9%{opacity:1;transform:translateX(-50%) scale(1.06)}
+    17%{transform:translateX(-50%) scale(1)}
+    82%{opacity:1;transform:translateX(-50%) scale(1)}
+    100%{opacity:0;transform:translateX(-50%) scale(.96)}}
+  @media (prefers-reduced-motion: reduce){
+    #celebrate.show{animation:celebfade 2.6s ease forwards}
+    @keyframes celebfade{0%{opacity:0}8%{opacity:1}82%{opacity:1}100%{opacity:0}}}
   /* 🩺 Logs view */
   .docview .logbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:6px 0 12px}
   .docview .logtabs{display:flex;gap:5px;flex-wrap:wrap}
@@ -872,6 +890,22 @@
       t.textContent = msg; t.classList.add('show');
       clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 1400);
     }
+    // Ephemeral congrats on COMPLETING an exercise (fires on advance, so once per
+    // exercise — no re-run spam). Animates in, holds, fades out; non-interactive.
+    function celebrate(nextId) {
+      let c = document.getElementById('celebrate');
+      if (!c) {
+        c = document.createElement('div'); c.id = 'celebrate';
+        c.setAttribute('role', 'status'); c.setAttribute('aria-live', 'polite');
+        document.body.appendChild(c);
+      }
+      c.innerHTML = '<div class="cg-h">🎉 Exercise complete!</div>'
+        + (nextId ? '<div class="cg-s">Next up: ' + esc(nextId) + '</div>'
+                  : '<div class="cg-s">That was the last one — nice work.</div>');
+      c.classList.remove('show'); void c.offsetWidth; // restart the CSS animation
+      c.classList.add('show');
+      clearTimeout(celebrate._t); celebrate._t = setTimeout(() => c.classList.remove('show'), 2600);
+    }
     async function copyText(s) {
       s = s == null ? '' : String(s);
       try { await navigator.clipboard.writeText(s); toast('copied ✓'); return; } catch (_) {}
@@ -1029,6 +1063,7 @@
           term.writeln(''); term.writeln(g('✓ exercise complete — advancing to ' + advancedTo));
           try { const cur = await fetch('api/current').then(r => r.json()); renderCurrent(cur); } catch (_) {}
           statusEl().textContent = 'advanced ✓';
+          celebrate(advancedTo);
         }
       }
       // Gate ONCE per exercise (Paul): the prediction persists after a run so you
@@ -1096,6 +1131,7 @@
           term.writeln(''); term.writeln(g('✓ exercise complete — advancing to ' + out.advanced_to));
           try { const cur = await fetch('api/current').then(r => r.json()); renderCurrent(cur); } catch (_) {}
           statusEl().textContent = 'advanced ✓';
+          celebrate(out.advanced_to);
         }
       } catch (e) {
         logEvent('net', 'info', 'local /api/run unavailable (' + (e && e.message || e) + ') — routing to on-device path');
