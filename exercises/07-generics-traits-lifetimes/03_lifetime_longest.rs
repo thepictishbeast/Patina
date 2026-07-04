@@ -1,6 +1,8 @@
-// `longest` returns whichever string slice is longer. The compiler can't tell
-// how long the returned reference is allowed to live. Run it, read the error,
-// and add what it asks for.
+// Inspired by Rustlings (MIT/Apache-2.0) — github.com/rust-lang/rustlings
+//
+// `longest` returns whichever slice is longer, but the compiler can't tell how long
+// the returned reference may live. Make it compile — read the error.
+
 fn longest(x: &str, y: &str) -> &str {
     if x.len() > y.len() {
         x

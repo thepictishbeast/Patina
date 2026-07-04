@@ -1,5 +1,8 @@
-// `show` accepts any type that can be displayed. `Point` is handed to it,
-// but `Point` hasn't earned that yet. Run it, read the error, and fix it.
+// Inspired by Rustlings (MIT/Apache-2.0) — github.com/rust-lang/rustlings
+//
+// `show` accepts any type that can be displayed; `Point` hasn't earned that yet.
+// Make it compile — read the error.
+
 use std::fmt::Display;
 
 fn show<T: Display>(value: T) {

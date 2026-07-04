@@ -1,17 +1,7 @@
 // Inspired by Rustlings (MIT/Apache-2.0) — github.com/rust-lang/rustlings
-
-// CONCEPT: when a struct holds a REFERENCE instead of an owned value, Rust needs a
-// promise that the reference won't outlive the data it points to. You make that
-// promise with a lifetime parameter on the struct: it ties "how long an `Excerpt`
-// lives" to "how long the string its `part` borrows from lives", and the compiler
-// checks the two stay consistent.
-
-// `Excerpt` stores a `&str` but declares no lifetime, so the compiler can't reason
-// about how long that borrow is valid (E0106: missing lifetime specifier).
-
-// Run it and read E0106 — the `help:` line shows the exact shape. Give the struct a
-// lifetime parameter and tie the reference field to it. The body in `main` is
-// already fine; only the struct definition needs the annotation.
+//
+// `Excerpt` stores a `&str` but declares no lifetime. Make it compile — only the
+// struct definition needs a change. Read the error and its `help:`.
 
 struct Excerpt {
     part: &str,

@@ -1,14 +1,7 @@
 // Inspired by Rustlings (MIT/Apache-2.0) — github.com/rust-lang/rustlings
-
-// CONCEPT: a type can IMPLEMENT a trait in one place, but the trait's methods are
-// only callable where the trait itself is IN SCOPE — brought in with a `use`. The
-// `Circle` below really does implement `Area`, yet `main` can't call `c.area()`,
-// because `main` has not imported the `Area` trait. The compiler reports the method
-// as "not found" even though the impl exists (E0599).
-
-// Run it and read E0599 top-to-bottom — the `help:` line names exactly the `use`
-// line you need to add. Bring the trait into scope so its method becomes callable;
-// don't change the math.
+//
+// `Circle` implements `Area`, but `main` can't call `c.area()`. Make it compile
+// WITHOUT changing the math. Read the error top-to-bottom, including its `help:`.
 
 mod geometry {
     pub trait Area {
