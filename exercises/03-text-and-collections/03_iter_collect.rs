@@ -1,16 +1,10 @@
 // Inspired by Rustlings (MIT/Apache-2.0) — github.com/rust-lang/rustlings
-
-// CONCEPT: iterators are LAZY. `.map(...)` doesn't produce a Vec — it
-// returns an iterator that does nothing until you consume it. To get a
-// `Vec` back, you `.collect()` it.
-
-// Make this compile WITHOUT changing `let doubled: Vec<i32>`. The error
-// says it found a `Map<...>` where a `Vec<i32>` was expected — finish
-// the chain so it actually produces the Vec.
+//
+// Make this compile WITHOUT changing `let doubled: Vec<i32>`. The error found a
+// `Map<...>` where a `Vec<i32>` was expected.
 
 fn main() {
     let nums = vec![1, 2, 3];
-    // map() returns an iterator, not a Vec — it's never collected.
     let doubled: Vec<i32> = nums.iter().map(|n| n * 2);
     println!("{doubled:?}");
 }
