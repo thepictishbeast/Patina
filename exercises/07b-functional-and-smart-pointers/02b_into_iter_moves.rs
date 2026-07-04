@@ -2,7 +2,7 @@
 // This program doubles the numbers that way, then tries to print the original
 // vector. It does not compile. Run it, read the error, and fix it so BOTH
 // lines print.
-//
+
 // Hint: one of the three iterator-makers borrows the collection instead of
 // consuming it — which one lets `v` survive the chain?
 fn main() {
