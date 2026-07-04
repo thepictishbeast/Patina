@@ -13,7 +13,7 @@ test('the Tutor reacts to the run and stays guide-only', async ({ page }) => {
   // Assist mode (no predict gate) + a definite compile error (E0384).
   await page.locator('#menuBtn').click(); // open the ⋯ menu (mode switcher lives there now)
   await page.locator('.modesw [data-mode="assist"]').click();
-  await page.locator('.editor textarea').fill('fn main() {\n    let x = 5;\n    x = 6;\n    println!("{x}");\n}');
+  await page.evaluate((v) => window.__cm.set(v), 'fn main() {\n    let x = 5;\n    x = 6;\n    println!("{x}");\n}');
   await page.locator('#runbtn').click();
 
   // It now names the real error and asks a contextual question — but never the fix.

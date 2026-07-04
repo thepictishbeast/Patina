@@ -11,10 +11,9 @@ test.describe('Tempered Studio web flow', () => {
 
     await page.goto('/');
     await expect(page.locator('#exTitle'), 'exercise title is populated').toContainText(/\S/);
-    await expect(page.locator('#editorCode'), 'editable code pane is shown').toBeVisible();
+    await expect(page.locator('.cm-content'), 'editable code pane is shown').toBeVisible();
     // the real exercise source is loaded into the editable pane (every exercise has fn main)
-    const editorText = await page.locator('#editorCode')
-      .evaluate((el) => el.value ?? el.innerText ?? el.textContent ?? '');
+    const editorText = await page.evaluate(() => window.__cm.get());
     expect(editorText, 'editor holds the real exercise source').toContain('fn main');
   });
 

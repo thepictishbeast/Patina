@@ -10,7 +10,7 @@ const FIX = 'fn main() {\n    let mut count = 0;\n    count = count + 1;\n    pr
 test('a passed exercise adds an actionable RECALL chip that explains on activation', async ({ page }) => {
   // pass the exercise (Assist = no predict-gate) so its code is recorded as "overcome"
   await page.goto('/');
-  await expect(page.locator('#editorCode')).toBeVisible();
+  await expect(page.locator('.cm-content')).toBeVisible();
   // MUST land (force bypasses Locked but NOT Done): on a polluted store this
   // 409'd silently and the FIX below then ran against whatever exercise was
   // current — quietly PASSING it and advancing the real store's progress.
@@ -22,7 +22,7 @@ test('a passed exercise adds an actionable RECALL chip that explains on activati
   await page.goto('/');
   await page.locator('#menuBtn').click(); // open the ⋯ menu (mode switcher lives there now)
   await page.locator('#modesw button[data-mode="assist"]').click();
-  await page.locator('#editorCode').evaluate((el, v) => { el.value = v; }, FIX);
+  await page.evaluate((v) => window.__cm.set(v), FIX);
   await page.locator('#runbtn').click();
   // a passing run shows "passed" or, when it advances to the next exercise, "advanced ✓"
   await expect(page.locator('#statusline')).toContainText(/passed|advanced/, { timeout: 30_000 });

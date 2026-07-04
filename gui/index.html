@@ -58,7 +58,9 @@
        the light theme (white cards), where it's set transparent. */
     --edge-hi: rgba(255,255,255,.055);
     /* syntax-highlight palette for rendered (read-only) Rust code blocks */
-    --tok-k:#ff7a3c; --tok-s:#7ec97e; --tok-c:#6b7884; --tok-n:#d2a8ff; --tok-t:#5aa9ff; --tok-m:#e0b020;
+    /* --tok-c lightened #6b7884→#808d9c: on the CM6 editor's near-black bg (#101010)
+       the comment grey was 4.2:1; #808d9c clears AA (≈5.2:1) there and on #1c1c1c. */
+    --tok-k:#ff7a3c; --tok-s:#7ec97e; --tok-c:#808d9c; --tok-n:#d2a8ff; --tok-t:#5aa9ff; --tok-m:#e0b020;
   }
   html[data-theme="light"] {
     /* Warm paper light theme (cards stay crisp white so the AA-tuned status
@@ -414,6 +416,11 @@
     font-size:12px; color:var(--fg-dim); font-family:var(--mono); }
   .editor .dot{width:10px;height:10px;border-radius:50%}
   .editor .editwrap { position:relative; }
+  /* CodeMirror 6 host — fills the editor's code area and scrolls internally. */
+  .editor .editwrap .cmhost { height:340px; max-height:52vh; overflow:hidden; }
+  .editor .editwrap .cm-editor { height:100%; }
+  .editor .editwrap .cm-editor.cm-focused { outline:none; }
+  .editor .editwrap .cm-scroller { -webkit-overflow-scrolling:touch; }
   /* Syntax-highlight overlay: a colored <pre> behind a transparent-text textarea,
      sharing one identical box so glyphs line up. The textarea owns input/caret/
      selection/scroll; the <pre> just paints colour and mirrors the scroll. */
@@ -792,8 +799,9 @@
           <span id="editstate" style="color:var(--fg-dim)">read &amp; edit, then Run</span>
           <span id="resetbtn" title="Restore the original starter code" style="cursor:pointer;color:var(--accent-soft);margin-left:12px">↺ reset</span></div>
         <div class="editwrap">
-          <pre id="editorHL" aria-hidden="true"></pre>
-          <textarea id="editorCode" class="scroll" aria-label="Source code editor for the current exercise" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off">// loading the current exercise…</textarea>
+          <!-- CodeMirror 6 mounts here (single-layer editor — replaces the old
+               transparent-textarea-over-<pre> overlay that drifted out of alignment). -->
+          <div id="cmhost" class="cmhost"></div>
         </div>
       </div>
 
@@ -1355,8 +1363,75 @@
     let curExercise = null, curOriginal = '', hintLevel = 0;
     let predict = { compiles: null, code: '' };
     let curBookRefs = [];
-    const editorEl = () => document.getElementById('editorCode');
-    const editorHL = () => document.getElementById('editorHL');
+    // ── CodeMirror 6 editor (single layer; replaces the textarea/<pre> overlay
+    //    that drifted out of alignment). CM6 does highlighting, indent, and
+    //    bracket-close natively; legacy code reaches it through the editorEl() shim.
+    let cmView = null;
+    const cmModeComp = window.CM ? new CM.Compartment() : null;
+    function cmDevExtensions() {
+      return (mode === 'dev' && window.CM)
+        ? [CM.closeBrackets(), CM.indentOnInput(), CM.bracketMatching()]
+        : [];
+    }
+    function initCM() {
+      if (cmView || !window.CM) return;
+      const host = document.getElementById('cmhost');
+      if (!host) return;
+      const hl = CM.HighlightStyle.define([
+        { tag: [CM.tags.keyword, CM.tags.controlKeyword, CM.tags.operatorKeyword, CM.tags.moduleKeyword], color: 'var(--tok-k)' },
+        { tag: [CM.tags.string, CM.tags.special(CM.tags.string), CM.tags.character], color: 'var(--tok-s)' },
+        { tag: [CM.tags.comment, CM.tags.lineComment, CM.tags.blockComment], color: 'var(--tok-c)', fontStyle: 'italic' },
+        { tag: [CM.tags.number, CM.tags.bool, CM.tags.atom], color: 'var(--tok-n)' },
+        { tag: [CM.tags.typeName, CM.tags.className, CM.tags.namespace], color: 'var(--tok-t)' },
+        { tag: [CM.tags.macroName, CM.tags.function(CM.tags.variableName), CM.tags.function(CM.tags.propertyName)], color: 'var(--tok-m)' },
+      ]);
+      const theme = CM.EditorView.theme({
+        '&': { background: 'transparent', color: 'var(--fg)', fontSize: '13px', height: '100%' },
+        '.cm-content': { fontFamily: 'var(--mono)', padding: '10px 0', caretColor: 'var(--accent)' },
+        '.cm-scroller': { fontFamily: 'var(--mono)', lineHeight: '1.55', overflow: 'auto' },
+        '.cm-gutters': { background: 'transparent', border: 'none', color: 'var(--fg-dim)' },
+        '.cm-lineNumbers .cm-gutterElement': { padding: '0 6px 0 8px', minWidth: '22px' },
+        '.cm-activeLine, .cm-activeLineGutter': { background: 'transparent' },
+        '&.cm-focused .cm-cursor': { borderLeftColor: 'var(--accent)' },
+        '.cm-selectionBackground, &.cm-focused .cm-selectionBackground': { background: 'var(--accent-soft)' },
+      });
+      cmView = new CM.EditorView({
+        doc: '// loading the current exercise…',
+        extensions: [
+          CM.lineNumbers(), CM.history(), CM.drawSelection(), CM.rust(),
+          CM.syntaxHighlighting(hl), theme, CM.EditorView.lineWrapping,
+          // accessible name for the contenteditable (axe aria-input-field-name).
+          CM.EditorView.contentAttributes.of({ 'aria-label': 'Source code editor for the current exercise' }),
+          // Ctrl/Cmd+Enter runs — every tier (routes through runOp, so Learn's
+          // predict-first gate still applies).
+          CM.keymap.of([{ key: 'Mod-Enter', run: () => { runOp('run'); return true; } }]),
+          CM.keymap.of([CM.indentWithTab, ...CM.defaultKeymap, ...CM.historyKeymap, ...CM.closeBracketsKeymap]),
+          cmModeComp.of(cmDevExtensions()),
+          CM.EditorView.updateListener.of(u => { if (u.docChanged) markEdited(); }),
+        ],
+        parent: host,
+      });
+      window.__cm = {
+        get: () => cmView.state.doc.toString(),
+        set: (v) => cmView.dispatch({ changes: { from: 0, to: cmView.state.doc.length, insert: String(v) } }),
+        sel: () => { const r = cmView.state.selection.main; return { from: r.from, to: r.to, selected: cmView.state.doc.sliceString(r.from, r.to), line: cmView.state.doc.lineAt(r.from).number }; },
+        caretEnd: () => cmView.dispatch({ selection: { anchor: cmView.state.doc.length } }),
+        focus: () => cmView.focus(),
+      };
+    }
+    // Shim: legacy code reads/writes editorEl().value and calls .focus(); route to
+    // CM6. selection/scroll/listeners are no-ops (CM6 owns them now).
+    const editorEl = () => ({
+      get value() { return cmView ? cmView.state.doc.toString() : ''; },
+      set value(v) { if (cmView) cmView.dispatch({ changes: { from: 0, to: cmView.state.doc.length, insert: String(v) } }); },
+      focus() { if (cmView) cmView.focus(); },
+      addEventListener() {}, removeEventListener() {},
+      get selectionStart() { return 0; }, set selectionStart(_) {},
+      get selectionEnd() { return 0; }, set selectionEnd(_) {},
+      setSelectionRange() {}, get scrollTop() { return 0; }, set scrollTop(_) {},
+      get scrollLeft() { return 0; }, set scrollLeft(_) {},
+    });
+    const editorHL = () => null;
     // Split highlighted HTML into per-LOGICAL-line `.cl` blocks so CSS counters
     // can paint a line-number gutter that stays correct even when long lines
     // soft-wrap (each block hanging-indents its wrapped rows past the gutter).
@@ -1412,6 +1487,9 @@
       // dimmed (optional) in Assist/Dev. The switcher highlight shows the mode.
       const pb = document.getElementById('predictbar');
       if (pb) pb.style.opacity = m === 'learn' ? '1' : '.55';
+      // Dev tier gets CM6's native conveniences (auto-close brackets, indent-on-
+      // input); Learn/Assist keep the plain editor. Swap them via the compartment.
+      if (cmView && cmModeComp) cmView.dispatch({ effects: cmModeComp.reconfigure(cmDevExtensions()) });
       // Diagnostics are a tier feature — re-render the last run so switching tiers
       // updates the panel immediately (Learn withholds it; Assist/Dev show it).
       if (lastOut) renderDiag(lastOut);
@@ -1774,6 +1852,7 @@
         }
       } catch (_) { if (intro) showDemo(); }
     }
+    initCM(); // mount the CodeMirror editor before the first exercise loads into it
     loadState(true);
 
     // throbber in the header (mirrors the TUI Throbber)
@@ -2941,17 +3020,12 @@
     // made an inline gutter overlay fragile. Focusing scrolls the selection into
     // view; mirror the scroll onto the syntax-highlight overlay to keep it aligned.
     function jumpToEditorLine(line) {
-      const ed = editorEl();
-      if (!ed || !Number.isFinite(line)) return;
-      const lines = ed.value.split('\n');
-      const target = Math.min(Math.max(1, line | 0), lines.length);
-      let start = 0;
-      for (let i = 0; i < target - 1; i++) start += lines[i].length + 1; // + the '\n'
-      const end = start + lines[target - 1].length;
-      ed.focus();
-      ed.setSelectionRange(start, end);
-      const hl = editorHL();
-      if (hl) { hl.scrollTop = ed.scrollTop; hl.scrollLeft = ed.scrollLeft; }
+      if (!cmView || !Number.isFinite(line)) return;
+      const total = cmView.state.doc.lines;
+      const target = Math.min(Math.max(1, line | 0), total);
+      const l = cmView.state.doc.line(target);
+      cmView.focus();
+      cmView.dispatch({ selection: { anchor: l.from, head: l.to }, scrollIntoView: true });
     }
     // Diagnostics are interactive in Assist/Dev: click (or Enter/Space) the CODE to
     // Explain it, or the LINE number to jump the editor there. Delegated so it

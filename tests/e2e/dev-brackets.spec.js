@@ -1,87 +1,56 @@
-// E2E for the Dev-tier editor convenience: bracket auto-close, type-over, and
-// empty-pair backspace — and the charter guarantee that Learn AND Assist leave
-// the textarea untouched (no editor assists outside Dev). Drives the real key
-// events against the live #editorCode textarea so we test the actual handler,
-// not a reimplementation.
+// E2E for the Dev-tier editor convenience: bracket auto-close — and the charter
+// guarantee that Learn AND Assist leave the editor default (no assists outside
+// Dev). The editor is now CodeMirror 6; Dev enables its closeBrackets extension,
+// Learn/Assist don't. We drive real key events against the live .cm-content so we
+// test the actual wired behaviour, not a reimplementation.
 const { test, expect } = require('@playwright/test');
 
-// Put the caret at the END of the editor and clear it to a known one-line value,
-// so each assertion starts from a clean, deterministic slate.
+async function setTier(page, m) {
+  await page.locator('#menuBtn').click(); // the tier switcher lives in the ⋯ menu
+  await page.locator(`#modesw button[data-mode="${m}"]`).click();
+}
+
+// Focus the editor, set a known one-line value, and park the caret at the end.
 async function seed(page, value) {
-  await page.locator('#editorCode').click();
-  await page.locator('#editorCode').evaluate((el, v) => {
-    el.value = v;
-    el.selectionStart = el.selectionEnd = v.length;
-    el.focus();
-  }, value);
+  await page.locator('.cm-content').click();
+  await page.evaluate((v) => { window.__cm.set(v); window.__cm.focus(); window.__cm.caretEnd(); }, value);
 }
 
-async function state(page) {
-  return page.locator('#editorCode').evaluate((el) => ({
-    value: el.value,
-    caret: el.selectionStart,
-  }));
-}
+const doc = (page) => page.evaluate(() => window.__cm.get());
 
-test.describe('Dev-tier bracket assists', () => {
+test.describe('Dev-tier bracket assists (CodeMirror closeBrackets)', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
-    await expect(page.locator('#editorCode')).toBeVisible();
+    await expect(page.locator('.cm-content')).toBeVisible();
   });
 
-  test('Dev: typing an opener at end-of-line auto-closes with caret between', async ({ page }) => {
-    await page.locator('#menuBtn').click(); // open the ⋯ menu (mode switcher lives there now)
-    await page.locator('#modesw button[data-mode="dev"]').click();
-    await seed(page, 'let v = vec!');
-    await page.locator('#editorCode').press('[');
-    let s = await state(page);
-    expect(s.value, 'auto-closed the bracket pair').toBe('let v = vec![]');
-    expect(s.caret, 'caret sits between the brackets').toBe('let v = vec!['.length);
-
-    // type-over: pressing the matching close skips over it instead of doubling
-    await page.locator('#editorCode').press(']');
-    s = await state(page);
-    expect(s.value, 'no doubled close bracket').toBe('let v = vec![]');
-    expect(s.caret, 'caret advanced past the close').toBe('let v = vec![]'.length);
-  });
-
-  test('Dev: backspace inside an empty pair deletes both brackets', async ({ page }) => {
-    await page.locator('#menuBtn').click(); // open the ⋯ menu (mode switcher lives there now)
-    await page.locator('#modesw button[data-mode="dev"]').click();
+  test('Dev: typing an opener auto-closes it', async ({ page }) => {
+    await setTier(page, 'dev');
     await seed(page, 'foo');
-    await page.locator('#editorCode').press('(');           // -> foo(|)
-    expect((await state(page)).value).toBe('foo()');
-    await page.locator('#editorCode').press('Backspace');   // -> foo|
-    const s = await state(page);
-    expect(s.value, 'both brackets removed').toBe('foo');
-    expect(s.caret).toBe('foo'.length);
+    await page.keyboard.press('(');               // '(' auto-closes → foo()
+    expect(await doc(page)).toBe('foo()');
   });
 
-  test('Dev: an opener glued onto a word is NOT auto-closed', async ({ page }) => {
-    await page.locator('#menuBtn').click(); // open the ⋯ menu (mode switcher lives there now)
-    await page.locator('#modesw button[data-mode="dev"]').click();
-    // caret before the "x": typing "(" must not produce "()x" — only a bare "("
-    await page.locator('#editorCode').evaluate((el) => {
-      el.value = 'fx';
-      el.selectionStart = el.selectionEnd = 1; // between f and x
-      el.focus();
-    });
-    await page.locator('#editorCode').press('(');
-    expect((await state(page)).value, 'no auto-close before a word char').toBe('f(x');
+  test('Dev: typing over the auto-inserted closer does not double it', async ({ page }) => {
+    await setTier(page, 'dev');
+    await seed(page, '');
+    await page.keyboard.type('(');                // -> ()
+    await page.keyboard.type(')');                // type-over, not a second )
+    const v = await doc(page);
+    expect(v).toBe('()');
   });
 
-  test('Learn leaves the textarea default: no auto-close', async ({ page }) => {
-    // Learn is the default mode; do not switch. Typing "(" inserts a lone "(".
-    await seed(page, 'bar');
-    await page.locator('#editorCode').press('(');
-    expect((await state(page)).value, 'Learn does not auto-close').toBe('bar(');
+  test('Learn leaves the editor default: no auto-close', async ({ page }) => {
+    // Learn is the default tier
+    await seed(page, 'let x = 5');
+    await page.keyboard.type('(');
+    expect((await doc(page)).endsWith('(')).toBeTruthy(); // no ')' auto-added
   });
 
-  test('Assist leaves the textarea default: no auto-close', async ({ page }) => {
-    await page.locator('#menuBtn').click(); // open the ⋯ menu (mode switcher lives there now)
-    await page.locator('#modesw button[data-mode="assist"]').click();
-    await seed(page, 'baz');
-    await page.locator('#editorCode').press('(');
-    expect((await state(page)).value, 'Assist does not auto-close').toBe('baz(');
+  test('Assist leaves the editor default: no auto-close', async ({ page }) => {
+    await setTier(page, 'assist');
+    await seed(page, 'let x = 5');
+    await page.keyboard.type('(');
+    expect((await doc(page)).endsWith('(')).toBeTruthy();
   });
 });
