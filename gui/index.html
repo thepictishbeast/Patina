@@ -415,15 +415,16 @@
   .kw{color:var(--accent-soft)} .fn{color:var(--note)} .str{color:var(--done)} .cm{color:var(--fg-dim);font-style:italic}
   .runrow{display:flex;gap:10px;align-items:center;margin:0 20px 12px}
   .run{background:linear-gradient(135deg,var(--accent),var(--accent-soft));color:#fff;border:none;
-    padding:9px 16px;border-radius:9px;font-weight:600;cursor:pointer;font-size:13px;box-shadow:0 4px 14px rgba(247,76,0,.35);transition:.15s}
-  .run:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(247,76,0,.5)}
+    padding:9px 16px;border-radius:9px;font-weight:600;cursor:pointer;font-size:13px;box-shadow:0 4px 14px rgba(247,76,0,.35),inset 0 1px 0 rgba(255,255,255,.28);transition:.15s}
+  .run:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(247,76,0,.55),inset 0 1px 0 rgba(255,255,255,.28)}
   .run.cta{animation:runReady 1.4s ease-in-out infinite}
-  @keyframes runReady{0%,100%{box-shadow:0 4px 14px rgba(247,76,0,.35)}50%{box-shadow:0 4px 22px rgba(247,76,0,.7)}}
+  /* keep the inset top-gloss in both keyframes so it doesn't flicker while the CTA pulses */
+  @keyframes runReady{0%,100%{box-shadow:0 4px 14px rgba(247,76,0,.35),inset 0 1px 0 rgba(255,255,255,.28)}50%{box-shadow:0 4px 22px rgba(247,76,0,.7),inset 0 1px 0 rgba(255,255,255,.28)}}
   /* gated (Learn, no prediction yet): clearly not pressable yet */
   .run.gated,.ghost.gated{opacity:.4;cursor:not-allowed;filter:grayscale(.4);box-shadow:none;transform:none}
   .run.gated:hover,.ghost.gated:hover{transform:none;box-shadow:none}
-  .ghost{background:var(--bg-2);color:var(--fg);border:1px solid var(--line);padding:9px 14px;border-radius:9px;cursor:pointer;font-size:13px;transition:border-color .15s,background .15s,transform .12s}
-  .ghost:hover:not(.gated){border-color:var(--accent);background:var(--bg-3);transform:translateY(-1px)}
+  .ghost{background:var(--bg-2);color:var(--fg);border:1px solid var(--line);padding:9px 14px;border-radius:9px;cursor:pointer;font-size:13px;box-shadow:inset 0 1px 0 var(--edge-hi);transition:border-color .15s,background .15s,transform .12s,box-shadow .15s}
+  .ghost:hover:not(.gated){border-color:var(--accent);background:var(--bg-3);transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.22),inset 0 1px 0 var(--edge-hi)}
   /* tactile press + keyboard focus rings across the IDE controls */
   .run:active:not(.gated),.ghost:active:not(.gated){transform:translateY(0)}
   .run:focus-visible,.ghost:focus-visible,.pbtn:focus-visible,.iconbtn:focus-visible,.modesw button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
