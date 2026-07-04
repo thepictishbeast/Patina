@@ -1,16 +1,8 @@
 // Inspired by Rustlings (MIT/Apache-2.0) — github.com/rust-lang/rustlings
-
-// CONCEPT: a `use` brings a path from the module tree into scope under a short
-// name — but the path has to point at something that ACTUALLY EXISTS. The `use`
-// below names a module that isn't in the tree (look closely at the spelling),
-// so the import can't be resolved and the program does not compile.
-
-// PREDICT first: what stops this compiling? Then run it and read the error —
-// note its code, and exactly which path it says is unresolved.
-
-// Fix it WITHOUT changing the `mod shapes` block, the struct, or `main`: correct
-// the path in the `use` so it points at the real module. (The book's "use"
-// section shows how a path names its way down the module tree.)
+//
+// Predict first: what stops this compiling? Then run it and read the error — note
+// which path it says is unresolved. Fix it WITHOUT changing the `mod shapes` block,
+// the struct, or `main`.
 
 mod shapes {
     pub struct Circle {
