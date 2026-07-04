@@ -123,6 +123,18 @@ check(mdToHtml('A _variable_ binds a value.').includes('<em>variable</em>'), '`_
 check(mdToHtml('This is *very* important.').includes('<em>very</em>'), '`*x*` → <em>');
 check(mdToHtml('Two _key_ _terms_ here.').includes('<em>key</em>') && mdToHtml('Two _key_ _terms_ here.').includes('<em>terms</em>'),
       'two emphases on one line both wrap');
+// 6a. A hard-wrapped bullet: the continuation source line joins the SAME <li>
+//     instead of dropping to a stray left-margin <p> (Paul 2026-07-04 — lesson
+//     bullets hard-wrap at ~80 cols and the 2nd line looked disconnected).
+const wrapB = mdToHtml('- It points at the first assignment,\n  then at the reassignment.');
+check((wrapB.match(/<li>/g) || []).length === 1 && !/<\/ul>\s*<p>/.test(wrapB)
+      && wrapB.includes('first assignment,') && wrapB.includes('then at the reassignment'),
+      'wrapped bullet continuation joins its <li>, not a stray paragraph');
+// 6b. …but a BLANK line still ends the list (continuation merges only when there
+//     is no blank between) — the paragraph after must stay a real <p>.
+const wrapEnd = mdToHtml('- lone item\n\nA following paragraph.');
+check(/<\/ul>/.test(wrapEnd) && /<p>A following paragraph\.<\/p>/.test(wrapEnd),
+      'a blank line still terminates the list');
 const snake = mdToHtml('Call to_string and read foo_bar_baz now.');
 check(!snake.includes('<em>') && snake.includes('to_string') && snake.includes('foo_bar_baz'),
       'intraword snake_case is NOT italicised');

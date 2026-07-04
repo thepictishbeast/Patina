@@ -1693,6 +1693,15 @@
         if (ul) { flushPara(); if (list !== 'ul') { closeList(); html += '<ul>'; list = 'ul'; } html += '<li>' + inline(ul[1]) + '</li>'; continue; }
         const ol = ln.match(/^\s*\d+\.\s+(.*)$/);
         if (ol) { flushPara(); if (list !== 'ol') { closeList(); html += '<ol>'; list = 'ol'; } html += '<li>' + inline(ol[1]) + '</li>'; continue; }
+        // A plain (non-bullet, non-heading) line DIRECTLY under a list item is the
+        // wrapped continuation of that bullet — our lesson bullets hard-wrap at
+        // ~80 cols, so the 2nd source line was rendering as a stray left-margin
+        // paragraph ("doesn't belong to the sentence" — Paul). Join it back into
+        // the <li>. A blank line still ends the list (it falls through to
+        // closeList below), so only true continuations (no blank between) merge.
+        if (list && ln.trim() && !/^#{1,6}\s/.test(ln.trim()) && html.endsWith('</li>')) {
+          html = html.slice(0, -5) + ' ' + inline(ln.trim()) + '</li>'; continue;
+        }
         closeList();
         // ATX headings, h1–h6 (single regex; the corpus uses through h4). Each
         // carries a slug `id` so book_ref anchors can scroll to the section.
