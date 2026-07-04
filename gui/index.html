@@ -397,6 +397,30 @@
   .appmenu .menuitem:hover,.appmenu .menuitem:focus-visible{background:var(--bg-3);outline:none}
   .appmenu .modesw{display:flex;width:100%;margin:0}
   .appmenu .modesw button{flex:1;padding:9px 0;font-size:12px}
+  /* Left lesson DRAWER — slides in from the left over the editor, recedes to close. */
+  .ldrawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:129;opacity:0;transition:opacity .28s}
+  .ldrawer-overlay.open{opacity:1}
+  .ldrawer-overlay[hidden]{display:none}
+  .ldrawer{position:fixed;left:0;top:0;bottom:0;width:min(90vw,440px);z-index:130;background:var(--bg-2);
+    border-right:1px solid var(--line);box-shadow:6px 0 34px rgba(0,0,0,.45);display:flex;flex-direction:column;
+    transform:translateX(-100%);transition:transform .28s ease;will-change:transform}
+  .ldrawer.open{transform:translateX(0)}
+  .ldrawer[hidden]{display:none}
+  .ldrawer .ldrawer-bar{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--line);flex:0 0 auto}
+  .ldrawer .ldrawer-title{font-weight:800;font-size:14px;color:var(--fg)}
+  .ldrawer .ldrawer-full{margin-left:auto;color:var(--note);font-size:12px;font-weight:600;text-decoration:none;white-space:nowrap}
+  .ldrawer .ldrawer-full:hover{text-decoration:underline}
+  .ldrawer .ldrawer-x{background:var(--bg-3);border:1px solid var(--line);border-radius:8px;width:30px;height:30px;
+    color:var(--fg-dim);font-size:18px;line-height:1;cursor:pointer;flex:0 0 auto}
+  .ldrawer .ldrawer-x:hover{color:var(--fg)}
+  .ldrawer .ldrawer-body{flex:1 1 auto;min-height:0;overflow:auto;padding:14px 16px;-webkit-overflow-scrolling:touch}
+  /* Left-edge pull tab (Practice view) — vertical "📖 Lesson". */
+  .lesson-handle{position:fixed;left:0;top:38%;z-index:60;display:flex;flex-direction:column;align-items:center;gap:3px;
+    background:var(--bg-2);color:var(--accent);border:1px solid var(--line);border-left:0;border-radius:0 10px 10px 0;
+    padding:9px 6px;font-size:15px;cursor:pointer;box-shadow:2px 2px 12px rgba(0,0,0,.3)}
+  .lesson-handle[hidden]{display:none}
+  .lesson-handle .lh-lbl{font-size:9px;font-weight:700;letter-spacing:.04em;color:var(--fg-dim);writing-mode:vertical-rl}
+  .lesson-handle:hover{border-color:var(--accent)}
   .pbtn { background:var(--bg-2); color:var(--fg); border:1px solid var(--line); border-radius:8px;
     padding:5px 10px; cursor:pointer; font-size:12.5px; transition:.12s; }
   .pbtn:hover { border-color:var(--accent); }
@@ -750,6 +774,21 @@
       <button class="menuitem" data-goto="cheatsheets" role="menuitem">📋 Cheat sheets</button>
     </div>
   </div>
+
+  <!-- Left LESSON DRAWER (Paul): slides out from the left to reference the current
+       exercise's lesson while you code, then recedes — you keep your spot in the
+       editor. Opened by the "read the lesson" link or the left-edge handle. -->
+  <div id="lessonDrawerOverlay" class="ldrawer-overlay" hidden></div>
+  <aside id="lessonDrawer" class="ldrawer" hidden aria-label="Lesson reference" aria-hidden="true">
+    <div class="ldrawer-bar">
+      <span class="ldrawer-title" id="lessonDrawerTitle">Lesson</span>
+      <a href="#" class="ldrawer-full" id="lessonDrawerFull" title="Open in the Learn tab">full view ↗</a>
+      <button class="ldrawer-x" id="lessonDrawerX" type="button" aria-label="Close lesson">×</button>
+    </div>
+    <div class="ldrawer-body bookbody lessonbody scroll" id="lessonDrawerBody"></div>
+  </aside>
+  <!-- Always-there pull tab on the left edge (Practice view) to grab the lesson. -->
+  <button id="lessonHandle" class="lesson-handle" type="button" title="Open the lesson" aria-label="Open the lesson drawer" hidden>📖<span class="lh-lbl">Lesson</span></button>
 
   <main>
     <section class="pane">
@@ -1361,6 +1400,7 @@
     }
 
     let curExercise = null, curOriginal = '', hintLevel = 0;
+    let curLessonId = null, curLessonTitle = ''; // the lesson that teaches the current exercise (for the drawer)
     let predict = { compiles: null, code: '' };
     let curBookRefs = [];
     // ── CodeMirror 6 editor (single layer; replaces the textarea/<pre> overlay
@@ -1754,8 +1794,14 @@
         cc.onclick = () => showGloss(cc.dataset.term);
         cc.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showGloss(cc.dataset.term); } };
       }
+      // Remember which lesson teaches this exercise; the "read the lesson" link and
+      // the left-edge handle open it in the DRAWER (read while coding, no tab switch).
+      curLessonId = lessonId || null;
+      curLessonTitle = j.concept ? (j.concept.charAt(0).toUpperCase() + j.concept.slice(1)) : 'Lesson';
       const ll = document.getElementById('lessonLink');
-      if (ll) ll.onclick = e => { e.preventDefault(); showView('lessons', ll.dataset.lesson); };
+      if (ll) ll.onclick = e => { e.preventDefault(); openLessonDrawer(curLessonId, curLessonTitle); };
+      const lh = document.getElementById('lessonHandle');
+      if (lh) lh.hidden = !curLessonId; // show the pull-tab only when a lesson exists
       document.getElementById('editorBar').textContent = `${j.exercise} · main.rs`;
       // Restore a saved edit for this exercise if present, else the starter.
       let saved = null;
@@ -2023,6 +2069,10 @@
         t.setAttribute('aria-selected', on ? 'true' : 'false');
       });
       const m = document.querySelector('main'), d = document.getElementById('docview');
+      // The lesson pull-tab belongs to Practice only; hide it elsewhere (+ close the drawer).
+      const lh = document.getElementById('lessonHandle');
+      if (lh) lh.hidden = (view !== 'practice') || !curLessonId;
+      if (view !== 'practice') closeLessonDrawer();
       if (view === 'practice') { m.hidden = false; d.hidden = true; refit(); return; }
       m.hidden = true; d.hidden = false;
       if (view === 'learn') {
@@ -2444,6 +2494,37 @@
       });
       if (cur !== null) html += '</ul></section>';
       return html;
+    }
+    // ── Left lesson DRAWER: read the current exercise's lesson WHILE coding, then
+    //    slide it away. Same markdown as the Learn tab (mdToHtml); "full view"
+    //    opens it there for the interactive cross-links. You keep your editor spot.
+    async function openLessonDrawer(lessonId, title) {
+      const dr = document.getElementById('lessonDrawer');
+      const ov = document.getElementById('lessonDrawerOverlay');
+      const body = document.getElementById('lessonDrawerBody');
+      if (!dr || !ov || !body || !lessonId) return;
+      document.getElementById('lessonDrawerTitle').textContent = title || 'Lesson';
+      const full = document.getElementById('lessonDrawerFull');
+      if (full) full.onclick = e => { e.preventDefault(); closeLessonDrawer(); showView('lessons', lessonId); };
+      body.innerHTML = '<p style="color:var(--fg-dim)">loading the lesson…</p>';
+      ov.hidden = false; dr.hidden = false; dr.setAttribute('aria-hidden', 'false');
+      requestAnimationFrame(() => { dr.classList.add('open'); ov.classList.add('open'); });
+      try {
+        const l = await fetch('api/lessons?id=' + encodeURIComponent(lessonId)).then(r => r.json()).then(j => j.lesson);
+        let md = (l && l.markdown) || '';
+        md = md.replace(/<!--[\s\S]*?-->/g, '').replace(/\n---\s*\n\s*\[[^\]]*Study Guide[\s\S]*$/i, ''); // drop HTML comments + the footer nav
+        body.innerHTML = md ? '<div class="bookbody lessonbody">' + mdToHtml(md) + '</div>'
+                            : '<p style="color:var(--fg-dim)">Lesson not found.</p>';
+        body.scrollTop = 0;
+      } catch (_) { body.innerHTML = '<p style="color:var(--fg-dim)">Could not load the lesson (offline?).</p>'; }
+    }
+    function closeLessonDrawer() {
+      const dr = document.getElementById('lessonDrawer');
+      const ov = document.getElementById('lessonDrawerOverlay');
+      if (!dr || dr.hidden) return;
+      dr.classList.remove('open'); ov.classList.remove('open'); dr.setAttribute('aria-hidden', 'true');
+      const done = () => { dr.hidden = true; ov.hidden = true; dr.removeEventListener('transitionend', done); };
+      dr.addEventListener('transitionend', done);
     }
     async function renderLessons(id) {
       const d = freshDocview();
@@ -2936,6 +3017,11 @@
       }
     });
     document.getElementById('resetbtn').onclick = () => { editorEl().value = curOriginal; markEdited(); editorEl().focus(); };
+    // Lesson drawer: the left-edge handle + close affordances (overlay, ×, Escape).
+    document.getElementById('lessonHandle')?.addEventListener('click', () => openLessonDrawer(curLessonId, curLessonTitle));
+    document.getElementById('lessonDrawerX')?.addEventListener('click', closeLessonDrawer);
+    document.getElementById('lessonDrawerOverlay')?.addEventListener('click', closeLessonDrawer);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLessonDrawer(); });
     document.getElementById('termcopy')?.addEventListener('click', () => copyText(termText()));
     document.getElementById('tmxCopy')?.addEventListener('click', () => copyText(TERMUX_SETUP_CMD));
     document.getElementById('tmxSetupX')?.addEventListener('click', hideTermuxSetup);
