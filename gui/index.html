@@ -707,6 +707,15 @@
         <div id="predictDone" class="predict-done" hidden></div>
       </div>
 
+      <!-- Run row ABOVE the editor (Paul) — action bar sits over the code. -->
+      <div class="runrow">
+        <button class="run" id="runbtn" title="Run (Ctrl/Cmd+Enter from the editor)">▷ Run</button>
+        <button class="ghost" id="checkbtn">✓ Check</button>
+        <button class="ghost" id="explainbtn">? Explain</button>
+        <button class="ghost" id="hintbtn">💡 Hint</button>
+        <span class="badge" id="statusline" style="margin-left:auto">ready</span>
+      </div>
+
       <div class="editor">
         <div class="bar"><span class="dot" style="background:var(--error)"></span>
           <span class="dot" style="background:var(--warn)"></span>
@@ -724,13 +733,6 @@
           <pre id="editorHL" aria-hidden="true"></pre>
           <textarea id="editorCode" class="scroll" aria-label="Source code editor for the current exercise" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off">// loading the current exercise…</textarea>
         </div>
-      </div>
-      <div class="runrow">
-        <button class="run" id="runbtn" title="Run (Ctrl/Cmd+Enter from the editor)">▷ Run</button>
-        <button class="ghost" id="checkbtn">✓ Check</button>
-        <button class="ghost" id="explainbtn">? Explain</button>
-        <button class="ghost" id="hintbtn">💡 Hint</button>
-        <span class="badge" id="statusline" style="margin-left:auto">ready</span>
       </div>
 
       <!-- Native-Run (Termux) one-time-setup card. Hidden until an on-device run
