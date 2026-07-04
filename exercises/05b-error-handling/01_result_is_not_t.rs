@@ -1,4 +1,4 @@
-// Rustlings Pro — exercises/05b-error-handling/01_result_is_not_t.rs
+// Inspired by Rustlings (MIT/Apache-2.0) — github.com/rust-lang/rustlings
 
 // CONCEPT: some operations can FAIL, so instead of handing back a value directly
 // they hand back a `Result`: `Ok(value)` when they succeed, or `Err(reason)` when
@@ -12,8 +12,6 @@
 // Run it, read the error (the `-->` line and the `help:` line), then get the number
 // out and handle the case where parsing fails — decide what to use when the text
 // isn't a valid number, instead of assuming it always is.
-
-// Hint ladder: press Hint (or `rpro exercise hint`).
 
 use std::num::ParseIntError;
 

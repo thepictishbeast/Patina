@@ -1,4 +1,4 @@
-// Rustlings Pro — exercises/06-modules/05_unresolved_import.rs
+// Inspired by Rustlings (MIT/Apache-2.0) — github.com/rust-lang/rustlings
 
 // CONCEPT: a `use` brings a path from the module tree into scope under a short
 // name — but the path has to point at something that ACTUALLY EXISTS. The `use`
@@ -12,7 +12,6 @@
 // the path in the `use` so it points at the real module. (The book's "use"
 // section shows how a path names its way down the module tree.)
 
-// Hint ladder: press Hint (or `rpro exercise hint`).
 mod shapes {
     pub struct Circle {
         pub radius: f64,

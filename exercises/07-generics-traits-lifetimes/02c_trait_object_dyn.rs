@@ -1,4 +1,4 @@
-// Rustlings Pro — exercises/07-generics-traits-lifetimes/02c_trait_object_dyn.rs
+// Inspired by Rustlings (MIT/Apache-2.0) — github.com/rust-lang/rustlings
 
 // CONCEPT: a `Vec<T>` holds many values of ONE type `T`. Below, `Circle` and
 // `Square` are two DIFFERENT types — even though both implement the `Shape`
@@ -16,8 +16,6 @@
 
 // Predict first: will this compile? Then run it and read the error before you
 // edit — the type the compiler "expected" is the clue.
-
-// Hint ladder: press Hint (or `rpro exercise hint`).
 
 trait Shape {
     fn area(&self) -> f64;

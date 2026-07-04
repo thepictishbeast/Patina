@@ -1,4 +1,4 @@
-// Rustlings Pro — exercises/05b-error-handling/04_custom_error_from.rs
+// Inspired by Rustlings (MIT/Apache-2.0) — github.com/rust-lang/rustlings
 
 // CONCEPT: real programs define their OWN error type so every way a function can
 // fail comes back as one consistent kind. The `?` operator works with this: when you
@@ -13,8 +13,6 @@
 // Run it and read E0277 — its `help:` line names the trait you need to implement to
 // teach Rust the conversion. Add that conversion so `?` can turn a parse failure into
 // your `AppError`. Don't change the function signatures.
-
-// Hint ladder: press Hint (or `rpro exercise hint`).
 
 use std::num::ParseIntError;
 

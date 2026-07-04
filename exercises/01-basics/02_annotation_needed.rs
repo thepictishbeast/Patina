@@ -1,4 +1,4 @@
-// Rustlings Pro — exercises/01-basics/02_annotation_needed.rs
+// Inspired by Rustlings (MIT/Apache-2.0) — github.com/rust-lang/rustlings
 
 // CONCEPT: Rust infers most types, but sometimes it genuinely can't.
 // `.parse()` can produce many types (i32, f64, ...), so you must say
@@ -7,8 +7,6 @@
 // Make this compile by telling the compiler the type, e.g.
 // `let n: i32 = ...` or `"42".parse::<i32>()`. Read the
 // "type annotations needed" error.
-
-// Hint ladder: press Hint (or `rpro exercise hint`).
 
 fn main() {
     // parse() is generic — the compiler can't tell what to parse into.

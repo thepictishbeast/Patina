@@ -1,4 +1,4 @@
-// Rustlings Pro — exercises/07b-functional-and-smart-pointers/04_shared_ownership_rc.rs
+// Inspired by Rustlings (MIT/Apache-2.0) — github.com/rust-lang/rustlings
 
 // CONCEPT: a `Box` gives a value exactly ONE owner. Here two lists, `b` and `c`,
 // each want the SAME tail `a` as their rest. Putting `a` inside `b` MOVES it, so
@@ -11,8 +11,6 @@
 // OWNERSHIP, not just borrow it. Reach for a smart pointer that lets one value have
 // many owners and frees it only once the last owner is done (it keeps a count of
 // how many owners there are). Make `a` shareable so both `b` and `c` can hold it.
-
-// Hint ladder: press Hint (or `rpro exercise hint`).
 
 enum List {
     Cons(i32, Box<List>),

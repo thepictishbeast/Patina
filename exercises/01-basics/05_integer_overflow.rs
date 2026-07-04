@@ -1,4 +1,4 @@
-// Rustlings Pro — exercises/01-basics/05_integer_overflow.rs
+// Inspired by Rustlings (MIT/Apache-2.0) — github.com/rust-lang/rustlings
 
 // CONCEPT: every integer type has a FIXED size, and so a fixed range of values. A
 // `u8` is an unsigned 8-bit integer — it can only hold 0 through 255. The math
@@ -11,8 +11,6 @@
 // the panic. Then make the calculation fit — the numbers are fine, the TYPE is too
 // small for their product. (Change the types `area` works with; leave the numbers in
 // the call and the println! as they are.)
-
-// Hint ladder: press Hint (or `rpro exercise hint`).
 
 fn area(width: u8, height: u8) -> u8 {
     width * height

@@ -1,4 +1,4 @@
-// Rustlings Pro — exercises/01-basics/08_use_before_init.rs
+// Inspired by Rustlings (MIT/Apache-2.0) — github.com/rust-lang/rustlings
 
 // CONCEPT: a `let` binding attaches a NAME to a value — but until you give it a
 // value, the name holds nothing, and Rust won't let you READ it. You may write
@@ -12,7 +12,6 @@
 // the line that reads it. (The book's "variables" section introduces binding a
 // name to a value.)
 
-// Hint ladder: press Hint (or `rpro exercise hint`).
 fn main() {
     let count: i32;
     println!("the count is {count}");

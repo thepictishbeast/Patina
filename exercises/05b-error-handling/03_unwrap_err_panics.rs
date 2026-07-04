@@ -1,4 +1,4 @@
-// Rustlings Pro — exercises/05b-error-handling/03_unwrap_err_panics.rs
+// Inspired by Rustlings (MIT/Apache-2.0) — github.com/rust-lang/rustlings
 
 // CONCEPT: `unwrap()` is the lazy way to get the value out of a `Result`: if it's
 // `Ok`, you get the value; if it's `Err`, the program PANICS and stops. It is a
@@ -13,8 +13,6 @@
 // error case instead of unwrapping it — decide what `count` should be when the text
 // isn't a number — so the program finishes instead of crashing. (You handled errors
 // this way in the earlier exercises in this phase.)
-
-// Hint ladder: press Hint (or `rpro exercise hint`).
 
 fn main() {
     let raw = "ferris";

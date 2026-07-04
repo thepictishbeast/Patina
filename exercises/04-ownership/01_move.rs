@@ -1,4 +1,4 @@
-// Rustlings Pro — exercises/04-ownership/01_move.rs
+// Inspired by Rustlings (MIT/Apache-2.0) — github.com/rust-lang/rustlings
 
 // CONCEPT: move semantics — when assigning one variable to another
 // transfers ownership instead of copying.

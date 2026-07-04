@@ -1,4 +1,4 @@
-// Rustlings Pro — exercises/09-advanced/04_operator_overload_add.rs
+// Inspired by Rustlings (MIT/Apache-2.0) — github.com/rust-lang/rustlings
 
 // CONCEPT: operators like `+` aren't magic built-ins reserved for numbers — each one
 // is backed by a TRAIT. `a + b` is really `a.add(b)`, from the `std::ops::Add` trait.
@@ -11,8 +11,6 @@
 // Run it and read E0369, then teach `Point` how to add: implement the operator's
 // trait so `a + b` returns a new `Point` whose fields are the two points' fields added
 // together. Don't change `main`.
-
-// Hint ladder: press Hint (or `rpro exercise hint`).
 
 #[derive(Debug, Clone, Copy)]
 struct Point {

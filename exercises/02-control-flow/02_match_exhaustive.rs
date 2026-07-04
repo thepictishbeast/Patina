@@ -1,4 +1,4 @@
-// Rustlings Pro — exercises/02-control-flow/02_match_exhaustive.rs
+// Inspired by Rustlings (MIT/Apache-2.0) — github.com/rust-lang/rustlings
 
 // CONCEPT: `match` must be EXHAUSTIVE — it has to cover every possible
 // value. The compiler checks this for you: if a case is missing, it
@@ -7,8 +7,6 @@
 // Make this compile WITHOUT changing `light`. Read which pattern the
 // compiler says is "not covered" and add an arm for it (or a `_`
 // catch-all). Keep the println! for each handled case.
-
-// Hint ladder: press Hint (or `rpro exercise hint`).
 
 enum Light {
     Red,

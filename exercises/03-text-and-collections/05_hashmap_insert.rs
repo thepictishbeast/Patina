@@ -1,4 +1,4 @@
-// Rustlings Pro — exercises/03-text-and-collections/05_hashmap_insert.rs
+// Inspired by Rustlings (MIT/Apache-2.0) — github.com/rust-lang/rustlings
 
 // CONCEPT: a `HashMap` stores key → value pairs and lets you look a value up by its
 // KEY (instead of by position the way a `Vec` uses an index). When you `insert` an
@@ -13,8 +13,6 @@
 // Run it and read E0382, then make both lines work: let the map have its own copy of
 // the name, or print the name BEFORE you hand it over — so you're not using a value
 // you've already given away.
-
-// Hint ladder: press Hint (or `rpro exercise hint`).
 
 use std::collections::HashMap;
 

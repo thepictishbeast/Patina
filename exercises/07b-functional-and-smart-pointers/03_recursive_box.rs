@@ -1,4 +1,4 @@
-// Rustlings Pro — exercises/07b-functional-and-smart-pointers/03_recursive_box.rs
+// Inspired by Rustlings (MIT/Apache-2.0) — github.com/rust-lang/rustlings
 
 // CONCEPT: a type that contains ITSELF has no fixed size. Here each `Cons` holds
 // the next `List` directly, so to lay `List` out in memory the compiler would
@@ -8,8 +8,6 @@
 // Run it and read the E0072 error top-to-bottom: the `help:` line names the exact
 // smart pointer the compiler wants. Give `List` a known size without changing
 // which values it holds.
-
-// Hint ladder: press Hint (or `rpro exercise hint`).
 
 enum List {
     Cons(i32, List),

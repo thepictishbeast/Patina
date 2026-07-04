@@ -1,4 +1,4 @@
-// Rustlings Pro — exercises/05-types-and-matching/05_refutable_let.rs
+// Inspired by Rustlings (MIT/Apache-2.0) — github.com/rust-lang/rustlings
 
 // CONCEPT: a plain `let` binds an IRREFUTABLE pattern — one that ALWAYS
 // matches. `Some(n)` is REFUTABLE: an `Option` might be `None`, so the
@@ -12,8 +12,6 @@
 // compiler even names the construct you need. There is more than one right
 // answer here (`if let`, `match`, or `let ... else`); pick one and make it
 // print "the number is 7".
-
-// Hint ladder: press Hint (or `rpro exercise hint`).
 
 fn main() {
     let maybe: Option<i32> = Some(7);

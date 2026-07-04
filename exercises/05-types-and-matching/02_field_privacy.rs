@@ -1,4 +1,4 @@
-// Rustlings Pro — exercises/05-types-and-matching/02_field_privacy.rs
+// Inspired by Rustlings (MIT/Apache-2.0) — github.com/rust-lang/rustlings
 
 // CONCEPT: a struct can be `pub` while some of its fields stay private.
 // Code outside the module can build/use the type through its public API
@@ -7,8 +7,6 @@
 // Make this compile WITHOUT making `area_cache` pub and WITHOUT changing
 // the module. Use only what's public (the `radius` field and `new`).
 // Read which field the compiler says is private.
-
-// Hint ladder: press Hint (or `rpro exercise hint`).
 
 mod shapes {
     pub struct Circle {

@@ -1,4 +1,4 @@
-// Rustlings Pro — exercises/05-types-and-matching/03b_unwrap_none.rs
+// Inspired by Rustlings (MIT/Apache-2.0) — github.com/rust-lang/rustlings
 
 // CONCEPT: some failures don't show up at COMPILE time — they wait until the code
 // RUNS. `.max()` on a list returns an `Option`, because the list might be empty and
@@ -11,8 +11,6 @@
 
 // Make it run without panicking, even when there are no scores yet — decide what the
 // "top score" should be when the list is empty, instead of assuming there is one.
-
-// Hint ladder: press Hint (or `rpro exercise hint`).
 
 fn main() {
     let scores: Vec<i32> = Vec::new(); // no scores recorded yet

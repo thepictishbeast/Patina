@@ -1,4 +1,4 @@
-// Rustlings Pro — exercises/02-control-flow/01_if_expr.rs
+// Inspired by Rustlings (MIT/Apache-2.0) — github.com/rust-lang/rustlings
 
 // CONCEPT: in Rust, `if` is an EXPRESSION — it evaluates to a value.
 // When you bind that value with `let`, every branch must produce the
@@ -7,8 +7,6 @@
 
 // Make this compile WITHOUT deleting the println!. Read the compiler's
 // `-->` line and its `help:` — it tells you what's missing.
-
-// Hint ladder: press Hint (or `rpro exercise hint`).
 
 fn main() {
     let temperature = 18;

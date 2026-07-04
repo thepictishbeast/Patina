@@ -1,4 +1,4 @@
-// Rustlings Pro — exercises/07b-functional-and-smart-pointers/01b_fn_once_move.rs
+// Inspired by Rustlings (MIT/Apache-2.0) — github.com/rust-lang/rustlings
 
 // CONCEPT: a closure can use a value it captured in one of three ways — just READ
 // it, CHANGE it, or GIVE IT AWAY (move it out). A closure that gives a captured
@@ -12,8 +12,6 @@
 // Run it and read the E0382 error: "use of moved value: `award`" — the closure was
 // used up by its first call. Make `award` callable twice: let it LEND the prize
 // instead of giving it away (or hand over a copy), without changing what it prints.
-
-// Hint ladder: press Hint (or `rpro exercise hint`).
 
 fn announce(prize: String) {
     println!("and the winner receives: {prize}");

@@ -1,4 +1,4 @@
-// Rustlings Pro — exercises/02-control-flow/02b_match_enum_data.rs
+// Inspired by Rustlings (MIT/Apache-2.0) — github.com/rust-lang/rustlings
 
 // CONCEPT: an enum variant can CARRY DATA. `Shape::Circle(f64)` holds a radius;
 // `Shape::Rectangle(f64, f64)` holds a width and a height. When you `match` such a
@@ -12,8 +12,6 @@
 // the enum or `main`.
 
 // Predict first: will this compile? Then run it and read the error before you edit.
-
-// Hint ladder: press Hint (or `rpro exercise hint`).
 
 enum Shape {
     Circle(f64),         // a circle stores its radius

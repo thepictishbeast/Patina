@@ -1,4 +1,4 @@
-// Rustlings Pro — exercises/07-generics-traits-lifetimes/03d_temporary_dropped.rs
+// Inspired by Rustlings (MIT/Apache-2.0) — github.com/rust-lang/rustlings
 
 // CONCEPT: a borrow must not outlive the value it points to — and a *temporary*
 // (a value with no name, like the `String` that `String::from(...)` builds on
@@ -13,7 +13,6 @@
 // enough — bind it to a variable, then pass a reference to that. (The book's
 // "lifetimes / the borrow checker" section is the why.)
 
-// Hint ladder: press Hint (or `rpro exercise hint`).
 fn first_word(s: &str) -> &str {
     s.split(' ').next().unwrap_or("")
 }

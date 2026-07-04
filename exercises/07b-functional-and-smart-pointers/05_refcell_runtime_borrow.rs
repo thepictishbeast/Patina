@@ -1,4 +1,4 @@
-// Rustlings Pro — exercises/07b-functional-and-smart-pointers/05_refcell_runtime_borrow.rs
+// Inspired by Rustlings (MIT/Apache-2.0) — github.com/rust-lang/rustlings
 
 // CONCEPT: a `RefCell` lets you change the value inside it even through a shared,
 // immutable-looking handle — "interior mutability". To stay safe it still enforces
@@ -13,8 +13,6 @@
 // Predict what happens when it RUNS, then run it and read the panic. Make it run
 // cleanly — let each change to `tasks` finish before the next one begins, so the
 // cell is never borrowed twice at once. Keep both pushes.
-
-// Hint ladder: press Hint (or `rpro exercise hint`).
 
 use std::cell::RefCell;
 

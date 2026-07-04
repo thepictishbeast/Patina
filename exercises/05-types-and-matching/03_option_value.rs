@@ -1,4 +1,4 @@
-// Rustlings Pro — exercises/05-types-and-matching/03_option_value.rs
+// Inspired by Rustlings (MIT/Apache-2.0) — github.com/rust-lang/rustlings
 
 // CONCEPT: `Option<i32>` is NOT an `i32`. It's a box that's either
 // `Some(value)` or `None`. You can't use it as the number directly —
@@ -8,8 +8,6 @@
 // Make this compile WITHOUT changing `let maybe: Option<i32>`. Pull the
 // value out of the Option before binding it to `value`. Read the
 // `expected i32, found Option<i32>` on the error.
-
-// Hint ladder: press Hint (or `rpro exercise hint`).
 
 fn main() {
     let maybe: Option<i32> = Some(7);

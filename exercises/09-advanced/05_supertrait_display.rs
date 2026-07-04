@@ -1,4 +1,4 @@
-// Rustlings Pro — exercises/09-advanced/05_supertrait_display.rs
+// Inspired by Rustlings (MIT/Apache-2.0) — github.com/rust-lang/rustlings
 
 // CONCEPT: a trait can REQUIRE another trait — written `trait Labelled: Display`,
 // which reads "to implement Labelled, a type must ALSO implement Display." That
@@ -12,8 +12,6 @@
 // Run it and read E0277, then make `Sku` printable so it can satisfy the supertrait:
 // implement `Display` for `Sku` (decide how a SKU should print). Don't change the
 // `Labelled` trait or `main`.
-
-// Hint ladder: press Hint (or `rpro exercise hint`).
 
 use std::fmt;
 

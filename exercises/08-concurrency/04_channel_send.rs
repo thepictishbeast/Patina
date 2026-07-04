@@ -1,4 +1,4 @@
-// Rustlings Pro — exercises/08-concurrency/04_channel_send.rs
+// Inspired by Rustlings (MIT/Apache-2.0) — github.com/rust-lang/rustlings
 
 // CONCEPT: besides sharing memory (Arc/Mutex), threads can talk by MESSAGE PASSING —
 // one thread SENDS a value down a channel and another RECEIVES it. The key rule:
@@ -12,8 +12,6 @@
 // Run it and read E0382. Let the thread send the message OR keep using it, not both:
 // print it before the send, or send a copy if both sides need one. The receiver in
 // main should still get the message.
-
-// Hint ladder: press Hint (or `rpro exercise hint`).
 
 use std::sync::mpsc;
 use std::thread;

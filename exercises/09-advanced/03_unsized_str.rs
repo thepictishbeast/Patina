@@ -1,4 +1,4 @@
-// Rustlings Pro — exercises/09-advanced/03_unsized_str.rs
+// Inspired by Rustlings (MIT/Apache-2.0) — github.com/rust-lang/rustlings
 
 // CONCEPT: most types have a fixed SIZE the compiler knows up front, so it can put
 // them on the stack and pass them around by value. But `str` (the string data
@@ -14,8 +14,6 @@
 
 // Give the parameter a known size by taking the text behind a reference instead of
 // by value. Then the call works.
-
-// Hint ladder: press Hint (or `rpro exercise hint`).
 
 fn first_char(text: str) -> char {
     text.chars().next().unwrap_or('?')

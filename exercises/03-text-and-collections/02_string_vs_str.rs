@@ -1,4 +1,4 @@
-// Rustlings Pro — exercises/03-text-and-collections/02_string_vs_str.rs
+// Inspired by Rustlings (MIT/Apache-2.0) — github.com/rust-lang/rustlings
 
 // CONCEPT: `String` (owned, growable, heap) and `&str` (a borrowed view
 // into existing text) are different types. A `"..."` literal is a `&str`.
@@ -6,8 +6,6 @@
 
 // Make this compile WITHOUT changing `let greeting: String`. Read the
 // `expected String, found &str` on the error.
-
-// Hint ladder: press Hint (or `rpro exercise hint`).
 
 fn main() {
     // "hello" is a &str literal — not an owned String.

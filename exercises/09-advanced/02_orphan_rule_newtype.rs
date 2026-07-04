@@ -1,4 +1,4 @@
-// Rustlings Pro — exercises/09-advanced/02_orphan_rule_newtype.rs
+// Inspired by Rustlings (MIT/Apache-2.0) — github.com/rust-lang/rustlings
 
 // CONCEPT: you can implement a trait for a type only if YOU define the trait, or YOU
 // define the type (or both) — never a foreign trait on a foreign type. This is the
@@ -11,8 +11,6 @@
 // Run it and read E0117. To give a FOREIGN type your own behavior, wrap it in a type
 // YOU own — a one-field "newtype" struct — and implement the trait on that wrapper
 // instead. Print the list however you like, through your own type.
-
-// Hint ladder: press Hint (or `rpro exercise hint`).
 
 use std::fmt;
 

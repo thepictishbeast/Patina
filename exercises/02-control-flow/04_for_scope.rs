@@ -1,4 +1,4 @@
-// Rustlings Pro — exercises/02-control-flow/04_for_scope.rs
+// Inspired by Rustlings (MIT/Apache-2.0) — github.com/rust-lang/rustlings
 
 // CONCEPT: a `for` loop's variable only exists INSIDE the loop body.
 // Once the loop ends, that name is gone — using it afterward is an
@@ -8,8 +8,6 @@
 // Make this compile WITHOUT removing the final println!. Think about
 // where to keep a running value that OUTLIVES the loop (declare it
 // before the loop, update it inside).
-
-// Hint ladder: press Hint (or `rpro exercise hint`).
 
 fn main() {
     for i in 1..=5 {

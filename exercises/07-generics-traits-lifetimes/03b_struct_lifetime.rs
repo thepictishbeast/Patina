@@ -1,4 +1,4 @@
-// Rustlings Pro — exercises/07-generics-traits-lifetimes/03b_struct_lifetime.rs
+// Inspired by Rustlings (MIT/Apache-2.0) — github.com/rust-lang/rustlings
 
 // CONCEPT: when a struct holds a REFERENCE instead of an owned value, Rust needs a
 // promise that the reference won't outlive the data it points to. You make that
@@ -12,8 +12,6 @@
 // Run it and read E0106 — the `help:` line shows the exact shape. Give the struct a
 // lifetime parameter and tie the reference field to it. The body in `main` is
 // already fine; only the struct definition needs the annotation.
-
-// Hint ladder: press Hint (or `rpro exercise hint`).
 
 struct Excerpt {
     part: &str,
