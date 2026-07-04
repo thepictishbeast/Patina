@@ -14,6 +14,7 @@ async function runInAssist(page, request) {
   await request.post('/api/select', { data: { id: EX, force: true } });
   await page.goto('/');
   await expect(page.locator('#editorCode')).toBeVisible();
+  await page.locator('#menuBtn').click(); // open the ⋯ menu (mode switcher lives there now)
   await page.locator('#modesw button[data-mode="assist"]').click();
   await page.locator('.pbtn[data-pred="fails"]').click();
   await page.locator('#runbtn').click();

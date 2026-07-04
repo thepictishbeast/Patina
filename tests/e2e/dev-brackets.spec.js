@@ -30,6 +30,7 @@ test.describe('Dev-tier bracket assists', () => {
   });
 
   test('Dev: typing an opener at end-of-line auto-closes with caret between', async ({ page }) => {
+    await page.locator('#menuBtn').click(); // open the ⋯ menu (mode switcher lives there now)
     await page.locator('#modesw button[data-mode="dev"]').click();
     await seed(page, 'let v = vec!');
     await page.locator('#editorCode').press('[');
@@ -45,6 +46,7 @@ test.describe('Dev-tier bracket assists', () => {
   });
 
   test('Dev: backspace inside an empty pair deletes both brackets', async ({ page }) => {
+    await page.locator('#menuBtn').click(); // open the ⋯ menu (mode switcher lives there now)
     await page.locator('#modesw button[data-mode="dev"]').click();
     await seed(page, 'foo');
     await page.locator('#editorCode').press('(');           // -> foo(|)
@@ -56,6 +58,7 @@ test.describe('Dev-tier bracket assists', () => {
   });
 
   test('Dev: an opener glued onto a word is NOT auto-closed', async ({ page }) => {
+    await page.locator('#menuBtn').click(); // open the ⋯ menu (mode switcher lives there now)
     await page.locator('#modesw button[data-mode="dev"]').click();
     // caret before the "x": typing "(" must not produce "()x" — only a bare "("
     await page.locator('#editorCode').evaluate((el) => {
@@ -75,6 +78,7 @@ test.describe('Dev-tier bracket assists', () => {
   });
 
   test('Assist leaves the textarea default: no auto-close', async ({ page }) => {
+    await page.locator('#menuBtn').click(); // open the ⋯ menu (mode switcher lives there now)
     await page.locator('#modesw button[data-mode="assist"]').click();
     await seed(page, 'baz');
     await page.locator('#editorCode').press('(');

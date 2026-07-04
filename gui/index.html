@@ -381,6 +381,20 @@
      (the bright --accent only manages ~3.5:1). The token is the reusable, AA-safe
      home for any small white-on-orange element; see its definition in :root. */
   .modesw button.sel { background:var(--accent-deep); color:#fff; }
+  /* ⋯ app menu — a dropdown sheet anchored top-right. Holds the editor mode +
+     quick jumps that don't need to sit on-screen all the time (Paul). */
+  .appmenu{position:fixed;top:52px;right:12px;z-index:120;width:236px;max-width:calc(100vw - 24px);
+    background:var(--bg-2);border:1px solid var(--line);border-radius:12px;box-shadow:0 16px 48px rgba(0,0,0,.5);
+    padding:8px;display:flex;flex-direction:column;gap:2px}
+  .appmenu[hidden]{display:none}
+  .appmenu .menusec{padding:4px 2px}
+  .appmenu .menusec + .menusec{border-top:1px solid var(--line);margin-top:2px;padding-top:8px}
+  .appmenu .menuh{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--fg-dim);margin:0 4px 7px}
+  .appmenu .menuitem{display:block;width:100%;text-align:left;background:none;border:0;border-radius:8px;
+    padding:9px 10px;font:600 13px var(--ui);color:var(--fg);cursor:pointer}
+  .appmenu .menuitem:hover,.appmenu .menuitem:focus-visible{background:var(--bg-3);outline:none}
+  .appmenu .modesw{display:flex;width:100%;margin:0}
+  .appmenu .modesw button{flex:1;padding:9px 0;font-size:12px}
   .pbtn { background:var(--bg-2); color:var(--fg); border:1px solid var(--line); border-radius:8px;
     padding:5px 10px; cursor:pointer; font-size:12.5px; transition:.12s; }
   .pbtn:hover { border-color:var(--accent); }
@@ -703,7 +717,29 @@
     <button class="iconbtn" id="focusBtn" title="Focus mode — hide the exercise list for more room" aria-label="Toggle focus mode (hide the exercise list)" aria-pressed="false">◧</button>
     <button class="iconbtn" id="insightsBtn" title="Show/hide Insights (diagnostics, book refs &amp; tutor)" aria-label="Toggle the Insights panel" aria-expanded="false">▦</button>
     <button class="iconbtn" id="theme" title="Toggle dark/light">🌓</button>
+    <button class="iconbtn" id="menuBtn" title="Menu" aria-label="Open menu" aria-haspopup="true" aria-expanded="false" aria-controls="appmenu">⋯</button>
   </header>
+
+  <!-- The ⋯ menu (Paul): holds the things that don't need to be on-screen all the
+       time — the editor mode (Learn/Assist/Dev, moved out of the editor bar to
+       free space) and quick jumps to the learning surfaces. -->
+  <div id="appmenu" class="appmenu" hidden role="menu" aria-label="Menu">
+    <div class="menusec">
+      <div class="menuh">Editor mode</div>
+      <span class="modesw" id="modesw" role="group" aria-label="Editor mode">
+        <button data-mode="learn" title="Learn: you do the work — predict before Run, read errors by hand, no autocomplete/auto-fix">Learn</button>
+        <button data-mode="assist" title="Assist: parsed diagnostics — click a code to explain it, click L# to jump there — plus hints on demand">Assist</button>
+        <button data-mode="dev" title="Dev: editor assists — Tab/Shift+Tab indent, Enter auto-indents, brackets auto-close (rust-analyzer later)">Dev</button>
+      </span>
+    </div>
+    <div class="menusec">
+      <div class="menuh">Go to</div>
+      <button class="menuitem" data-goto="learn" role="menuitem">📚 Learn hub</button>
+      <button class="menuitem" data-goto="library" role="menuitem">📖 Textbooks</button>
+      <button class="menuitem" data-goto="glossary" role="menuitem">📔 Glossary</button>
+      <button class="menuitem" data-goto="cheatsheets" role="menuitem">📋 Cheat sheets</button>
+    </div>
+  </div>
 
   <main>
     <section class="pane">
@@ -749,11 +785,6 @@
           <span class="dot" style="background:var(--warn)"></span>
           <span class="dot" style="background:var(--done)"></span>
           &nbsp; <span id="editorBar">main.rs</span>
-          <span class="modesw" id="modesw" role="group" aria-label="Editor mode">
-            <button data-mode="learn" title="Learn: you do the work — predict before Run, read errors by hand, no autocomplete/auto-fix">Learn</button>
-            <button data-mode="assist" title="Assist: parsed diagnostics — click a code to explain it, click L# to jump there — plus hints on demand">Assist</button>
-            <button data-mode="dev" title="Dev: editor assists — Tab/Shift+Tab indent, Enter auto-indents, brackets auto-close (rust-analyzer later)">Dev</button>
-          </span>
           <span style="flex:1"></span>
           <span id="editstate" style="color:var(--fg-dim)">read &amp; edit, then Run</span>
           <span id="resetbtn" title="Restore the original starter code" style="cursor:pointer;color:var(--accent-soft);margin-left:12px">↺ reset</span></div>
@@ -2874,8 +2905,30 @@
       if (e.key === 'Enter' && predict.compiles !== null) { e.preventDefault(); runOp('run'); }
     });
     // Mode switcher (Learn / Assist / Dev) + restore the saved mode.
-    document.querySelectorAll('#modesw button').forEach(b => b.onclick = () => setMode(b.dataset.mode));
+    document.querySelectorAll('#modesw button').forEach(b => b.onclick = () => { setMode(b.dataset.mode); closeMenu(); });
     setMode(mode);
+
+    // ⋯ menu — open/close, click-outside, Escape, and the "Go to" jumps.
+    const menuBtn = document.getElementById('menuBtn');
+    const appmenu = document.getElementById('appmenu');
+    function closeMenu() {
+      if (!appmenu || appmenu.hidden) return;
+      appmenu.hidden = true;
+      menuBtn && menuBtn.setAttribute('aria-expanded', 'false');
+    }
+    function openMenu() {
+      if (!appmenu) return;
+      appmenu.hidden = false;
+      menuBtn && menuBtn.setAttribute('aria-expanded', 'true');
+    }
+    if (menuBtn && appmenu) {
+      menuBtn.onclick = (e) => { e.stopPropagation(); appmenu.hidden ? openMenu() : closeMenu(); };
+      appmenu.addEventListener('click', (e) => e.stopPropagation());
+      document.addEventListener('click', () => closeMenu());
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMenu(); });
+      appmenu.querySelectorAll('.menuitem[data-goto]').forEach(b =>
+        b.onclick = () => { showView(b.dataset.goto); closeMenu(); });
+    }
     document.getElementById('explainbtn').onclick = () => {
       const code = (prompt('Diagnostic code to explain (letters/digits only):', lastCode) || '').trim();
       if (code) runOp('explain', { code });

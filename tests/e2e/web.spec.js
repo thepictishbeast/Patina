@@ -55,6 +55,7 @@ test.describe('Tempered Studio web flow', () => {
       .not.toContainText(/E0\d{3}/);
     // Switch to Assist: the SAME last run re-renders with the parsed Diagnostics panel,
     // surfacing the real rustc error code — no re-run needed (the tier re-render path).
+    await page.locator('#menuBtn').click(); // open the ⋯ menu (mode switcher lives there now)
     await page.locator('#modesw button[data-mode="assist"]').click();
     await expect(page.locator('#diag'), 'Assist surfaces the parsed rustc error code')
       .toContainText(/E0\d{3}/, { timeout: 25_000 });

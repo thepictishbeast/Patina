@@ -10,6 +10,7 @@ test.describe('editor Run shortcut (Ctrl/Cmd+Enter)', () => {
     await request.post('/api/select', { data: { id: EX, force: true } });
     await page.goto('/');
     await expect(page.locator('#editorCode')).toBeVisible();
+    await page.locator('#menuBtn').click(); // open the ⋯ menu (mode switcher lives there now)
     await page.locator('#modesw button[data-mode="assist"]').click(); // no predict-gate in Assist
     await page.locator('#editorCode').click();
     await page.locator('#editorCode').press('Control+Enter');
@@ -65,6 +66,7 @@ test.describe('editor Run shortcut (Ctrl/Cmd+Enter)', () => {
   test('Ctrl+Enter does not insert a newline in the editor (Dev)', async ({ page, request }) => {
     await request.post('/api/select', { data: { id: EX, force: true } });
     await page.goto('/');
+    await page.locator('#menuBtn').click(); // open the ⋯ menu (mode switcher lives there now)
     await page.locator('#modesw button[data-mode="dev"]').click();
     await page.locator('#editorCode').evaluate((el) => {
       el.value = 'fn main() {}';

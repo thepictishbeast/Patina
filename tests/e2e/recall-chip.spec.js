@@ -20,6 +20,7 @@ test('a passed exercise adds an actionable RECALL chip that explains on activati
   }).then((r) => r.ok), EX);
   expect(selOk, 'pin-select basics/01 must succeed (run against a FRESH store — scripts/e2e.sh)').toBeTruthy();
   await page.goto('/');
+  await page.locator('#menuBtn').click(); // open the ⋯ menu (mode switcher lives there now)
   await page.locator('#modesw button[data-mode="assist"]').click();
   await page.locator('#editorCode').evaluate((el, v) => { el.value = v; }, FIX);
   await page.locator('#runbtn').click();
@@ -38,6 +39,7 @@ test('a passed exercise adds an actionable RECALL chip that explains on activati
   // activate via keyboard (the footer bar overlays the chip, so click is flaky) →
   // an Explain request for THIS code is sent (deterministic; xterm's scrolled
   // buffer is unreliable to scrape). That's the active-recall self-check firing.
+  await page.locator('#menuBtn').click(); // open the ⋯ menu (mode switcher lives there now)
   await page.locator('#modesw button[data-mode="assist"]').click();
   await chip.focus();
   const [req] = await Promise.all([
