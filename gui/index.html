@@ -512,6 +512,14 @@
 
   /* Phone-first reflow: the locked learner profile is mobile-first. Below ~760px
      the three columns stack into one scrollable page. */
+  @media (max-width: 470px) {
+    /* Narrow phones: collapse the wordmark to just the ◆ mark so the brand +
+       progress % + panel toggles fit ONE header row (they were overflowing and
+       shoving the Practice/Learn tabs onto a 3rd row). Reclaims a row of chrome
+       above the task — Paul's "main view = task, declutter" direction. The mark
+       still identifies the app; the wordmark returns above 470px. */
+    .brandtext { display:none; }
+  }
   @media (max-width: 760px) {
     body { height:auto; overflow-y:auto; overflow-x:hidden; }
     header { flex-wrap:wrap; gap:8px 12px; padding:8px 10px; }
@@ -589,7 +597,7 @@
 </head>
 <body>
   <header>
-    <div class="brand"><span class="mark">◆</span> Tempered&nbsp;Studio</div>
+    <div class="brand"><span class="mark">◆</span> <span class="brandtext">Tempered&nbsp;Studio</span></div>
     <!-- Active-learning surfaces stay as primary tabs (where you DO the work);
          reference/lookup surfaces fold into the ⋯ More menu (Paul, 2026-06-25:
          "tabs and a menu bar … things the user isn't working on shouldn't be on
