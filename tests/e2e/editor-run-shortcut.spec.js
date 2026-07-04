@@ -35,19 +35,31 @@ test.describe('editor Run shortcut (Ctrl/Cmd+Enter)', () => {
       .toContainText(/failed|passed/, { timeout: 30_000 });
   });
 
-  test('Enter in the error-code box runs — but only once the outcome is locked', async ({ page, request }) => {
+  test('gate ONCE: answering collapses the question + unlocks Run for repeated runs', async ({ page, request }) => {
     await request.post('/api/select', { data: { id: EX, force: true } });
     await page.goto('/'); // Learn is the default mode
     await expect(page.locator('#editorCode')).toBeVisible();
-    // Type a code guess but pick NO outcome: Enter must be a no-op (gate holds).
+    // Type a code guess but pick NO outcome: the gate holds (Run disabled, bar shown).
     await page.locator('#predcode').fill('E0384');
-    await page.locator('#predcode').press('Enter');
-    await expect(page.locator('#runbtn'), 'still gated with no outcome picked').toBeDisabled();
-    // Lock the outcome; now Enter from the same box fires the run.
+    await expect(page.locator('#runbtn'), 'gated with no outcome picked').toBeDisabled();
+    await expect(page.locator('#predictbar')).toBeVisible();
+    // Lock the outcome: the pass/fail QUESTION disappears (Paul), the compact
+    // confirmation carries the guess (incl. the code), and Run unlocks.
     await page.locator('.pbtn[data-pred="fails"]').click();
-    await page.locator('#predcode').press('Enter');
-    await expect(page.locator('#statusline'), 'Enter finishes the prediction gesture')
-      .toContainText(/failed|passed/, { timeout: 30_000 });
+    await expect(page.locator('#predictbar')).toBeHidden();
+    await expect(page.locator('#predictDone')).toContainText('fails');
+    await expect(page.locator('#predictDone')).toContainText('E0384');
+    await expect(page.locator('#runbtn')).toBeEnabled();
+    // Run from the editor now that the gate is satisfied.
+    await page.locator('#editorCode').click();
+    await page.locator('#editorCode').press('Control+Enter');
+    await expect(page.locator('#statusline')).toContainText(/failed|passed/, { timeout: 30_000 });
+    // GATE ONCE — the key fix: it does NOT re-ask after a run. The question stays
+    // gone and a second run fires without predicting again.
+    await expect(page.locator('#predictbar')).toBeHidden();
+    await expect(page.locator('#runbtn')).toBeEnabled();
+    await page.locator('#editorCode').press('Control+Enter');
+    await expect(page.locator('#statusline')).toContainText(/failed|passed/, { timeout: 30_000 });
   });
 
   test('Ctrl+Enter does not insert a newline in the editor (Dev)', async ({ page, request }) => {

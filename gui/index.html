@@ -729,7 +729,7 @@
       <div id="termuxSetup" class="tmxsetup" hidden>
         <button class="tmxsetup-x" id="tmxSetupX" type="button" aria-label="Dismiss">×</button>
         <div class="tmxsetup-h">⚙ Native Run needs a one-time Termux setting</div>
-        <p class="tmxsetup-p">Paste this into <b>Termux</b> and press enter, then tap <b>Run</b> again. It's a <b>one-time</b> setup — it persists across reboots and app updates.</p>
+        <p class="tmxsetup-p">Paste this into <b>Termux</b> and press enter, then tap <b>Run</b> again. It's a <b>one-time</b> setup — it persists across reboots and app updates. <b>If Run still fails, fully close and reopen the app</b> so the new permission takes effect.</p>
         <div class="tmxsetup-cmd"><code id="tmxCmd"></code><button class="tmxcopy" id="tmxCopy" type="button">⧉ Copy command</button></div>
       </div>
 
@@ -992,12 +992,8 @@
       statusEl().textContent = passed ? (termuxOp === 'check' ? 'type-checks ✓' : 'ran on-device ✓') : 'failed (on-device)';
       try { setInsights(true); } catch (_) {}
       renderTutor(passed, ''); // Termux output is raw (no parsed code) → by-hand phrasing
-      if (mode === 'learn') { // re-arm the predict gate, like the server path
-        predict = { compiles: null, code: '' };
-        document.querySelectorAll('.pbtn').forEach(x => x.classList.remove('sel'));
-        const pc = document.getElementById('predcode'); if (pc) pc.value = '';
-        updateRunGate();
-      }
+      // Gate ONCE per exercise (Paul): the prediction persists after a run so you
+      // can edit + re-run freely; it only re-arms on the NEXT exercise (loadCurrent).
     };
 
     // Live path: POST a whitelisted op to the local server and stream the raw
@@ -1049,14 +1045,9 @@
         renderDiag(out); // sets lastCode (Assist/Dev only; '' in Learn — by-hand)
         setInsights(true); // a result exists now — surface the Insights drawer
         if (op !== 'explain') { showPrediction(out); renderTutor(out.passed, lastCode); }
-        if (mode === 'learn' && op !== 'explain') {
-          // Re-arm the gate: each Learn-mode run needs a fresh prediction
-          // (re-predict on retry — the verdict above stays visible as feedback).
-          predict = { compiles: null, code: '' };
-          document.querySelectorAll('.pbtn').forEach(x => x.classList.remove('sel'));
-          const pc = document.getElementById('predcode'); if (pc) pc.value = '';
-          updateRunGate();
-        }
+        // Gate ONCE per exercise (Paul): the prediction persists after a run, so
+        // Run stays unlocked for edit-and-rerun; it only re-arms on the NEXT
+        // exercise (loadCurrent). The verdict above stays as feedback.
         statusEl().textContent = out.passed ? 'passed' : 'failed';
         // Refresh the list/gauge/attempts after every run; if a pass advanced
         // the learner, load the next exercise into the editor.
@@ -1306,15 +1297,19 @@
       const runb = document.getElementById('runbtn');
       if (runb) runb.classList.toggle('cta', mode === 'learn' && answered);
       const pb = document.getElementById('predictbar');
-      if (pb) pb.classList.toggle('needs-answer', gated);
+      // M (Paul): the pass/fail QUESTION disappears once answered — collapse the
+      // whole bar to the compact confirmation below; "change" re-opens it.
+      if (pb) { pb.classList.toggle('needs-answer', gated); pb.style.display = answered ? 'none' : ''; }
       const prose = document.getElementById('predictProse');
       if (prose) prose.style.display = (mode === 'learn' && !answered) ? '' : 'none';
       const done = document.getElementById('predictDone');
       if (done) {
-        if (mode === 'learn' && answered) {
+        if (answered) {
           done.hidden = false;
-          done.textContent = '✓ Predicted: ' + (predict.compiles ? 'passes' : 'fails')
-            + (predict.code ? ' (' + predict.code + ')' : '') + ' — now press Run to see the real result.';
+          done.innerHTML = '✓ Predicted: <b>' + (predict.compiles ? 'passes' : 'fails') + '</b>'
+            + (predict.code ? ' (' + esc(predict.code) + ')' : '')
+            + (mode === 'learn' ? ' — press Run.' : '')
+            + ' · <a href="#" id="predictChange">change</a>';
         } else { done.hidden = true; }
       }
     }
@@ -2665,6 +2660,17 @@
     document.getElementById('tmxSetupX')?.addEventListener('click', hideTermuxSetup);
     document.getElementById('runErrorCopy')?.addEventListener('click', () => copyText(document.getElementById('runErrorMsg')?.textContent || ''));
     document.getElementById('runErrorX')?.addEventListener('click', hideRunError);
+    // "change" in the compact prediction confirmation re-opens the pass/fail
+    // question (delegated — #predictDone's content is rebuilt each render).
+    document.addEventListener('click', e => {
+      if (e.target && e.target.id === 'predictChange') {
+        e.preventDefault();
+        predict = { compiles: null, code: '' };
+        document.querySelectorAll('.pbtn').forEach(x => x.classList.remove('sel'));
+        const pc = document.getElementById('predcode'); if (pc) pc.value = '';
+        updateRunGate();
+      }
+    });
 
     // ── phone progressive disclosure: exercise-list accordion + folded terminal ──
     const isPhone = () => window.matchMedia('(max-width:760px)').matches;
