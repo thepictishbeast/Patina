@@ -949,7 +949,7 @@
     // rustc (via an installed Termux) and calls this back asynchronously.
     let termuxPending = null;
     let termuxOp = 'run'; // which op fired the pending Termux call (run/check/test/explain)
-    window.__termuxResult = function (cbId, res) {
+    window.__termuxResult = async function (cbId, res) {
       if (cbId !== termuxPending) return; // ignore stale/duplicate
       termuxPending = null;
       res = res || {};
@@ -992,6 +992,22 @@
       statusEl().textContent = passed ? (termuxOp === 'check' ? 'type-checks ✓' : 'ran on-device ✓') : 'failed (on-device)';
       try { setInsights(true); } catch (_) {}
       renderTutor(passed, ''); // Termux output is raw (no parsed code) → by-hand phrasing
+      // Record the outcome to the local store — the mobile WRITE-path that fixes
+      // the lockout (passing now marks Done + advances). Refresh the list/current
+      // from the seam. Advance on a passing run/test, never on check/explain.
+      if (termuxOp !== 'explain' && curExercise && window.AndroidSeam && AndroidSeam.recordRun) {
+        let advancedTo = null;
+        try {
+          const rec = JSON.parse(AndroidSeam.recordRun(curExercise, passed, passed && termuxOp !== 'check'));
+          advancedTo = rec && rec.advanced_to;
+        } catch (_) {}
+        try { const exs = await fetch('api/exercises').then(r => r.json()); if (exs) renderList(exs); } catch (_) {}
+        if (advancedTo) {
+          term.writeln(''); term.writeln(g('✓ exercise complete — advancing to ' + advancedTo));
+          try { const cur = await fetch('api/current').then(r => r.json()); renderCurrent(cur); } catch (_) {}
+          statusEl().textContent = 'advanced ✓';
+        }
+      }
       // Gate ONCE per exercise (Paul): the prediction persists after a run so you
       // can edit + re-run freely; it only re-arms on the NEXT exercise (loadCurrent).
     };
@@ -1165,6 +1181,16 @@
       // refuses re-opening a completed one (409 → nudge to Reset).
       box.querySelectorAll('.ex[data-id]').forEach(el => {
         const go = async () => {
+          // Mobile: no server → switch via the seam's offline write-path.
+          if (window.AndroidSeam && AndroidSeam.selectExercise) {
+            try {
+              const r = JSON.parse(AndroidSeam.selectExercise(el.dataset.id, false));
+              if (r && r.ok) { statusEl().textContent = 'switched'; await loadState(false); }
+              else if (r && r.error === 'done') { statusEl().textContent = '“' + el.dataset.id + '” is done — press ↺ Reset to redo it'; }
+              else { statusEl().textContent = 'could not switch exercise'; }
+            } catch (_) { statusEl().textContent = 'could not switch'; }
+            return;
+          }
           try {
             const res = await fetch('api/select', {
               method: 'POST', headers: { 'Content-Type': 'application/json' },
