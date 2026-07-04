@@ -7,7 +7,7 @@ speaks the neutral `rpro-lang` seam — `RunOp`, `Outcome`, `Diagnostic`,
 `EditorAssists` — never `cargo`/`rustc` directly). Derived from the locked
 learner profile (genuine beginner, control-flow gap, reads better than he
 writes, phone-first, no cross-language analogies, must diagnose errors by hand)
-and verified against the existing corpus on rustc 1.94.1.
+and verified against the existing corpus on rustc 1.95.0.
 
 # Interactive Loop — App-Driven State Machine (mechanism, not lesson content)
 
@@ -32,7 +32,7 @@ Lesson 1 already invented this: "predict the error code and the `help:` suggesti
 
 - **Format:** App shows a *short broken snippet* (a teaching snippet — never his own exercise) and asks: predict the **error code** + the **one-line fix** the compiler will suggest. Then it runs real rustc and reveals the raw output.
 - **Difficulty ramp:** (1) given the error, name the cause; (2) given broken code, predict the error code; (3) given broken code, predict code + the `help:` text verbatim-ish; (4) given a clean snippet, predict it compiles and what it prints.
-- **Source of snippets:** the error codes the corpus already teaches — E0384 (assign-twice), E0308 (type mismatch incl. if/else arms and the missing-semicolon `-> ()` case), E0004 (non-exhaustive match). All three verified on rustc 1.94.1.
+- **Source of snippets:** the error codes the corpus already teaches — E0384 (assign-twice), E0308 (type mismatch incl. if/else arms and the missing-semicolon `-> ()` case), E0004 (non-exhaustive match). All three verified on rustc 1.95.0.
 - **Write-muscle bias:** at least one drill per session must require him to *type a fix and re-run*, not just identify the error — to attack the read>write gap directly.
 
 ## Repetition / recall (the spaced unit = the error code)
@@ -122,6 +122,6 @@ writing lessons," so they are not applied unilaterally. The two cheatsheet fixes
 **Fix:** Formalize this into the app-driven loop (see interactivity spec): the prediction must be captured and the answer hidden until after the real run. Tag these existing prompts as the canonical pattern so future lessons reproduce them verbatim in structure. No rewrite of the prose is needed — the lesson is already doing the right thing; the app just needs to enforce the gate the prose currently only suggests.
 
 ### Whole corpus — strength to preserve, not a defect
-**Issue:** Every compiler claim I checked is exact on rustc 1.94.1: Lesson 1's E0384 block is byte-for-byte the real unedited output; Phase-2 cheatsheet's E0308 (if/else incompatible types) and E0004 (non-exhaustive patterns) are accurate error codes with accurate messages. rustc --explain works for all three. This is the foundation the interactive loop depends on and it is genuinely solid.
+**Issue:** Every compiler claim I checked is exact on rustc 1.95.0: Lesson 1's E0384 block is byte-for-byte the real unedited output; Phase-2 cheatsheet's E0308 (if/else incompatible types) and E0004 (non-exhaustive patterns) are accurate error codes with accurate messages. rustc --explain works for all three. This is the foundation the interactive loop depends on and it is genuinely solid.
 
 **Fix:** No change — protect it. The interactivity spec must NEVER paraphrase or hand-simulate compiler output; it must surface the raw bytes from the real toolchain (the same discipline the authors already follow). Make 'raw, real, unedited compiler output' an explicit invariant so no future tooling shortcut erodes this.

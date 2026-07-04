@@ -97,7 +97,7 @@ fn main() {
 
 **Before you scroll — will this even compile?**
 
-It won't. Here is the *real* output from `rustc` (1.94.1), unedited:
+It won't. Here is the *real* output from `rustc` (1.95.0), unedited:
 
 ```
 error[E0384]: cannot assign twice to immutable variable `x`
@@ -189,7 +189,7 @@ adjust the next lesson to match where you actually are.
   staged as a commented-out reassignment).
 - **BLOG** — *Rust for Beginners* (Pablo Aguirre), "Immutable variables." Cited
   for contrast (immutability stated as a rule "for security").
-- Compiler output captured live on **rustc 1.94.1** (edition 2024).
+- Compiler output captured live on **rustc 1.95.0** (edition 2024).
 
 ---
 
