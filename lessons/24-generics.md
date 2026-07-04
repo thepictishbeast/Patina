@@ -35,10 +35,10 @@ A **type parameter** is a name — by convention a single capital letter, usuall
 "Type") — that stands in for a real type you haven't chosen yet. You **declare** it in angle
 brackets, then **use** it as if it were a type:
 
-```
+```rust
 fn largest<T>(list: &[T]) -> &T { ... }
-//         ^^^                       declare T here
-//             ^^^^^^^^       ^^     then use it as a type
+// `<T>` right after the name DECLARES the generic type, named T.
+// After that, T is USED like any type — here in `&[T]` and the return `&T`.
 ```
 
 The `<T>` right after the name says "this thing is generic over a type I'm calling `T`."

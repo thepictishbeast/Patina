@@ -46,14 +46,16 @@ Here is the single idea beginners trip on, so read it twice:
 The syntax mirrors generics. You declare the lifetime in angle brackets after the
 function name, then attach it to the references:
 
-```
+```rust
 fn longest<'a>(x: &'a str, y: &'a str) -> &'a str
-         ^^^^      ^^^         ^^^         ^^^
-       declare    "x lives    "and so     "and the result
-       a lifetime  at least    does y"     borrows from one of
-       called 'a   'a long"                them, so it also
-                                           lives at least 'a"
 ```
+
+Reading each `'a` in that signature:
+
+- `<'a>` — declares a lifetime, named `'a`.
+- `x: &'a str` — x lives at least as long as `'a`.
+- `y: &'a str` — and so does y.
+- `-> &'a str` — the result borrows from one of them, so it also lives at least `'a`.
 
 That signature tells the compiler: *the returned reference is valid for as long as both
 `x` and `y` are valid.* Now the compiler can enforce, at every call site, that you don't
