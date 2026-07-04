@@ -39,7 +39,10 @@
     --accent-deep: #c44000;
     --done: #36c46b; --current: #2bb6d6; --locked: #6b7280;
     --skipped: #e0b020; --error: #ff5c5c; --warn: #e0b020; --note: #5aa9ff;
-    --bg: #0e1116; --bg-2: #161b22; --bg-3: #1d2430; --line: #2a3340;
+    /* Warm, layered dark: a subtly warm charcoal (not cold blue-gray) that
+       harmonises with the Ferris-orange accent and reads premium, not dev-tool.
+       Three distinct surface steps give real depth (bg < bg-2 < bg-3). */
+    --bg: #14120e; --bg-2: #1d1a15; --bg-3: #282219; --line: #372f24;
     /* Emoji families FIRST, not last: every listed font is emoji-only (and the
        bundled Noto faces are unicode-range-gated to emoji blocks), so letters
        can never match them — but emoji always do. When they trailed the list,
@@ -48,15 +51,17 @@
        makes the emoji font authoritative — verified by pixel probe
        (0 → 92 colored px on the stuck tab). */
     --emoji: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", "Twemoji Mozilla", "Android Emoji", "EmojiOne Color";
-    --fg: #e6edf3; --fg-dim: #9aa7b4; --mono: var(--emoji), ui-monospace, "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
+    --fg: #f2ede3; --fg-dim: #ab9f8c; --mono: var(--emoji), ui-monospace, "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
     --ui: var(--emoji), system-ui, -apple-system, "Segoe UI", Roboto, Inter, sans-serif;
-    --radius: 12px; --shadow: 0 6px 24px rgba(0,0,0,.35);
+    --radius: 14px; --shadow: 0 1px 2px rgba(0,0,0,.4), 0 12px 34px rgba(0,0,0,.5);
     /* syntax-highlight palette for rendered (read-only) Rust code blocks */
     --tok-k:#ff7a3c; --tok-s:#7ec97e; --tok-c:#6b7884; --tok-n:#d2a8ff; --tok-t:#5aa9ff; --tok-m:#e0b020;
   }
   html[data-theme="light"] {
-    --bg:#f6f7f9; --bg-2:#ffffff; --bg-3:#eef1f5; --line:#dde3ea;
-    --fg:#1b2330; --fg-dim:#5b6776; --accent:#b7410e; --shadow:0 6px 24px rgba(0,0,0,.10);
+    /* Warm paper light theme (cards stay crisp white so the AA-tuned status
+       colours below keep their contrast). */
+    --bg:#f7f4ee; --bg-2:#ffffff; --bg-3:#f1ece2; --line:#e6ddcd;
+    --fg:#1b2330; --fg-dim:#5b6776; --accent:#b7410e; --shadow:0 1px 2px rgba(60,50,30,.06), 0 12px 30px rgba(60,50,30,.12);
     /* The STATUS palette needs light variants too: the dark-tuned greens/blues
        (#36c46b, #5aa9ff…) are ~2.5–3:1 on white — axe flagged them serious.
        These deepened values clear WCAG AA (≥4.5:1) for small text on --bg-2. */
