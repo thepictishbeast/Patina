@@ -429,7 +429,7 @@
   .run:focus-visible,.ghost:focus-visible,.pbtn:focus-visible,.iconbtn:focus-visible,.modesw button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
   /* embedded terminal — a real xterm.js widget */
-  .terminal { margin:0 20px 18px; border:1px solid var(--line); border-radius:var(--radius); background:#0a0d12;
+  .terminal { margin:0 20px 18px; border:1px solid var(--line); border-radius:var(--radius); background:#0f0c07;
     box-shadow:var(--shadow), inset 0 1px 0 var(--edge-hi); display:flex; flex-direction:column; height:240px; overflow:hidden; }
   .terminal .tbar{display:flex;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid var(--line);
     /* FIXED color, not var(--fg-dim): the terminal keeps its dark background in
@@ -713,7 +713,7 @@
   <script src="vendor/xterm/addon-fit.js"></script>
   <script>
     // ── Real xterm.js terminal — renders true ANSI, like live rpro output ──
-    const C = { fg:'#cfe3d6', bg:'#0a0d12', green:'#36c46b', red:'#ff5c5c',
+    const C = { fg:'#e8e0d2', bg:'#0f0c07', green:'#36c46b', red:'#ff5c5c',
                 blue:'#5aa9ff', dim:'#9aa7b4', accent:'#ff7a3c' };
     const term = new Terminal({
       convertEol:true, cursorBlink:true, fontSize:12.5, scrollback:1000,
