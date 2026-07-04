@@ -442,6 +442,13 @@
   .termcopy{background:var(--bg-3);color:var(--fg-dim);border:1px solid var(--line);border-radius:7px;
     padding:4px 10px;font:600 11.5px var(--mono);cursor:pointer}
   .termcopy:hover{color:var(--fg);border-color:var(--accent)}
+  /* console fold: a discoverable chevron collapses the output to its title bar,
+     reclaiming height to focus on code. Works on every platform (the tcollapsed
+     rules below are global, not phone-only). */
+  .tfold{background:none;border:none;color:var(--fg-dim);cursor:pointer;font-size:12px;line-height:1;padding:3px 5px;margin-right:1px;border-radius:5px}
+  .tfold:hover{color:var(--fg);background:var(--bg-3)}
+  .terminal.tcollapsed{height:auto}
+  .terminal.tcollapsed .xterm-host{display:none}
   /* Native-Run one-time-setup card (Termux allow-external-apps) */
   .tmxsetup{position:relative;margin:0 20px 14px;padding:14px 16px;border:1px solid var(--accent);
     border-radius:var(--radius);background:rgba(247,76,0,.06);box-shadow:var(--shadow),inset 0 1px 0 var(--edge-hi)}
@@ -539,6 +546,11 @@
   @media (max-width: 760px) {
     body { height:auto; overflow-y:auto; overflow-x:hidden; }
     header { flex-wrap:wrap; gap:8px 12px; padding:8px 10px; }
+    /* Focus mode (hide the exercise-list COLUMN) is a desktop-only layout toggle;
+       the phone layout neuters it (the list stays a collapsible section below), so
+       the ◧ button did nothing when tapped — an inert, cryptic icon (Paul). Drop
+       it on phones; the theme + Insights toggles stay. */
+    #focusBtn { display:none; }
     /* 3 tabs + the ⋯ More menu fit a phone row now, so wrap instead of
        horizontal-scroll (scrolling also clips the dropdown via overflow). */
     .navwrap { order:5; width:100%; flex-wrap:wrap; margin-left:0; }
@@ -705,7 +717,7 @@
       </div>
 
       <div class="terminal">
-        <div class="tbar"><span class="throbber" id="throb">⠹</span> <span class="tbar-lbl">rpro · output</span><span style="flex:1"></span><button class="termcopy" id="termcopy" title="Copy the output (e.g. to share an error)">⧉ copy</button></div>
+        <div class="tbar"><button class="tfold" id="tfold" type="button" title="Collapse / expand the output" aria-label="Collapse or expand the output">▾</button><span class="throbber" id="throb">⠹</span> <span class="tbar-lbl">rpro · output</span><span style="flex:1"></span><button class="termcopy" id="termcopy" title="Copy the output (e.g. to share an error)">⧉ copy</button></div>
         <div id="xterm" class="xterm-host"></div>
       </div>
     </section>
@@ -2628,17 +2640,35 @@
         ttl.addEventListener('click', toggle);
         ttl.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
       }
-      // terminal starts folded on phones (no output yet); tap the bar to peek
+      // Console fold: the chevron collapses the output to its title bar so the
+      // editor gets the room. The choice persists; default = folded on phones
+      // (no output yet), open on desktop.
       const t = document.querySelector('.terminal');
-      if (t && isPhone()) t.classList.add('tcollapsed');
+      let cpref = null; try { cpref = localStorage.getItem('ts-console-folded'); } catch (_) {}
+      if (t) t.classList.toggle('tcollapsed', cpref === null ? isPhone() : cpref === '1');
+      syncConsoleChevron();
+      document.getElementById('tfold')?.addEventListener('click', e => { e.stopPropagation(); toggleConsole(); });
+      // mobile convenience: tapping the bar (not its buttons) also folds
       t?.querySelector('.tbar')?.addEventListener('click', e => {
-        if (e.target.id === 'termcopy' || !isPhone()) return;
-        t.classList.toggle('tcollapsed'); try { refit(); } catch (_) {}
+        if (e.target.id === 'termcopy' || e.target.id === 'tfold' || !isPhone()) return;
+        toggleConsole();
       });
     })();
+    function syncConsoleChevron() {
+      const t = document.querySelector('.terminal'), c = document.getElementById('tfold');
+      if (t && c) c.textContent = t.classList.contains('tcollapsed') ? '▸' : '▾';
+    }
+    function toggleConsole() {
+      const t = document.querySelector('.terminal'); if (!t) return;
+      const folded = t.classList.toggle('tcollapsed');
+      try { localStorage.setItem('ts-console-folded', folded ? '1' : '0'); } catch (_) {}
+      syncConsoleChevron(); try { refit(); } catch (_) {}
+    }
+    // A run always unfolds the console (output is coming); the persisted
+    // preference is only changed by an explicit chevron tap.
     function expandTerminal() {
       const t = document.querySelector('.terminal');
-      if (t && t.classList.contains('tcollapsed')) { t.classList.remove('tcollapsed'); try { refit(); } catch (_) {} }
+      if (t && t.classList.contains('tcollapsed')) { t.classList.remove('tcollapsed'); syncConsoleChevron(); try { refit(); } catch (_) {} }
     }
     document.getElementById('hintbtn').onclick = runHint;
     // predict-first: lock a compiles/fails guess (+ optional error code) before Run
