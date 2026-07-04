@@ -39,10 +39,10 @@
     --accent-deep: #c44000;
     --done: #36c46b; --current: #2bb6d6; --locked: #6b7280;
     --skipped: #e0b020; --error: #ff5c5c; --warn: #e0b020; --note: #5aa9ff;
-    /* Warm, layered dark: a subtly warm charcoal (not cold blue-gray) that
-       harmonises with the Ferris-orange accent and reads premium, not dev-tool.
-       Three distinct surface steps give real depth (bg < bg-2 < bg-3). */
-    --bg: #14120e; --bg-2: #1d1a15; --bg-3: #282219; --line: #372f24;
+    /* AMOLED dark (Paul: prefers true-black, not the warm brown). Pure #000 base
+       for OLED; neutral near-black surface steps give depth (bg < bg-2 < bg-3)
+       with the --edge-hi top-highlight doing the lift. Ferris-orange accent stays. */
+    --bg: #000000; --bg-2: #101010; --bg-3: #1c1c1c; --line: #2a2a2a;
     /* Emoji families FIRST, not last: every listed font is emoji-only (and the
        bundled Noto faces are unicode-range-gated to emoji blocks), so letters
        can never match them — but emoji always do. When they trailed the list,
@@ -51,7 +51,7 @@
        makes the emoji font authoritative — verified by pixel probe
        (0 → 92 colored px on the stuck tab). */
     --emoji: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", "Twemoji Mozilla", "Android Emoji", "EmojiOne Color";
-    --fg: #f2ede3; --fg-dim: #ab9f8c; --mono: var(--emoji), ui-monospace, "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
+    --fg: #f4f4f5; --fg-dim: #a1a1aa; --mono: var(--emoji), ui-monospace, "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
     --ui: var(--emoji), system-ui, -apple-system, "Segoe UI", Roboto, Inter, sans-serif;
     --radius: 14px; --shadow: 0 1px 2px rgba(0,0,0,.4), 0 12px 34px rgba(0,0,0,.5);
     /* Top-edge highlight for elevated cards — the dark-mode depth cue: a hairline
@@ -168,6 +168,16 @@
   .docview pre code .tok-n { color:var(--tok-n); }
   .docview pre code .tok-t { color:var(--tok-t); }
   .docview pre code .tok-m { color:var(--tok-m); }
+  /* The EDITABLE editor's highlight overlay uses the same tok-* classes but was
+     NOT inheriting these colors (they were scoped to .docview pre code only), so
+     editor code rendered monochrome — "no syntax highlighting" (Paul). Color the
+     editor tokens too. */
+  .editor #editorHL .tok-k { color:var(--tok-k); }
+  .editor #editorHL .tok-s { color:var(--tok-s); }
+  .editor #editorHL .tok-c { color:var(--tok-c); font-style:italic; }
+  .editor #editorHL .tok-n { color:var(--tok-n); }
+  .editor #editorHL .tok-t { color:var(--tok-t); }
+  .editor #editorHL .tok-m { color:var(--tok-m); }
   .docview blockquote { margin:10px 0; padding:6px 14px; border-left:3px solid var(--note); background:var(--bg-2); color:var(--fg-dim); border-radius:0 6px 6px 0; line-height:1.6; }
   .docview ol { padding-left:22px; } .docview ol li { line-height:1.7; }
   .docview a { color:var(--note); }
@@ -387,7 +397,7 @@
   .editor .editwrap pre, .editor .editwrap textarea {
     /* left padding reserves the line-number gutter — IDENTICAL on both layers
        so the transparent textarea's caret/selection stays glyph-aligned. */
-    margin:0; padding:14px 16px 14px 54px; box-sizing:border-box; border:0;
+    margin:0; padding:14px 12px 14px 40px; box-sizing:border-box; border:0;
     font-family:var(--mono); font-size:13px; line-height:1.6; tab-size:4; -moz-tab-size:4;
     white-space:pre-wrap; overflow-wrap:break-word; word-break:break-word; }
   .editor #editorHL { position:absolute; inset:0; overflow:hidden; counter-reset:line;
@@ -401,8 +411,8 @@
      This is the by-hand-errors affordance — rustc says `--> main.rs:4:5`;
      now 4 sits in the margin instead of being counted on fingers. */
   .editor #editorHL .cl { display:block; counter-increment:line; }
-  .editor #editorHL .cl::before { content:counter(line); display:inline-block; width:30px;
-    margin-left:-38px; margin-right:8px; text-align:right;
+  .editor #editorHL .cl::before { content:counter(line); display:inline-block; width:24px;
+    margin-left:-32px; margin-right:8px; text-align:right;
     color:var(--fg-dim); opacity:.55; font-size:11px; }
   /* A line the last run's diagnostics flagged (Assist/Dev): its NUMBER turns
      error-red — the visual "error ↔ line" bridge next to the L# jump links.
@@ -430,7 +440,7 @@
   .run:focus-visible,.ghost:focus-visible,.pbtn:focus-visible,.iconbtn:focus-visible,.modesw button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
   /* embedded terminal — a real xterm.js widget */
-  .terminal { margin:0 20px 18px; border:1px solid var(--line); border-radius:var(--radius); background:#0f0c07;
+  .terminal { margin:0 20px 18px; border:1px solid var(--line); border-radius:var(--radius); background:#000000;
     box-shadow:var(--shadow), inset 0 1px 0 var(--edge-hi); display:flex; flex-direction:column; height:240px; overflow:hidden; }
   .terminal .tbar{display:flex;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid var(--line);
     /* FIXED color, not var(--fg-dim): the terminal keeps its dark background in
@@ -449,6 +459,10 @@
   .tfold:hover{color:var(--fg);background:var(--bg-3)}
   .terminal.tcollapsed{height:auto}
   .terminal.tcollapsed .xterm-host{display:none}
+  /* Console scrolls itself — no chaining to the whole app (Paul) — and its width
+     is clamped so a re-fit wraps long compiler lines instead of clipping right. */
+  .terminal .xterm-viewport{overscroll-behavior:contain}
+  .xterm-host{overflow:hidden;max-width:100%}
   /* Native-Run one-time-setup card (Termux allow-external-apps) */
   .tmxsetup{position:relative;margin:0 20px 14px;padding:14px 16px;border:1px solid var(--accent);
     border-radius:var(--radius);background:rgba(247,76,0,.06);box-shadow:var(--shadow),inset 0 1px 0 var(--edge-hi)}
@@ -604,6 +618,9 @@
        "read & edit, then Run" label crammed the reset. Wrap cleanly: file + reset
        on row 1, a full-width segmented mode switcher on row 2, drop the noisy label. */
     .editor .bar { flex-wrap:wrap; padding:8px 10px; row-gap:0; }
+    /* Decorative macOS traffic-light dots — no function; drop them on phones to
+       reclaim the row (Paul). */
+    .editor .bar .dot { display:none; }
     .editor .bar #editstate { display:none; }
     .editor .bar > span[style*="flex:1"] { display:none; }
     .editor .bar #resetbtn { margin-left:auto !important; }
@@ -716,6 +733,15 @@
         <div class="tmxsetup-cmd"><code id="tmxCmd"></code><button class="tmxcopy" id="tmxCopy" type="button">⧉ Copy command</button></div>
       </div>
 
+      <!-- Copyable bridge-error card: when a run can't reach the compiler, show the
+           RAW error from the Termux bridge with a one-tap copy (Paul: "a popup I
+           can copy" — the xterm output is hard to select on a phone). -->
+      <div id="runError" class="tmxsetup" hidden>
+        <button class="tmxsetup-x" id="runErrorX" type="button" aria-label="Dismiss">×</button>
+        <div class="tmxsetup-h">⚠ Run couldn't reach the compiler</div>
+        <div class="tmxsetup-cmd"><code id="runErrorMsg"></code><button class="tmxcopy" id="runErrorCopy" type="button">⧉ Copy error</button></div>
+      </div>
+
       <div class="terminal">
         <div class="tbar"><button class="tfold" id="tfold" type="button" title="Collapse / expand the output" aria-label="Collapse or expand the output">▾</button><span class="throbber" id="throb">⠹</span> <span class="tbar-lbl">rpro · output</span><span style="flex:1"></span><button class="termcopy" id="termcopy" title="Copy the output (e.g. to share an error)">⧉ copy</button></div>
         <div id="xterm" class="xterm-host"></div>
@@ -760,7 +786,7 @@
   <script src="vendor/xterm/addon-fit.js"></script>
   <script>
     // ── Real xterm.js terminal — renders true ANSI, like live rpro output ──
-    const C = { fg:'#e8e0d2', bg:'#0f0c07', green:'#36c46b', red:'#ff5c5c',
+    const C = { fg:'#e6e6e6', bg:'#000000', green:'#36c46b', red:'#ff5c5c',
                 blue:'#5aa9ff', dim:'#9aa7b4', accent:'#ff7a3c' };
     const term = new Terminal({
       convertEol:true, cursorBlink:true, fontSize:12.5, scrollback:1000,
@@ -840,6 +866,12 @@
       el.hidden = false;
     }
     function hideTermuxSetup() { const el = document.getElementById('termuxSetup'); if (el) el.hidden = true; }
+    function showRunError(msg) {
+      const el = document.getElementById('runError'); if (!el) return;
+      const c = document.getElementById('runErrorMsg'); if (c) c.textContent = (msg || 'Unknown error').trim();
+      el.hidden = false;
+    }
+    function hideRunError() { const el = document.getElementById('runError'); if (el) el.hidden = true; }
     function termText() { // the terminal's text (visible + scrollback), for Copy
       try { const b = term.buffer.active, out = [];
         for (let i = 0; i < b.length; i++) { const ln = b.getLine(i); if (ln) out.push(ln.translateToString(true)); }
@@ -931,12 +963,17 @@
       // Surface the #1 setup gotcha with the exact one-time fix.
       if (blob.includes('allow-external-apps')) {
         term.writeln(''); term.writeln(r('Termux needs one more setting') + d(' — see the card above: tap ') + g('⧉ Copy command') + d(', paste it in Termux, then Run again.'));
-        showTermuxSetup();
+        showTermuxSetup(); hideRunError();
         logEvent('app', 'error', 'Termux allow-external-apps not enabled — showed one-time setup card (copy-command).');
+      } else if (res.errmsg) {
+        // A bridge-level error (couldn't reach Termux / permission / etc.) — NOT
+        // normal compiler output. Surface it in a copyable card.
+        hideTermuxSetup(); showRunError(res.errmsg);
+        logEvent('run', 'error', 'termux bridge error: ' + res.errmsg);
       } else {
-        hideTermuxSetup();
+        hideTermuxSetup(); hideRunError();
         logEvent('run', passed ? 'info' : 'error',
-          passed ? 'on-device run OK' : 'on-device run failed (exit ' + res.exit + ')\n' + text + (res.errmsg ? '\n' + res.errmsg : ''));
+          passed ? 'on-device run OK' : 'on-device run failed (exit ' + res.exit + ')\n' + text);
       }
       term.writeln('');
       // Explain output is REFERENCE text (rustc --explain), not a run — no
@@ -2626,6 +2663,8 @@
     document.getElementById('termcopy')?.addEventListener('click', () => copyText(termText()));
     document.getElementById('tmxCopy')?.addEventListener('click', () => copyText(TERMUX_SETUP_CMD));
     document.getElementById('tmxSetupX')?.addEventListener('click', hideTermuxSetup);
+    document.getElementById('runErrorCopy')?.addEventListener('click', () => copyText(document.getElementById('runErrorMsg')?.textContent || ''));
+    document.getElementById('runErrorX')?.addEventListener('click', hideRunError);
 
     // ── phone progressive disclosure: exercise-list accordion + folded terminal ──
     const isPhone = () => window.matchMedia('(max-width:760px)').matches;
@@ -2668,7 +2707,12 @@
     // preference is only changed by an explicit chevron tap.
     function expandTerminal() {
       const t = document.querySelector('.terminal');
-      if (t && t.classList.contains('tcollapsed')) { t.classList.remove('tcollapsed'); syncConsoleChevron(); try { refit(); } catch (_) {} }
+      if (t && t.classList.contains('tcollapsed')) { t.classList.remove('tcollapsed'); syncConsoleChevron(); }
+      // Re-fit now AND after layout settles — on phones the first fit can run
+      // before the single-column width applies, leaving cols too wide so long
+      // compiler lines clip off the right instead of wrapping.
+      try { refit(); } catch (_) {}
+      setTimeout(() => { try { refit(); } catch (_) {} }, 60);
     }
     document.getElementById('hintbtn').onclick = runHint;
     // predict-first: lock a compiles/fails guess (+ optional error code) before Run
