@@ -442,6 +442,22 @@
   .termcopy{background:var(--bg-3);color:var(--fg-dim);border:1px solid var(--line);border-radius:7px;
     padding:4px 10px;font:600 11.5px var(--mono);cursor:pointer}
   .termcopy:hover{color:var(--fg);border-color:var(--accent)}
+  /* Native-Run one-time-setup card (Termux allow-external-apps) */
+  .tmxsetup{position:relative;margin:0 20px 14px;padding:14px 16px;border:1px solid var(--accent);
+    border-radius:var(--radius);background:rgba(247,76,0,.06);box-shadow:var(--shadow),inset 0 1px 0 var(--edge-hi)}
+  .tmxsetup-h{font-weight:700;font-size:14px;color:var(--fg);margin-bottom:5px}
+  .tmxsetup-p{margin:0 0 11px;font-size:13px;line-height:1.5;color:var(--fg-dim)}
+  .tmxsetup-p b{color:var(--fg)}
+  .tmxsetup-cmd{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap}
+  .tmxsetup-cmd code{flex:1 1 200px;min-width:0;overflow:auto;white-space:nowrap;background:var(--bg);color:var(--fg);
+    border:1px solid var(--line);border-radius:8px;padding:9px 11px;font:12px/1.4 var(--mono)}
+  .tmxcopy{flex:0 0 auto;background:linear-gradient(135deg,var(--accent),var(--accent-soft));color:#fff;border:none;
+    border-radius:8px;padding:9px 14px;font-weight:700;font-size:13px;cursor:pointer;
+    box-shadow:0 3px 10px rgba(247,76,0,.3),inset 0 1px 0 rgba(255,255,255,.28);transition:.15s}
+  .tmxcopy:hover{transform:translateY(-1px);box-shadow:0 5px 14px rgba(247,76,0,.45),inset 0 1px 0 rgba(255,255,255,.28)}
+  .tmxsetup-x{position:absolute;top:8px;right:10px;background:none;border:none;color:var(--fg-dim);
+    font-size:20px;line-height:1;cursor:pointer;padding:2px 6px}
+  .tmxsetup-x:hover{color:var(--fg)}
   /* toast (copy confirmation) */
   #toast{position:fixed;left:50%;bottom:54px;transform:translateX(-50%) translateY(8px);z-index:80;
     background:var(--bg-3);color:var(--fg);border:1px solid var(--line);border-radius:9px;padding:8px 16px;
@@ -678,6 +694,16 @@
         <span class="badge" id="statusline" style="margin-left:auto">ready</span>
       </div>
 
+      <!-- Native-Run (Termux) one-time-setup card. Hidden until an on-device run
+           fails for the allow-external-apps reason; gives a copy-ONLY-the-command
+           button (the terminal ⧉ copies the whole blob, which Paul found fiddly). -->
+      <div id="termuxSetup" class="tmxsetup" hidden>
+        <button class="tmxsetup-x" id="tmxSetupX" type="button" aria-label="Dismiss">×</button>
+        <div class="tmxsetup-h">⚙ Native Run needs a one-time Termux setting</div>
+        <p class="tmxsetup-p">Paste this into <b>Termux</b> and press enter, then tap <b>Run</b> again. It's a <b>one-time</b> setup — it persists across reboots and app updates.</p>
+        <div class="tmxsetup-cmd"><code id="tmxCmd"></code><button class="tmxcopy" id="tmxCopy" type="button">⧉ Copy command</button></div>
+      </div>
+
       <div class="terminal">
         <div class="tbar"><span class="throbber" id="throb">⠹</span> <span class="tbar-lbl">rpro · output</span><span style="flex:1"></span><button class="termcopy" id="termcopy" title="Copy the output (e.g. to share an error)">⧉ copy</button></div>
         <div id="xterm" class="xterm-host"></div>
@@ -791,6 +817,17 @@
         document.body.appendChild(ta); ta.focus(); ta.select(); document.execCommand('copy'); ta.remove(); toast('copied ✓'); return; } catch (_) {}
       toast('copy failed');
     }
+    // Native-Run (Termux) one-time setup: enable allow-external-apps. The command
+    // is IDEMPOTENT — it appends the line only if absent, then reloads — so it's
+    // safe to re-run and the setting sticks across reboots AND app updates; you do
+    // it once. Kept as ONE line so "⧉ Copy command" hands over a single paste.
+    const TERMUX_SETUP_CMD = "mkdir -p ~/.termux; grep -qxF 'allow-external-apps=true' ~/.termux/termux.properties 2>/dev/null || echo 'allow-external-apps=true' >> ~/.termux/termux.properties; termux-reload-settings";
+    function showTermuxSetup() {
+      const el = document.getElementById('termuxSetup'); if (!el) return;
+      const c = document.getElementById('tmxCmd'); if (c) c.textContent = TERMUX_SETUP_CMD;
+      el.hidden = false;
+    }
+    function hideTermuxSetup() { const el = document.getElementById('termuxSetup'); if (el) el.hidden = true; }
     function termText() { // the terminal's text (visible + scrollback), for Copy
       try { const b = term.buffer.active, out = [];
         for (let i = 0; i < b.length; i++) { const ln = b.getLine(i); if (ln) out.push(ln.translateToString(true)); }
@@ -881,11 +918,11 @@
       const blob = (text + ' ' + (res.errmsg || '')).toLowerCase();
       // Surface the #1 setup gotcha with the exact one-time fix.
       if (blob.includes('allow-external-apps')) {
-        term.writeln(''); term.writeln(r('Termux needs one more setting') + d(' — run these in Termux, then press Run again:'));
-        term.writeln('  ' + g('echo "allow-external-apps=true" >> ~/.termux/termux.properties'));
-        term.writeln('  ' + g('termux-reload-settings'));
-        logEvent('app', 'error', 'Termux allow-external-apps not enabled — needs the two setup lines + termux-reload-settings.');
+        term.writeln(''); term.writeln(r('Termux needs one more setting') + d(' — see the card above: tap ') + g('⧉ Copy command') + d(', paste it in Termux, then Run again.'));
+        showTermuxSetup();
+        logEvent('app', 'error', 'Termux allow-external-apps not enabled — showed one-time setup card (copy-command).');
       } else {
+        hideTermuxSetup();
         logEvent('run', passed ? 'info' : 'error',
           passed ? 'on-device run OK' : 'on-device run failed (exit ' + res.exit + ')\n' + text + (res.errmsg ? '\n' + res.errmsg : ''));
       }
@@ -2566,6 +2603,8 @@
     });
     document.getElementById('resetbtn').onclick = () => { editorEl().value = curOriginal; markEdited(); editorEl().focus(); };
     document.getElementById('termcopy')?.addEventListener('click', () => copyText(termText()));
+    document.getElementById('tmxCopy')?.addEventListener('click', () => copyText(TERMUX_SETUP_CMD));
+    document.getElementById('tmxSetupX')?.addEventListener('click', hideTermuxSetup);
 
     // ── phone progressive disclosure: exercise-list accordion + folded terminal ──
     const isPhone = () => window.matchMedia('(max-width:760px)').matches;
