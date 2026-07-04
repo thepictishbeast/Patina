@@ -1207,7 +1207,17 @@
             try {
               const r = JSON.parse(AndroidSeam.selectExercise(el.dataset.id, false));
               if (r && r.ok) { statusEl().textContent = 'switched'; await loadState(false); }
-              else if (r && r.error === 'done') { statusEl().textContent = '“' + el.dataset.id + '” is done — press ↺ Reset to redo it'; }
+              else if (r && r.error === 'done') {
+                // Re-open a completed exercise to REDO it (Paul: reset-to-redo was
+                // dead). Per-exercise only; it re-counts as done once you pass again.
+                if (confirm('“' + el.dataset.id + '” is completed. Re-open it to practise again?')) {
+                  try {
+                    const rr = JSON.parse(AndroidSeam.resetExercise(el.dataset.id));
+                    if (rr && rr.ok) { statusEl().textContent = 'reopened — redo it'; await loadState(false); }
+                    else { statusEl().textContent = 'could not reopen'; }
+                  } catch (_) { statusEl().textContent = 'could not reopen'; }
+                }
+              }
               else { statusEl().textContent = 'could not switch exercise'; }
             } catch (_) { statusEl().textContent = 'could not switch'; }
             return;
