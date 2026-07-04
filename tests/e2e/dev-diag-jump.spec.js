@@ -37,24 +37,21 @@ test.describe('Assist/Dev diagnostic jump-to-line', () => {
     expect(sel.selected.length, 'the offending line is selected (caret moved there)').toBeGreaterThan(0);
   });
 
-  // DEFERRED: red gutter error-marks are being reimplemented as CodeMirror line
-  // decorations (the old #editorHL overlay is gone). Diagnostics still show in the
-  // console + the jump-to-line works; the gutter tint is a follow-up.
-  test.skip('the gutter marks the diagnostic line red — and an edit clears it', async ({ page, request }) => {
+  test('the gutter marks the diagnostic line red — and an edit clears it', async ({ page, request }) => {
     await runInAssist(page, request);
     const lineNo = parseInt(await page.locator('.diag .jumpline').first().getAttribute('data-line'), 10);
-    // The .cl block at that 1-based index carries the err mark (red number).
-    const errIndexes = await page.evaluate(() => {
-      const cls = [...document.querySelectorAll('#editorHL .cl')];
-      return cls.flatMap((el, i) => el.classList.contains('err') ? [i + 1] : []);
-    });
-    expect(errIndexes, 'the flagged line number is marked in the gutter').toContain(lineNo);
+    // Jump so the flagged line is scrolled into view (CM6 virtualises the gutter),
+    // then its gutter line-number element carries the .cm-errline class.
+    await page.locator('.diag .jumpline').first().click();
+    const marked = await page.evaluate((n) => {
+      const el = [...document.querySelectorAll('.cm-lineNumbers .cm-gutterElement')]
+        .find((e) => e.textContent.trim() === String(n));
+      return el ? el.classList.contains('cm-errline') : null;
+    }, lineNo);
+    expect(marked, 'the flagged line number is marked in the gutter').toBe(true);
     // Editing the buffer invalidates the marks (they describe the OLD code).
-    await page.locator('#editorCode').evaluate((el) => {
-      el.value = '// edited\n' + el.value;
-      el.dispatchEvent(new Event('input', { bubbles: true }));
-    });
-    await expect(page.locator('#editorHL .cl.err'), 'edit clears stale marks').toHaveCount(0);
+    await page.evaluate(() => window.__cm.set('// edited\n' + window.__cm.get()));
+    await expect(page.locator('.cm-lineNumbers .cm-errline'), 'edit clears stale marks').toHaveCount(0);
   });
 
   test('Learn never marks the gutter (by-hand stays by-hand)', async ({ page, request }) => {
@@ -64,7 +61,7 @@ test.describe('Assist/Dev diagnostic jump-to-line', () => {
     await page.locator('.pbtn[data-pred="fails"]').click();
     await page.locator('#runbtn').click();
     await expect(page.locator('#statusline')).toContainText(/failed|passed/, { timeout: 30_000 });
-    await expect(page.locator('#editorHL .cl.err')).toHaveCount(0);
+    await expect(page.locator('.cm-lineNumbers .cm-errline')).toHaveCount(0);
   });
 
   test('the diagnostic row is not itself an interactive control (no nested buttons)', async ({ page, request }) => {

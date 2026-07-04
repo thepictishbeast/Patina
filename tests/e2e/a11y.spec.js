@@ -34,7 +34,14 @@ async function blockingViolations(page, label) {
  *  composites a mid-fade opacity into its contrast math) + the requested theme. */
 async function prep(page, theme) {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.addInitScript((t) => { try { localStorage.setItem('ts-theme', t); } catch (e) {} }, theme);
+  await page.addInitScript((t) => {
+    try {
+      localStorage.setItem('ts-theme', t);
+      // Audit the DEFAULT (Learn) tier deterministically — a prior spec may have
+      // left ts-mode=assist/dev (which dims the predict bar), so pin it here.
+      localStorage.setItem('ts-mode', 'learn');
+    } catch (e) {}
+  }, theme);
 }
 
 for (const theme of ['dark', 'light']) {

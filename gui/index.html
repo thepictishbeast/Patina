@@ -1367,6 +1367,7 @@
     //    that drifted out of alignment). CM6 does highlighting, indent, and
     //    bracket-close natively; legacy code reaches it through the editorEl() shim.
     let cmView = null;
+    let setEditorErrorLines = () => {}; // no-op until initCM wires the gutter marks
     const cmModeComp = window.CM ? new CM.Compartment() : null;
     function cmDevExtensions() {
       return (mode === 'dev' && window.CM)
@@ -1394,12 +1395,37 @@
         '.cm-activeLine, .cm-activeLineGutter': { background: 'transparent' },
         '&.cm-focused .cm-cursor': { borderLeftColor: 'var(--accent)' },
         '.cm-selectionBackground, &.cm-focused .cm-selectionBackground': { background: 'var(--accent-soft)' },
+        '.cm-lineNumbers .cm-gutterElement.cm-errline': { color: 'var(--error)', fontWeight: '700' },
       });
+      // Gutter error-marks: a StateField of gutter markers for the lines the last
+      // run's diagnostics flagged (Assist/Dev). Cleared automatically on any edit
+      // (a changed buffer makes the marks stale) — reimplements the old #editorHL
+      // red gutter numbers as native CM6 gutter decorations.
+      const cmErr = CM.StateEffect.define();
+      const errMarker = new (class extends CM.GutterMarker { get elementClass() { return 'cm-errline'; } })();
+      const errField = CM.StateField.define({
+        create: () => CM.RangeSet.empty,
+        update(set, tr) {
+          set = set.map(tr.changes);
+          let hit = false;
+          for (const e of tr.effects) if (e.is(cmErr)) {
+            hit = true;
+            const doc = tr.state.doc, b = new CM.RangeSetBuilder();
+            [...new Set(e.value)].filter(n => n >= 1 && n <= doc.lines).sort((a, z) => a - z)
+              .forEach(n => { const ln = doc.line(n); b.add(ln.from, ln.from, errMarker); });
+            set = b.finish();
+          }
+          if (!hit && tr.docChanged) set = CM.RangeSet.empty; // an edit invalidates the marks
+          return set;
+        },
+        provide: f => CM.gutterLineClass.from(f),
+      });
+      setEditorErrorLines = (marks) => { if (cmView) cmView.dispatch({ effects: cmErr.of([...(marks || [])]) }); };
       cmView = new CM.EditorView({
         doc: '// loading the current exercise…',
         extensions: [
           CM.lineNumbers(), CM.history(), CM.drawSelection(), CM.rust(),
-          CM.syntaxHighlighting(hl), theme, CM.EditorView.lineWrapping,
+          CM.syntaxHighlighting(hl), theme, CM.EditorView.lineWrapping, errField,
           // accessible name for the contenteditable (axe aria-input-field-name).
           CM.EditorView.contentAttributes.of({ 'aria-label': 'Source code editor for the current exercise' }),
           // Ctrl/Cmd+Enter runs — every tier (routes through runOp, so Learn's
@@ -1411,6 +1437,11 @@
         ],
         parent: host,
       });
+      // The scroll container is keyboard-scrollable but CM6 leaves it tabindex=-1;
+      // give it a tab stop + name so axe's scrollable-region-focusable passes when
+      // the code overflows (the .cm-content itself stays the primary edit target).
+      cmView.scrollDOM.setAttribute('tabindex', '0');
+      cmView.scrollDOM.setAttribute('aria-label', 'Code editor scroll region');
       window.__cm = {
         get: () => cmView.state.doc.toString(),
         set: (v) => cmView.dispatch({ changes: { from: 0, to: cmView.state.doc.length, insert: String(v) } }),
@@ -1791,7 +1822,7 @@
       if (mode === 'learn') {
         box.innerHTML = '<div class="diag note"><span class="lvl">[i]</span>'
           + '<span class="msg">read it by hand<small>the compiler output is in the terminal above — find the error code yourself (switch to Assist to have it parsed)</small></span></div>';
-        syncHL(); // repaint with the (empty) marks — clears any Assist leftovers
+        setEditorErrorLines([]); // Learn withholds gutter marks (clear any leftovers)
         return;
       }
       let rows = [];
@@ -1825,7 +1856,7 @@
         else if (!rows.length) rows = ['<div class="diag note"><span class="lvl">[i]</span><span class="msg">see terminal<small>read the raw output by hand</small></span></div>'];
       }
       box.innerHTML = rows.join('');
-      syncHL(); // repaint the gutter with this run's marks
+      setEditorErrorLines(diagMarks); // paint the CM6 gutter marks for this run
     }
 
     // Fetch the real list + current exercise and render them; if the server is
