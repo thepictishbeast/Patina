@@ -46,8 +46,11 @@ test.describe('lesson → phase cheatsheet cross-link', () => {
     await page.goto('/');
     await page.locator('.tab[data-view="learn"]').click();
     await page.locator('.hubcard[data-view="lessons"]').click();
-    await expect(page.locator('.lessonjump').first()).toBeVisible();
-    await page.locator('.lessonjump').first().click();
+    // Target a PHASE lesson explicitly — the first lesson is now the hello-world
+    // intro (no phase cheatsheet), so ".first()" would have no cheat link.
+    const phaseLesson = page.locator('.lessonjump[data-id="01-bindings-and-immutability"]');
+    await expect(phaseLesson).toBeVisible();
+    await phaseLesson.click();
     const cheat = page.locator('.cheatlink');
     await expect(cheat).toBeVisible();
     await expect(cheat).toHaveAttribute('data-cheat', /^(phase\d|phase6-generics|tooling)$/);

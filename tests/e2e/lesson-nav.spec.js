@@ -91,7 +91,8 @@ test.describe('Books woven into the path (chapter deep-links)', () => {
   test('a lesson carries a book cross-link with a real chapter page', async ({ page }) => {
     await page.goto('/');
     await page.evaluate(() => showView('lessons'));
-    await page.locator('.lessonjump').first().click();
+    // A PHASE lesson (the first lesson is now the hello-world intro — no book link).
+    await page.locator('.lessonjump[data-id="01-bindings-and-immutability"]').click();
     const book = page.locator('.lessonbook .booklink');
     await expect(book).toBeVisible();
     await expect(book).toHaveAttribute('data-file', /\.pdf$/);

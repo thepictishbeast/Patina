@@ -72,7 +72,9 @@
     --done:#1a7f37; --current:#0e7490; --note:#0a66c2;
     --error:#c62828; --warn:#9a6700; --skipped:#9a6700;
     --accent-soft:#c44000; /* .excount text + the Run gradient's far stop: 4.99:1 on white */
-    --tok-k:#b7410e; --tok-s:#2e7d32; --tok-c:#6b7884; --tok-n:#6f42c1; --tok-t:#0a66c2; --tok-m:#9a6700;
+    /* darkened for AA on the light code-block bg (#f1ece2): #2e7d32/#9a6700/#6b7884
+       were ~4.1–4.4:1 there (hello-world's println!+strings tripped the axe gate). */
+    --tok-k:#b7410e; --tok-s:#216b26; --tok-c:#4f5b68; --tok-n:#6f42c1; --tok-t:#0a66c2; --tok-m:#855800;
   }
   * { box-sizing: border-box; }
   body {
@@ -195,6 +197,14 @@
   .docview .lessonnav { display:flex; flex-wrap:wrap; gap:10px 18px; margin:18px 0 8px; padding-top:14px; border-top:1px solid var(--line); }
   .docview .lessonnav a { color:var(--note); font-weight:600; text-decoration:none; }
   .docview .lessonnav a:hover { text-decoration:underline; }
+  .docview .lessonprevnext { justify-content:space-between; align-items:center; }
+  .docview .lessonprevnext .lessonnext { margin-left:auto; text-align:right; }
+  .docview .lnspacer { flex:1; }
+  /* "← Learn" back button on every Learn sub-view (lesson/book/glossary/…) */
+  .docview .learnback { display:inline-flex; align-items:center; gap:5px; margin:0 0 14px;
+    background:var(--bg-2); color:var(--fg-dim); border:1px solid var(--line); border-radius:8px;
+    padding:6px 12px; font-size:13px; font-weight:600; cursor:pointer; }
+  .docview .learnback:hover { color:var(--fg); border-color:var(--accent); }
   /* Lessons tab: the "Practice this lesson" launcher card */
   .docview .lessonpractice { margin:20px 0 6px; padding:12px 16px; border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:8px; }
   .docview .lessonpractice h3 { font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--fg-dim); margin:0 0 8px; }
@@ -1834,6 +1844,17 @@
       } else if (view === 'library') {
         await renderLibrary(chapter || null, anchor || null);
       }
+      // A "← Learn" back button on every Learn SUB-view (not the hub) so you can
+      // always return to the hub in-app, without Android's back button (Paul).
+      if (LEARN_VIEWS.includes(view) && view !== 'learn') {
+        const dv = document.getElementById('docview');
+        if (dv && !dv.querySelector('.learnback')) {
+          const btn = document.createElement('button');
+          btn.className = 'learnback'; btn.type = 'button'; btn.textContent = '← Learn';
+          btn.onclick = () => showView('learn');
+          dv.insertBefore(btn, dv.firstChild);
+        }
+      }
     }
 
     // Render a quiz with PER-QUESTION reveals: pair each `**Q<n>` with its
@@ -2203,13 +2224,16 @@
     function lessonStagesHtml(items, read) {
       let html = '', cur = null;
       items.forEach(l => {
-        const ph = lessonToQuiz(parseInt(l.id, 10));
+        // Pre-phase-1 basics (hello-world = lesson 0) have no quiz phase → group
+        // them under "Getting started" so every <li> still sits inside a <ul>
+        // (a stray <li> outside a list is an a11y violation the axe gate caught).
+        const ph = lessonToQuiz(parseInt(l.id, 10)) || 'basics';
         if (ph !== cur) {
           if (cur !== null) html += '</ul></section>';
           cur = ph;
-          const st = items.filter(x => lessonToQuiz(parseInt(x.id, 10)) === ph);
+          const st = items.filter(x => (lessonToQuiz(parseInt(x.id, 10)) || 'basics') === ph);
           const rd = st.filter(x => read.has(x.id)).length;
-          html += `<section class="lstage"><h2 class="lessonstage">${esc(PHASE_NAMES[ph] || ph)}`
+          html += `<section class="lstage"><h2 class="lessonstage">${esc(ph === 'basics' ? 'Getting started' : (PHASE_NAMES[ph] || ph))}`
             + `<span class="stagecount${rd === st.length ? ' done' : ''}">${rd}/${st.length}${rd === st.length ? ' ✓' : ''}</span></h2><ul class="booktoc">`;
         }
         const isRead = read.has(l.id);
@@ -2309,6 +2333,21 @@
               + '</ul></div>';
           }
         } catch (_) {}
+        // Reliable Prev/Next from the actual lesson ORDER (Paul: "no way to go to
+        // the next lesson"). The old footer-parsed nav was fragile — only a "next"
+        // link, and it broke on any format drift. Compute both ends from the list.
+        let prevNextHtml = '';
+        try {
+          const ll = ((await fetch('api/lessons').then(r => r.json())).lessons) || [];
+          const idx = ll.findIndex(x => x.id === id);
+          if (idx !== -1) {
+            const prev = ll[idx - 1], next = ll[idx + 1];
+            prevNextHtml = '<div class="lessonnav lessonprevnext">'
+              + (prev ? `<a href="#" class="lessonnavto" data-id="${esc(prev.id)}">← ${esc(prev.title)}</a>` : '<span class="lnspacer"></span>')
+              + (next ? `<a href="#" class="lessonnavto lessonnext" data-id="${esc(next.id)}">${esc(next.title)} →</a>` : '')
+              + '</div>';
+          }
+        } catch (_) {}
         // Self-check: on the LAST lesson of a phase, link to that phase's quiz
         // (the per-phase quizzes test the whole phase, so prompt at its end).
         const n = parseInt(id, 10);
@@ -2334,10 +2373,13 @@
         const bookHtml = quizId
           ? `<p class="lessonbook">📖 Read deeper: <a href="#" class="booklink" data-file="${esc(bk.file)}" data-page="${esc(bk.page)}">${esc(bkLabel)} (offline) →</a></p>`
           : '';
-        d.innerHTML = back + '<div class="bookbody lessonbody">' + mdToHtml(md) + '</div>' + cheatHtml + bookHtml + practiceHtml + quizHtml + navHtml;
+        d.innerHTML = back + prevNextHtml + '<div class="bookbody lessonbody">' + mdToHtml(md) + '</div>'
+          + cheatHtml + bookHtml + practiceHtml + quizHtml + prevNextHtml;
         markLessonRead(id); // reading it = progress (✓ in the list + Journey counts)
       }
       d.querySelectorAll('.lessonback').forEach(a => a.onclick = e => { e.preventDefault(); renderLessons(null); });
+      d.querySelectorAll('.lessonnavto').forEach(a =>
+        a.onclick = e => { e.preventDefault(); renderLessons(a.dataset.id); });
       d.querySelectorAll('.quizlink').forEach(a =>
         a.onclick = e => { e.preventDefault(); showView('quizzes', a.dataset.quiz); });
       d.querySelectorAll('.cheatlink').forEach(a =>
