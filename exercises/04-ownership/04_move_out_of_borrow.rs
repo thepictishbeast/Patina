@@ -1,5 +1,8 @@
-// `first` only borrows the vector, but tries to hand back something it doesn't
-// own. Run it, read the error, and return a value you're allowed to give away.
+// Inspired by Rustlings (MIT/Apache-2.0) — github.com/rust-lang/rustlings
+//
+// `first` only borrows the vector. Make it compile so it returns the first word.
+// Read the compiler error.
+
 fn first(words: &Vec<String>) -> String {
     words[0]
 }
