@@ -76,7 +76,7 @@ count · **split** = replace with the listed smaller lessons.
 | `21-packages-crates-modules` | 1507 | split | 4 | 1 | → **Packages and Crates**<br>→ **Modules and the Module Tree**<br>→ **Splitting Modules into Files** |
 | `22-paths-and-visibility` | 1485 | split | 4 | 0 | → **Paths: Naming Items Across Modules**<br>→ **Privacy and pub**<br>→ **pub on Structs and Enums** |
 | `23-the-use-keyword` | 1210 | trim | 5 | 3 | — |
-| `24-generics` | 2270 | split | 6 | 1 | → **Generic Functions: the <T> Placeholder**<br>→ **Generic Structs, Enums, and Methods** |
+| ✅ `24-generics` → `24-generic-functions` + `24b-generic-types` (done `a1f8907`; E0369 wall = the destination, fwd-ref resolved) | 2270 | split | 6 | 1 | → **Generic Functions: the <T> Placeholder**<br>→ **Generic Structs, Enums, and Methods** |
 | `25-traits` | 1888 | split | 5 | 0 | → **Traits: Declare and Implement**<br>→ **Trait Bounds: Requiring Behavior of a Generic T** |
 | `26-lifetimes` | 2344 | split | 6 | 2 | → **Lifetime Annotations: the longest Function**<br>→ **Lifetime Elision: the Annotations You Never Write**<br>→ **Lifetimes in Structs** |
 | `27-closures` | 1992 | split | 5 | 3 | → **Closures: Unnamed Inline Functions**<br>→ **Closure Capture and move** |
