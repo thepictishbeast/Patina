@@ -9,11 +9,6 @@ faraway line quietly changes it to `6`, you get bugs that are miserable to track
 down. Rust closes that door by default, so a name you didn't mark as changeable
 *really* won't change.
 
-> **How the three sources frame it (one line):** the official **BOOK** *proves*
-> it by making you run code that fails; **CR** stages it as a commented-out line
-> you uncomment to watch it break; **BLOG** just states the rule ("for security").
-> We follow BOOK — you'll see the real failure.
-
 ## 2. The idea
 
 A **binding** is the act of attaching a name to a value:
@@ -80,11 +75,10 @@ It doesn't — both compile to the exact same program and print the identical li
 The crew size is: 7
 ```
 
-Inference isn't a different, "looser" mode — Rust still pins down one fixed kind.
-Writing `: i32` just makes that kind visible. You'll lean on inference most of the
-time and reach for the annotation when you want to be explicit (or when Rust asks
-you to). *(That was your first small write-rep — part 5 is where you write the
-most.)*
+Inference isn't a looser mode — Rust still pins down one fixed kind, and `: i32`
+just makes it visible. The full story of the kinds themselves is the Book's §3.2
+"Data Types" (and Lesson 5). *(That was your first small write-rep — part 5 is
+where you write the most.)*
 
 ## 4. Common pitfalls / real compiler errors
 
@@ -133,27 +127,10 @@ Read it slowly — the compiler is *teaching* here:
 > A compiler error is not a scolding — it's the program telling you it isn't yet
 > safely doing what you asked.
 
-**The fix Rust suggested:** add `mut` ("mutable") to the binding. That's how you
-explicitly ask for a name you *can* change.
-
-```rust
-fn main() {
-    let mut x = 5;
-    println!("The value of x is: {x}");
-    x = 6;
-    println!("The value of x is: {x}");
-}
-```
-
-**Before you scroll — what does this print?**
-
-```
-The value of x is: 5
-The value of x is: 6
-```
-
-So: names are locked by default; `mut` is the explicit opt-out. We'll dig into
-`mut` properly in Lesson 2 — for now, just know it's the off-switch for the lock.
+**The fix Rust suggested** — that `help: consider making this binding mutable:
+let mut x = 5` line — is the subject of the *next* lesson. For now, take away the
+rule: names are locked by default, and the compiler names both the lock (`E0384`)
+and the key (`mut`).
 
 ## 5. Predict-then-run practice (your turn — write this yourself)
 
@@ -173,10 +150,8 @@ paper:
 - If not — what **error code** will appear, and what exact one-word change will
   the compiler suggest under `help:`?
 
-Then run it and check your prediction against the real output.
-
-3. Now apply the compiler's suggestion. Predict the **two lines** it will print,
-   then run it to confirm.
+Then run it and check your prediction against the real output. *(Applying the
+compiler's suggested fix is Lesson 2's opening move — save it.)*
 
 *(You write every line here — I won't. The predictions above are your answer
 key; the code is yours.)*
