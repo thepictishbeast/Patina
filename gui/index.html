@@ -227,6 +227,16 @@
     padding:11px 13px; margin-top:12px; font-family:var(--mono); font-size:12.6px; line-height:1.5;
     white-space:pre-wrap; word-break:break-word; min-height:44px; max-height:34vh; overflow:auto; }
   .docview .sbxout.err { color:#ffd9d0; }
+  /* Runnable code examples in lessons/book: a ▷ Run under a whole-program block. */
+  .docview .coderun-bar { margin:-8px 0 0; }
+  .docview .coderun-btn { background:var(--bg-2); color:var(--fg-dim); border:1px solid var(--line);
+    border-radius:0 0 8px 8px; padding:4px 13px; font-size:12px; font-weight:600; cursor:pointer; }
+  .docview .coderun-btn:hover:not(:disabled) { color:var(--fg); border-color:var(--accent); }
+  .docview .coderun-btn:disabled { opacity:.55; cursor:default; }
+  .docview .coderun-out { background:#0a0a0a; color:#e8e8e8; border:1px solid var(--line); border-radius:8px;
+    padding:9px 12px; margin:9px 0 14px; font-family:var(--mono); font-size:12px; line-height:1.5;
+    white-space:pre-wrap; word-break:break-word; max-height:30vh; overflow:auto; }
+  .docview .coderun-out.err { color:#ffd9d0; }
   /* Lessons tab: the "Practice this lesson" launcher card */
   .docview .lessonpractice { margin:20px 0 6px; padding:12px 16px; border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:8px; }
   .docview .lessonpractice h3 { font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--fg-dim); margin:0 0 8px; }
@@ -1235,12 +1245,67 @@
       }
     }
 
+    // ── Runnable code examples in lessons/book ──────────────────────────────────
+    // Generic "compile+run this code, call back with {passed,text,note}" — the SAME
+    // offline path as the Sandbox (web → /api/sandbox; mobile → Termux op 'sandbox',
+    // free-play so it never touches progress/hints). Used to make whole-program
+    // examples runnable in place. Does NOT touch runSandbox.
+    function runCode(code, onResult) {
+      if (window.AndroidSeam && AndroidSeam.runViaTermux) {
+        let ok = false; try { ok = AndroidSeam.termuxInstalled(); } catch (_) {}
+        if (!ok) { onResult({ passed: false, text: '', note: 'Native Run needs Termux with Rust — see the Practice tab’s one-time setup.' }); return; }
+        const cbId = 'run-' + Math.random().toString(36).slice(2);
+        _runCbs.set(cbId, onResult);
+        try { AndroidSeam.runViaTermux(code, cbId, 'sandbox'); }
+        catch (_) { _runCbs.delete(cbId); onResult({ passed: false, text: '', note: 'Could not reach Termux.' }); }
+        return;
+      }
+      fetch('api/sandbox', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code }) })
+        .then(r => r.ok ? r.json() : Promise.reject('HTTP ' + r.status))
+        .then(r => onResult({ passed: r.passed, text: (r.raw_stdout || '') + '\n' + (r.raw_stderr || ''), note: r.status === null ? 'toolchain error' : '' }))
+        .catch(_ => onResult({ passed: false, text: '', note: 'Could not reach the local compiler (offline server needed).' }));
+    }
+
+    // Make WHOLE-PROGRAM code examples (those with a `fn main`) runnable in place:
+    // a ▷ Run button under the block runs it offline and shows the output inline.
+    // Partial snippets are skipped (they can't compile standalone). This is READING
+    // support — the exercises stay predict-then-run gated elsewhere.
+    function wireRunnableCode(root) {
+      if (!root) return;
+      root.querySelectorAll('pre').forEach(pre => {
+        if (pre._runWired) return;
+        const codeEl = pre.querySelector('code') || pre;
+        const code = codeEl.textContent || '';
+        if (!/\bfn\s+main\s*\(/.test(code)) return; // only complete programs
+        pre._runWired = true;
+        const bar = document.createElement('div'); bar.className = 'coderun-bar';
+        const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'coderun-btn';
+        btn.textContent = '▷ Run'; btn.setAttribute('aria-label', 'Run this example');
+        bar.appendChild(btn);
+        const out = document.createElement('pre'); out.className = 'coderun-out'; out.hidden = true; out.setAttribute('aria-live', 'polite'); out.setAttribute('tabindex', '0');
+        pre.insertAdjacentElement('afterend', out);
+        pre.insertAdjacentElement('afterend', bar); // order: pre, bar, out
+        btn.onclick = () => {
+          btn.disabled = true; btn.textContent = 'running…';
+          out.hidden = false; out.classList.remove('err'); out.textContent = 'compiling + running…';
+          runCode(code, r => {
+            btn.disabled = false; btn.textContent = '▷ Run';
+            const clean = (r.text || '').replace(/\x1b\[[0-9;]*m/g, '').trim();
+            out.classList.toggle('err', !r.passed);
+            const body = (r.note ? r.note + (clean ? '\n\n' + clean : '') : clean);
+            out.textContent = body || '(no output)';
+          });
+        };
+      });
+    }
+
     // ── Native on-device Run result (from the Android Termux bridge) ──
     // MainActivity.runViaTermux() compiles+runs the code with the phone's real
     // rustc (via an installed Termux) and calls this back asynchronously.
     let termuxPending = null;
     let termuxOp = 'run'; // which op fired the pending Termux call (run/check/test/explain)
     let sbxPending = null; // separate pending id for the Sandbox (free-play) path
+    const _runCbs = new Map(); // cbId -> onResult, for runnable code examples (free-play)
     window.__termuxResult = async function (cbId, res) {
       // Sandbox results are free-play: render to the Sandbox console and STOP —
       // no exercise verdict, no tutor, no recordRun (progress stays untouched).
@@ -1249,6 +1314,13 @@
         const passed = res.exit === 0;
         const text = [(res.stdout || ''), (res.stderr || ''), (res.errmsg || '')].join('\n');
         sbxRender(text, passed, res.errmsg ? 'error' : undefined); // else: compile/runtime/ran
+        return;
+      }
+      // A runnable code example (lesson/book) — route to its callback and STOP,
+      // same free-play rules as the Sandbox (never touches progress/hints).
+      if (_runCbs.has(cbId)) {
+        const cb = _runCbs.get(cbId); _runCbs.delete(cbId); res = res || {};
+        cb({ passed: res.exit === 0, text: [(res.stdout || ''), (res.stderr || ''), (res.errmsg || '')].join('\n'), note: res.errmsg ? 'bridge error' : '' });
         return;
       }
       if (cbId !== termuxPending) return; // ignore stale/duplicate
@@ -2671,6 +2743,7 @@
         body.innerHTML = md ? '<div class="bookbody lessonbody">' + mdToHtml(md) + '</div>'
                             : '<p style="color:var(--fg-dim)">Lesson not found.</p>';
         glossaryLinkify(body.querySelector('.lessonbody'), await glossaryTerms());
+        wireRunnableCode(body.querySelector('.lessonbody'));
         body.scrollTop = 0;
       } catch (_) { body.innerHTML = '<p style="color:var(--fg-dim)">Could not load the lesson (offline?).</p>'; }
     }
@@ -2917,6 +2990,7 @@
         d.innerHTML = back + prevNextHtml + '<div class="bookbody lessonbody">' + mdToHtml(md) + '</div>'
           + cheatHtml + bookHtml + practiceHtml + quizHtml + prevNextHtml;
         glossaryLinkify(d.querySelector('.lessonbody'), await glossaryTerms());
+        wireRunnableCode(d.querySelector('.lessonbody'));
         markLessonRead(id); // reading it = progress (✓ in the list + Journey counts)
       }
       // Route "back to list" through showView (not renderLessons directly) so the
@@ -3081,6 +3155,7 @@
         // reveals the plain-language definition. Skips code, so examples are
         // untouched. (Same first-occurrence-per-term linkifier as the lessons.)
         glossaryLinkify(d.querySelector('.bookbody'), await glossaryTerms());
+        wireRunnableCode(d.querySelector('.bookbody'));
       }
       wire();
       // Scroll priority: a book_ref anchor (heading id) wins; else a search term
