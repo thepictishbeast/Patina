@@ -1,0 +1,17 @@
+id = "collections/03b_tuple_field"
+title = "Tuple fields are numbered from 0 — and bounded by the arity"
+difficulty = "beginner"
+estimated_minutes = 5
+concept = "tuple-field-access"
+expected_error_code = "E0609"
+solution_outline = """
+Tuple fields are 0-indexed: a three-element tuple has `.0`, `.1`, `.2`
+— there is no `.3`. The error even prints "available fields are: 0, 1,
+2". To reach the LAST element (30), use `.2`. (Off-by-one: the highest
+index is one less than the count.)
+"""
+
+[[book_refs]]
+chapter = "ch03-02-data-types"
+anchor = "the-tuple-type"
+why = "Tuples group a fixed set of values; you reach each by a period-index starting at 0, so the valid indices are 0..arity."
