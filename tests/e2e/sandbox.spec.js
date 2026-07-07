@@ -36,4 +36,33 @@ test.describe('Sandbox: free-play scratchpad', () => {
     await page.locator('.tab[data-view="practice"]').click();
     await expect(page.locator('#exTitle')).toHaveText(progressBefore);
   });
+
+  test('multiple files: create, switch keeps them independent, run the active, delete', async ({ page }) => {
+    page.on('dialog', (d) => (d.type() === 'prompt' ? d.accept('demo') : d.accept()));
+    await page.goto('/');
+    await page.waitForSelector('#exTitle');
+    await page.evaluate(() => { try { localStorage.removeItem('ts-sandbox-files'); localStorage.removeItem('ts-sandbox-code'); } catch (_) {} });
+    await page.evaluate(() => showView('sandbox'));
+    await page.waitForSelector('#sbxhost .cm-content');
+    await expect(page.locator('#sbxfiles .sbxfile-name')).toHaveText(['scratch']);
+
+    // + new → "demo", becomes the active file.
+    await page.locator('#sbxfiles .sbxfile-new').click();
+    await expect(page.locator('#sbxfiles .sbxfile.active .sbxfile-name')).toHaveText('demo');
+
+    // Put distinct code in demo; switching to scratch shows scratch's own code.
+    await page.evaluate(() => window.sbxView.dispatch({ changes: { from: 0, to: window.sbxView.state.doc.length, insert: 'fn main(){ println!("SBX-DEMO"); }' } }));
+    await page.locator('#sbxfiles .sbxfile-name', { hasText: 'scratch' }).click();
+    expect(await page.evaluate(() => window.sbxView.state.doc.toString()), 'files are independent').not.toContain('SBX-DEMO');
+
+    // Back to demo → its code persisted; run it.
+    await page.locator('#sbxfiles .sbxfile-name', { hasText: 'demo' }).click();
+    expect(await page.evaluate(() => window.sbxView.state.doc.toString())).toContain('SBX-DEMO');
+    await page.locator('#sbxrun').click();
+    await expect(page.locator('#sbxout')).toContainText('SBX-DEMO', { timeout: 30_000 });
+
+    // Delete the active file → back to a single file.
+    await page.locator('#sbxfiles .sbxfile.active .sbxfile-x').click();
+    await expect(page.locator('#sbxfiles .sbxfile-name')).toHaveText(['scratch']);
+  });
 });

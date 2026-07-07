@@ -237,6 +237,16 @@
     padding:9px 12px; margin:9px 0 14px; font-family:var(--mono); font-size:12px; line-height:1.5;
     white-space:pre-wrap; word-break:break-word; max-height:30vh; overflow:auto; }
   .docview .coderun-out.err { color:#ffd9d0; }
+  /* Sandbox files bar — several independent named scratch buffers. */
+  .docview .sbxfiles { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:2px 0 10px; }
+  .docview .sbxfile { display:inline-flex; align-items:center; border:1px solid var(--line); border-radius:7px; overflow:hidden; }
+  .docview .sbxfile.active { border-color:var(--accent); }
+  .docview .sbxfile-name { background:var(--bg-2); color:var(--fg-dim); border:0; padding:4px 10px; font:inherit; font-size:12px; cursor:pointer; }
+  .docview .sbxfile.active .sbxfile-name { color:var(--fg); font-weight:600; }
+  .docview .sbxfile-x { background:var(--bg-2); color:var(--fg-dim); border:0; border-left:1px solid var(--line); padding:4px 8px; font-size:12px; font-weight:700; cursor:pointer; }
+  .docview .sbxfile-x:hover { color:var(--error); }
+  .docview .sbxfile-new { background:none; border:1px dashed var(--line); color:var(--fg-dim); border-radius:7px; padding:4px 11px; font-size:12px; cursor:pointer; }
+  .docview .sbxfile-new:hover { color:var(--fg); border-color:var(--accent); }
   /* Lessons tab: the "Practice this lesson" launcher card */
   .docview .lessonpractice { margin:20px 0 6px; padding:12px 16px; border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:8px; }
   .docview .lessonpractice h3 { font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--fg-dim); margin:0 0 8px; }
@@ -1140,13 +1150,80 @@
       '    let sum: i32 = (1..=10).sum();\n' +
       '    println!("1 + 2 + ... + 10 = {sum}");\n' +
       '}\n';
+    // The Sandbox holds several INDEPENDENT named scratch files (each a standalone
+    // program — this is a scratchpad, not a multi-file cargo project). Model:
+    // { files:[{name,code}], active }. Persisted whole; migrates the old single key.
+    const SBX_FILES_KEY = 'ts-sandbox-files';
+    let sbxFiles = null;
+    function sbxLoadFiles() {
+      try {
+        const m = JSON.parse(localStorage.getItem(SBX_FILES_KEY) || 'null');
+        if (m && Array.isArray(m.files) && m.files.length) {
+          m.active = Math.min(Math.max(0, m.active | 0), m.files.length - 1);
+          return m;
+        }
+      } catch (_) {}
+      let code = SBX_DEFAULT; // migrate the old single-buffer key if present
+      try { const s = localStorage.getItem(SBX_KEY); if (s != null) code = s; } catch (_) {}
+      return { files: [{ name: 'scratch', code }], active: 0 };
+    }
+    function sbxSaveFiles() { try { localStorage.setItem(SBX_FILES_KEY, JSON.stringify(sbxFiles)); } catch (_) {} }
+    function sbxActive() { return sbxFiles.files[sbxFiles.active]; }
+    function sbxSetDoc(code) {
+      if (sbxView) sbxView.dispatch({ changes: { from: 0, to: sbxView.state.doc.length, insert: code } });
+      else { const ta = document.getElementById('sbxta'); if (ta) ta.value = code; }
+    }
+    function sbxRenderFilesBar() {
+      const bar = document.getElementById('sbxfiles'); if (!bar) return;
+      bar.textContent = '';
+      sbxFiles.files.forEach((f, i) => {
+        const wrap = document.createElement('span'); wrap.className = 'sbxfile' + (i === sbxFiles.active ? ' active' : '');
+        const nameBtn = document.createElement('button'); nameBtn.type = 'button'; nameBtn.className = 'sbxfile-name';
+        nameBtn.textContent = f.name; nameBtn.setAttribute('aria-label', 'File ' + f.name + (i === sbxFiles.active ? ' (current)' : ''));
+        nameBtn.onclick = () => sbxSwitchTo(i);
+        wrap.appendChild(nameBtn);
+        if (i === sbxFiles.active && sbxFiles.files.length > 1) {
+          const x = document.createElement('button'); x.type = 'button'; x.className = 'sbxfile-x';
+          x.textContent = '×'; x.title = 'Delete this file'; x.setAttribute('aria-label', 'Delete file ' + f.name);
+          x.onclick = () => sbxDeleteActive();
+          wrap.appendChild(x);
+        }
+        bar.appendChild(wrap);
+      });
+      const add = document.createElement('button'); add.type = 'button'; add.className = 'sbxfile-new';
+      add.textContent = '+ new'; add.title = 'New file'; add.setAttribute('aria-label', 'New file');
+      add.onclick = () => sbxNewFile();
+      bar.appendChild(add);
+    }
+    function sbxSwitchTo(i) {
+      if (i === sbxFiles.active) return;
+      sbxFiles.active = i; sbxSaveFiles();
+      sbxSetDoc(sbxActive().code); sbxRenderFilesBar();
+    }
+    function sbxNewFile() {
+      const n = sbxFiles.files.length + 1;
+      let name = (prompt('Name the new file:', 'file' + n) || '').trim();
+      if (!name) name = 'file' + n;
+      sbxFiles.files.push({ name, code: SBX_DEFAULT });
+      sbxFiles.active = sbxFiles.files.length - 1; sbxSaveFiles();
+      sbxSetDoc(SBX_DEFAULT); sbxRenderFilesBar();
+      if (sbxView) sbxView.focus();
+    }
+    function sbxDeleteActive() {
+      if (sbxFiles.files.length <= 1) return;
+      if (!confirm('Delete “' + sbxActive().name + '”? (its code will be lost)')) return;
+      sbxFiles.files.splice(sbxFiles.active, 1);
+      sbxFiles.active = Math.max(0, sbxFiles.active - 1); sbxSaveFiles();
+      sbxSetDoc(sbxActive().code); sbxRenderFilesBar();
+    }
     async function renderSandbox() {
       const d = freshDocview();
       sbxView = null; // the old host was wiped by freshDocview
-      let code = SBX_DEFAULT;
-      try { const s = localStorage.getItem(SBX_KEY); if (s != null) code = s; } catch (_) {}
+      sbxFiles = sbxLoadFiles();
+      const code = sbxActive().code;
       d.innerHTML = '<h1>🧪 Sandbox</h1>'
-        + '<p style="color:var(--fg-dim)">A free-play Rust scratchpad — write anything and Run it with the real compiler, fully offline. Nothing here counts toward your exercise progress.</p>'
+        + '<p style="color:var(--fg-dim)">A free-play Rust scratchpad — write anything and Run it with the real compiler, fully offline. Keep several files; nothing here counts toward your exercise progress.</p>'
+        + '<div class="sbxfiles" id="sbxfiles" role="group" aria-label="Sandbox files"></div>'
         + '<div class="sbxbar"><button class="run" id="sbxrun" title="Run (Ctrl/Cmd+Enter)">▷ Run</button>'
         + '<button class="ghost" id="sbxreset" title="Reset to the starter snippet">↺ reset</button>'
         + '<span class="badge" id="sbxstatus">ready</span></div>'
@@ -1180,7 +1257,7 @@
             CM.keymap.of([{ key: 'Mod-Enter', run: () => { runSandbox(); return true; } }]),
             CM.keymap.of([CM.indentWithTab, ...CM.defaultKeymap, ...CM.historyKeymap, ...CM.closeBracketsKeymap]),
             CM.EditorView.updateListener.of(u => {
-              if (u.docChanged) { try { localStorage.setItem(SBX_KEY, sbxView.state.doc.toString()); } catch (_) {} }
+              if (u.docChanged) { sbxActive().code = sbxView.state.doc.toString(); sbxSaveFiles(); }
             }),
           ],
           parent: host,
@@ -1194,10 +1271,9 @@
       }
       document.getElementById('sbxrun').onclick = () => runSandbox();
       document.getElementById('sbxreset').onclick = () => {
-        if (sbxView) sbxView.dispatch({ changes: { from: 0, to: sbxView.state.doc.length, insert: SBX_DEFAULT } });
-        else { const ta = document.getElementById('sbxta'); if (ta) ta.value = SBX_DEFAULT; }
-        try { localStorage.setItem(SBX_KEY, SBX_DEFAULT); } catch (_) {}
+        sbxSetDoc(SBX_DEFAULT); sbxActive().code = SBX_DEFAULT; sbxSaveFiles();
       };
+      sbxRenderFilesBar();
       d.scrollTop = 0;
     }
     // Shared result renderer for BOTH paths (web /api/sandbox + mobile Termux),
