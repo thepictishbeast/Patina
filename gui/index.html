@@ -152,16 +152,18 @@
   #insightsBtn[aria-expanded="true"], #focusBtn[aria-pressed="true"] { color:var(--fg); background:var(--bg-3); border-color:var(--line); box-shadow:inset 0 -2px 0 var(--accent); }
   /* Reading column: a comfortable ~72ch measure (not the full 920) reads far
      better for prose; library/logs/tables sit happily in the same width. */
-  .docview { height:calc(100vh - 45px); overflow:auto; padding:24px 30px 64px; max-width:780px; margin:0 auto; }
+  .docview { height:calc(100vh - 45px); overflow:auto; padding:24px 30px 64px; max-width:680px; margin:0 auto; }
   .docview h1 { font-size:25px; font-weight:700; letter-spacing:-.015em; line-height:1.2; margin:4px 0 16px; }
   .docview h2 { font-size:17.5px; font-weight:600; line-height:1.3; margin:26px 0 9px; }
   .docview h3 { font-size:13.5px; color:var(--fg-dim); letter-spacing:.04em; margin:18px 0 6px; }
   .docview p { line-height:1.7; } .docview li { line-height:1.72; }
-  /* Prose rhythm for the reading surfaces (lessons / book / quizzes / glossary). */
-  .bookbody { font-size:14.6px; }
+  /* Prose rhythm for the reading surfaces (lessons / book / quizzes / glossary).
+     15.5px body + a ~78ch measure (680px column) reads far easier than the old
+     14.6px at ~95ch — a beginner spends a lot of time on this text. */
+  .bookbody { font-size:15.5px; }
   .bookbody p { margin:0 0 13px; }
   .bookbody > :first-child { margin-top:0; }
-  .docview code { background:var(--bg-3); padding:1.5px 5px; border-radius:5px; font-family:var(--mono); font-size:12.5px; }
+  .docview code { background:var(--bg-3); padding:1.5px 5px; border-radius:5px; font-family:var(--mono); font-size:0.86em; }
   .docview pre { background:var(--bg-3); border:1px solid var(--line); padding:13px 15px; border-radius:9px; overflow:auto; margin:12px 0; line-height:1.55; }
   .docview pre code { background:none; padding:0; border-radius:0; font-size:12.5px; white-space:pre; }
   /* token highlighting for rendered Rust code blocks (escape-then-tokenize) */
