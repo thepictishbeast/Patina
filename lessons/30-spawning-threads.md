@@ -1,6 +1,6 @@
 # Lesson 30 — Spawning threads: `spawn`, `join` & `move`
 
-*(Phase 9 — Concurrency, the opener. Until now your programs did **one thing at a
+*(Phase 8 — Concurrency, the opener. Until now your programs did **one thing at a
 time**, top to bottom. A **thread** lets a second line of work run *alongside* the
 first — and Rust's ownership rules turn the classic shared-data bugs into compile
 errors. The Book calls this "fearless concurrency.")*

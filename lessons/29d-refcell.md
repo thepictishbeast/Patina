@@ -125,7 +125,7 @@ before each run.**
 
 *(You write every line here — I won't. The predictions are your answer key. That
 closes Phase 7: closures · iterators · smart pointers — you can now reach past
-single ownership when a real problem needs it. Next, Phase 9: threads.)*
+single ownership when a real problem needs it. Next, Phase 8: threads.)*
 
 ## 6. What surprised you?
 

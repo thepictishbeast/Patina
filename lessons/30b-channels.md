@@ -1,6 +1,6 @@
 # Lesson 30b — Channels: passing data between threads
 
-*(Phase 9, part 2. Two threads run side by side — how does one hand a result to
+*(Phase 8, part 2. Two threads run side by side — how does one hand a result to
 the other without them ever touching the same value at the same time? Through a
 one-way pipe that MOVES ownership.)*
 

@@ -509,4 +509,4 @@ you catch later? Tell me, and I'll fold it into the Phase-9 review.
 ---
 
 <!-- lesson-nav -->
-[← Lesson 31 — Async / Await: `async fn`, `.await`, `Future`](31-async-await.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 33 — Advanced Patterns & Matching →](33-advanced-patterns.md)
+[← Lesson 31b — Futures are lazy: why async needs a runtime](31b-futures-are-lazy.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 33 — Advanced Patterns & Matching →](33-advanced-patterns.md)

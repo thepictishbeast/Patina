@@ -1,6 +1,6 @@
 # Lesson 30c — Shared state: `Arc` & `Mutex`
 
-*(Phase 9, part 3 — the concurrency keystone. Channels pass values along.
+*(Phase 8, part 3 — the concurrency keystone. Channels pass values along.
 Sometimes threads genuinely must share ONE mutable value — and the compiler
 walks you, error by error, to the right design.)*
 
@@ -123,7 +123,7 @@ were pushing you toward. Next: `async`/`await` — waiting without threads.)*
 A sentence or two: did the two-failure arc make `Arc<Mutex<T>>` feel like the
 answer the compiler steered you to, rather than a thing to memorise? Did it
 surprise you that `Result: 10` never varies while thread interleaving always
-does? Tell me, and I'll fold it into the Phase-9 review.
+does? Tell me, and I'll fold it into the Phase-8 review.
 
 ## 7. Sources
 
@@ -138,4 +138,4 @@ does? Tell me, and I'll fold it into the Phase-9 review.
 ---
 
 <!-- lesson-nav -->
-[← Lesson 30b — Channels](30b-channels.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 31 — Async / Await: `async fn`, `.await`, `Future` →](31-async-await.md)
+[← Lesson 30b — Channels](30b-channels.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 31 — Async syntax: async fn, .await & async blocks →](31-async-syntax.md)
