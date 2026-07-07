@@ -1,17 +1,8 @@
 // Inspired by Rustlings (MIT/Apache-2.0) — github.com/rust-lang/rustlings
-
-// CONCEPT: besides sharing memory (Arc/Mutex), threads can talk by MESSAGE PASSING —
-// one thread SENDS a value down a channel and another RECEIVES it. The key rule:
-// sending a value MOVES it. Ownership travels down the channel to the receiver, so
-// once you have sent something, it is no longer yours to use on the sending side.
-
-// Here the spawned thread sends `message`, then tries to print it again. Because
-// `send` moved `message` into the channel, that second use is a use-after-move
-// (E0382) — the value is gone from here.
-
-// Run it and read E0382. Let the thread send the message OR keep using it, not both:
-// print it before the send, or send a copy if both sides need one. The receiver in
-// main should still get the message.
+//
+// The spawned thread sends `message` down the channel, then tries to use it
+// again — so it won't compile. Make it compile so main still receives the
+// message. Run it and read the compiler error.
 
 use std::sync::mpsc;
 use std::thread;

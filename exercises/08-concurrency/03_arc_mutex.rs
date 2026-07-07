@@ -1,6 +1,6 @@
-// Five threads each try to add one to a shared counter. Sharing it with `Arc`
-// is fine, but `Arc` alone gives you read-only access. Run it, read the error,
-// and add the piece that allows safe mutation.
+// Five threads each try to add one to a shared counter, but this won't compile.
+// Make all five increments happen safely so the final count is 5. Run it and read
+// the compiler error.
 use std::sync::Arc;
 use std::thread;
 

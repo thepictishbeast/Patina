@@ -1,5 +1,6 @@
-// A spawned thread tries to print a vector owned by `main`. The compiler
-// can't prove the vector outlives the thread. Run it, read the error, fix it.
+// A spawned thread tries to use a vector owned by `main`, but this won't compile.
+// Make it compile without changing what the thread prints. Run it and read the
+// compiler error.
 use std::thread;
 
 fn main() {

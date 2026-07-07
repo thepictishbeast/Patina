@@ -1,6 +1,6 @@
-// Sharing a reference-counted value with a thread. `Rc` is fast but not safe to
-// move between threads. Run it, read the error, and reach for the thread-safe
-// cousin instead.
+// This shares a reference-counted value with a spawned thread, but it won't
+// compile. Make it compile so both the thread and main can read the value. Run it
+// and read the compiler error.
 use std::rc::Rc;
 use std::thread;
 
