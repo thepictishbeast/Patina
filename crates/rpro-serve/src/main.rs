@@ -524,6 +524,165 @@ async fn exercises_handler(State(state): State<AppState>) -> impl IntoResponse {
     Json(serde_json::json!({ "exercises": items, "done": done, "total": total })).into_response()
 }
 
+// ── workspace file API — the IDE's file explorer & editor persistence ──────
+//
+// Everything here is keyed by exercise **id**, never by a path from the wire
+// (the same doctrine as `/api/select`): the server maps id → the source file
+// it discovered itself, so there is nothing to traverse and the answer-bearing
+// metadata files can never be named, listed, or read through this surface.
+
+/// Query for `GET /api/workspace/file`.
+#[derive(Debug, Deserialize)]
+struct WorkspaceFileQuery {
+    id: String,
+}
+
+/// Body for `PUT /api/workspace/file`.
+#[derive(Debug, Deserialize)]
+struct WorkspaceWriteBody {
+    id: String,
+    content: String,
+}
+
+/// One explorer entry. Like [`current_json`], this deliberately carries
+/// **none** of the answer-bearing metadata — the explorer sees files, never
+/// solutions or expected outcomes.
+fn workspace_entry_json(ex: &rpro_runner::Exercise, status: ExerciseStatus) -> serde_json::Value {
+    serde_json::json!({
+        "id": ex.meta.id,
+        "name": ex.source.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default(),
+        "title": ex.meta.title,
+        "status": status_str(status),
+    })
+}
+
+/// The phase directory an exercise lives under (e.g. `02-control-flow`) — the
+/// explorer's grouping key. Derived from the discovered source path.
+fn workspace_group(ex: &rpro_runner::Exercise) -> String {
+    ex.source
+        .parent()
+        .and_then(|p| p.file_name())
+        .map(|n| n.to_string_lossy().into_owned())
+        .unwrap_or_default()
+}
+
+/// Resolve a wire id to its discovered exercise, applying the same progression
+/// gate as `/api/select`: unknown → 400, still-locked → 423. The file API must
+/// not become a way around the baby-steps gate — or a peek at code the learner
+/// has not reached.
+fn workspace_resolve(
+    store_root: &Path,
+    id: &str,
+) -> Result<rpro_runner::Exercise, (StatusCode, &'static str)> {
+    let store = Store::at(store_root.to_path_buf());
+    let exercises = rpro_runner::discover(&store.root().join("exercises")).unwrap_or_default();
+    let ordered: Vec<String> = exercises.iter().map(|e| e.meta.id.clone()).collect();
+    let Some(ex) = exercises.into_iter().find(|e| e.meta.id == id) else {
+        return Err((StatusCode::BAD_REQUEST, "unknown exercise"));
+    };
+    let progress = store.load_progress().unwrap_or_default();
+    if !progress.is_unlocked(&ordered, id) {
+        return Err((
+            StatusCode::LOCKED,
+            "locked — finish the earlier exercise first (or jump ahead)",
+        ));
+    }
+    Ok(ex)
+}
+
+/// `GET /api/workspace` — the IDE file explorer's tree: every exercise source,
+/// grouped by phase directory, in course order, each with its progress status.
+async fn workspace_handler(State(state): State<AppState>) -> impl IntoResponse {
+    let store = Store::at(state.store_root);
+    let exercises = rpro_runner::discover(&store.root().join("exercises")).unwrap_or_default();
+    let progress = store.load_progress().unwrap_or_default();
+    let mut groups: Vec<serde_json::Value> = Vec::new();
+    let mut cur_dir = String::new();
+    let mut cur_files: Vec<serde_json::Value> = Vec::new();
+    for ex in &exercises {
+        let dir = workspace_group(ex);
+        if dir != cur_dir && !cur_files.is_empty() {
+            groups.push(serde_json::json!({ "dir": cur_dir, "files": cur_files }));
+            cur_files = Vec::new();
+        }
+        cur_dir = dir;
+        let status = progress
+            .entries
+            .get(&ex.meta.id)
+            .map_or(ExerciseStatus::Locked, |p| p.status);
+        cur_files.push(workspace_entry_json(ex, status));
+    }
+    if !cur_files.is_empty() {
+        groups.push(serde_json::json!({ "dir": cur_dir, "files": cur_files }));
+    }
+    Json(serde_json::json!({ "groups": groups })).into_response()
+}
+
+/// `GET /api/workspace/file?id=…` — one exercise source for the IDE editor.
+/// Locked exercises return 423 so the explorer can offer the same "jump ahead"
+/// the Practice view does (select-with-force, then re-request).
+async fn workspace_file_handler(
+    State(state): State<AppState>,
+    axum::extract::Query(q): axum::extract::Query<WorkspaceFileQuery>,
+) -> impl IntoResponse {
+    let ex = match workspace_resolve(&state.store_root, &q.id) {
+        Ok(ex) => ex,
+        Err(e) => return e.into_response(),
+    };
+    let Ok(content) = std::fs::read_to_string(&ex.source) else {
+        return (StatusCode::INTERNAL_SERVER_ERROR, "could not read the file").into_response();
+    };
+    let store = Store::at(state.store_root.clone());
+    let progress = store.load_progress().unwrap_or_default();
+    let status = progress
+        .entries
+        .get(&ex.meta.id)
+        .map_or(ExerciseStatus::Locked, |p| p.status);
+    Json(serde_json::json!({
+        "id": ex.meta.id,
+        "name": ex.source.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default(),
+        "status": status_str(status),
+        "content": content,
+    }))
+    .into_response()
+}
+
+/// `PUT /api/workspace/file` — persist the learner's edited buffer to the
+/// exercise's source file. This is the IDE's save: unlike `/api/run`'s
+/// ephemeral `source`, the edit survives restarts. Mirrors `/api/select`'s
+/// rules exactly — unknown → 400, locked → 423, done → 409 (Reset is the path
+/// to redo a finished exercise). The buffer is size-clamped; the target path
+/// comes from discovery, never the wire.
+async fn workspace_write_handler(
+    State(state): State<AppState>,
+    body: Result<Json<WorkspaceWriteBody>, axum::extract::rejection::JsonRejection>,
+) -> impl IntoResponse {
+    let Json(WorkspaceWriteBody { id, content }) = match body {
+        Ok(j) => j,
+        Err(rej) => return rej.into_response(),
+    };
+    if content.len() > MAX_SOURCE_BYTES {
+        return (StatusCode::PAYLOAD_TOO_LARGE, "source too large").into_response();
+    }
+    let store = Store::at(state.store_root.clone());
+    let progress = store.load_progress().unwrap_or_default();
+    if progress.entries.get(&id).map(|e| e.status) == Some(ExerciseStatus::Done) {
+        return (
+            StatusCode::CONFLICT,
+            "exercise already completed — reset it to practise again",
+        )
+            .into_response();
+    }
+    let ex = match workspace_resolve(&state.store_root, &id) {
+        Ok(ex) => ex,
+        Err(e) => return e.into_response(),
+    };
+    if std::fs::write(&ex.source, &content).is_err() {
+        return (StatusCode::INTERNAL_SERVER_ERROR, "could not save the file").into_response();
+    }
+    Json(serde_json::json!({ "saved": true, "id": id, "bytes": content.len() })).into_response()
+}
+
 /// `GET /api/review` — the spaced-repetition (RECALL) queue: diagnostic codes due
 /// for review (weakest first) plus mastered/tracked counts. Read-only.
 ///
@@ -1017,6 +1176,11 @@ fn build_router(state: AppState, gui_dir: &Path) -> Router {
         .route("/api/current", axum::routing::get(current_handler))
         .route("/api/select", post(select_handler))
         .route("/api/exercises", axum::routing::get(exercises_handler))
+        .route("/api/workspace", axum::routing::get(workspace_handler))
+        .route(
+            "/api/workspace/file",
+            axum::routing::get(workspace_file_handler).put(workspace_write_handler),
+        )
         .route("/api/review", axum::routing::get(review_handler))
         .route("/api/hint", axum::routing::get(hint_handler))
         .route("/api/roadmap", axum::routing::get(roadmap_handler))
@@ -1844,5 +2008,143 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(res.status(), StatusCode::CONFLICT);
+    }
+
+    // ── workspace file API (the IDE) — contract tests ──────────────────────
+
+    fn put_json(uri: &str, body: &str) -> Request<Body> {
+        Request::builder()
+            .method("PUT")
+            .uri(uri)
+            .header("content-type", "application/json")
+            .body(Body::from(body.to_string()))
+            .unwrap()
+    }
+
+    #[tokio::test]
+    async fn workspace_tree_lists_sources_only_and_never_answers() {
+        let (_d, app) = seeded_app();
+        let res = app.oneshot(get("/api/workspace")).await.unwrap();
+        assert_eq!(res.status(), StatusCode::OK);
+        let s = body_string(res).await;
+        let v: serde_json::Value = serde_json::from_str(&s).unwrap();
+        let groups = v["groups"].as_array().expect("groups array");
+        assert!(!groups.is_empty(), "the seeded store has phase groups");
+        for g in groups {
+            for f in g["files"].as_array().unwrap() {
+                let name = f["name"].as_str().unwrap();
+                assert!(
+                    std::path::Path::new(name)
+                        .extension()
+                        .is_some_and(|e| e == "rs"),
+                    "only source files appear in the explorer, got {name}"
+                );
+            }
+        }
+        assert!(!s.contains(".toml"), "metadata files never appear");
+        assert!(!s.contains("solution_outline"), "no solution leak");
+        assert!(!s.contains("expected_error_code"), "no expected-error leak");
+    }
+
+    #[tokio::test]
+    async fn workspace_file_roundtrip_on_the_current_exercise() {
+        let (d, app) = seeded_app();
+        let (id, _, _) = resolve_current(d.path()).expect("a fresh store has a current exercise");
+        let uri = format!("/api/workspace/file?id={}", urlencode(&id));
+        let res = app.clone().oneshot(get(&uri)).await.unwrap();
+        assert_eq!(res.status(), StatusCode::OK);
+        let s = body_string(res).await;
+        assert!(s.contains("\"content\""), "serves the source: {s}");
+        assert!(!s.contains("solution_outline"), "no solution leak");
+        // Save an edited buffer, then confirm it persisted to disk.
+        let edited = "fn main() { /* edited in the IDE */ }\n";
+        let body = serde_json::json!({ "id": id, "content": edited }).to_string();
+        let res = app
+            .clone()
+            .oneshot(put_json("/api/workspace/file", &body))
+            .await
+            .unwrap();
+        assert_eq!(res.status(), StatusCode::OK);
+        let (_, on_disk, _) = resolve_current(d.path()).unwrap();
+        assert_eq!(on_disk, edited, "the save is persistent, not ephemeral");
+    }
+
+    #[tokio::test]
+    async fn workspace_gates_match_select_locked_and_done_and_unknown() {
+        let (d, app) = seeded_app();
+        // A locked exercise: the LAST one in course order on a fresh store.
+        let store = Store::at(d.path().to_path_buf());
+        let exercises = rpro_runner::discover(&store.root().join("exercises")).unwrap();
+        let locked_id = exercises.last().unwrap().meta.id.clone();
+        let res = app
+            .clone()
+            .oneshot(get(&format!(
+                "/api/workspace/file?id={}",
+                urlencode(&locked_id)
+            )))
+            .await
+            .unwrap();
+        assert_eq!(res.status(), StatusCode::LOCKED, "locked reads are gated");
+        let body = serde_json::json!({ "id": locked_id, "content": "x" }).to_string();
+        let res = app
+            .clone()
+            .oneshot(put_json("/api/workspace/file", &body))
+            .await
+            .unwrap();
+        assert_eq!(res.status(), StatusCode::LOCKED, "locked writes are gated");
+        // Unknown id → 400 (never a filesystem probe).
+        let res = app
+            .clone()
+            .oneshot(put_json(
+                "/api/workspace/file",
+                "{\"id\":\"../../etc/passwd\",\"content\":\"x\"}",
+            ))
+            .await
+            .unwrap();
+        assert_eq!(res.status(), StatusCode::BAD_REQUEST);
+        // Done → 409, mirroring select (Reset is the redo path).
+        let done_id = exercises[0].meta.id.clone();
+        let mut p = store.load_progress().unwrap_or_default();
+        p.set_done(&done_id);
+        store.save_progress(&p).unwrap();
+        let body = serde_json::json!({ "id": done_id, "content": "x" }).to_string();
+        let res = app
+            .oneshot(put_json("/api/workspace/file", &body))
+            .await
+            .unwrap();
+        assert_eq!(res.status(), StatusCode::CONFLICT);
+    }
+
+    #[tokio::test]
+    async fn workspace_write_clamps_oversized_buffers() {
+        let (d, app) = seeded_app();
+        let (id, _, _) = resolve_current(d.path()).unwrap();
+        let big = "x".repeat(MAX_SOURCE_BYTES + 1);
+        let body = serde_json::json!({ "id": id, "content": big }).to_string();
+        let res = app
+            .oneshot(put_json("/api/workspace/file", &body))
+            .await
+            .unwrap();
+        // The transport body cap (1 MiB) or the source clamp — either rejects it.
+        assert!(
+            res.status() == StatusCode::PAYLOAD_TOO_LARGE
+                || res.status() == StatusCode::BAD_REQUEST,
+            "oversized buffer must be refused, got {}",
+            res.status()
+        );
+    }
+
+    /// Minimal percent-encoding for exercise ids in query strings (ids contain
+    /// `/`). Test-only helper.
+    fn urlencode(s: &str) -> String {
+        s.chars()
+            .flat_map(|c| {
+                if c.is_ascii_alphanumeric() || c == '-' || c == '_' || c == '.' {
+                    vec![c]
+                } else {
+                    format!("%{:02X}", c as u32).chars().collect()
+                }
+            })
+            .collect()
     }
 }
