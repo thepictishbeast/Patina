@@ -47,18 +47,14 @@ vs `io::Result`), or rename one with **`as`**:
 use std::io::Result as IoResult;   // now `Result` and `IoResult` are distinct
 ```
 
-**Re-export with `pub use`.** A plain `use` is private to your module. **`pub use`**
-re-exports the name, so *outside* code can reach it through your shorter path. The payoff:
-you can organize your code one way internally but expose a **different, simpler** public API
-— callers don't need to know your folder layout.
-
-**Tidy imports: nested paths, `self`, glob.**
-
-- Collapse a shared prefix: `use std::{cmp::Ordering, io};` (instead of two lines).
-- Bring a module *and* an item under it: `use std::io::{self, Write};` — that's both `io`
-  and `io::Write`.
-- The **glob** `use std::collections::*;` brings in *everything*. Handy in tests; **use it
-  sparingly** in real code — it hides where each name actually came from.
+**Two more tools to recognize, not master yet.** **`pub use`** re-exports a
+name so outside code can reach it through your shorter path — the
+public-API-façade trick, in **Book §7.4 Listing 7-17** and CR §27.5 when you
+need it. And imports can be tidied: a shared prefix collapses
+(`use std::{cmp::Ordering, io};`), and the **glob** `use std::collections::*;`
+brings in everything — handy in tests, **used sparingly** elsewhere because it
+hides where names came from (**Book §7.4 Listings 7-18 to 7-20** has the full
+menu).
 
 ## 3. Tiny examples to read
 
@@ -96,40 +92,6 @@ fn main() {
 
 ```
 two Results, no clash
-```
-
-**Nested paths and `self`** (fewer `use` lines):
-
-```rust
-use std::io::{self, Write};   // brings in `io` AND `io::Write`
-
-fn main() {
-    let mut out = io::stdout();
-    out.write_all(b"hi via Write\n").unwrap();   // write_all comes from the Write trait
-    out.flush().unwrap();
-}
-```
-
-```
-hi via Write
-```
-
-**The glob** (everything from a module — fine for a quick program):
-
-```rust
-use std::collections::*;
-
-fn main() {
-    let mut m: HashMap<&str, i32> = HashMap::new();
-    let mut s: HashSet<i32> = HashSet::new();
-    m.insert("x", 1);
-    s.insert(7);
-    println!("{} {}", m.len(), s.len());
-}
-```
-
-```
-1 1
 ```
 
 ## 4. Common pitfalls / real compiler errors
@@ -203,7 +165,8 @@ arbitrary or sensible? Tell me, and I'll shape the Phase-6 review around it.
 
 - **BOOK** — *The Rust Programming Language*, §7.4: the `use` shortcut and scope-locality
   (Listings 7-11/7-12, the `E0433`), the function-vs-type idiom (7-14/7-15), name clashes and
-  `as` (7-16), `pub use` re-exporting (7-17), and nested paths + `self` + glob (7-18 to 7-20).
+  `as` (7-16); `pub use` (7-17) and nested paths/`self`/glob (7-18 to 7-20) are pointed at
+  rather than taught here.
 - **CR** — *Comprehensive Rust* (Google), §27.5: `use`, the `pub use` re-export (the `lib.rs`
   façade), and the explicit "glob is **discouraged**" guidance.
 - **BLOG** — absent for this slice (out of scope; sourced from BOOK/CR).

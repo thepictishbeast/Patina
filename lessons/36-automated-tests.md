@@ -24,12 +24,16 @@ on demand. Now refactoring is safe — if you break a behaviour, a test goes red
   - `assert!(condition)` — panics if `condition` is `false`.
   - `assert_eq!(a, b)` / `assert_ne!(a, b)` — panic if the two values are (not) equal, **and
     print both values** so you can see what went wrong. Prefer these when comparing.
-  - Add a custom message: `assert!(ok, "expected ok for input {x}")`.
 - **`#[should_panic]`** marks a test that's supposed to panic — it passes *when* the code
-  panics (use `#[should_panic(expected = "substring")]` to also check the message).
+  panics.
 - **`#[cfg(test)] mod tests { ... }`** holds your unit tests. `#[cfg(test)]` means this module
   is compiled **only** when you run `cargo test` — it adds nothing to a normal release build.
   Inside it, `use super::*;` brings the code-under-test into scope.
+
+(Custom failure messages and matching a panic's *text* with
+`#[should_panic(expected = "…")]` are **Book Ch.11.1**; laying tests out as
+unit vs integration files is **Ch.11.3** — and doc-tests, the third kind, are
+the next lesson.)
 
 ## 3. Tiny examples to read
 
@@ -153,8 +157,9 @@ run.**
    it back.
 
 3. **`should_panic`.** Write a function that `panic!`s on an empty input, and a `#[test]
-   #[should_panic]` that calls it with empty input. **Predict** whether it passes. Then make it
-   `#[should_panic(expected = "...")]` with the wrong substring and **predict** what changes.
+   #[should_panic]` that calls it with empty input. **Predict** whether it passes. Then fix
+   the function so it *stops* panicking on empty input — **predict** what the test reports
+   now, and why a should-panic test failing is good news here.
 
 *(You write every line here — I won't. Tests are how you make change safe: once a behaviour has
 a test, you'll know the instant anything breaks it.)*
@@ -168,10 +173,10 @@ scary? Tell me, and I'll tune the wrap-up.
 ## 7. Sources
 
 - **BOOK** — *The Rust Programming Language*, Ch.11 "Writing Automated Tests": §11.1 (the
-  `#[test]` attribute, the `#[cfg(test)] mod tests`, `assert!`/`assert_eq!`/`assert_ne!`, custom
-  messages, `#[should_panic]`).
-- **CR** — *Comprehensive Rust* (Google), §28 (unit tests; integration and doc tests are a
-  later step).
+  `#[test]` attribute, the `#[cfg(test)] mod tests`, the assertion macros, `#[should_panic]`;
+  custom messages and `expected = …` matching pointed at rather than taught) and §11.3 (test
+  organization, pointed at).
+- **CR** — *Comprehensive Rust* (Google), §28 (unit tests; doc-tests are Lesson 37).
 - Every snippet compiled and **run with the test harness** (`rustc --test`, equivalent to
   `cargo test`) on **rustc 1.95.0**, edition 2024; the failing-test output is captured verbatim.
 
