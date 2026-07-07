@@ -237,6 +237,12 @@
     padding:9px 12px; margin:9px 0 14px; font-family:var(--mono); font-size:12px; line-height:1.5;
     white-space:pre-wrap; word-break:break-word; max-height:30vh; overflow:auto; }
   .docview .coderun-out.err { color:#ffd9d0; }
+  /* ⧉ Copy on code blocks (lessons/book) */
+  .docview .codewrap { position:relative; }
+  .docview .codecopy { position:absolute; top:6px; right:6px; background:var(--bg-2); color:var(--fg-dim);
+    border:1px solid var(--line); border-radius:6px; padding:2px 8px; font-size:11px; font-weight:600;
+    cursor:pointer; user-select:none; }
+  .docview .codecopy:hover { color:var(--fg); border-color:var(--accent); }
   /* Sandbox files bar — several independent named scratch buffers. */
   .docview .sbxfiles { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:2px 0 10px; }
   .docview .sbxfile { display:inline-flex; align-items:center; border:1px solid var(--line); border-radius:7px; overflow:hidden; }
@@ -1387,6 +1393,26 @@
             out.textContent = body || '(no output)';
           });
         };
+      });
+    }
+
+    // A small "⧉ Copy" on every CODE block (lessons/book) — grab any snippet to
+    // paste into the Sandbox / your own editor. Wraps each <pre> so the button
+    // survives horizontal scroll; skips the run/console output <pre> (no <code>).
+    function wireCodeCopy(root) {
+      if (!root) return;
+      root.querySelectorAll('pre').forEach(pre => {
+        if (pre._copyWired || (pre.parentElement && pre.parentElement.classList.contains('codewrap'))) return;
+        const codeEl = pre.querySelector('code');
+        if (!codeEl) return; // output/console <pre> has no <code> child
+        pre._copyWired = true;
+        const wrap = document.createElement('div'); wrap.className = 'codewrap';
+        pre.parentNode.insertBefore(wrap, pre);
+        wrap.appendChild(pre);
+        const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'codecopy';
+        btn.textContent = '⧉ Copy'; btn.setAttribute('aria-label', 'Copy this code');
+        btn.onclick = () => copyText(codeEl.textContent || '');
+        wrap.appendChild(btn);
       });
     }
 
@@ -2835,6 +2861,7 @@
                             : '<p style="color:var(--fg-dim)">Lesson not found.</p>';
         glossaryLinkify(body.querySelector('.lessonbody'), await glossaryTerms());
         wireRunnableCode(body.querySelector('.lessonbody'));
+        wireCodeCopy(body.querySelector('.lessonbody'));
         body.scrollTop = 0;
       } catch (_) { body.innerHTML = '<p style="color:var(--fg-dim)">Could not load the lesson (offline?).</p>'; }
     }
@@ -3082,6 +3109,7 @@
           + cheatHtml + bookHtml + practiceHtml + quizHtml + prevNextHtml;
         glossaryLinkify(d.querySelector('.lessonbody'), await glossaryTerms());
         wireRunnableCode(d.querySelector('.lessonbody'));
+        wireCodeCopy(d.querySelector('.lessonbody'));
         markLessonRead(id); // reading it = progress (✓ in the list + Journey counts)
       }
       // Route "back to list" through showView (not renderLessons directly) so the
@@ -3247,6 +3275,7 @@
         // untouched. (Same first-occurrence-per-term linkifier as the lessons.)
         glossaryLinkify(d.querySelector('.bookbody'), await glossaryTerms());
         wireRunnableCode(d.querySelector('.bookbody'));
+        wireCodeCopy(d.querySelector('.bookbody'));
       }
       wire();
       // Scroll priority: a book_ref anchor (heading id) wins; else a search term

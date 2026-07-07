@@ -23,6 +23,12 @@ test.describe('Runnable code examples in lessons/book', () => {
       }));
     expect(allWhole, 'no Run button on a partial snippet').toBe(true);
 
+    // Every code block also gets a "⧉ Copy" button (whole programs AND partial snippets).
+    const codeBlocks = await page.locator('#docview .lessonbody pre code').count();
+    const copyBtns = await page.locator('#docview .lessonbody .codecopy').count();
+    expect(copyBtns, 'one Copy button per code block').toBe(codeBlocks);
+    expect(codeBlocks, 'the lesson has code blocks').toBeGreaterThan(0);
+
     // Run it → output appears inline in its own console.
     await btns.first().click();
     const out = page.locator('#docview .coderun-out').first();
