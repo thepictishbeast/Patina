@@ -375,4 +375,4 @@ I'll fold it into the Phase-7 review.
 ---
 
 <!-- lesson-nav -->
-[← Lesson 28 — Iterators](28-iterators.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 30 — Threads, Channels & Shared State →](30-threads-and-concurrency.md)
+[← Lesson 28b — Adapter chains: map, filter, collect](28b-adapter-chains.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 30 — Threads, Channels & Shared State →](30-threads-and-concurrency.md)

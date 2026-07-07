@@ -196,4 +196,4 @@ place? Tell me, and I'll fold it into the Phase-7 review.
 ---
 
 <!-- lesson-nav -->
-[← Lesson 27 — Closures: unnamed inline functions](27-closure-syntax.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 28 — Iterators →](28-iterators.md)
+[← Lesson 27 — Closures: unnamed inline functions](27-closure-syntax.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 28 — Iterators: the next() cursor →](28-iterator-cursor.md)
