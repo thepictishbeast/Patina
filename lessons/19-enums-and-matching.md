@@ -252,4 +252,4 @@ Phase-5 review around it.
 ---
 
 <!-- lesson-nav -->
-[← Lesson 18 — Structs (your own types)](18-structs.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 20 — Error Handling: `Result`, `?`, `panic!` →](20-error-handling.md)
+[← Lesson 18c — Printing your own types](18c-derive-debug.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 20 — Error Handling: `Result`, `?`, `panic!` →](20-error-handling.md)
