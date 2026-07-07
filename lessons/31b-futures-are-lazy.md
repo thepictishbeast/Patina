@@ -171,4 +171,4 @@ thing? Tell me, and I'll fold it into the Phase-8 review.
 ---
 
 <!-- lesson-nav -->
-[← Lesson 31 — Async syntax: async fn, .await & async blocks](31-async-syntax.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 32 — Trait Objects & OOP in Rust: `dyn Trait`, Encapsulation, States as Types →](32-trait-objects-and-oop.md)
+[← Lesson 31 — Async syntax: async fn, .await & async blocks](31-async-syntax.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 32 — Trait objects: one collection, many types →](32-trait-objects.md)

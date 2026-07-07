@@ -1,6 +1,6 @@
 # Lesson 33 — Advanced Patterns & Matching
 
-*(Phase 9 — Advanced, part 1. Lesson 19 taught you `match`: bind the inner data,
+*(Phase 9 — Advanced, part 4. Lesson 19 taught you `match`: bind the inner data,
 cover every case. This lesson goes deeper into the **pattern** itself — the little
 shape on the left of `=>` (and the left of `=` in a `let`). You'll add an extra
 condition to an arm, capture a value **and** range-test it in one move, reach into
@@ -340,4 +340,4 @@ Did it surprise you that the *inverse* mistake (an irrefutable `if let`) is only
 ---
 
 <!-- lesson-nav -->
-[← Lesson 32 — Trait Objects & OOP in Rust: `dyn Trait`, Encapsulation, States as Types](32-trait-objects-and-oop.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 34 — Advanced Features: `unsafe`, Traits & Macros →](34-advanced-features.md)
+[← Lesson 32c — States as types: broken states won't compile](32c-states-as-types.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 34 — Advanced Features: `unsafe`, Traits & Macros →](34-advanced-features.md)
