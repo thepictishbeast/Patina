@@ -100,4 +100,4 @@ a surprise? Tell me, and I'll pitch Lesson 19 (enums + matching) to match.
 ---
 
 <!-- lesson-nav -->
-[← Lesson 18b — Methods & impl blocks](18b-methods-and-impl.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 19 — Enums & Matching →](19-enums-and-matching.md)
+[← Lesson 18b — Methods & impl blocks](18b-methods-and-impl.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 19 — Enums: one-of types →](19-enums.md)

@@ -212,4 +212,4 @@ Phase-5 review.
 ---
 
 <!-- lesson-nav -->
-[← Lesson 19 — Enums & Matching](19-enums-and-matching.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 21 — Packages, Crates & Modules →](21-packages-crates-modules.md)
+[← Lesson 19d — Concise matching](19d-concise-matching.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 21 — Packages, Crates & Modules →](21-packages-crates-modules.md)
