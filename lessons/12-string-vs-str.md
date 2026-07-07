@@ -173,4 +173,4 @@ A sentence or two: was "a literal can't grow, a `String` can" a clear line, or f
 ---
 
 <!-- lesson-nav -->
-[← Lesson 11 — `match` (intro)](11-match-intro.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 13 — Tuples, Arrays, and Slices →](13-tuples-arrays-slices.md)
+[← Lesson 11 — `match` (intro)](11-match-intro.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 13 — Tuples: grouping mixed values →](13-tuples.md)

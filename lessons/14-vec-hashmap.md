@@ -1,6 +1,6 @@
 # Lesson 14 — `Vec` and `HashMap`
 
-*(Phase 3 — Text & collections, part 3 and last. Lesson 13's tuples and arrays were
+*(Phase 3 — Text & collections, part 5 and last. Lessons 13–13b's tuples and arrays were
 **fixed** in size. These two **grow**: a list that adds items as you go, and a lookup
 table from keys to values.)*
 
@@ -219,4 +219,4 @@ review around it.
 ---
 
 <!-- lesson-nav -->
-[← Lesson 13 — Tuples, Arrays, and Slices](13-tuples-arrays-slices.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 15 — Ownership & Moves →](15-ownership-and-moves.md)
+[← Lesson 13c — Slices: a borrowed window](13c-slices.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 15 — Ownership & Moves →](15-ownership-and-moves.md)
