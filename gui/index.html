@@ -497,11 +497,18 @@
   .lesson { padding:16px 20px; overflow:auto; }
   .lesson h1 { font-size:22px; font-weight:700; margin:2px 0 7px; line-height:1.22; letter-spacing:-.02em; }
   .lesson .sub { color:var(--fg-dim); font-size:12.5px; margin-bottom:9px; }
-  /* concept chip → tap for a glossary definition */
-  .gloss { color:var(--accent-soft); border-bottom:1px dotted var(--accent-soft); cursor:pointer; }
+  /* concept chip → tap for a glossary definition. Styled as a small tappable
+     PILL rather than dotted-underline text: as plain underlined text next to the
+     other metadata it was easy to miss, so learners never discovered the offline
+     definition it opens. The pill reads as interactive on touch (no hover). */
+  .gloss { display:inline-block; color:var(--accent); background:var(--bg-3);
+    border:1px solid var(--line); border-radius:999px; padding:0 9px; line-height:1.55;
+    font-size:.9em; font-weight:500; cursor:pointer; white-space:nowrap; vertical-align:baseline;
+    transition:border-color .15s ease, background .15s ease, color .15s ease; }
   .lesson-link { color:var(--note); font-weight:600; text-decoration:none; }
   .lesson-link:hover { text-decoration:underline; }
-  .gloss:hover, .gloss:focus-visible { color:var(--accent); border-bottom-style:solid; outline:none; }
+  .gloss:hover, .gloss:focus-visible { color:var(--fg); border-color:var(--accent); background:var(--bg-2); outline:none; }
+  .gloss.open { color:var(--fg); border-color:var(--accent); background:var(--bg-2); }
   .glossbox { margin:-4px 0 14px; padding:10px 13px; border:1px solid var(--line); border-left:3px solid var(--accent);
     border-radius:8px; background:var(--bg-2); font-size:13px; line-height:1.5; }
   .gl-term { font-weight:700; color:var(--fg); text-transform:capitalize; }
@@ -2511,9 +2518,11 @@
           if (a) a.onclick = e => { e.preventDefault(); showView('book', t.book_chapter); };
         }
         box.hidden = false;
+        const cc = document.getElementById('conceptChip'); if (cc) cc.classList.add('open');
+        const close = () => { box.hidden = true; box.innerHTML = ''; const c = document.getElementById('conceptChip'); if (c) c.classList.remove('open'); };
         const x = document.getElementById('glX');
-        if (x) { x.onclick = () => { box.hidden = true; box.innerHTML = ''; };
-          x.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { box.hidden = true; box.innerHTML = ''; } }; }
+        if (x) { x.onclick = close;
+          x.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') close(); }; }
       } catch (_) { /* offline without the local seam — leave the chip inert */ }
     }
 
