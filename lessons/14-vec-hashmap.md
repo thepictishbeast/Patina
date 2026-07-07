@@ -176,7 +176,9 @@ crashing. Reach for `.get()` whenever the index might legitimately be out of ran
 
 ## 5. Predict-then-run practice (your turn — write this yourself)
 
-Open a fresh playground or `cargo new collections2`. **Predict on paper before each run.**
+Type these in the app's **🧪 Sandbox** (⋯ menu), then take on the matching
+exercises via the **Practice this lesson** links at the bottom. *(On your own
+machine, a playground or `cargo new collections2` works too.)* **Predict on paper before each run.**
 
 1. **Build and sum a `Vec`.** Start an empty `Vec<i32>` (`Vec::new()`), `push` three
    numbers onto it, then loop over `&v` and add them into a `total`. Print the `Vec` with

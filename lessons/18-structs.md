@@ -184,7 +184,9 @@ and it's a Phase-6 topic. For now, the right fix is to **own the data**: make it
 
 ## 5. Predict-then-run practice (your turn — write this yourself)
 
-Open a fresh playground or `cargo new structs`. **Predict on paper before each run.**
+Type these in the app's **🧪 Sandbox** (⋯ menu), then take on the matching
+exercises via the **Practice this lesson** links at the bottom. *(On your own
+machine, a playground or `cargo new structs` works too.)* **Predict on paper before each run.**
 
 1. **Define and use.** Make a `struct Book` with an owned title (`String`) and a `u32`
    page count. Build one, print both fields. Then make the binding `mut` and change the

@@ -304,7 +304,9 @@ what promise to add.
 
 ## 5. Predict-then-run practice (your turn — write this yourself)
 
-Open a fresh playground or `cargo new generics`. **Predict on paper before each run.** You
+Type these in the app's **🧪 Sandbox** (⋯ menu), then take on the matching
+exercises via the **Practice this lesson** links at the bottom. *(On your own
+machine, a playground or `cargo new generics` works too.)* **Predict on paper before each run.** You
 write every line here — I won't.
 
 1. **Make a function generic.** Start by writing a *non-generic* `fn first_i32(list: &[i32])

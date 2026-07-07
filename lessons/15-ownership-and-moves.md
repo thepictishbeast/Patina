@@ -180,7 +180,9 @@ values in and out (or cloning everything) is clumsy. The clean answer — lettin
 
 ## 5. Predict-then-run practice (your turn — write this yourself)
 
-Open a fresh playground or `cargo new ownership`. **Predict on paper before each run.**
+Type these in the app's **🧪 Sandbox** (⋯ menu), then take on the matching
+exercises via the **Practice this lesson** links at the bottom. *(On your own
+machine, a playground or `cargo new ownership` works too.)* **Predict on paper before each run.**
 
 1. **Make the move error.** Create a `String`, bind it to a second name, then print the
    *first* name. **Predict** the error code and what the compiler will suggest. Run it.

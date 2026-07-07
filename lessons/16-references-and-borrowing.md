@@ -188,7 +188,9 @@ disappear.
 
 ## 5. Predict-then-run practice (your turn — write this yourself)
 
-Open a fresh playground or `cargo new borrowing`. **Predict on paper before each run.**
+Type these in the app's **🧪 Sandbox** (⋯ menu), then take on the matching
+exercises via the **Practice this lesson** links at the bottom. *(On your own
+machine, a playground or `cargo new borrowing` works too.)* **Predict on paper before each run.**
 
 1. **Lend, don't give.** Write a function that takes `&String` and prints its `.len()`.
    Call it on a `String`, then print the `String` again afterward. **Predict**: does it

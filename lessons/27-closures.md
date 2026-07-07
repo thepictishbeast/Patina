@@ -241,7 +241,9 @@ moved, the old name is dead. Drop the `move` (the closure would borrow instead a
 
 ## 5. Predict-then-run practice (your turn — write this yourself)
 
-Open a fresh playground or `cargo new closures`. **Predict on paper before each run.**
+Type these in the app's **🧪 Sandbox** (⋯ menu), then take on the matching
+exercises via the **Practice this lesson** links at the bottom. *(On your own
+machine, a playground or `cargo new closures` works too.)* **Predict on paper before each run.**
 
 1. **The three capture modes, by hand.** Write three closures over a `let mut v =
    vec![10, 20, 30]`: one that only *prints* `v`, one that *pushes* a number onto

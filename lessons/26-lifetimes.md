@@ -274,7 +274,9 @@ back freshly-made data, return the owned `String` itself.
 
 ## 5. Predict-then-run practice (your turn — write this yourself)
 
-Open a fresh playground or `cargo new lifetimes`. **Predict on paper before each run** —
+Type these in the app's **🧪 Sandbox** (⋯ menu), then take on the matching
+exercises via the **Practice this lesson** links at the bottom. *(On your own
+machine, a playground or `cargo new lifetimes` works too.)* **Predict on paper before each run** —
 the error codes are the answer key.
 
 1. **Build a `shorter` function — and watch it demand a lifetime.** Write a function that

@@ -433,7 +433,9 @@ become **unrepresentable**.
 
 ## 5. Predict-then-run practice (your turn — write this yourself)
 
-Open a fresh playground or `cargo new traitobjects`. **Predict on paper before
+Type these in the app's **🧪 Sandbox** (⋯ menu), then take on the matching
+exercises via the **Practice this lesson** links at the bottom. *(On your own
+machine, a playground or `cargo new traitobjects` works too.)* **Predict on paper before
 each run.**
 
 1. **A mixed collection that draws itself.** Define a trait `Shape` with one

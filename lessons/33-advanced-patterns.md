@@ -277,7 +277,8 @@ the refutability:** irrefutable → `let`/`for`; refutable → `if let`/`while l
 
 ## 5. Predict-then-run practice (your turn — write this yourself)
 
-Open a fresh playground or `cargo new patterns`. **Predict on paper before each run.**
+Type these in the app's **🧪 Sandbox** (⋯ menu). *(On your own machine, a
+playground or `cargo new patterns` works too.)* **Predict on paper before each run.**
 
 1. **Trigger `E0005` yourself.** Write a `let` that binds with a refutable pattern —
    e.g. destructure an `Option<i32>` you set to `Some(...)` using `let Some(x) = …;`.

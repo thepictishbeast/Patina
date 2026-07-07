@@ -223,7 +223,8 @@ run it — which is exactly what these two errors are telling you.
 
 ## 5. Predict-then-run practice (your turn — write this yourself)
 
-You can compile these with `rustc --edition 2024` (no runtime needed). **Predict on
+Type these in the app's **🧪 Sandbox** (⋯ menu) — they compile without an async
+runtime. *(On your own machine, `rustc --edition 2024` works too.)* **Predict on
 paper before each run.**
 
 1. **A future that doesn't run.** Write an `async fn greet(name: &str)` whose body

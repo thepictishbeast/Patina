@@ -239,7 +239,9 @@ yourself a free pass.
 
 ## 5. Predict-then-run practice (your turn — write this yourself)
 
-Open a fresh playground or `cargo new advanced`. **Predict on paper before each run.**
+Type these in the app's **🧪 Sandbox** (⋯ menu), then take on the matching
+exercises via the **Practice this lesson** links at the bottom. *(On your own
+machine, a playground or `cargo new advanced` works too.)* **Predict on paper before each run.**
 
 1. **Two pointers, one value.** Declare a `let mut n = 1;`. Make a read-only raw
    pointer to it with `&raw const n` and a read-write one with `&raw mut n`. In an

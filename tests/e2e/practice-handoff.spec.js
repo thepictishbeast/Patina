@@ -37,16 +37,19 @@ test.describe('Lesson → Practice handoff (Batch A)', () => {
   test('Foundations practice sections route in-app (Sandbox named, no bare cargo-new opener)', async ({ page }) => {
     await page.goto('/');
     await page.waitForSelector('#exTitle');
-    for (const id of ['00-hello-world', '04-constants', '07-functions']) {
+    // Spans both Batch-A slices: Foundations (00/04/07) + the L09–L34 pass
+    // (10/20/33), incl. a with-exercise and a sandbox-only lesson from each.
+    for (const id of ['00-hello-world', '04-constants', '07-functions', '10-loops', '20-error-handling', '33-advanced-patterns']) {
       const md = await page.evaluate(async (lid) => {
         const j = await fetch('api/lessons?id=' + lid).then((r) => r.json());
         return j.lesson.markdown;
       }, id);
-      const practice = md.split(/## 5\./)[1] || '';
-      expect(practice, `${id} practice names the Sandbox`).toContain('Sandbox');
-      // cargo new may only appear as the parenthesised own-machine aside.
-      const opener = practice.trim().split('\n').slice(0, 3).join(' ');
-      expect(opener.startsWith('`cargo new'), `${id} practice no longer OPENS with cargo new`).toBe(false);
+      const section = md.split(/## 5\./)[1] || '';
+      // Drop the heading remnant line, then take the first non-empty BODY line —
+      // that's the real opener (checking the raw split would let the heading mask it).
+      const body = section.split('\n').slice(1).map((l) => l.trim()).filter(Boolean);
+      expect(section, `${id} practice names the Sandbox`).toContain('Sandbox');
+      expect(body[0], `${id} practice opens by routing into the app`).toMatch(/^Type these in the app/);
     }
   });
 });

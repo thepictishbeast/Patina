@@ -167,7 +167,9 @@ assumption broke.
 
 ## 5. Predict-then-run practice (your turn — write this yourself)
 
-Open a fresh playground or `cargo new errors`. **Predict on paper before each run.**
+Type these in the app's **🧪 Sandbox** (⋯ menu), then take on the matching
+exercises via the **Practice this lesson** links at the bottom. *(On your own
+machine, a playground or `cargo new errors` works too.)* **Predict on paper before each run.**
 
 1. **Parse-and-add with `?`.** Write `fn add_strs(a: &str, b: &str) -> Result<i32, std::num::ParseIntError>`
    that parses both strings with `?` and returns their sum wrapped in `Ok`. Call it from

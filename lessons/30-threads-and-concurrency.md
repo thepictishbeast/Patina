@@ -368,7 +368,9 @@ a second thread is involved.
 
 ## 5. Predict-then-run practice (your turn — write this yourself)
 
-Open a fresh playground or `cargo new threads`. **Predict on paper before each run** —
+Type these in the app's **🧪 Sandbox** (⋯ menu), then take on the matching
+exercises via the **Practice this lesson** links at the bottom. *(On your own
+machine, a playground or `cargo new threads` works too.)* **Predict on paper before each run** —
 and for the interleaving ones, predict what's *guaranteed* versus what's *not*.
 
 1. **Spawn and join.** Spawn a thread that prints `"in thread"` three times in a loop, and

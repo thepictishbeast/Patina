@@ -141,7 +141,9 @@ for now, just know `+` is "use the left one up to build the result," and reach f
 
 ## 5. Predict-then-run practice (your turn — write this yourself)
 
-Open a fresh playground or `cargo new strings`. **Predict on paper before each run.**
+Type these in the app's **🧪 Sandbox** (⋯ menu), then take on the matching
+exercises via the **Practice this lesson** links at the bottom. *(On your own
+machine, a playground or `cargo new strings` works too.)* **Predict on paper before each run.**
 
 1. **Build and grow.** Make a `String` from `"Rust"` (your choice of `String::from` or
    `.to_string()`). Then `push_str` a space and another word onto it. Print it. **Predict** the

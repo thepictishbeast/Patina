@@ -149,7 +149,8 @@ error[E0502]: cannot borrow `v` as mutable because it is also borrowed as immuta
 
 ## 5. Predict-then-run practice (your turn — write this yourself)
 
-Open a fresh playground or `cargo new slices`. **Predict on paper before each run.**
+Type these in the app's **🧪 Sandbox** (⋯ menu). *(On your own machine, a
+playground or `cargo new slices` works too.)* **Predict on paper before each run.**
 
 1. **Safe slices.** Make a `String`, take two `&str` slices of different parts, and print
    both *before* changing anything. **Predict** the output; confirm it compiles.

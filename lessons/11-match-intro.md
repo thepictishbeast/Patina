@@ -167,7 +167,9 @@ lots
 
 ## 5. Predict-then-run practice (your turn — write this yourself)
 
-Open a fresh playground or `cargo new matching`. **Predict on paper before each run.**
+Type these in the app's **🧪 Sandbox** (⋯ menu), then take on the matching
+exercises via the **Practice this lesson** links at the bottom. *(On your own
+machine, a playground or `cargo new matching` works too.)* **Predict on paper before each run.**
 
 1. **Match a number to words.** Bind a number `0`–`5` of your choosing. `match` it so
    `0`–`3` each map to their own word and everything else maps to `"big"`. Store the

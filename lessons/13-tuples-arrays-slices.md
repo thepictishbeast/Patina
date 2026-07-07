@@ -187,7 +187,8 @@ where the boundary is.
 
 ## 5. Predict-then-run practice (your turn — write this yourself)
 
-Open a fresh playground or `cargo new collections`. **Predict on paper before each run.**
+Type these in the app's **🧪 Sandbox** (⋯ menu). *(On your own machine, a
+playground or `cargo new collections` works too.)* **Predict on paper before each run.**
 
 1. **Tuple.** Make a tuple holding a word (`&str`), a whole number, and a `bool`.
    Destructure it into three names and print them. Then print the middle one again using

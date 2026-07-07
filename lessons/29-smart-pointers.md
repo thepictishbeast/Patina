@@ -315,7 +315,9 @@ you to get it right and panics if you don't.)
 
 ## 5. Predict-then-run practice (your turn — write this yourself)
 
-Open a fresh playground or `cargo new pointers`. **Predict on paper before each run.**
+Type these in the app's **🧪 Sandbox** (⋯ menu), then take on the matching
+exercises via the **Practice this lesson** links at the bottom. *(On your own
+machine, a playground or `cargo new pointers` works too.)* **Predict on paper before each run.**
 
 1. **Box on the heap.** Put a `Box::new(10)` in a variable, then print both `b` and
    `*b`. **Predict** whether they print the same thing and why. Then try to add a plain
