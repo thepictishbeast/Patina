@@ -183,4 +183,4 @@ into the Phase-6 review.
 ---
 
 <!-- lesson-nav -->
-[← Lesson 25 — Traits: declare and implement](25-traits-declare-implement.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 26 — Lifetimes: annotations (`'a`), the borrow checker, elision →](26-lifetimes.md)
+[← Lesson 25 — Traits: declare and implement](25-traits-declare-implement.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 26 — Lifetime annotations: the longest function →](26-lifetime-annotations.md)

@@ -298,4 +298,4 @@ fold it into the Phase-7 review.
 ---
 
 <!-- lesson-nav -->
-[← Lesson 26 — Lifetimes: annotations (`'a`), the borrow checker, elision](26-lifetimes.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 28 — Iterators →](28-iterators.md)
+[← Lesson 26c — Lifetimes in structs](26c-lifetimes-in-structs.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 28 — Iterators →](28-iterators.md)
