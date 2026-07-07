@@ -62,10 +62,10 @@ count · **split** = replace with the listed smaller lessons.
 | `07-functions` | 647 | ok | 5 | 0 | — |
 | `08-comments-and-printing` | 712 | ok | 5 | 2 | — |
 | ✅ `09-if-else-expressions` → `09-if-else` + `09b-if-as-expression` (done `2a441fc`; sources-comparison meta cut; &str gloss made forward-safe; coupling moved to 09b) | 1440 | split | 4 | 1 | → **if / else if / else — making the program choose**<br>→ **if is an expression — branching that produces a value** |
-| `10-loops` | 1380 | split | 7 | 3 | → **loop — repeat until you break**<br>→ **while — repeat while a condition holds**<br>→ **for and ranges — walk each item** |
+| ✅ `10-loops` → `10-loop-and-break` + `10b-while` + `10c-for-and-ranges` (done `0f89993`; ALL 3 fwd-refs fixed: += taught, print! taught, array off-by-one DEFERRED to the 13 row; labels + .rev() → Book §3.5; NEW E0571/E0308/E0425 pitfalls; couplings placed 10 + 10c) | 1380 | split | 7 | 3 | → **loop — repeat until you break**<br>→ **while — repeat while a condition holds**<br>→ **for and ranges — walk each item** |
 | `11-match-intro` | 1276 | trim | 5 | 0 | — |
 | ✅ `12-string-vs-str` (trimmed `8403d8e`: slice-syntax deferred to L13, + & UTF-8 → Book) | 1278 | trim | 4 | 2 | — |
-| `13-tuples-arrays-slices` | 1412 | split | 5 | 0 | → **Tuples — grouping mixed values**<br>→ **Arrays — a fixed row of one type**<br>→ **Slices — a borrowed window into a sequence** |
+| `13-tuples-arrays-slices` ⚠ADOPT the array off-by-one panic demo removed from old L10 (while index <= a.len()) — it belongs after arrays/indexing/.len() are taught | 1412 | split | 5 | 0 | → **Tuples — grouping mixed values**<br>→ **Arrays — a fixed row of one type**<br>→ **Slices — a borrowed window into a sequence** |
 | `14-vec-hashmap` | 1301 | split | 6 | 3 | → **Vec — the growable list**<br>→ **HashMap — the lookup table** |
 | `15-ownership-and-moves` | 1517 | split | 6 | 0 | → **Ownership, Scope, and Drop**<br>→ **Moves — assignment hands ownership over**<br>→ **Copy and Clone** |
 | ✅ `16-references-and-borrowing` → `16-shared-references` + `16b-mutable-references` (override split, done `934d47c`) | 1393 | split | 5 | 1 | — |
