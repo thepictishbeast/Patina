@@ -126,6 +126,8 @@ test.describe('Lessons: glossary tap-to-define', () => {
     const pop = page.locator('#docview .lessonbody .glosspop');
     await expect(pop).toBeVisible();
     await expect(pop).not.toBeEmpty();
+    // Definitions render markdown `code` spans as real inline <code>, not literal backticks.
+    expect(await pop.first().textContent(), 'no raw backtick in the definition').not.toContain('`');
     await page.locator('#docview .lessonbody .glossdef.open').first().click();
     await expect(pop).toHaveCount(0);
   });

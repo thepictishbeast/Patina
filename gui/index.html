@@ -194,6 +194,10 @@
   .docview .gloss-term { border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:8px; padding:11px 14px; margin:10px 0; }
   .docview .gloss-name { font-size:14px; color:var(--fg); margin:0 0 5px; letter-spacing:0; text-transform:none; }
   .docview .gloss-def { line-height:1.6; margin:0; }
+  /* Inline `code` inside glossary definitions (glossary view + tap-to-define popover
+     + the Practice concept box) — the last two aren't in .docview, so style here. */
+  .gloss-def code, .glosspop code, .gl-def code { background:var(--bg-3); padding:1px 5px;
+    border-radius:5px; font-family:var(--mono); font-size:0.86em; }
   .docview .gloss-foot { margin-top:8px; font-size:12px; color:var(--fg-dim); display:flex; gap:14px; align-items:center; flex-wrap:wrap; }
   .docview .gloss-more { color:var(--note); text-decoration:none; font-weight:600; }
   .docview .gloss-more:hover { text-decoration:underline; }
@@ -1631,6 +1635,9 @@
     // re-render the Diagnostics panel without re-running (Learn withholds it).
     let lastOut = null;
     const esc = s => (s == null ? '' : String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    // Escape first (XSS-safe), then render `inline code` spans as <code> — for
+    // glossary definitions, which are plain-text but written with markdown backticks.
+    const mdInlineCode = s => esc(s).replace(/`([^`]+)`/g, '<code>$1</code>');
     const CHIP = { done:'✓', current:'▸', locked:'🔒', skipped:'»' };
 
     function renderList(data) {
@@ -1984,7 +1991,7 @@
           const more = t.book_chapter
             ? ` <a class="gl-more" href="#" id="glMore">read more in the Book →</a>` : '';
           box.innerHTML =
-            `<span class="gl-term">${esc(t.name)}</span><span class="gl-def"> ${esc(t.definition)}</span>`
+            `<span class="gl-term">${esc(t.name)}</span><span class="gl-def"> ${mdInlineCode(t.definition)}</span>`
             + `<div class="gl-foot"><span class="gl-src">${esc(t.source)}</span>${more}`
             + ` <span class="gl-x" id="glX" role="button" tabindex="0" title="close">✕</span></div>`;
           const a = document.getElementById('glMore');
@@ -2963,7 +2970,9 @@
         if (same) return;
         const pop = document.createElement('span');
         pop.className = 'glosspop'; pop._for = b;
-        pop.appendChild(document.createTextNode(b.dataset.def + ' '));
+        const defSpan = document.createElement('span');
+        defSpan.innerHTML = mdInlineCode(b.dataset.def) + ' '; // esc'd; renders `code` spans
+        pop.appendChild(defSpan);
         if (b.dataset.ch) {
           const a = document.createElement('a');
           a.href = '#'; a.className = 'glosspop-more'; a.textContent = 'read more in the Book →';
@@ -3174,7 +3183,7 @@
           ? ` <a class="gloss-more" href="#" data-ch="${esc(t.book_chapter)}">read more in the Book →</a>` : '';
         return `<div class="gloss-term" data-hay="${esc(hay)}">`
           + `<h3 class="gloss-name">${esc(t.name)}</h3>`
-          + `<p class="gloss-def">${esc(t.definition)}</p>`
+          + `<p class="gloss-def">${mdInlineCode(t.definition)}</p>`
           + `<div class="gloss-foot"><span class="gloss-src">${esc(t.source)}</span>${more}</div></div>`;
       }).join('');
       d.innerHTML = '<h1>Glossary</h1>'
