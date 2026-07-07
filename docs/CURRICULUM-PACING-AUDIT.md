@@ -57,7 +57,7 @@ count · **split** = replace with the listed smaller lessons.
 | `02-mutability` | 695 | ok | 2 | 1 | — |
 | `03-shadowing` | 713 | ok | 3 | 1 | — |
 | `04-constants` | 643 | ok | 4 | 1 | — |
-| `05-number-types-and-overflow` | 725 | split | 5 | 1 | → **The scalar types: integers, floats, bool and char**<br>→ **Integer overflow — your first runtime panic** |
+| ✅ `05-number-types-and-overflow` → `05-scalar-types` + `05b-integer-overflow` (done `5960f71`) | 725 | split | 5 | 1 | → **The scalar types: integers, floats, bool and char**<br>→ **Integer overflow — your first runtime panic** |
 | `06-expressions-statements-semicolon` | 682 | ok | 4 | 2 | — |
 | `07-functions` | 647 | ok | 5 | 0 | — |
 | `08-comments-and-printing` | 712 | ok | 5 | 2 | — |
