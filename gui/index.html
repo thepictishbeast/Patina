@@ -1654,6 +1654,7 @@
     let ideView = null;                 // the IDE's CodeMirror instance (per visit)
     let ideOpen = null;                 // { id, name, status, content } currently open
     const IDE_KEY = 'ts-ide-state';     // { openId, sidebarOpen, termOpen }
+    const IDE_BUF = 'ts-ide-buf:';      // per-file edit DRAFT (offline safety net; keyed by exercise id)
     const isPhone = () => window.matchMedia('(max-width:760px)').matches;
     function ideLoad() {
       try { const s = JSON.parse(localStorage.getItem(IDE_KEY) || 'null'); if (s && typeof s === 'object') return s; } catch (_) {}
@@ -1715,17 +1716,51 @@
       if (nameEl) nameEl.textContent = ideOpen ? ideOpen.name : 'no file open — pick one in 📂 Files';
       host.innerHTML = ''; ideView = null;
       if (!ideOpen) { host.innerHTML = '<div class="ide-empty">Open a file from the <b>📂 Files</b> explorer to edit it here.</div>'; return; }
+      // Restore an offline DRAFT if one exists (survives view-switch / reload /
+      // app-close, and is the ONLY persistence on mobile, where Save's PUT can't
+      // reach the embedded server). Falls back to the file's on-disk content.
+      let startDoc = ideOpen.content, restored = false;
+      try { const b = localStorage.getItem(IDE_BUF + ideOpen.id); if (b != null && b !== ideOpen.content) { startDoc = b; restored = true; } } catch (_) {}
       if (window.CM) {
         ideView = new CM.EditorView({
-          doc: ideOpen.content,
-          extensions: makeEditorExtensions('IDE Rust editor', () => ideRun()),
+          doc: startDoc,
+          extensions: [
+            ...makeEditorExtensions('IDE Rust editor', () => ideRun()),
+            CM.EditorView.updateListener.of(u => { if (u.docChanged) ideBufSave(); }),
+          ],
           parent: host,
         });
         try { ideView.scrollDOM.setAttribute('tabindex', '0'); } catch (_) {}
         try { window.ideView = ideView; } catch (_) {}
       } else {
-        host.innerHTML = '<textarea id="ideta" spellcheck="false" style="width:100%;height:100%;background:transparent;color:var(--fg);border:0;font-family:var(--mono);font-size:13px;padding:10px">' + esc(ideOpen.content) + '</textarea>';
+        host.innerHTML = '<textarea id="ideta" spellcheck="false" style="width:100%;height:100%;background:transparent;color:var(--fg);border:0;font-family:var(--mono);font-size:13px;padding:10px">' + esc(startDoc) + '</textarea>';
+        const ta = document.getElementById('ideta'); if (ta) ta.oninput = () => ideBufSave();
       }
+      const status = document.getElementById('idestatus');
+      if (status) status.textContent = restored ? 'draft restored ✏️' : 'ready';
+    }
+    // Persist the editor buffer to a per-file offline DRAFT (never lose work). A
+    // buffer equal to the on-disk content clears the draft, so localStorage only
+    // holds genuine unsaved edits. Mirrors Practice's markEdited (localStorage on
+    // every change) — the IDE lacked any such safety net.
+    function ideBufSave() {
+      if (!ideOpen) return;
+      const status = document.getElementById('idestatus');
+      try {
+        const t = ideEditorText();
+        if (t === ideOpen.content) localStorage.removeItem(IDE_BUF + ideOpen.id);
+        else localStorage.setItem(IDE_BUF + ideOpen.id, t);
+        if (status) status.textContent = (t === ideOpen.content) ? 'ready' : 'edited ✏️ · draft kept offline';
+      } catch (_) {}
+    }
+    // Discard the current draft and reload the file's on-disk content — the escape
+    // hatch that keeps draft-persistence from trapping you in your own edits.
+    function ideReset() {
+      if (!ideOpen) return;
+      try { localStorage.removeItem(IDE_BUF + ideOpen.id); } catch (_) {}
+      ideRenderEditor();
+      const status = document.getElementById('idestatus'); if (status) status.textContent = 'reset to the file';
+      if (ideView) setTimeout(() => { try { ideView.focus(); } catch (_) {} }, 0);
     }
     function ideEditorText() {
       return ideView ? ideView.state.doc.toString()
@@ -1736,9 +1771,12 @@
       document.querySelectorAll('#idetree .ide-file').forEach(el =>
         el.classList.toggle('open', !!ideOpen && el.dataset.id === ideOpen.id));
     }
-    // Save the buffer to the exercise source (PUT /api/workspace/file). Same gates
-    // as select: 409 done, 423 locked. This is a real persist (survives restarts),
-    // unlike the Sandbox's localStorage-only buffers.
+    // Save the buffer to the exercise source on DISK (PUT /api/workspace/file).
+    // Same gates as select: 409 done, 423 locked. This commits to disk (survives
+    // restarts) — the offline localStorage draft is the always-available safety
+    // net beneath it (and the only persistence on mobile, where this PUT can't
+    // reach the embedded server). On a successful disk save the draft is cleared,
+    // since the buffer now equals the on-disk content.
     async function ideSaveFile() {
       if (!ideOpen) return;
       const status = document.getElementById('idestatus');
@@ -1748,10 +1786,11 @@
         const res = await fetch('api/workspace/file', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: ideOpen.id, content }) });
         if (res.status === 409) { if (status) status.textContent = 'done — reset in Practice to edit'; return; }
         if (res.status === 423) { if (status) status.textContent = 'locked'; return; }
-        if (!res.ok) { if (status) status.textContent = 'save failed (' + res.status + ')'; return; }
+        if (!res.ok) { if (status) status.textContent = 'save failed (' + res.status + ') · draft kept'; return; }
         ideOpen.content = content;
-        if (status) status.textContent = 'saved ✓';
-      } catch (_) { if (status) status.textContent = 'save failed (offline?)'; }
+        try { localStorage.removeItem(IDE_BUF + ideOpen.id); } catch (_) {}
+        if (status) status.textContent = 'saved to disk ✓';
+      } catch (_) { if (status) status.textContent = 'save failed (offline) · draft kept'; }
     }
     // Run the open buffer through the progress-neutral sandbox path (web
     // /api/sandbox, mobile Termux 'sandbox' op) and show the output in the IDE
@@ -1793,7 +1832,8 @@
         +   '<div class="ide-main">'
         +     '<div class="ide-editwrap">'
         +       '<div class="ide-toolbar"><button class="run" id="iderun" title="Run (Ctrl/Cmd+Enter)">▷ Run</button>'
-        +       '<button class="ghost" id="idesave" title="Save to the exercise file">💾 Save</button>'
+        +       '<button class="ghost" id="idesave" title="Save your edits to the file on disk">💾 Save</button>'
+        +       '<button class="ghost" id="idereset" title="Discard your edits and reload the file">↺ Reset</button>'
         +       '<span class="badge" id="idestatus">ready</span></div>'
         +       '<div class="ide-host" id="idehost"></div>'
         +     '</div>'
@@ -1819,6 +1859,7 @@
       };
       document.getElementById('iderun').onclick = () => ideRun();
       document.getElementById('idesave').onclick = () => ideSaveFile();
+      document.getElementById('idereset').onclick = () => ideReset();
       await ideRenderTree();
       if (st.openId) { await ideOpenFile(st.openId, null); }
       else { ideRenderEditor(); }

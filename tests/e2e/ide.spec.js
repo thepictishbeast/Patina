@@ -119,4 +119,39 @@ test.describe('Fullscreen IDE', () => {
     await page.waitForTimeout(150);
     expect(await page.locator('#ideopenname').textContent()).toContain('no file open');
   });
+
+  test('edits persist as an offline draft across reloads, and Reset restores the file', async ({ page }) => {
+    // The IDE Save is a disk PUT that cannot reach the embedded server on mobile,
+    // so unsaved edits used to vanish on close. A localStorage draft is the
+    // offline safety net: it must survive a reload, and Reset must discard it.
+    await page.goto('/');
+    await page.evaluate(() => localStorage.clear());
+    await page.evaluate(() => showView('ide'));
+    await page.waitForSelector('.ide-file');
+    // Open the first file the server serves, then type a marker into the editor.
+    const openId = await page.evaluate(async () => {
+      const d = await (await fetch('api/workspace')).json();
+      const ids = d.groups.flatMap(g => g.files.map(f => f.id));
+      for (const id of ids) { if ((await fetch('api/workspace/file?id=' + encodeURIComponent(id))).status === 200) return id; }
+      return null;
+    });
+    expect(openId).toBeTruthy();
+    await page.evaluate((id) => ideOpenFile(id, null), openId);
+    await page.waitForSelector('#idehost .cm-editor, #idehost textarea');
+    await page.evaluate(() => window.ideView.dispatch({ changes: { from: 0, insert: '// DRAFT-MARK\n' } }));
+    // The draft is persisted under a per-file key.
+    expect(await page.evaluate((id) => localStorage.getItem('ts-ide-buf:' + id), openId)).toContain('// DRAFT-MARK');
+
+    // Reload (proxy for app-close): the draft must come back in the editor.
+    await page.goto('/');
+    await page.evaluate(() => showView('ide'));
+    await page.waitForSelector('#idehost .cm-editor, #idehost textarea');
+    await page.waitForFunction(() => window.ideView && window.ideView.state.doc.toString().includes('// DRAFT-MARK'));
+
+    // Reset discards the draft and reloads the on-disk content.
+    await page.evaluate(() => ideReset());
+    await page.waitForTimeout(150);
+    expect(await page.evaluate(() => window.ideView.state.doc.toString().includes('// DRAFT-MARK'))).toBe(false);
+    expect(await page.evaluate((id) => localStorage.getItem('ts-ide-buf:' + id), openId)).toBeNull();
+  });
 });
