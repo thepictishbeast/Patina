@@ -457,14 +457,41 @@ fn strip_html_comments(md: &str) -> String {
 // Commands
 // ---------------------------------------------------------------------------
 
+/// Whether a store's recorded content version (`.content-version`, absent reads
+/// as 0) is older than the bundled [`rpro_runner::CONTENT_VERSION`] — i.e. it was
+/// seeded by an earlier build and should re-copy the read-only content dirs.
+fn store_content_behind(store_root: &std::path::Path) -> bool {
+    let stored = std::fs::read_to_string(store_root.join(".content-version"))
+        .ok()
+        .and_then(|s| s.trim().parse::<u32>().ok())
+        .unwrap_or(0);
+    stored < rpro_runner::CONTENT_VERSION
+}
+
 fn cmd_init(refresh: bool) -> Result<()> {
-    let title = if refresh {
+    let store = Store::user().context("locating ~/.rustlings-pro/")?;
+
+    // Auto-refresh an out-of-date store even without `--refresh`: if the store
+    // already has content but was seeded by an older build (its `.content-version`
+    // marker is behind the bundled `rpro_runner::CONTENT_VERSION`, or absent =
+    // reads as 0), re-copy the read-only content dirs so later improvements (the
+    // exercise "never hand the answer" sweep, new glossary terms, lesson rewrites)
+    // reach existing installs — matching the web server and the Android app. A
+    // truly fresh store seeds normally (below) and this stays false so the title
+    // reads "first-time setup". Progress is never touched by the refresh.
+    let marker = store.root().join(".content-version");
+    let had_content =
+        rpro_runner::discover(&store.root().join("exercises")).is_ok_and(|v| !v.is_empty());
+    let refresh = refresh || (had_content && store_content_behind(store.root()));
+
+    let title = if !had_content {
+        "Rustlings Pro — first-time setup"
+    } else if refresh {
         "Rustlings Pro — refreshing bundled content"
     } else {
-        "Rustlings Pro — first-time setup"
+        "Rustlings Pro — already up to date"
     };
     println!("{}", style(title).bold().cyan());
-    let store = Store::user().context("locating ~/.rustlings-pro/")?;
     println!("  state directory: {}", style(store.root().display()).dim());
 
     // Create the standard subdirs.
@@ -596,6 +623,11 @@ fn cmd_init(refresh: bool) -> Result<()> {
         style("rpro book").yellow()
     );
     println!();
+
+    // Record the content version so a later `rpro init` on this store is a no-op
+    // until the bundled content actually moves ahead (`CONTENT_VERSION` bumps).
+    std::fs::write(&marker, rpro_runner::CONTENT_VERSION.to_string())
+        .with_context(|| format!("recording content version at {}", marker.display()))?;
     Ok(())
 }
 
@@ -1357,6 +1389,31 @@ mod tests {
         p.set_current("a/3");
         store.save_progress(&p).unwrap();
         assert_eq!(resolve_exercise(&store, &exs, None).unwrap().meta.id, "a/3");
+    }
+
+    #[test]
+    fn store_content_behind_tracks_the_version_marker() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path();
+        let marker = root.join(".content-version");
+        // No marker → reads as version 0 → behind whenever the bundle is >= 1.
+        assert_eq!(
+            store_content_behind(root),
+            rpro_runner::CONTENT_VERSION > 0,
+            "an absent marker reads as version 0"
+        );
+        // A marker at the current version is NOT behind (steady state).
+        std::fs::write(&marker, rpro_runner::CONTENT_VERSION.to_string()).unwrap();
+        assert!(
+            !store_content_behind(root),
+            "a current marker is up to date"
+        );
+        // A newer marker (shouldn't happen, but be robust) is not behind either.
+        std::fs::write(&marker, (rpro_runner::CONTENT_VERSION + 1).to_string()).unwrap();
+        assert!(!store_content_behind(root), "a newer marker is not behind");
+        // Rolling the marker back to 0 makes it behind again (the upgrade path).
+        std::fs::write(&marker, "0").unwrap();
+        assert_eq!(store_content_behind(root), rpro_runner::CONTENT_VERSION > 0);
     }
 
     #[test]

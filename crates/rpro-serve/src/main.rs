@@ -677,13 +677,11 @@ async fn book_handler(
     }
 }
 
-/// Bundled content revision. Bump this whenever the shipped `exercises/`,
-/// `book/`, `glossary/`, `lessons/`, `quizzes/`, or `cheatsheets/` change in a
-/// way existing installs should pick up (e.g. the "never hand the answer"
-/// exercise sweep, new glossary terms, lesson rewrites). [`ensure_seeded`]
-/// re-copies the read-only content dirs of any store whose recorded version is
-/// older — so an already-seeded store isn't frozen on its first-run copies.
-const CONTENT_VERSION: u32 = 1;
+// Bundled content revision — shared across every surface (see
+// `rpro_runner::CONTENT_VERSION`). `ensure_seeded` re-copies the read-only
+// content dirs of any store whose recorded version is older, so an
+// already-seeded store isn't frozen on its first-run copies.
+use rpro_runner::CONTENT_VERSION;
 
 /// Ensure the chosen `store_root` is runnable: it must have an `exercises/` tree
 /// and a progress file with a `Current` entry, plus the embedded `book/` for the

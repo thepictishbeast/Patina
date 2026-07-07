@@ -13,6 +13,18 @@ use rpro_storage_fs::Store;
 use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
 
+/// Bundled-content revision — the single source of truth every surface seeds
+/// against (the web/desktop server, the CLI, and the TUI via the CLI store).
+///
+/// Bump this whenever the shipped `exercises/`, `book/`, `glossary/`, `lessons/`,
+/// `quizzes/`, or `cheatsheets/` change in a way existing installs should pick
+/// up (e.g. the "never hand the answer" exercise sweep, new glossary terms,
+/// lesson rewrites). A store records the version it was seeded at in a
+/// `.content-version` marker; a store whose marker is older re-copies the
+/// read-only content dirs on next seed, so an already-seeded store isn't frozen
+/// on its first-run copies. Progress is never touched by that refresh.
+pub const CONTENT_VERSION: u32 = 1;
+
 /// Errors during exercise discovery.
 #[derive(Debug, thiserror::Error)]
 pub enum DiscoveryError {
