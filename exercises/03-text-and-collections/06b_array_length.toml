@@ -1,0 +1,19 @@
+id = "collections/06b_array_length"
+title = "An array's length is part of its type"
+difficulty = "beginner"
+estimated_minutes = 6
+concept = "array-length-type"
+expected_error_code = "E0308"
+solution_outline = """
+`[i32; 3]` and `[i32; 4]` are DIFFERENT types — the length is baked in.
+The error names both sizes ("expected an array with a size of 3, found
+one with a size of 4"). Either drop the extra element so the value has
+exactly three, or — if you really want four — change the annotation to
+`[i32; 4]`. The exercise is about seeing that the count is part of the
+type, not a separate fact.
+"""
+
+[[book_refs]]
+chapter = "ch03-02-data-types"
+anchor = "the-array-type"
+why = "Arrays have a fixed length that is part of the type `[T; N]`; the compiler checks the element count against it."
