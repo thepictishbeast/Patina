@@ -1,17 +1,8 @@
 // Inspired by Rustlings (MIT/Apache-2.0) — github.com/rust-lang/rustlings
-
-// CONCEPT: a trait can REQUIRE another trait — written `trait Labelled: Display`,
-// which reads "to implement Labelled, a type must ALSO implement Display." That
-// required trait is a SUPERTRAIT. Requiring it lets the trait's own methods rely on
-// the parent's behaviour: `labelled` below uses `{self}`, which only works because
-// every `Labelled` type is guaranteed to also be `Display`.
-
-// `Sku` implements `Labelled` but NOT `Display`, so it breaks the supertrait's
-// promise (E0277: `Sku` doesn't implement `Display`).
-
-// Run it and read E0277, then make `Sku` printable so it can satisfy the supertrait:
-// implement `Display` for `Sku` (decide how a SKU should print). Don't change the
-// `Labelled` trait or `main`.
+//
+// `Sku` implements `Labelled`, but `Labelled` requires more than `Sku` currently
+// provides, so this won't compile. Satisfy that requirement without changing the
+// `Labelled` trait or `main`. Run it and read the compiler error.
 
 use std::fmt;
 

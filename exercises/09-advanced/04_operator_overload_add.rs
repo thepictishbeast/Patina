@@ -1,16 +1,8 @@
 // Inspired by Rustlings (MIT/Apache-2.0) — github.com/rust-lang/rustlings
-
-// CONCEPT: operators like `+` aren't magic built-ins reserved for numbers — each one
-// is backed by a TRAIT. `a + b` is really `a.add(b)`, from the `std::ops::Add` trait.
-// Number types come with `Add` already implemented; your own types don't, so `+`
-// isn't available on them until you implement that trait yourself.
-
-// `Point` has no `Add` impl, so `a + b` has no `add` method to call (E0369: cannot
-// add `Point` to `Point`).
-
-// Run it and read E0369, then teach `Point` how to add: implement the operator's
-// trait so `a + b` returns a new `Point` whose fields are the two points' fields added
-// together. Don't change `main`.
+//
+// `main` adds two `Point`s with `+`, but `Point` doesn't support `+` yet, so this
+// won't compile. Make `a + b` produce a `Point` whose fields are the two points'
+// fields added together, without changing `main`. Run it and read the compiler error.
 
 #[derive(Debug, Clone, Copy)]
 struct Point {

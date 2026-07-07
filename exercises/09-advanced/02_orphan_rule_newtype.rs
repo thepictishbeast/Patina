@@ -1,16 +1,8 @@
 // Inspired by Rustlings (MIT/Apache-2.0) — github.com/rust-lang/rustlings
-
-// CONCEPT: you can implement a trait for a type only if YOU define the trait, or YOU
-// define the type (or both) — never a foreign trait on a foreign type. This is the
-// coherence rule (often called the "orphan rule"), and it stops two unrelated crates
-// from each adding a conflicting impl behind your back.
-
-// Here `Display` belongs to the standard library and so does `Vec`, so implementing
-// one for the other is not allowed (E0117) — even though the code looks reasonable.
-
-// Run it and read E0117. To give a FOREIGN type your own behavior, wrap it in a type
-// YOU own — a one-field "newtype" struct — and implement the trait on that wrapper
-// instead. Print the list however you like, through your own type.
+//
+// This tries to give `Vec<String>` a custom `Display`, but Rust won't let you
+// implement a foreign trait on a foreign type. Make it compile so the list still
+// prints. Run it and read the compiler error, including its `help:` line.
 
 use std::fmt;
 

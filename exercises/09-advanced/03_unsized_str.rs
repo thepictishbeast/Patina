@@ -1,19 +1,8 @@
 // Inspired by Rustlings (MIT/Apache-2.0) — github.com/rust-lang/rustlings
-
-// CONCEPT: most types have a fixed SIZE the compiler knows up front, so it can put
-// them on the stack and pass them around by value. But `str` (the string data
-// itself, not `&str`) is a DYNAMICALLY SIZED type — its length isn't known until
-// runtime, so the compiler can't lay it out by value. That's why you always see
-// `&str`, never a bare `str`: a reference has a known size (a pointer plus a length)
-// even when the data behind it doesn't.
-
-// `first_char` tries to take a `str` BY VALUE, which the compiler rejects (E0277:
-// the size of `str` can't be known at compile time). Read the FIRST error — that's
-// the real lesson; the second (E0308) is just the call not matching the broken
-// signature, and fixing the parameter type fixes both.
-
-// Give the parameter a known size by taking the text behind a reference instead of
-// by value. Then the call works.
+//
+// `first_char` takes its text by value as `str`, which won't compile. Fix the
+// parameter type so it compiles, without changing what `main` passes or what it
+// prints. Run it and read the FIRST compiler error.
 
 fn first_char(text: str) -> char {
     text.chars().next().unwrap_or('?')
