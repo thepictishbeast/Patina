@@ -143,4 +143,4 @@ where you actually are.
 ---
 
 <!-- lesson-nav -->
-[← Lesson 9 — if / else if / else: making the program choose](09-if-else.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 10 — Loops: `loop`, `while`, and `for` →](10-loops.md)
+[← Lesson 9 — if / else if / else: making the program choose](09-if-else.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 10 — loop: repeat until you break →](10-loop-and-break.md)

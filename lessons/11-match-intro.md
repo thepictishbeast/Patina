@@ -1,6 +1,6 @@
 # Lesson 11 — `match` (intro)
 
-*(Phase 2 — Control flow, part 3 and last. After this comes the Phase 2 review and
+*(Phase 2 — Control flow, part 6 and last. After this comes the Phase 2 review and
 the `likes` kata.)*
 
 ## 1. Why it exists
@@ -210,4 +210,4 @@ the `likes` kata at the right level.
 ---
 
 <!-- lesson-nav -->
-[← Lesson 10 — Loops: `loop`, `while`, and `for`](10-loops.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 12 — `String` vs `&str` →](12-string-vs-str.md)
+[← Lesson 10c — for & ranges: walk each item](10c-for-and-ranges.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 12 — `String` vs `&str` →](12-string-vs-str.md)
