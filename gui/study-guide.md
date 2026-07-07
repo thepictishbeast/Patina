@@ -1,6 +1,6 @@
 # Study Guide — learning Rust with Tempered Studio
 
-A short guide to *how* to work through the Patina curriculum. It's 37 lessons for
+A short guide to *how* to work through the Patina curriculum. It's 38 lessons for
 absolute beginners, and it runs **fully offline** — no internet, no account, no AI
 required. Take it in order; each lesson is a small step that builds on the last.
 
@@ -40,7 +40,7 @@ Journey** — the whole path by stage, with your progress.
 
 | Stage | Lessons | What you'll learn |
 |---|---|---|
-| 1 · Foundations | 1–8 | bindings, `mut`, shadowing, constants, number types & overflow, expressions vs statements, functions, printing |
+| 1 · Foundations | 0–8 | hello world & reading a real compiler error, bindings, `mut`, shadowing, constants, number types & overflow, expressions vs statements, functions, printing |
 | 2 · Control Flow | 9–11 | `if`/`else` as an expression, loops, `match` |
 | 3 · Text & Collections | 12–14 | `String` vs `&str`, tuples/arrays/slices, `Vec` & `HashMap` |
 | 4 · Ownership & Borrowing | 15–17 | moves, references & borrowing, slices in depth |
