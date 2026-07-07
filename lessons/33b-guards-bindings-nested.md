@@ -212,4 +212,4 @@ fold it into the Phase-9 review.
 ---
 
 <!-- lesson-nav -->
-[← Lesson 33 — Refutability: when a pattern can fail](33-refutability.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 34 — Advanced Features: `unsafe`, Traits & Macros →](34-advanced-features.md)
+[← Lesson 33 — Refutability: when a pattern can fail](33-refutability.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 34 — unsafe: a small, audited escape hatch →](34-unsafe.md)

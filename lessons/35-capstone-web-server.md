@@ -236,4 +236,4 @@ A sentence or two: did it click that `execute` just *boxes and sends a closure*?
 ---
 
 <!-- lesson-nav -->
-[← Lesson 34 — Advanced Features: `unsafe`, Traits & Macros](34-advanced-features.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 36 — Automated Tests →](36-automated-tests.md)
+[← Lesson 34c — Declarative macros: macro_rules!](34c-macro-rules.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 36 — Automated Tests →](36-automated-tests.md)
