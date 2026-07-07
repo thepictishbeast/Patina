@@ -1,6 +1,6 @@
 # Lesson 23 — The `use` Keyword
 
-*(Phase 6 — Organizing & generics, part 3, and the finale of the "Organizing" set. Lesson
+*(Phase 6 — Organizing & generics, part 5, and the finale of the "Organizing" set. Lesson
 22 had you writing full paths like `crate::front_of_house::hosting::add_to_waitlist()`.
 Saying that on every call is noise. `use` brings a name into scope **once** so you can use
 the short form — think of it as a **symbolic link** in the filesystem: a shortcut to

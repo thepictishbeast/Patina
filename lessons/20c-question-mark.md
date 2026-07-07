@@ -125,4 +125,4 @@ Phase-5 review.
 ---
 
 <!-- lesson-nav -->
-[← Lesson 20b — panic!, unwrap and expect](20b-panic-unwrap-expect.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 21 — Packages, Crates & Modules →](21-packages-crates-modules.md)
+[← Lesson 20b — panic!, unwrap and expect](20b-panic-unwrap-expect.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 21 — Packages & crates →](21-packages-and-crates.md)

@@ -1,6 +1,6 @@
 # Lesson 22 — Paths & Visibility (`pub`)
 
-*(Phase 6 — Organizing & generics, part 2. Lesson 21 built the module **tree**. Now the
+*(Phase 6 — Organizing & generics, part 4. Lessons 21b–21c built the module **tree**. Now the
 two questions that make it usable: how do you **name** an item that lives in another module
 (a *path*), and what is **allowed** to be named from where (*visibility*, controlled by
 `pub`)? Paths reach; `pub` permits. They're two halves of one idea.)*
@@ -229,4 +229,4 @@ does the absolute-path preference make sense yet? Tell me, and I'll tune L23 (`u
 ---
 
 <!-- lesson-nav -->
-[← Lesson 21 — Packages, Crates & Modules](21-packages-crates-modules.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 23 — The `use` Keyword →](23-the-use-keyword.md)
+[← Lesson 21c — Splitting modules into files](21c-modules-in-files.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 23 — The `use` Keyword →](23-the-use-keyword.md)

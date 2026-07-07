@@ -1,6 +1,6 @@
 # Study Guide — learning Rust with Tempered Studio
 
-A short guide to *how* to work through the Patina curriculum. It's 71 lessons for
+A short guide to *how* to work through the Patina curriculum. It's 73 lessons for
 absolute beginners, and it runs **fully offline** — no internet, no account, no AI
 required. Take it in order; each lesson is a small step that builds on the last.
 
