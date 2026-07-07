@@ -403,13 +403,13 @@ source = "The Rust Book, ch.6.3 \"Concise Control Flow with if let\""
 
 [[term]]
 name = "tuple"
-aliases = ["tuples", "tuple type", "unit value", "unit type"]
+aliases = ["tuples", "tuple type", "unit value", "unit type", "tuple-field-access"]
 definition = "A tuple groups a FIXED number of values — which may be of different types — into one compound value, written with parentheses like `(1, \"hi\", true)`. You reach the parts by position (`t.0`, `t.1`, and so on) or by destructuring into separate names (`let (a, b, c) = t`). A tuple's length is fixed once it is written. The empty tuple `()` is called the unit value, and it is what an expression or function produces when it has no other meaningful value to return."
 book_chapter = "ch03-02-data-types"
 source = "The Rust Book, ch.3.2 \"Data Types — The Tuple Type\""
 [[term]]
 name = "array"
-aliases = ["arrays", "array type"]
+aliases = ["arrays", "array type", "array-length-type"]
 definition = "An array is a fixed-length sequence of values that all share one type, written in square brackets like `[10, 20, 30]`; its type is written `[i32; 3]` (element type, then length). The length is part of the type and fixed at compile time, and the whole array is stored inline rather than on the heap. Reading past the end is not allowed — a constant out-of-range index is caught at compile time, and a runtime one stops the program rather than reading stray memory. When you need a sequence that can grow or shrink, reach for a vector instead."
 book_chapter = "ch03-02-data-types"
 source = "The Rust Book, ch.3.2 \"Data Types — The Array Type\""
