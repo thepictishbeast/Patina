@@ -129,4 +129,25 @@ test.describe('Lessons: glossary tap-to-define', () => {
     await page.locator('#docview .lessonbody .glossdef.open').first().click();
     await expect(pop).toHaveCount(0);
   });
+
+  test('the Book chapters get tap-to-define too (forward-reference jargon), minus common-word false positives', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForSelector('#exTitle');
+    await page.evaluate(() => showView('book', 'ch04-01-what-is-ownership'));
+    await page.waitForSelector('#docview .bookbody');
+    await page.waitForTimeout(300); // async terms + linkify
+    const defs = page.locator('#docview .bookbody .glossdef');
+    await expect(defs.first(), 'the chapter linked at least one term').toBeVisible();
+    // Never in code (the book is full of examples), and the common-English stoplist
+    // holds (e.g. the ordinary word "result" must NOT be linked to the Rust term).
+    const bad = await page.evaluate(() => {
+      const els = [...document.querySelectorAll('#docview .bookbody .glossdef')];
+      return {
+        inCode: els.filter((e) => e.closest('code,pre,a,h1,h2,h3,h4,h5,h6')).length,
+        stoplisted: els.filter((e) => ['result', 'method', 'expect', 'collect', 'moved'].includes(e.textContent.trim().toLowerCase())).length,
+      };
+    });
+    expect(bad.inCode, 'no term linked inside code/heading').toBe(0);
+    expect(bad.stoplisted, 'no common-English word linked (stoplist)').toBe(0);
+  });
 });

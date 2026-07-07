@@ -2553,6 +2553,12 @@
       return _glossCache;
     }
     const _GLOSS_SKIP = new Set(['CODE', 'PRE', 'A', 'BUTTON', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6']);
+    // Common-English aliases that read as ordinary words in prose far more often
+    // than as the Rust term (case-sensitivity + the ≥5-char rule don't catch these
+    // lowercase collisions). Skipped as MATCH keys only — they stay glossary-search
+    // terms. Genuine Rust words (lifetime, immutable, reference, closures) are kept.
+    const _GLOSS_STOP = new Set(['result', 'results', 'method', 'expect', 'collect',
+      'moved', 'moves', 'owner', 'owned', 'owns', 'assign', 'shadow', 'shadowed', 'wrapping', 'send']);
     function _glossTextNodes(root) {
       const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
         acceptNode(n) {
@@ -2577,7 +2583,8 @@
       // common English words that would mis-link in unrelated prose; the names
       // (and long aliases like "mutex"/"annotation") carry the real value.
       terms.forEach(t => {
-        const keys = [t.name, ...(t.aliases || []).filter(a => a && a.length >= 5)];
+        const keys = [t.name, ...(t.aliases || []).filter(a =>
+          a && a.length >= 5 && !_GLOSS_STOP.has(a.toLowerCase()))];
         keys.filter(Boolean).forEach(k =>
           entries.push({ key: k, name: t.name, def: t.definition, ch: t.book_chapter }));
       });
@@ -2925,6 +2932,11 @@
         d.innerHTML = back + '<p>Chapter not found.</p>';
       } else {
         d.innerHTML = back + '<div class="bookbody">' + mdToHtml(ch.markdown) + '</div>';
+        // Tap-to-define here too: a beginner reading an early chapter hits terms
+        // from LATER ones (a forward reference like `closure` or `Vec`) — tapping
+        // reveals the plain-language definition. Skips code, so examples are
+        // untouched. (Same first-occurrence-per-term linkifier as the lessons.)
+        glossaryLinkify(d.querySelector('.bookbody'), await glossaryTerms());
       }
       wire();
       // Scroll priority: a book_ref anchor (heading id) wins; else a search term
