@@ -77,7 +77,7 @@ count · **split** = replace with the listed smaller lessons.
 | `22-paths-and-visibility` | 1485 | split | 4 | 0 | → **Paths: Naming Items Across Modules**<br>→ **Privacy and pub**<br>→ **pub on Structs and Enums** |
 | `23-the-use-keyword` | 1210 | trim | 5 | 3 | — |
 | ✅ `24-generics` → `24-generic-functions` + `24b-generic-types` (done `a1f8907`; E0369 wall = the destination, fwd-ref resolved) | 2270 | split | 6 | 1 | → **Generic Functions: the <T> Placeholder**<br>→ **Generic Structs, Enums, and Methods** |
-| `25-traits` | 1888 | split | 5 | 0 | → **Traits: Declare and Implement**<br>→ **Trait Bounds: Requiring Behavior of a Generic T** |
+| ✅ `25-traits` → `25-traits-declare-implement` + `25b-trait-bounds` (done `656a946`; 25b closes 24's E0369 arc) | 1888 | split | 5 | 0 | → **Traits: Declare and Implement**<br>→ **Trait Bounds: Requiring Behavior of a Generic T** |
 | `26-lifetimes` | 2344 | split | 6 | 2 | → **Lifetime Annotations: the longest Function**<br>→ **Lifetime Elision: the Annotations You Never Write**<br>→ **Lifetimes in Structs** |
 | `27-closures` | 1992 | split | 5 | 3 | → **Closures: Unnamed Inline Functions**<br>→ **Closure Capture and move** |
 | `28-iterators` | 2031 | split | 6 | 0 | → **Iterators: the next() Cursor**<br>→ **Adapter Chains: map, filter, collect** |
