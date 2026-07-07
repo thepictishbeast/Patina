@@ -223,4 +223,4 @@ me, and I'll pitch Lesson 16 (references & borrowing) to match.
 ---
 
 <!-- lesson-nav -->
-[← Lesson 14 — `Vec` and `HashMap`](14-vec-hashmap.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 16 — Shared references →](16-shared-references.md)
+[← Lesson 14b — HashMap: the lookup table](14b-hashmap.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 16 — Shared references →](16-shared-references.md)

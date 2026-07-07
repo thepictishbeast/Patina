@@ -129,4 +129,4 @@ match.
 ---
 
 <!-- lesson-nav -->
-[← Lesson 13b — Arrays: a fixed row of one type](13b-arrays.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 14 — `Vec` and `HashMap` →](14-vec-hashmap.md)
+[← Lesson 13b — Arrays: a fixed row of one type](13b-arrays.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 14 — Vec: the growable list →](14-vec.md)
