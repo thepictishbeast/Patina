@@ -670,6 +670,35 @@
     background:var(--bg-3);color:var(--fg);border:1px solid var(--line);border-radius:9px;padding:8px 16px;
     font-size:13px;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .18s,transform .18s}
   #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  /* ── Gamification (Paul 2026-07-07: "gamify learning … fun and cool"): a
+     compact XP/level/streak chip in the header, tap for the badge panel. XP is
+     a PURE FUNCTION of the server's `done` count, so a hint/reveal can never
+     grant it — the charter's "never reward reveals" holds by construction. */
+  #xpchip{display:inline-flex;align-items:center;gap:7px;background:var(--bg-2);border:1px solid var(--line);
+    border-radius:999px;padding:4px 11px;font-size:12px;color:var(--fg-dim);cursor:pointer;white-space:nowrap}
+  #xpchip:hover,#xpchip:focus-visible{border-color:var(--accent);color:var(--fg);outline:none}
+  #xpchip .xp-lv{font-weight:700;color:var(--fg)}
+  #xpchip .xp-bar{width:44px;height:5px;border-radius:999px;background:var(--bg-3);overflow:hidden;border:1px solid var(--line)}
+  #xpchip .xp-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),#ffb37a);border-radius:999px;width:0}
+  #xpchip .xp-streak{font-weight:700}
+  #xpchip .xp-streak.hot{color:#ff7a3c}
+  @media (max-width:760px){#xpchip .xp-bar{display:none}}
+  .xppanel{position:fixed;top:52px;right:10px;z-index:82;width:min(320px,92vw);background:var(--bg-2);
+    border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:14px 15px}
+  .xppanel h3{margin:0 0 3px;font-size:15px}
+  .xppanel .xp-sub{color:var(--fg-dim);font-size:12px;margin:0 0 11px}
+  .xppanel .badgegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:9px}
+  .badge{display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;
+    border:1px solid var(--line);border-radius:10px;padding:9px 6px;background:var(--bg-3)}
+  .badge.locked{opacity:.4;filter:grayscale(1)}
+  .badge .bi{font-size:22px;line-height:1}
+  .badge .bn{font-size:10.5px;color:var(--fg-dim);font-weight:600}
+  .badge.earned .bn{color:var(--fg)}
+  .xptoast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%) translateY(10px) scale(.96);z-index:85;
+    background:linear-gradient(135deg,var(--accent),#ffb37a);color:#1a1207;border-radius:12px;padding:11px 18px;
+    font-size:13.5px;font-weight:700;box-shadow:var(--shadow);opacity:0;pointer-events:none;
+    transition:opacity .22s cubic-bezier(.2,.8,.3,1),transform .22s cubic-bezier(.2,.8,.3,1)}
+  .xptoast.show{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}
   /* ephemeral celebration popup on completing an exercise — animates in, then
      auto-dismisses (Paul: a temporary congrats popup that frees the space a
      permanent banner would take). Non-interactive so it never blocks a tap. */
@@ -871,6 +900,12 @@
       <div class="track"><div class="fill" id="fill"></div></div>
       <span class="pct" id="pct">12 / 40 · 30%</span>
     </div>
+    <button id="xpchip" type="button" aria-haspopup="true" aria-expanded="false"
+      title="Your XP, level & streak — tap for badges" aria-label="XP, level and streak — open badges">
+      <span class="xp-lv" id="xpLv">Lv 1</span>
+      <span class="xp-bar"><i id="xpBar"></i></span>
+      <span class="xp-streak" id="xpStreak">🔥0</span>
+    </button>
     <button class="iconbtn" id="focusBtn" title="Focus mode — hide the exercise list for more room" aria-label="Toggle focus mode (hide the exercise list)" aria-pressed="false">◧</button>
     <button class="iconbtn" id="insightsBtn" title="Show/hide Insights (diagnostics, book refs &amp; tutor)" aria-label="Toggle the Insights panel" aria-expanded="false">▦</button>
     <button class="iconbtn" id="theme" title="Toggle dark/light">🌓</button>
@@ -1105,6 +1140,118 @@
       if (!t) { t = document.createElement('div'); t.id = 'toast'; document.body.appendChild(t); }
       t.textContent = msg; t.classList.add('show');
       clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 1400);
+    }
+
+    // ── Gamification: XP, level, streak & badges, all derived from the server's
+    //    authoritative `done` count. The load-bearing rule (charter: NEVER reward
+    //    a reveal/hint) holds BY CONSTRUCTION — `done` only rises when the learner
+    //    genuinely passes an exercise; a hint or answer-reveal leaves it untouched,
+    //    so it can grant no XP, no level, no streak. Pure offline localStorage.
+    const GAMIFY_KEY = 'ts-gamify';
+    const XP_PER_EXERCISE = 10;        // xp = doneExercises * this
+    const LEVEL_SIZE = 5;              // exercises per level
+    const BADGES = [
+      { id: 'first',  icon: '🌱', name: 'First step',    test: (d) => d >= 1 },
+      { id: 'five',   icon: '⭐', name: 'Getting going',  test: (d) => d >= 5 },
+      { id: 'ten',    icon: '🔟', name: 'Double digits',  test: (d) => d >= 10 },
+      { id: 'twenty', icon: '🏅', name: 'Twenty done',    test: (d) => d >= 20 },
+      { id: 'fifty',  icon: '🏆', name: 'Fifty strong',   test: (d) => d >= 50 },
+      { id: 's3',     icon: '🔥', name: '3-day streak',   test: (d, s) => s >= 3 },
+      { id: 's7',     icon: '🔥', name: 'Week strong',    test: (d, s) => s >= 7 },
+    ];
+    // Level (1-based) and progress toward the next, from the best-ever done count.
+    function xpLevel(best) { return Math.floor(best / LEVEL_SIZE) + 1; }
+    function xpProgress(best) { return (best % LEVEL_SIZE) / LEVEL_SIZE; } // 0..1
+    function gamifyLoad() {
+      try { const s = JSON.parse(localStorage.getItem(GAMIFY_KEY) || 'null'); if (s && typeof s.bestDone === 'number') return s; } catch (_) {}
+      return null;
+    }
+    function gamifySave(s) { try { localStorage.setItem(GAMIFY_KEY, JSON.stringify(s)); } catch (_) {} }
+    const xpDay = () => { const d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); };
+    function xpDaysBetween(a, b) { // whole days from day-string a to day-string b
+      const pa = a.split('-').map(Number), pb = b.split('-').map(Number);
+      const da = Date.UTC(pa[0], pa[1] - 1, pa[2]), db = Date.UTC(pb[0], pb[1] - 1, pb[2]);
+      return Math.round((db - da) / 86400000);
+    }
+    function xpToast(msg) {
+      let t = document.getElementById('xptoast');
+      if (!t) { t = document.createElement('div'); t.id = 'xptoast'; t.className = 'xptoast'; t.setAttribute('role', 'status'); document.body.appendChild(t); }
+      t.textContent = msg; t.classList.add('show');
+      clearTimeout(xpToast._t); xpToast._t = setTimeout(() => t.classList.remove('show'), 2200);
+    }
+    // The one entry point: fold the server-confirmed `done` count into XP state,
+    // celebrate any level-up / new badge, and repaint the header chip. Idempotent
+    // when `done` is unchanged (safe to call on every list refresh).
+    function gamifyUpdate(done) {
+      done = Math.max(0, done | 0);
+      let s = gamifyLoad();
+      const today = xpDay();
+      if (!s) {
+        // First run: SEED from current progress without a toast storm — pre-earn
+        // every badge already merited, set a 1-day streak if there's any progress.
+        const streak = done > 0 ? 1 : 0;
+        s = { bestDone: done, lastDone: done, streak, lastActiveDay: done > 0 ? today : null,
+              lastLevel: xpLevel(done), earned: BADGES.filter(b => b.test(done, streak)).map(b => b.id) };
+        gamifySave(s);
+        gamifyPaint(s); return;
+      }
+      // A genuine new completion (done rose past what we last saw) drives the streak.
+      if (done > s.lastDone) {
+        if (!s.lastActiveDay) { s.streak = 1; }
+        else {
+          const gap = xpDaysBetween(s.lastActiveDay, today);
+          if (gap <= 0) { /* already counted today — streak unchanged */ }
+          else if (gap === 1) { s.streak = (s.streak || 0) + 1; }
+          else { s.streak = 1; } // a day was skipped — streak resets
+        }
+        s.lastActiveDay = today;
+      }
+      s.lastDone = done;
+      s.bestDone = Math.max(s.bestDone || 0, done); // XP/level never go backwards on reset-to-redo
+      // Celebrate a level-up.
+      const lvl = xpLevel(s.bestDone);
+      if (lvl > (s.lastLevel || 1)) { xpToast('⬆️ Level ' + lvl + '!'); }
+      s.lastLevel = lvl;
+      // Award any newly-merited badges (permanent once earned).
+      s.earned = s.earned || [];
+      for (const b of BADGES) {
+        if (!s.earned.includes(b.id) && b.test(s.bestDone, s.streak || 0)) {
+          s.earned.push(b.id);
+          xpToast(b.icon + ' Badge: ' + b.name);
+        }
+      }
+      gamifySave(s);
+      gamifyPaint(s);
+    }
+    function gamifyPaint(s) {
+      const lv = document.getElementById('xpLv'), bar = document.getElementById('xpBar'), st = document.getElementById('xpStreak');
+      if (lv) lv.textContent = 'Lv ' + xpLevel(s.bestDone);
+      if (bar) bar.style.width = Math.round(xpProgress(s.bestDone) * 100) + '%';
+      if (st) { const n = s.streak || 0; st.textContent = '🔥' + n; st.classList.toggle('hot', n >= 3); }
+    }
+    // Tap the chip → a panel with exact XP and the badge grid (earned + locked).
+    function gamifyTogglePanel() {
+      let p = document.getElementById('xppanel');
+      const chip = document.getElementById('xpchip');
+      if (p) { p.remove(); if (chip) chip.setAttribute('aria-expanded', 'false'); return; }
+      const s = gamifyLoad() || { bestDone: 0, streak: 0, earned: [] };
+      const xp = (s.bestDone || 0) * XP_PER_EXERCISE, lvl = xpLevel(s.bestDone || 0);
+      const toNext = LEVEL_SIZE - ((s.bestDone || 0) % LEVEL_SIZE);
+      p = document.createElement('div'); p.className = 'xppanel'; p.id = 'xppanel'; p.setAttribute('role', 'dialog'); p.setAttribute('aria-label', 'XP and badges');
+      p.innerHTML = '<h3>Level ' + lvl + ' · ' + xp + ' XP</h3>'
+        + '<p class="xp-sub">' + (s.bestDone || 0) + ' exercises done · 🔥 ' + (s.streak || 0) + '-day streak · '
+        + toNext + ' more to level up</p>'
+        + '<div class="badgegrid">' + BADGES.map(b => {
+            const got = (s.earned || []).includes(b.id);
+            return '<div class="badge ' + (got ? 'earned' : 'locked') + '" title="' + esc(b.name) + (got ? '' : ' (locked)') + '">'
+              + '<span class="bi" aria-hidden="true">' + b.icon + '</span><span class="bn">' + esc(b.name) + '</span></div>';
+          }).join('') + '</div>';
+      document.body.appendChild(p);
+      if (chip) chip.setAttribute('aria-expanded', 'true');
+      // Dismiss on any outside click / Esc.
+      const off = (ev) => { if (!p.contains(ev.target) && ev.target !== chip) { p.remove(); if (chip) chip.setAttribute('aria-expanded', 'false'); document.removeEventListener('mousedown', off); document.removeEventListener('keydown', onEsc); } };
+      const onEsc = (ev) => { if (ev.key === 'Escape') off({ target: document.body }); };
+      setTimeout(() => { document.addEventListener('mousedown', off); document.addEventListener('keydown', onEsc); }, 0);
     }
     // Ephemeral congrats on COMPLETING an exercise (fires on advance, so once per
     // exercise — no re-run spam). Animates in, holds, fades out; non-interactive.
@@ -2010,6 +2157,8 @@
         document.getElementById('pct').textContent = `${data.done || 0} / ${data.total} · ${pct}%`;
         document.getElementById('fill').style.width = pct + '%';
       }
+      // Fold the server-authoritative done count into the XP/level/streak/badges.
+      if (data && typeof data.done === 'number') gamifyUpdate(data.done);
     }
 
     // The Recall queue: codes the learner has met, weakest-first, with mastery
@@ -3758,6 +3907,9 @@
     document.getElementById('focusBtn').onclick = () =>
       setFocusMode(!document.querySelector('main').classList.contains('no-list'));
     setFocusMode((() => { try { return localStorage.getItem('ts-focus') === '1'; } catch (_) { return false; } })());
+    // Gamification chip → the XP/badges panel; paint from any existing progress.
+    document.getElementById('xpchip').onclick = () => gamifyTogglePanel();
+    try { const gs = gamifyLoad(); if (gs) gamifyPaint(gs); } catch (_) {}
     // run/check/explain → live POST to the local server, raw output into xterm.
     document.getElementById('runbtn').onclick = () => runOp('run');
     document.getElementById('checkbtn').onclick = () => runOp('check');
