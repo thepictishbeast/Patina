@@ -154,4 +154,4 @@ Tell me, and I'll shape the Phase-3 review around it.
 ---
 
 <!-- lesson-nav -->
-[← Lesson 14 — Vec: the growable list](14-vec.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 15 — Ownership & Moves →](15-ownership-and-moves.md)
+[← Lesson 14 — Vec: the growable list](14-vec.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 15 — Ownership, scope & drop →](15-ownership.md)

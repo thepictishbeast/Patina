@@ -1,6 +1,6 @@
 # Lesson 16 — Shared references: borrow to *read*
 
-*(Phase 4 — Ownership, part 2. Lesson 15 left us with a clumsy choice: hand a value
+*(Phase 4 — Ownership, part 4. Lessons 15–15c left us with a clumsy choice: hand a value
 away (move) or pay to copy it (`.clone()`). Borrowing is the way out — use a value
 without taking it.)*
 
@@ -116,4 +116,4 @@ Lesson 16b to match.
 ---
 
 <!-- lesson-nav -->
-[← Lesson 15 — Ownership & Moves](15-ownership-and-moves.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 16b — Mutable references & the borrowing rules →](16b-mutable-references.md)
+[← Lesson 15c — Copy & Clone: when assignment duplicates](15c-copy-and-clone.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 16b — Mutable references & the borrowing rules →](16b-mutable-references.md)

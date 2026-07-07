@@ -1,6 +1,6 @@
 # Lesson 17 — Slices in Depth
 
-*(Phase 4 — Ownership, part 3 and last. Lesson 13 introduced slices as "a view into a
+*(Phase 4 — Ownership, part 6 and last. Lesson 13 introduced slices as "a view into a
 sequence." Now that you know borrowing (Lesson 16), we can see what a slice *really* is —
 and the bug it quietly prevents.)*
 

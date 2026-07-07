@@ -1,6 +1,6 @@
 # Lesson 16b — Mutable references & the borrowing rules
 
-*(Phase 4 — Ownership, part 3. Lesson 16 lent values out to be READ. Now: lending a
+*(Phase 4 — Ownership, part 5. Lesson 16 lent values out to be READ. Now: lending a
 value out to be CHANGED — and the two rules that make lending safe at all.)*
 
 ## 1. Why it exists
