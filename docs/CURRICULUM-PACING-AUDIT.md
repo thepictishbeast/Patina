@@ -53,7 +53,7 @@ count · **split** = replace with the listed smaller lessons.
 | Lesson | Words | Verdict | Concepts | Fwd refs | Becomes |
 |---|---|---|---|---|---|
 | `00-hello-world` | 879 | ok | 5 | 1 | — |
-| `01-bindings-and-immutability` | 1136 | trim | 5 | 3 | — |
+| ✅ `01-bindings-and-immutability` (trimmed in Batch A `1762b79`, 1214→1095w — row belatedly marked; found unmarked during the pt.9 audit-of-the-audit) | 1136 | trim | 5 | 3 | — |
 | `02-mutability` | 695 | ok | 2 | 1 | — |
 | `03-shadowing` | 713 | ok | 3 | 1 | — |
 | `04-constants` | 643 | ok | 4 | 1 | — |
@@ -75,7 +75,7 @@ count · **split** = replace with the listed smaller lessons.
 | ✅ `20-error-handling` → `20-result` + `20b-panic-unwrap-expect` + `20c-question-mark` (done `244b624`) | 1406 | split | 4 | 2 | → **Result<T, E>: Errors Are Values**<br>→ **panic!, unwrap and expect**<br>→ **The ? Operator** |
 | ✅ `21-packages-crates-modules` → `21-packages-and-crates` + `21b-modules` + `21c-modules-in-files` (done `2605311`; pub fwd-ref → copy-now-understand-in-L22 gloss; cardinality + mod.rs style → Book §7.1/§7.5; NEW E0601 + E0425 walls) | 1507 | split | 4 | 1 | → **Packages and Crates**<br>→ **Modules and the Module Tree**<br>→ **Splitting Modules into Files** |
 | ✅ `22-paths-and-visibility` → `22-paths` + `22b-privacy-and-pub` + `22c-pub-structs-enums` (done `7f26510`; NEW E0425 forgot-super wall pairing its exercise; E0603/E0616 kept; pub(crate)+E0451+prefer-absolute → Book §7.3 per audit; couplings placed by expected_error_code) | 1485 | split | 4 | 0 | → **Paths: Naming Items Across Modules**<br>→ **Privacy and pub**<br>→ **pub on Structs and Enums** |
-| `23-the-use-keyword` | 1210 | trim | 5 | 3 | — |
+| ✅ `23-the-use-keyword` (trimmed `248a13a`: nested/self+Write example, glob+HashSet example, pub-use discussion → Book §7.4 pointers; ALL 3 fwd-refs died with the cuts) | 1210 | trim | 5 | 3 | — |
 | ✅ `24-generics` → `24-generic-functions` + `24b-generic-types` (done `a1f8907`; E0369 wall = the destination, fwd-ref resolved) | 2270 | split | 6 | 1 | → **Generic Functions: the <T> Placeholder**<br>→ **Generic Structs, Enums, and Methods** |
 | ✅ `25-traits` → `25-traits-declare-implement` + `25b-trait-bounds` (done `656a946`; 25b closes 24's E0369 arc) | 1888 | split | 5 | 0 | → **Traits: Declare and Implement**<br>→ **Trait Bounds: Requiring Behavior of a Generic T** |
 | ✅ `26-lifetimes` → `26-lifetime-annotations` + `26b-lifetime-elision` + `26c-lifetimes-in-structs` (done `f52cce7`; both iterator fwd-refs rewritten w/ find/match) | 2344 | split | 6 | 2 | → **Lifetime Annotations: the longest Function**<br>→ **Lifetime Elision: the Annotations You Never Write**<br>→ **Lifetimes in Structs** |
@@ -88,7 +88,7 @@ count · **split** = replace with the listed smaller lessons.
 | ✅ `33-advanced-patterns` → `33-refutability` + `33b-guards-bindings-nested` (done `fce023e`; flagship walk tightened → Book Ch.19.3, ref footnote → 1-line read-more; NEW E0004 guards-exhaustivity pitfall in 33b) | 2343 | split | 4 | 0 | → **Refutability: When a Pattern Can Fail**<br>→ **Guards, @ Bindings & Nested Patterns** |
 | ✅ `34-advanced-features` → `34-unsafe` + `34b-operator-overloading` + `34c-macro-rules` (done `4917a9f`; superpowers 2–5 → Book Ch.20.1, adv-traits depth → Ch.20.2; NEW E0369 pitfall in 34b closing L31's Output= IOU; NEW trailing-comma macro pitfall in 34c) | 2317 | split | 4 | 0 | → **unsafe: A Small Audited Escape Hatch**<br>→ **Operator Overloading & Associated Types**<br>→ **Declarative Macros: macro_rules!** |
 | ✅ `35-capstone-web-server` → `35-single-threaded-server` + `35b-thread-pool` (done `6464b3f`; ALL 3 fwd-refs fixed: 'static gloss, assert! gloss, Option::take honest gloss; slow-request now demonstrated; NEW E0596 pitfall; Drop-order + lock-scope → Book Ch.21) | 1442 | split | 5 | 3 | → **Capstone Part 1: A Single-Threaded Web Server**<br>→ **Capstone Part 2: The Thread Pool & Graceful Shutdown** |
-| `36-automated-tests` | 1012 | trim | 4 | 0 | — |
+| ✅ `36-automated-tests` (trimmed `248a13a`: custom messages + should_panic(expected) → Book Ch.11.1, organization → Ch.11.3 (+ doc-tests now = L37); left/right walkthrough intact) | 1012 | trim | 4 | 0 | — |
 | ✅ `37-more-about-cargo` → `37-doc-comments` + `37b-shipping-with-cargo` (done `7ae2fc8`; REAL doc-test pass+fail captures from a live cargo project; publish/workspace mechanics → Book §14.2/§14.3 per audit; 37b carries the course epilogue) | 1133 | split | 4 | 0 | → **Documenting Rust: Doc Comments & Doc-Tests**<br>→ **Shipping with Cargo: Profiles, Publishing & Workspaces** |
 **Editorial override — `16-references-and-borrowing`:** the auditor said *trim* (1393 w, 5 concepts),
 but this lesson is the practice hub of the whole curriculum — **10 mapped exercises across 8 concept
