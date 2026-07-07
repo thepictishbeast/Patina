@@ -469,3 +469,17 @@ aliases = ["macros", "println macro", "bang operator"]
 definition = "A macro is code that writes code: when the compiler meets a macro call it expands into more Rust before the program is built. You call one by putting a `!` right after its name — `println!`, `vec!`, `panic!` — and that `!` is exactly how you tell a macro call apart from an ordinary function call. Macros can do things a plain function cannot, such as accept any number of arguments or check a format string as the code compiles, which is why printing text is a macro rather than a function."
 book_chapter = ""
 source = "The Rust Book, ch.19.5 \"Macros\" (and the println! you meet from the very first program)"
+
+[[term]]
+name = "type annotation"
+aliases = ["type annotations", "annotation", "annotate the type"]
+definition = "A type annotation is where you write a value's type explicitly, after a colon — `let count: u32 = 5;`, or a function parameter like `n: i32`. Often you can leave it off and the compiler infers the type from how the value is used; but sometimes it can't tell which type you mean and needs you to say, and a few places always require one (function parameters, and `const`)."
+book_chapter = "ch03-02-data-types"
+source = "The Rust Book, ch.3.2 \"Data Types\""
+
+[[term]]
+name = "cargo"
+aliases = ["Cargo", "cargo new", "cargo run", "Cargo.toml"]
+definition = "Cargo is Rust's build tool and package manager — the command you use to start, build, run, and test a project. `cargo new name` lays out a project the standard way, `cargo run` compiles and runs it, and `cargo test` runs its tests. It reads a `Cargo.toml` file that lists the project's name and its dependencies (other people's crates), fetching and building them for you."
+book_chapter = ""
+source = "The Rust Book, ch.1.3 \"Hello, Cargo!\" (and The Cargo Book)"
