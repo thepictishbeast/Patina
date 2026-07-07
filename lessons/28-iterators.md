@@ -305,4 +305,4 @@ change / take ownership"? Tell me, and I'll fold it into the Phase-7 review.
 ---
 
 <!-- lesson-nav -->
-[← Lesson 27 — Closures: Anonymous Functions That Capture](27-closures.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 29 — Smart Pointers: `Box`, `Rc`, `RefCell`, `Deref`, `Drop` →](29-smart-pointers.md)
+[← Lesson 27b — Closure capture & move](27b-closure-capture.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 29 — Smart Pointers: `Box`, `Rc`, `RefCell`, `Deref`, `Drop` →](29-smart-pointers.md)

@@ -127,4 +127,4 @@ me, and I'll fold it into the Phase-6 review.
 ---
 
 <!-- lesson-nav -->
-[← Lesson 26b — Lifetime elision](26b-lifetime-elision.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 27 — Closures: Anonymous Functions That Capture →](27-closures.md)
+[← Lesson 26b — Lifetime elision](26b-lifetime-elision.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 27 — Closures: unnamed inline functions →](27-closure-syntax.md)
