@@ -64,12 +64,12 @@ count · **split** = replace with the listed smaller lessons.
 | `09-if-else-expressions` | 1440 | split | 4 | 1 | → **if / else if / else — making the program choose**<br>→ **if is an expression — branching that produces a value** |
 | `10-loops` | 1380 | split | 7 | 3 | → **loop — repeat until you break**<br>→ **while — repeat while a condition holds**<br>→ **for and ranges — walk each item** |
 | `11-match-intro` | 1276 | trim | 5 | 0 | — |
-| `12-string-vs-str` | 1278 | trim | 4 | 2 | — |
+| ✅ `12-string-vs-str` (trimmed `8403d8e`: slice-syntax deferred to L13, + & UTF-8 → Book) | 1278 | trim | 4 | 2 | — |
 | `13-tuples-arrays-slices` | 1412 | split | 5 | 0 | → **Tuples — grouping mixed values**<br>→ **Arrays — a fixed row of one type**<br>→ **Slices — a borrowed window into a sequence** |
 | `14-vec-hashmap` | 1301 | split | 6 | 3 | → **Vec — the growable list**<br>→ **HashMap — the lookup table** |
 | `15-ownership-and-moves` | 1517 | split | 6 | 0 | → **Ownership, Scope, and Drop**<br>→ **Moves — assignment hands ownership over**<br>→ **Copy and Clone** |
 | ✅ `16-references-and-borrowing` → `16-shared-references` + `16b-mutable-references` (override split, done `934d47c`) | 1393 | split | 5 | 1 | — |
-| `17-slices-in-depth` | 1356 | trim | 4 | 2 | — |
+| ✅ `17-slices-in-depth` (trimmed `8403d8e`: first_word → signature + Book §4.3; coercion glossed) | 1356 | trim | 4 | 2 | — |
 | ✅ `18-structs` → `18-defining-structs` + `18b-methods-and-impl` + `18c-derive-debug` (done `5dbd4c9`) | 1358 | split | 6 | 0 | → **Defining Structs**<br>→ **Methods and impl Blocks**<br>→ **Printing Your Own Types: derive(Debug)** |
 | ✅ `19-enums-and-matching` → `19-enums` + `19b-option` + `19c-match-in-depth` + `19d-concise-matching` (done `4fda08a`) | 1452 | split | 5 | 1 | → **Enums: One-of Types**<br>→ **Option<T>: Rust Has No Null**<br>→ **match Patterns in Depth**<br>→ **Concise Matching: if let, while let, let…else** |
 | ✅ `20-error-handling` → `20-result` + `20b-panic-unwrap-expect` + `20c-question-mark` (done `244b624`) | 1406 | split | 4 | 2 | → **Result<T, E>: Errors Are Values**<br>→ **panic!, unwrap and expect**<br>→ **The ? Operator** |
