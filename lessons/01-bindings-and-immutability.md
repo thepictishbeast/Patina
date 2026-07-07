@@ -176,4 +176,4 @@ adjust the next lesson to match where you actually are.
 ---
 
 <!-- lesson-nav -->
-[↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 2 — Mutability (`mut`) →](02-mutability.md)
+[← Lesson 0 — Hello, World (your first program)](00-hello-world.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 2 — Mutability (`mut`) →](02-mutability.md)

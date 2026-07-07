@@ -42,6 +42,7 @@ run "exercise integrity" bash scripts/verify-exercises.sh
 run "cli smoke" bash scripts/smoke-cli.sh
 run "gui transforms" node scripts/test-gui.mjs
 run "book anchors" node scripts/verify-book-anchors.mjs
+run "lesson integrity" node scripts/check-lessons.mjs
 
 # ── seam-gates.yml: language-seam guard ──────────────────────────────────────
 # No language-specific tokens (cargo/rustc/clippy/E0###/…) outside the language
