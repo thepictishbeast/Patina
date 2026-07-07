@@ -41,21 +41,22 @@ let owned = "hello".to_string();
 …and then grow it: `push_str` adds a `&str` onto the end, `format!` builds a fresh one from
 pieces (you met `format!` in Lesson 8), and `+` joins two.
 
-**They connect.** Slicing a `String` gives you a `&str` view back out: `&owned[0..5]` is a
-`&str` looking at the first five bytes of `owned`. So the two aren't rivals — a `String`
-owns the text; a `&str` is a window into some text (a literal, or a slice of a `String`).
+**They connect.** Ask a `String` for a view of itself and you get a `&str` back:
+`owned.as_str()`. So the two aren't rivals — a `String` owns the text; a `&str` is a
+window onto some text. (Windowing onto a *piece* of a `String` is slicing — the very
+next lesson's opening move.)
 
 ## 3. Tiny examples to read
 
-**All three at once** — a literal `&str`, an owned `String` we grow, and a `&str` sliced
-back out. Read it, then predict the three lines:
+**All three at once** — a literal `&str`, an owned `String` we grow, and a `&str` view
+of it. Read it, then predict the three lines:
 
 ```rust
 fn main() {
     let greeting: &str = "Hello";          // a literal — a fixed, borrowed view
     let mut owned = String::from("Hello");  // owned and growable
     owned.push_str(", world");              // grow it (push_str takes a &str)
-    let view: &str = &owned[0..5];          // slice a &str view back out
+    let view: &str = owned.as_str();        // a &str view of the whole String
     println!("greeting = {greeting}");
     println!("owned    = {owned}");
     println!("view     = {view}");
@@ -65,11 +66,11 @@ fn main() {
 ```
 greeting = Hello
 owned    = Hello, world
-view     = Hello
+view     = Hello, world
 ```
 
 `greeting` never changes (it's a fixed `&str`); `owned` grew because it's a `String`; and
-`view` is a `&str` peeking at the first five bytes of `owned`.
+`view` is a `&str` looking at `owned`'s text without owning it.
 
 **Now a 30-second rep — you type this one.** Build a `String` from pieces with `format!`,
 and predict the output:
@@ -117,27 +118,15 @@ error[E0277]: the type `str` cannot be indexed by `{integer}`
   = note: you can use `.chars().nth()` or `.bytes().nth()`
 ```
 
-Rust text is UTF-8, where one "character" can take several bytes, so `s[0]` is ambiguous —
-do you mean the first byte or the first character? Rust refuses to guess. The note hands you
-the honest tools: `s.chars().nth(0)` for the first character, or slice a *range* of bytes you
-know is valid (`&s[0..1]`). You'll meet slices properly in the next lesson.
+In Rust, text is stored so that one "character" can take several bytes — so `s[0]` is
+ambiguous (first byte? first character?) and Rust refuses to guess. The note hands you the
+honest tool: `s.chars().nth(0)` for the first character. (The full how-text-is-stored story
+is the Book, §8.2 — and slices, the range-based way in, arrive next lesson.)
 
-**A heads-up you'll understand fully in Phase 4.** Joining with `+` works, but it *consumes*
-the left string:
-
-```rust
-fn main() {
-    let s1 = String::from("Hello, ");
-    let s2 = String::from("world!");
-    let s3 = s1 + &s2;   // s1 is moved into s3 here
-    println!("{s3}");     // prints: Hello, world!
-}
-```
-
-This compiles and prints `Hello, world!`. The thing to file away: after `s1 + &s2`, you can't
-use `s1` anymore — `+` took ownership of it. *Why* that happens is the whole point of Phase 4;
-for now, just know `+` is "use the left one up to build the result," and reach for `format!`
-(which doesn't consume its inputs) when you want to keep them.
+**One heads-up on `+`.** Joining strings with `+` works, but it *uses up* the left-hand
+`String` to build the result — after `let s3 = s1 + …;` you can't use `s1` any more. *Why*
+is the whole point of Phase 4 (ownership); the details are in the Book, §8.2. Until then,
+reach for `format!`, which reads its pieces and consumes nothing.
 
 ## 5. Predict-then-run practice (your turn — write this yourself)
 
@@ -149,11 +138,12 @@ machine, a playground or `cargo new strings` works too.)* **Predict on paper bef
    `.to_string()`). Then `push_str` a space and another word onto it. Print it. **Predict** the
    final text before you run.
 
-2. **Slice a view.** From your `String`, take a `&str` slice of just the first word
-   (`&name[0..4]` style — pick the right range). Print the slice. **Predict** what it shows.
+2. **Take a view.** From your `String`, take a `&str` view of the whole thing with
+   `.as_str()` and print both. **Predict**: do they print the same text? (Viewing a
+   *piece* — a slice — is next lesson's opening move.)
 
-3. **`format!` vs `+`.** Build one sentence two ways: once with `format!` and once with `+`.
-   **Predict**: do both print the same thing? Run and confirm.
+3. **Build from pieces.** Build one sentence from three pieces with `format!`.
+   **Predict** the output before you run.
 
 4. **Trigger the index error.** Try to read `s[0]` on a `String`. **Predict**: compile or
    runtime? which **error code**? Run it, read the note, then get the first character a way the
