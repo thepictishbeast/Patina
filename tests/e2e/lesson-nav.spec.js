@@ -108,3 +108,25 @@ test.describe('Books woven into the path (chapter deep-links)', () => {
     expect(await links.count()).toBeGreaterThan(1); // one per phase
   });
 });
+
+test.describe('Lessons: glossary tap-to-define', () => {
+  test('jargon in lesson prose is tappable and reveals a definition — never in code', async ({ page }) => {
+    await page.goto('/');
+    await page.evaluate(() => showView('lessons', '01-bindings-and-immutability'));
+    await page.waitForSelector('#docview .lessonbody');
+    const defs = page.locator('#docview .lessonbody .glossdef');
+    await expect(defs.first()).toBeVisible(); // at least one term got linked
+    // Jargon-in-code / editor stays untouched: no glossdef inside code/link/heading.
+    const inCode = await page.evaluate(() =>
+      [...document.querySelectorAll('#docview .lessonbody .glossdef')]
+        .filter((el) => el.closest('code,pre,a,h1,h2,h3,h4,h5,h6')).length);
+    expect(inCode, 'no term linked inside code/link/heading').toBe(0);
+    // Tap → an inline definition popover appears; tap again → it closes (one at a time).
+    await defs.first().click();
+    const pop = page.locator('#docview .lessonbody .glosspop');
+    await expect(pop).toBeVisible();
+    await expect(pop).not.toBeEmpty();
+    await page.locator('#docview .lessonbody .glossdef.open').first().click();
+    await expect(pop).toHaveCount(0);
+  });
+});

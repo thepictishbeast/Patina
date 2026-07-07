@@ -207,6 +207,15 @@
     background:var(--bg-2); color:var(--fg-dim); border:1px solid var(--line); border-radius:8px;
     padding:6px 12px; font-size:13px; font-weight:600; cursor:pointer; }
   .docview .learnback:hover { color:var(--fg); border-color:var(--accent); }
+  /* Glossary tap-to-define: jargon in lesson prose is tappable to reveal its
+     definition inline (a dictionary-style dotted underline; no layout shift until tapped). */
+  .lessonbody .glossdef { font:inherit; color:var(--note); background:none; border:0; padding:0;
+    border-bottom:1px dotted var(--note); cursor:pointer; line-height:inherit; }
+  .lessonbody .glossdef:hover, .lessonbody .glossdef.open { color:var(--fg); border-bottom-style:solid; }
+  .lessonbody .glosspop { display:block; margin:7px 0 9px; padding:9px 12px; background:var(--bg-3);
+    border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:7px;
+    font-size:.93em; color:var(--fg); line-height:1.55; }
+  .lessonbody .glosspop-more { color:var(--note); font-weight:600; white-space:nowrap; margin-left:4px; }
   /* Lessons tab: the "Practice this lesson" launcher card */
   .docview .lessonpractice { margin:20px 0 6px; padding:12px 16px; border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:8px; }
   .docview .lessonpractice h3 { font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--fg-dim); margin:0 0 8px; }
@@ -2515,6 +2524,7 @@
         md = md.replace(/<!--[\s\S]*?-->/g, '').replace(/\n---\s*\n\s*\[[^\]]*Study Guide[\s\S]*$/i, ''); // drop HTML comments + the footer nav
         body.innerHTML = md ? '<div class="bookbody lessonbody">' + mdToHtml(md) + '</div>'
                             : '<p style="color:var(--fg-dim)">Lesson not found.</p>';
+        glossaryLinkify(body.querySelector('.lessonbody'), await glossaryTerms());
         body.scrollTop = 0;
       } catch (_) { body.innerHTML = '<p style="color:var(--fg-dim)">Could not load the lesson (offline?).</p>'; }
     }
@@ -2526,6 +2536,101 @@
       const done = () => { dr.hidden = true; ov.hidden = true; dr.removeEventListener('transitionend', done); };
       dr.addEventListener('transitionend', done);
     }
+
+    // ── Glossary tap-to-define: make beginner jargon in lesson prose tappable to
+    //    reveal its plain-language definition inline (Paul: "tap a word for a
+    //    definition — a term a beginner won't know should be lookup-able"). Terms
+    //    come from /api/glossary (cached); only the FIRST whole-word occurrence of
+    //    each term is linked, and NEVER inside code, links, or headings (the code
+    //    editor is deliberately untouched — Paul: it's hard there, hence the drawer).
+    let _glossCache = null;
+    async function glossaryTerms() {
+      if (_glossCache) return _glossCache;
+      try { _glossCache = (((await fetch('api/glossary').then(r => r.json())) || {}).terms) || []; }
+      catch (_) { _glossCache = []; }
+      return _glossCache;
+    }
+    const _GLOSS_SKIP = new Set(['CODE', 'PRE', 'A', 'BUTTON', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6']);
+    function _glossTextNodes(root) {
+      const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+        acceptNode(n) {
+          if (!n.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+          for (let p = n.parentNode; p && p !== root; p = p.parentNode)
+            if (_GLOSS_SKIP.has(p.nodeName) || (p.classList && p.classList.contains('glosspop')))
+              return NodeFilter.FILTER_REJECT;
+          return NodeFilter.FILTER_ACCEPT;
+        },
+      });
+      const out = [];
+      for (let n = w.nextNode(); n; n = w.nextNode()) out.push(n);
+      return out;
+    }
+    function glossaryLinkify(root, terms) {
+      if (!root || !terms || !terms.length) return;
+      // One match key per name + alias; prefer longer keys so multi-word terms
+      // win over their sub-words (e.g. "trait object" before "trait").
+      const entries = [];
+      // Match on the term NAME (a clean canonical Rust word) + only DISTINCTIVE
+      // aliases (≥5 chars). Short aliases like "lock"/"let"/"use"/"map"/"mut" are
+      // common English words that would mis-link in unrelated prose; the names
+      // (and long aliases like "mutex"/"annotation") carry the real value.
+      terms.forEach(t => {
+        const keys = [t.name, ...(t.aliases || []).filter(a => a && a.length >= 5)];
+        keys.filter(Boolean).forEach(k =>
+          entries.push({ key: k, name: t.name, def: t.definition, ch: t.book_chapter }));
+      });
+      entries.sort((a, b) => b.key.length - a.key.length);
+      const linked = new Set();
+      for (const e of entries) {
+        if (linked.has(e.name)) continue;
+        // Case-SENSITIVE, whole-word: Rust identifiers (Some, Vec, Option, Copy)
+        // are capitalized while the colliding English words ("some", "copy") are
+        // not — so this links the term, never the ordinary word. Lowercase concept
+        // terms (ownership, borrow, closure) still match their prose usage.
+        const re = new RegExp('\\b' + e.key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b');
+        for (const node of _glossTextNodes(root)) {
+          const m = node.nodeValue.match(re);
+          if (!m) continue;
+          const p = node.parentNode, i = m.index;
+          const btn = document.createElement('button');
+          btn.type = 'button'; btn.className = 'glossdef';
+          btn.textContent = node.nodeValue.slice(i, i + m[0].length);
+          btn.setAttribute('aria-label', btn.textContent + ' — tap for a definition');
+          btn.dataset.def = e.def; if (e.ch) btn.dataset.ch = e.ch;
+          p.insertBefore(document.createTextNode(node.nodeValue.slice(0, i)), node);
+          p.insertBefore(btn, node);
+          p.insertBefore(document.createTextNode(node.nodeValue.slice(i + m[0].length)), node);
+          p.removeChild(node);
+          linked.add(e.name);
+          break;
+        }
+      }
+      if (root._glossWired) return;
+      root._glossWired = true;
+      // One delegated handler: tapping a term toggles a single inline definition
+      // popover (tap again, or another term, closes it — one open at a time).
+      root.addEventListener('click', (ev) => {
+        const b = ev.target.closest('.glossdef');
+        if (!b || !root.contains(b)) return;
+        ev.preventDefault();
+        const open = root.querySelector('.glosspop'), same = open && open._for === b;
+        if (open) open.remove();
+        root.querySelectorAll('.glossdef.open').forEach((x) => x.classList.remove('open'));
+        if (same) return;
+        const pop = document.createElement('span');
+        pop.className = 'glosspop'; pop._for = b;
+        pop.appendChild(document.createTextNode(b.dataset.def + ' '));
+        if (b.dataset.ch) {
+          const a = document.createElement('a');
+          a.href = '#'; a.className = 'glosspop-more'; a.textContent = 'read more in the Book →';
+          a.onclick = (e2) => { e2.preventDefault(); showView('book', b.dataset.ch); };
+          pop.appendChild(a);
+        }
+        b.classList.add('open');
+        b.insertAdjacentElement('afterend', pop);
+      });
+    }
+
     async function renderLessons(id) {
       const d = freshDocview();
       if (!id) {
@@ -2658,6 +2763,7 @@
           : '';
         d.innerHTML = back + prevNextHtml + '<div class="bookbody lessonbody">' + mdToHtml(md) + '</div>'
           + cheatHtml + bookHtml + practiceHtml + quizHtml + prevNextHtml;
+        glossaryLinkify(d.querySelector('.lessonbody'), await glossaryTerms());
         markLessonRead(id); // reading it = progress (✓ in the list + Journey counts)
       }
       // Route "back to list" through showView (not renderLessons directly) so the
