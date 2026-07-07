@@ -2516,6 +2516,37 @@
     // The Quizzes tab: the per-phase self-check quizzes (served by /api/quizzes).
     // Each quiz is `## Questions` then `## Answers`; `quizToHtml` pairs each
     // question with its own reveal so predict-then-verify holds per question.
+    // Memoized ordered lists for the linear reference surfaces, so a single item
+    // can offer its previous/next neighbours (see prevNextNav) — same idea as the
+    // Book's bookChapters().
+    let _quizListCache = null;
+    async function quizList() {
+      if (_quizListCache) return _quizListCache;
+      try { _quizListCache = (((await fetch('api/quizzes').then(r => r.json())) || {}).quizzes) || []; }
+      catch (_) { _quizListCache = []; }
+      return _quizListCache;
+    }
+    let _cheatListCache = null;
+    async function cheatList() {
+      if (_cheatListCache) return _cheatListCache;
+      try { _cheatListCache = (((await fetch('api/cheatsheets').then(r => r.json())) || {}).cheatsheets) || []; }
+      catch (_) { _cheatListCache = []; }
+      return _cheatListCache;
+    }
+    // Build a prev/next footer (reuses the Book's .booknav styling) for an ordered
+    // [{id,title}] list: a card to the neighbour on each side, omitting the missing
+    // side at the ends. `cls` is a jump class already wired to open by data-id.
+    function prevNextNav(items, id, cls) {
+      const idx = items.findIndex(x => x.id === id);
+      if (idx === -1) return '';
+      const prev = items[idx - 1], next = items[idx + 1];
+      if (!prev && !next) return '';
+      return '<nav class="booknav">'
+        + (prev ? `<a href="#" class="${cls} booknav-prev" data-id="${esc(prev.id)}"><span class="booknav-dir">← previous</span><span class="booknav-ttl">${esc(prev.title)}</span></a>` : '<span></span>')
+        + (next ? `<a href="#" class="${cls} booknav-next" data-id="${esc(next.id)}"><span class="booknav-dir">next →</span><span class="booknav-ttl">${esc(next.title)}</span></a>` : '<span></span>')
+        + '</nav>';
+    }
+
     async function renderQuizzes(id) {
       const d = freshDocview();
       if (!id) {
@@ -2549,7 +2580,8 @@
       } else {
         const md = q.markdown.replace(/<!--[\s\S]*?-->/g, '');
         const backlinks = await phaseBackLinks(id);
-        d.innerHTML = back + quizToHtml(md) + backlinks;
+        const nav = prevNextNav(await quizList(), id, 'quizjump');
+        d.innerHTML = back + quizToHtml(md) + backlinks + nav;
         // Completion: mark the quiz done once EVERY answer has been revealed
         // (predicted, then verified). Surfaces as ✓ + count on the list.
         const reveals = [...d.querySelectorAll('.quizanswers')];
@@ -2559,6 +2591,8 @@
         }
       }
       d.querySelectorAll('.quizback').forEach(a => a.onclick = e => { e.preventDefault(); showView('quizzes'); });
+      // Wire the prev/next quiz cards (same jump class as the list).
+      d.querySelectorAll('.quizjump').forEach(a => a.onclick = e => { e.preventDefault(); renderQuizzes(a.dataset.id); });
       wirePhaseBackLinks(d);
       d.scrollTop = 0;
     }
@@ -2593,9 +2627,12 @@
         d.innerHTML = back + '<p>Cheatsheet not found.</p>';
       } else {
         const backlinks = await phaseBackLinks(id);
-        d.innerHTML = back + '<div class="bookbody">' + mdToHtml(c.markdown.replace(/<!--[\s\S]*?-->/g, '')) + '</div>' + backlinks;
+        const nav = prevNextNav(await cheatList(), id, 'cheatjump');
+        d.innerHTML = back + '<div class="bookbody">' + mdToHtml(c.markdown.replace(/<!--[\s\S]*?-->/g, '')) + '</div>' + backlinks + nav;
       }
       d.querySelectorAll('.cheatback').forEach(a => a.onclick = e => { e.preventDefault(); showView('cheatsheets'); });
+      // Wire the prev/next cheatsheet cards (same jump class as the list).
+      d.querySelectorAll('.cheatjump').forEach(a => a.onclick = e => { e.preventDefault(); renderCheatsheets(a.dataset.id); });
       wirePhaseBackLinks(d);
       d.scrollTop = 0;
     }
