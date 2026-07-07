@@ -135,7 +135,7 @@ run.**
 
 *(You write every line here — I won't. The predictions are your answer key.
 That completes the advanced-features tour — `unsafe` (34), operators and
-associated types (34b), and macros (34c). One lesson remains: the capstone,
+associated types (34b), and macros (34c). The capstone remains — two parts,
 where the whole course builds a real multithreaded web server.)*
 
 ## 6. What surprised you?
@@ -161,4 +161,4 @@ function signature)? Tell me, and I'll fold it into the Phase-9 review.
 ---
 
 <!-- lesson-nav -->
-[← Lesson 34b — Operator overloading & associated types](34b-operator-overloading.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 35 — Capstone: A Multithreaded Web Server →](35-capstone-web-server.md)
+[← Lesson 34b — Operator overloading & associated types](34b-operator-overloading.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 35 — Capstone I: a single-threaded web server →](35-single-threaded-server.md)
