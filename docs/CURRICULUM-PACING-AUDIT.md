@@ -72,7 +72,7 @@ count · **split** = replace with the listed smaller lessons.
 | `17-slices-in-depth` | 1356 | trim | 4 | 2 | — |
 | ✅ `18-structs` → `18-defining-structs` + `18b-methods-and-impl` + `18c-derive-debug` (done `5dbd4c9`) | 1358 | split | 6 | 0 | → **Defining Structs**<br>→ **Methods and impl Blocks**<br>→ **Printing Your Own Types: derive(Debug)** |
 | ✅ `19-enums-and-matching` → `19-enums` + `19b-option` + `19c-match-in-depth` + `19d-concise-matching` (done `4fda08a`) | 1452 | split | 5 | 1 | → **Enums: One-of Types**<br>→ **Option<T>: Rust Has No Null**<br>→ **match Patterns in Depth**<br>→ **Concise Matching: if let, while let, let…else** |
-| `20-error-handling` | 1406 | split | 4 | 2 | → **Result<T, E>: Errors Are Values**<br>→ **panic!, unwrap and expect**<br>→ **The ? Operator** |
+| ✅ `20-error-handling` → `20-result` + `20b-panic-unwrap-expect` + `20c-question-mark` (done `244b624`) | 1406 | split | 4 | 2 | → **Result<T, E>: Errors Are Values**<br>→ **panic!, unwrap and expect**<br>→ **The ? Operator** |
 | `21-packages-crates-modules` | 1507 | split | 4 | 1 | → **Packages and Crates**<br>→ **Modules and the Module Tree**<br>→ **Splitting Modules into Files** |
 | `22-paths-and-visibility` | 1485 | split | 4 | 0 | → **Paths: Naming Items Across Modules**<br>→ **Privacy and pub**<br>→ **pub on Structs and Enums** |
 | `23-the-use-keyword` | 1210 | trim | 5 | 3 | — |
