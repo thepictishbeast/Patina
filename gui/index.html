@@ -1190,29 +1190,42 @@
       };
       d.scrollTop = 0;
     }
+    // Shared result renderer for BOTH paths (web /api/sandbox + mobile Termux),
+    // so the console looks identical wherever the compile ran.
+    function sbxRender(text, passed, statusText) {
+      const out = document.getElementById('sbxout'), status = document.getElementById('sbxstatus');
+      const clean = (text || '').replace(/\x1b\[[0-9;]*m/g, '').trim(); // ANSI → plain
+      if (out) { out.classList.toggle('err', !passed); out.textContent = clean || '(no output)'; }
+      if (status) status.textContent = statusText;
+    }
     async function runSandbox() {
       const out = document.getElementById('sbxout'), status = document.getElementById('sbxstatus');
       const code = sbxView ? sbxView.state.doc.toString() : (document.getElementById('sbxta') ? document.getElementById('sbxta').value : '');
       if (status) status.textContent = 'running…';
       if (out) { out.classList.remove('err'); out.textContent = 'compiling + running…'; }
-      const strip = s => (s || '').replace(/\x1b\[[0-9;]*m/g, ''); // ANSI → plain
+      // Mobile: no local server — compile+run natively via the Termux bridge, op
+      // 'sandbox' (free-play, so MainActivity skips the exercise attempt count).
+      // The result arrives async at window.__termuxResult, short-circuited above.
+      if (window.AndroidSeam && AndroidSeam.runViaTermux) {
+        let ok = false; try { ok = AndroidSeam.termuxInstalled(); } catch (_) {}
+        if (!ok) { sbxRender('Native Run needs Termux with Rust (pkg install rust). Do the one-time Termux setup shown in the Practice tab, then Run here.', false, 'needs Termux'); return; }
+        sbxPending = 'sbx-' + Math.random().toString(36).slice(2);
+        try { AndroidSeam.runViaTermux(code, sbxPending, 'sandbox'); }
+        catch (_) { sbxRender('Could not reach Termux.', false, 'error'); }
+        return;
+      }
+      // Web: POST to the local server's /api/sandbox.
       try {
         const res = await fetch('api/sandbox', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ code }),
         });
-        if (!res.ok) {
-          if (out) { out.classList.add('err'); out.textContent = 'Sandbox unavailable (HTTP ' + res.status + ').'; }
-          if (status) status.textContent = 'error';
-          return;
-        }
+        if (!res.ok) { sbxRender('Sandbox unavailable (HTTP ' + res.status + ').', false, 'error'); return; }
         const r = await res.json();
-        const text = [strip(r.raw_stdout), strip(r.raw_stderr)].filter(s => s.trim()).join('\n').trim();
-        if (out) { out.classList.toggle('err', !r.passed); out.textContent = text || '(no output)'; }
-        if (status) status.textContent = r.passed ? 'ran ✓' : (r.status === null ? 'toolchain error' : 'exited ' + r.status);
+        sbxRender((r.raw_stdout || '') + '\n' + (r.raw_stderr || ''),
+          r.passed, r.passed ? 'ran ✓' : (r.status === null ? 'toolchain error' : 'exited ' + r.status));
       } catch (e) {
-        if (out) { out.classList.add('err'); out.textContent = 'Could not reach the local compiler (the offline server must be running).'; }
-        if (status) status.textContent = 'error';
+        sbxRender('Could not reach the local compiler (the offline server must be running).', false, 'error');
       }
     }
 
@@ -1221,7 +1234,17 @@
     // rustc (via an installed Termux) and calls this back asynchronously.
     let termuxPending = null;
     let termuxOp = 'run'; // which op fired the pending Termux call (run/check/test/explain)
+    let sbxPending = null; // separate pending id for the Sandbox (free-play) path
     window.__termuxResult = async function (cbId, res) {
+      // Sandbox results are free-play: render to the Sandbox console and STOP —
+      // no exercise verdict, no tutor, no recordRun (progress stays untouched).
+      if (cbId === sbxPending) {
+        sbxPending = null; res = res || {};
+        const passed = res.exit === 0;
+        const text = [(res.stdout || ''), (res.stderr || ''), (res.errmsg || '')].join('\n');
+        sbxRender(text, passed, passed ? 'ran ✓' : (res.errmsg ? 'error' : 'exited ' + res.exit));
+        return;
+      }
       if (cbId !== termuxPending) return; // ignore stale/duplicate
       termuxPending = null;
       res = res || {};
@@ -3365,10 +3388,8 @@
       document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMenu(); });
       appmenu.querySelectorAll('.menuitem[data-goto]').forEach(b =>
         b.onclick = () => { showView(b.dataset.goto); closeMenu(); });
-      // Sandbox runs via POST /api/sandbox — served on the web, but the mobile
-      // Termux intercept isn't wired yet, so hide it on-device until then (avoids
-      // a dead button on the phone).
-      if (window.AndroidSeam) { const sb = document.getElementById('menuSandbox'); if (sb) sb.hidden = true; }
+      // Sandbox runs on the web via POST /api/sandbox, and on-device via the
+      // Termux bridge (op 'sandbox') — available on both, so no gating.
     }
     document.getElementById('explainbtn').onclick = () => {
       const code = (prompt('Diagnostic code to explain (letters/digits only):', lastCode) || '').trim();
