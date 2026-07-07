@@ -61,7 +61,7 @@ count · **split** = replace with the listed smaller lessons.
 | `06-expressions-statements-semicolon` | 682 | ok | 4 | 2 | — |
 | `07-functions` | 647 | ok | 5 | 0 | — |
 | `08-comments-and-printing` | 712 | ok | 5 | 2 | — |
-| `09-if-else-expressions` | 1440 | split | 4 | 1 | → **if / else if / else — making the program choose**<br>→ **if is an expression — branching that produces a value** |
+| ✅ `09-if-else-expressions` → `09-if-else` + `09b-if-as-expression` (done `2a441fc`; sources-comparison meta cut; &str gloss made forward-safe; coupling moved to 09b) | 1440 | split | 4 | 1 | → **if / else if / else — making the program choose**<br>→ **if is an expression — branching that produces a value** |
 | `10-loops` | 1380 | split | 7 | 3 | → **loop — repeat until you break**<br>→ **while — repeat while a condition holds**<br>→ **for and ranges — walk each item** |
 | `11-match-intro` | 1276 | trim | 5 | 0 | — |
 | ✅ `12-string-vs-str` (trimmed `8403d8e`: slice-syntax deferred to L13, + & UTF-8 → Book) | 1278 | trim | 4 | 2 | — |
