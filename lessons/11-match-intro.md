@@ -15,11 +15,8 @@ every possible case, and the compiler checks it — so you physically cannot for
 one. That's a safety feature, not red tape; a forgotten case is a classic bug, and
 Rust turns it into a build error you fix in seconds.
 
-> **How the sources frame it:** **CR** gives the cleanest first taste (literal arms +
-> the `_` catch-all, returning a value); **BLOG** owns the failing "you forgot a
-> case" demo; the **BOOK** gives the one metaphor worth keeping (the coin sorter) and
-> the `match`-vs-`if` contrast. Deep pattern matching (pulling data *out* of values)
-> waits for Phase 5 — this is the shallow intro.
+(This is the shallow intro on purpose — deep pattern matching, pulling data
+*out* of values, waits for Phase 5.)
 
 ## 2. The idea
 
@@ -33,10 +30,9 @@ match value {
 }
 ```
 
-> **Metaphor (BOOK):** picture a coin-sorting machine. A coin slides along and drops
-> through the **first hole it fits**. `match` works the same way: the value falls
-> through the arms top to bottom and takes the **first pattern it matches** — the
-> rest are skipped.
+Think of the Book's coin-sorting machine: the value slides down the arms top to
+bottom and drops through the **first pattern it fits** — the rest are skipped
+(the full picture is Book §6.2).
 
 `_` is the **catch-all** — a pattern that matches anything, used as the "everything
 else" arm. Two more things to know up front:
@@ -47,9 +43,9 @@ else" arm. Two more things to know up front:
    For a type with a huge range (like a number), `_` is how you cover "all the rest"
    in one line. Leave a gap and it won't compile — you'll see that in part 4.
 
-And a contrast with Lesson 9: an `if` *condition* must be a `bool`, but `match`
-compares a value against patterns, so it works on any type — numbers, `bool`,
-characters, and (in Phase 5) your own types.
+One contrast with Lesson 9: an `if` *condition* must be a `bool`; `match`
+compares against patterns, so it works on any type (Book §6.2 has the fuller
+contrast).
 
 ## 3. Tiny examples to read
 
@@ -161,9 +157,8 @@ fn main() {
 lots
 ```
 
-> The compiler refusing a non-exhaustive `match` is the same spirit as the rest of
-> Rust: it would rather stop you at build time than let a value silently fall through
-> with no result at run time.
+The refusal is the same build-time-over-run-time spirit as the rest of Rust
+(Book §6.2).
 
 ## 5. Predict-then-run practice (your turn — write this yourself)
 
