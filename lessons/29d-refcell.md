@@ -147,4 +147,4 @@ it versus a plain `&mut`? Tell me, and I'll fold it into the Phase-7 review.
 ---
 
 <!-- lesson-nav -->
-[← Lesson 29c — Rc: one value, many owners](29c-rc.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 30 — Threads, Channels & Shared State →](30-threads-and-concurrency.md)
+[← Lesson 29c — Rc: one value, many owners](29c-rc.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 30 — Spawning threads: spawn, join & move →](30-spawning-threads.md)

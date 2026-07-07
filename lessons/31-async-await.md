@@ -292,4 +292,4 @@ pick each? Tell me, and I'll fold it into the Phase-8 review.
 ---
 
 <!-- lesson-nav -->
-[← Lesson 30 — Threads, Channels & Shared State](30-threads-and-concurrency.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 32 — Trait Objects & OOP in Rust: `dyn Trait`, Encapsulation, States as Types →](32-trait-objects-and-oop.md)
+[← Lesson 30c — Shared state: Arc & Mutex](30c-shared-state.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 32 — Trait Objects & OOP in Rust: `dyn Trait`, Encapsulation, States as Types →](32-trait-objects-and-oop.md)
