@@ -15,8 +15,8 @@
 
 [[term]]
 name = "binding"
-aliases = ["let", "bindings", "variable binding"]
-definition = "A binding is a name attached to a value with `let` (as in `let x = 5`). The name lets you refer to that value later in its scope. By default a binding is immutable — the value it holds cannot be reassigned."
+aliases = ["let", "bindings", "variable binding", "variable", "variables"]
+definition = "A binding is a name attached to a value with `let` (as in `let x = 5`) — often just called a *variable*. The name lets you refer to that value later in its scope. By default a binding is immutable — the value it holds cannot be reassigned."
 book_chapter = "ch03-01-variables-and-mutability"
 source = "The Rust Book, ch.3.1 \"Variables and Mutability\""
 
@@ -462,3 +462,10 @@ aliases = ["statements"]
 definition = "A statement is a piece of code that performs an action but does not evaluate to a value. A `let` binding is a statement, and so is any expression once a semicolon is placed after it — the semicolon discards the value. Because a statement has no value, there is nothing to hand back or read out of it; that is the counterpart to an expression, which does produce a value."
 book_chapter = "ch03-03-how-functions-work"
 source = "The Rust Book, ch.3.3 \"Functions\""
+
+[[term]]
+name = "macro"
+aliases = ["macros", "println macro", "bang operator"]
+definition = "A macro is code that writes code: when the compiler meets a macro call it expands into more Rust before the program is built. You call one by putting a `!` right after its name — `println!`, `vec!`, `panic!` — and that `!` is exactly how you tell a macro call apart from an ordinary function call. Macros can do things a plain function cannot, such as accept any number of arguments or check a format string as the code compiles, which is why printing text is a macro rather than a function."
+book_chapter = ""
+source = "The Rust Book, ch.19.5 \"Macros\" (and the println! you meet from the very first program)"
