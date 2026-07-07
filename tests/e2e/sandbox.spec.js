@@ -29,6 +29,8 @@ test.describe('Sandbox: free-play scratchpad', () => {
     await page.locator('#sbxrun').click();
     await expect(page.locator('#sbxout.err')).toBeVisible({ timeout: 30_000 });
     await expect(page.locator('#sbxout')).toContainText(/error/i);
+    // The status distinguishes a compile failure from a runtime one (not "exited 101").
+    await expect(page.locator('#sbxstatus')).toContainText(/compile error/i);
 
     // The whole point: the Sandbox NEVER touches exercise progress.
     await page.locator('.tab[data-view="practice"]').click();

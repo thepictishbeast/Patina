@@ -1192,11 +1192,17 @@
     }
     // Shared result renderer for BOTH paths (web /api/sandbox + mobile Termux),
     // so the console looks identical wherever the compile ran.
-    function sbxRender(text, passed, statusText) {
+    function sbxRender(text, passed, statusOverride) {
       const out = document.getElementById('sbxout'), status = document.getElementById('sbxstatus');
       const clean = (text || '').replace(/\x1b\[[0-9;]*m/g, '').trim(); // ANSI → plain
       if (out) { out.classList.toggle('err', !passed); out.textContent = clean || '(no output)'; }
-      if (status) status.textContent = statusText;
+      // A meta override (running / needs-Termux / network / toolchain) wins; else
+      // read the outcome — a rustc "error[E####]"/"error:" means it never compiled,
+      // vs a non-zero exit / panic at run time. Clearer than a bare exit code.
+      let st = statusOverride;
+      if (!st) st = passed ? 'ran ✓'
+        : (/\berror\[E\d{4}\]|\berror:/.test(clean) ? 'compile error ✗' : 'runtime error ✗');
+      if (status) status.textContent = st;
     }
     async function runSandbox() {
       const out = document.getElementById('sbxout'), status = document.getElementById('sbxstatus');
@@ -1223,7 +1229,7 @@
         if (!res.ok) { sbxRender('Sandbox unavailable (HTTP ' + res.status + ').', false, 'error'); return; }
         const r = await res.json();
         sbxRender((r.raw_stdout || '') + '\n' + (r.raw_stderr || ''),
-          r.passed, r.passed ? 'ran ✓' : (r.status === null ? 'toolchain error' : 'exited ' + r.status));
+          r.passed, r.status === null ? 'toolchain error' : undefined); // else: compile/runtime/ran
       } catch (e) {
         sbxRender('Could not reach the local compiler (the offline server must be running).', false, 'error');
       }
@@ -1242,7 +1248,7 @@
         sbxPending = null; res = res || {};
         const passed = res.exit === 0;
         const text = [(res.stdout || ''), (res.stderr || ''), (res.errmsg || '')].join('\n');
-        sbxRender(text, passed, passed ? 'ran ✓' : (res.errmsg ? 'error' : 'exited ' + res.exit));
+        sbxRender(text, passed, res.errmsg ? 'error' : undefined); // else: compile/runtime/ran
         return;
       }
       if (cbId !== termuxPending) return; // ignore stale/duplicate
