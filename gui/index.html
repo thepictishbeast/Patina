@@ -160,9 +160,20 @@
   /* Prose rhythm for the reading surfaces (lessons / book / quizzes / glossary).
      15.5px body + a ~78ch measure (680px column) reads far easier than the old
      14.6px at ~95ch — a beginner spends a lot of time on this text. */
-  .bookbody { font-size:15.5px; }
+  /* Reading size (Paul 2026-07-07, #41 readability): all long-form reading text
+     — the Book, lessons, the lesson drawer — scales with --read-scale, set from
+     the ⋯ menu's A− / A+ control and persisted. Default 1 = the tuned 15.5px. */
+  :root { --read-scale: 1; }
+  .bookbody { font-size:calc(15.5px * var(--read-scale)); }
   .bookbody p { margin:0 0 13px; }
   .bookbody > :first-child { margin-top:0; }
+  /* Reading-size stepper in the ⋯ menu. */
+  .readsize { display:inline-flex; align-items:center; gap:6px; }
+  .readsize button { background:var(--bg-2); color:var(--fg-dim); border:1px solid var(--line);
+    border-radius:8px; min-width:34px; padding:5px 0; font-weight:700; cursor:pointer; }
+  .readsize button:hover, .readsize button:focus-visible { color:var(--fg); border-color:var(--accent); outline:none; }
+  .readsize .rs-a-lo { font-size:11px; } .readsize .rs-a-hi { font-size:15px; }
+  .readsize .rs-val { min-width:44px; text-align:center; font-family:var(--mono); font-size:12px; color:var(--fg-dim); }
   /* The lesson DRAWER (#lessonDrawerBody.ldrawer-body — read a lesson while coding
      in Practice) carries .bookbody/.lessonbody but NOT .docview, whose base rule
      sets a full-height page layout we don't want in a slide-out panel. So the
@@ -932,6 +943,14 @@
       <button class="menuitem" data-goto="cheatsheets" role="menuitem">📋 Cheat sheets</button>
       <button class="menuitem" data-goto="sandbox" id="menuSandbox" role="menuitem">🧪 Sandbox</button>
       <button class="menuitem" data-goto="ide" id="menuIde" role="menuitem">🛠 IDE</button>
+    </div>
+    <div class="menusec">
+      <div class="menuh">Reading size</div>
+      <span class="readsize" role="group" aria-label="Reading text size">
+        <button type="button" id="rsDown" class="rs-a-lo" title="Smaller reading text" aria-label="Smaller reading text">A−</button>
+        <span class="rs-val" id="rsVal" aria-live="polite">100%</span>
+        <button type="button" id="rsUp" class="rs-a-hi" title="Larger reading text" aria-label="Larger reading text">A+</button>
+      </span>
     </div>
   </div>
 
@@ -3910,6 +3929,29 @@
     // Gamification chip → the XP/badges panel; paint from any existing progress.
     document.getElementById('xpchip').onclick = () => gamifyTogglePanel();
     try { const gs = gamifyLoad(); if (gs) gamifyPaint(gs); } catch (_) {}
+    // Reading size (#41): scale all long-form reading text (Book, lessons, drawer)
+    // via --read-scale, persisted. Clamped so layout never breaks. 5 steps.
+    const READ_KEY = 'ts-read-scale', READ_STEPS = [0.85, 1, 1.15, 1.3, 1.5];
+    function applyReadScale(v) {
+      document.documentElement.style.setProperty('--read-scale', String(v));
+      const label = document.getElementById('rsVal');
+      if (label) label.textContent = Math.round(v * 100) + '%';
+    }
+    function readScaleGet() {
+      try { const v = parseFloat(localStorage.getItem(READ_KEY)); if (READ_STEPS.includes(v)) return v; } catch (_) {}
+      return 1;
+    }
+    function setReadScale(dir) {
+      const cur = readScaleGet();
+      let i = READ_STEPS.indexOf(cur); if (i < 0) i = 1;
+      i = Math.min(READ_STEPS.length - 1, Math.max(0, i + dir));
+      const v = READ_STEPS[i];
+      try { localStorage.setItem(READ_KEY, String(v)); } catch (_) {}
+      applyReadScale(v);
+    }
+    document.getElementById('rsDown').onclick = () => setReadScale(-1);
+    document.getElementById('rsUp').onclick = () => setReadScale(1);
+    applyReadScale(readScaleGet()); // restore on load
     // run/check/explain → live POST to the local server, raw output into xterm.
     document.getElementById('runbtn').onclick = () => runOp('run');
     document.getElementById('checkbtn').onclick = () => runOp('check');
