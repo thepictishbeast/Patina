@@ -354,6 +354,15 @@
   .bshit-flash { background:rgba(247,76,0,.18); border-radius:4px; transition:background 1.4s ease; }
   .booktoc { list-style:none; padding:0; } .booktoc li { margin:3px 0; }
   .booktoc a { font-size:13.5px; } .booktoc small { margin-left:8px; }
+  /* Book chapter prev/next nav (linear reading) — two cards, prev left / next right. */
+  .booknav { display:flex; gap:10px; margin:22px 0 4px; }
+  .booknav a { flex:1 1 0; min-width:0; display:flex; flex-direction:column; gap:2px; text-decoration:none;
+    border:1px solid var(--line); border-radius:9px; padding:9px 13px; background:var(--bg-2); color:var(--fg); }
+  .booknav a:hover { border-color:var(--accent); }
+  .booknav .booknav-next { text-align:right; }
+  .booknav .booknav-dir { font-size:11px; color:var(--note); font-weight:600; }
+  .booknav .booknav-ttl { font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .booknav > span { flex:1 1 0; } /* empty placeholder keeps a lone next-link right-aligned */
   .pane { border-right:1px solid var(--line); display:flex; flex-direction:column; min-height:0; min-width:0; }
   .pane:last-child { border-right:none; }
   .pane h2 { font-size:11px; text-transform:uppercase; letter-spacing:.12em; color:var(--fg-dim);
@@ -2900,6 +2909,15 @@
       catch (_) { _glossCache = []; }
       return _glossCache;
     }
+    // The ordered Book table of contents, memoized — lets a chapter compute its
+    // previous/next neighbours for linear reading nav (see renderBook).
+    let _bookTocCache = null;
+    async function bookChapters() {
+      if (_bookTocCache) return _bookTocCache;
+      try { _bookTocCache = (((await fetch('api/book').then(r => r.json())) || {}).chapters) || []; }
+      catch (_) { _bookTocCache = []; }
+      return _bookTocCache;
+    }
     const _GLOSS_SKIP = new Set(['CODE', 'PRE', 'A', 'BUTTON', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6']);
     // Common-English aliases that read as ordinary words in prose far more often
     // than as the Rust term (case-sensitivity + the ≥5-char rule don't catch these
@@ -3283,7 +3301,19 @@
       if (!ch || !ch.markdown) {
         d.innerHTML = back + '<p>Chapter not found.</p>';
       } else {
-        d.innerHTML = back + '<div class="bookbody">' + mdToHtml(ch.markdown) + '</div>';
+        // Linear reading nav: find this chapter in the ordered ToC and offer its
+        // neighbours, so you can read straight through without bouncing to contents.
+        const chapters = await bookChapters();
+        const idx = chapters.findIndex(c => c.id === chapter);
+        const prev = idx > 0 ? chapters[idx - 1] : null;
+        const next = idx >= 0 && idx < chapters.length - 1 ? chapters[idx + 1] : null;
+        const navRow = (prev || next)
+          ? '<nav class="booknav">'
+            + (prev ? `<a href="#" class="bookjump booknav-prev" data-ch="${esc(prev.id)}"><span class="booknav-dir">← previous</span><span class="booknav-ttl">${esc(prev.title)}</span></a>` : '<span></span>')
+            + (next ? `<a href="#" class="bookjump booknav-next" data-ch="${esc(next.id)}"><span class="booknav-dir">next →</span><span class="booknav-ttl">${esc(next.title)}</span></a>` : '<span></span>')
+            + '</nav>'
+          : '';
+        d.innerHTML = back + '<div class="bookbody">' + mdToHtml(ch.markdown) + '</div>' + navRow;
         // Tap-to-define here too: a beginner reading an early chapter hits terms
         // from LATER ones (a forward reference like `closure` or `Vec`) — tapping
         // reveals the plain-language definition. Skips code, so examples are
