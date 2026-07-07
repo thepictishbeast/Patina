@@ -188,4 +188,4 @@ it into the Phase-9 review.
 ---
 
 <!-- lesson-nav -->
-[← Lesson 32b — Encapsulation: private fields, public methods](32b-encapsulation.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 33 — Advanced Patterns & Matching →](33-advanced-patterns.md)
+[← Lesson 32b — Encapsulation: private fields, public methods](32b-encapsulation.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 33 — Refutability: when a pattern can fail →](33-refutability.md)

@@ -307,4 +307,4 @@ keeping, and I'll fold it into the Phase-9 review.
 ---
 
 <!-- lesson-nav -->
-[← Lesson 33 — Advanced Patterns & Matching](33-advanced-patterns.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 35 — Capstone: A Multithreaded Web Server →](35-capstone-web-server.md)
+[← Lesson 33b — Guards, `@` bindings & nested patterns](33b-guards-bindings-nested.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 35 — Capstone: A Multithreaded Web Server →](35-capstone-web-server.md)

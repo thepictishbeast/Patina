@@ -40,7 +40,7 @@ test.describe('Lesson → Practice handoff (Batch A)', () => {
     // Spans both Batch-A slices: Foundations (00/04/07) + the L09–L34 pass
     // (10/20/33), incl. a with-exercise and a sandbox-only lesson from each.
     // NOTE: keep these ids current across lesson splits (a split renames files).
-    for (const id of ['00-hello-world', '04-constants', '07-functions', '10-loops', '20c-question-mark', '33-advanced-patterns']) {
+    for (const id of ['00-hello-world', '04-constants', '07-functions', '10-loops', '20c-question-mark', '33-refutability']) {
       const md = await page.evaluate(async (lid) => {
         const j = await fetch('api/lessons?id=' + lid).then((r) => r.json());
         return j.lesson.markdown;
