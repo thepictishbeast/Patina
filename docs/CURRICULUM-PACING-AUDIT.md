@@ -68,7 +68,7 @@ count · **split** = replace with the listed smaller lessons.
 | `13-tuples-arrays-slices` | 1412 | split | 5 | 0 | → **Tuples — grouping mixed values**<br>→ **Arrays — a fixed row of one type**<br>→ **Slices — a borrowed window into a sequence** |
 | `14-vec-hashmap` | 1301 | split | 6 | 3 | → **Vec — the growable list**<br>→ **HashMap — the lookup table** |
 | `15-ownership-and-moves` | 1517 | split | 6 | 0 | → **Ownership, Scope, and Drop**<br>→ **Moves — assignment hands ownership over**<br>→ **Copy and Clone** |
-| `16-references-and-borrowing` | 1393 | trim | 5 | 1 | — |
+| ✅ `16-references-and-borrowing` → `16-shared-references` + `16b-mutable-references` (override split, done `934d47c`) | 1393 | split | 5 | 1 | — |
 | `17-slices-in-depth` | 1356 | trim | 4 | 2 | — |
 | `18-structs` | 1358 | split | 6 | 0 | → **Defining Structs**<br>→ **Methods and impl Blocks**<br>→ **Printing Your Own Types: derive(Debug)** |
 | `19-enums-and-matching` | 1452 | split | 5 | 1 | → **Enums: One-of Types**<br>→ **Option<T>: Rust Has No Null**<br>→ **match Patterns in Depth**<br>→ **Concise Matching: if let, while let, let…else** |
