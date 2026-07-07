@@ -47,7 +47,9 @@ enum Cmd {
         /// Re-seed the bundled exercises, Book chapters, and glossary even if the
         /// store already has them — use after updating Tempered Studio to pull in
         /// new content. Preserves your progress, config, and any exercises you
-        /// added yourself (it merges, never deletes).
+        /// added yourself (the exercises dir merges; the read-only reference dirs
+        /// — book/glossary/lessons/quizzes/cheatsheets — are synced to the bundle,
+        /// so renamed or removed content disappears cleanly).
         #[arg(long)]
         refresh: bool,
     },
@@ -94,7 +96,7 @@ enum Cmd {
     },
     /// Read the Patina curriculum lessons offline. Omit the id to list them all.
     Lessons {
-        /// Lesson id (e.g. `05` or `05-number-types-and-overflow`; a prefix is
+        /// Lesson id (e.g. `05` or `05-scalar-types`; a prefix is
         /// enough). Omit to list every lesson in order.
         id: Option<String>,
     },
@@ -533,12 +535,26 @@ fn cmd_init(refresh: bool) -> Result<()> {
         let n = rpro_runner::discover(&exercises_dir).map_or(0, |v| v.len());
         println!("  + seeded {n} bundled exercise(s)");
     }
+    // Read-only reference dirs are SYNCED on refresh (cleared, then copied): a
+    // content update can REMOVE/RENAME a file (e.g. a lesson split), and an
+    // overlay copy would leave the old file behind as a ghost list entry. The
+    // exercises dir above is deliberately overlay-only — its README invites the
+    // user to drop their own exercises alongside the bundled set.
+    let sync_dir = |dir: &std::path::Path| -> Result<()> {
+        if refresh && dir.is_dir() {
+            std::fs::remove_dir_all(dir)
+                .with_context(|| format!("clearing {} for refresh", dir.display()))?;
+        }
+        Ok(())
+    };
+
     // Seed the bundled Rust Book chapters the same way, so the Book reader has
     // real content offline (parity with the exercises seed).
     let book_dir = store.root().join("book");
     let bundled_book = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../book");
     let have_book = rpro_book::Book::load(&book_dir).is_ok_and(|b| !b.chapters.is_empty());
     if (refresh || !have_book) && bundled_book.is_dir() {
+        sync_dir(&book_dir)?;
         copy_tree(&bundled_book, &book_dir)
             .with_context(|| format!("seeding book from {}", bundled_book.display()))?;
         if let Ok(b) = rpro_book::Book::load(&book_dir) {
@@ -550,6 +566,7 @@ fn cmd_init(refresh: bool) -> Result<()> {
     let gloss_dir = store.root().join("glossary");
     let bundled_gloss = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../glossary");
     if (refresh || !gloss_dir.join("glossary.toml").exists()) && bundled_gloss.is_dir() {
+        sync_dir(&gloss_dir)?;
         copy_tree(&bundled_gloss, &gloss_dir)
             .with_context(|| format!("seeding glossary from {}", bundled_gloss.display()))?;
         if let Ok(g) = rpro_glossary::Glossary::load(&gloss_dir.join("glossary.toml")) {
@@ -561,6 +578,7 @@ fn cmd_init(refresh: bool) -> Result<()> {
     let lessons_dir = store.root().join("lessons");
     let bundled_lessons = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../lessons");
     if (refresh || md_stems(&lessons_dir).is_empty()) && bundled_lessons.is_dir() {
+        sync_dir(&lessons_dir)?;
         copy_tree(&bundled_lessons, &lessons_dir)
             .with_context(|| format!("seeding lessons from {}", bundled_lessons.display()))?;
         println!("  + seeded {} lesson(s)", md_stems(&lessons_dir).len());
@@ -573,6 +591,7 @@ fn cmd_init(refresh: bool) -> Result<()> {
             .join("../..")
             .join(sub);
         if (refresh || md_stems(&dir).is_empty()) && bundled.is_dir() {
+            sync_dir(&dir)?;
             copy_tree(&bundled, &dir)
                 .with_context(|| format!("seeding {sub} from {}", bundled.display()))?;
             println!("  + seeded {} {label}(s)", md_stems(&dir).len());

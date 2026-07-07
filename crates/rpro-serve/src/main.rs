@@ -726,9 +726,25 @@ fn ensure_seeded(
     let refresh = stored_ver < CONTENT_VERSION;
 
     // Copy exercises in if we don't have any yet — or refresh on a version bump.
+    // Exercises are OVERLAY-copied (never cleared): the seeded README invites the
+    // user to drop their own exercises alongside the bundled ones, and a clearing
+    // refresh would delete them. (Consequence: a *renamed/removed* bundled
+    // exercise would linger — acceptable; exercise ids are stable.)
     if refresh || rpro_runner::discover(&ex_dir).map_or(true, |v| v.is_empty()) {
         copy_dir_recursive(workspace_exercises, &ex_dir)?;
     }
+
+    // The read-only reference dirs below are SYNCED on refresh (cleared, then
+    // copied): a content update can REMOVE or RENAME a file — e.g. a lesson split
+    // replaces one .md with two — and an overlay copy would leave the old file
+    // behind as a ghost entry in the served list. These dirs are server-fixed and
+    // hold no user data, so clearing is safe.
+    let sync_dir = |dir: &Path| -> std::io::Result<()> {
+        if refresh && dir.is_dir() {
+            std::fs::remove_dir_all(dir)?; // nosemgrep — server-fixed path, no wire input
+        }
+        Ok(())
+    };
 
     // Copy the bundled Book in if we don't have it yet — gives the web Book tab
     // the same chapters the CLI/TUI seed (web/TUI parity). The book dir is
@@ -736,6 +752,7 @@ fn ensure_seeded(
     let book_dir = store.root().join("book");
     let have_book = rpro_book::Book::load(&book_dir).is_ok_and(|b| !b.is_empty());
     if (refresh || !have_book) && workspace_book.is_dir() {
+        sync_dir(&book_dir)?;
         copy_dir_recursive(workspace_book, &book_dir)?;
     }
 
@@ -745,6 +762,7 @@ fn ensure_seeded(
     // copies. Server-fixed dir; nothing here comes from the wire.
     let gloss_dir = store.root().join("glossary");
     if (refresh || !gloss_dir.join("glossary.toml").exists()) && workspace_glossary.is_dir() {
+        sync_dir(&gloss_dir)?;
         copy_dir_recursive(workspace_glossary, &gloss_dir)?;
     }
 
@@ -757,6 +775,7 @@ fn ensure_seeded(
     let lessons_dir = store.root().join("lessons");
     let have_lessons = std::fs::read_dir(&lessons_dir).is_ok_and(|mut rd| rd.next().is_some()); // nosemgrep
     if (refresh || !have_lessons) && workspace_lessons.is_dir() {
+        sync_dir(&lessons_dir)?;
         copy_dir_recursive(workspace_lessons, &lessons_dir)?;
     }
 
@@ -765,6 +784,7 @@ fn ensure_seeded(
     let quizzes_dir = store.root().join("quizzes");
     let have_quizzes = std::fs::read_dir(&quizzes_dir).is_ok_and(|mut rd| rd.next().is_some()); // nosemgrep
     if (refresh || !have_quizzes) && workspace_quizzes.is_dir() {
+        sync_dir(&quizzes_dir)?;
         copy_dir_recursive(workspace_quizzes, &quizzes_dir)?;
     }
 
@@ -773,6 +793,7 @@ fn ensure_seeded(
     let cheats_dir = store.root().join("cheatsheets");
     let have_cheats = std::fs::read_dir(&cheats_dir).is_ok_and(|mut rd| rd.next().is_some()); // nosemgrep
     if (refresh || !have_cheats) && workspace_cheatsheets.is_dir() {
+        sync_dir(&cheats_dir)?;
         copy_dir_recursive(workspace_cheatsheets, &cheats_dir)?;
     }
 
@@ -1346,11 +1367,28 @@ mod tests {
         let gloss = root.join("glossary/glossary.toml");
         let good_gloss = fs::read_to_string(&gloss).unwrap();
         fs::write(&gloss, "# STALE glossary\n").unwrap();
+        // A GHOST file: pretend an earlier bundle shipped a lesson that no longer
+        // exists (the lesson-split case — one .md replaced by two). The refresh
+        // must SYNC the read-only dirs, not overlay them, or the ghost lingers in
+        // the served list. A user-added exercise, by contrast, must SURVIVE.
+        let ghost = root.join("lessons/99-ghost-of-a-renamed-lesson.md");
+        fs::write(&ghost, "# ghost\n").unwrap();
+        let user_ex = root.join("exercises/99-user/my_own.rs");
+        fs::create_dir_all(user_ex.parent().unwrap()).unwrap();
+        fs::write(&user_ex, "fn main() {}\n").unwrap();
         fs::write(&marker, "0").unwrap();
 
         // Re-run: the version gate (0 < CONTENT_VERSION) refreshes the content dirs.
         seed();
 
+        assert!(
+            !ghost.exists(),
+            "a removed/renamed bundled lesson is deleted by the refresh (sync, not overlay)"
+        );
+        assert!(
+            user_ex.exists(),
+            "a user-added exercise survives the refresh (exercises overlay, never clear)"
+        );
         assert!(
             !fs::read_to_string(&victim_ex).unwrap().contains("STALE"),
             "the stale exercise source was refreshed from the bundle"
