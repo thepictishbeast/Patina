@@ -37,9 +37,14 @@ confidence-threshold = 0.9
 
 [bans]
 # Duplicate versions are bloat/drift, not a hard error; wildcard deps are banned
-# (they make the lockfile non-reproducible).
+# (they make the lockfile non-reproducible). Internal `{ path = ... }` deps are
+# exempt via allow-wildcard-paths: every workspace crate is `publish = false`
+# (unpublished — distribution is GitHub releases, not crates.io), and cargo-deny
+# only honours the exemption for unpublished crates, so a real registry wildcard
+# (`version = "*"`) still fails the gate.
 multiple-versions = "warn"
 wildcards = "deny"
+allow-wildcard-paths = true
 
 [sources]
 # Supply-chain integrity: only the official crates.io registry, no unvetted git
