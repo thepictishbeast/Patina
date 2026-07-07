@@ -39,6 +39,9 @@ See https://github.com/adobe-type-tools/cmap-resources
     <link rel="stylesheet" href="viewer.css" />
 
   <script src="viewer.mjs" type="module"></script>
+  <!-- Tempered Studio: back-button handler (inline onclick is blocked by the CSP;
+       this same-origin file is allowed by script-src 'self'). defer → DOM ready. -->
+  <script src="tempered-back.js" defer></script>
   </head>
 
   <body tabindex="0">
@@ -50,6 +53,19 @@ See https://github.com/adobe-type-tools/cmap-resources
           <div id="toolbarContainer">
             <div id="toolbarViewer" class="toolbarHorizontalGroup">
               <div id="toolbarViewerLeft" class="toolbarHorizontalGroup">
+                <!-- Tempered Studio: an in-app "back to the app" control. The
+                     library opens each book as a full-page nav to this vendored
+                     viewer, so without this the ONLY way out was the browser /
+                     Android back button (Paul flagged the missing close button).
+                     history.back() returns to the SPA; the fallback covers a
+                     direct open. Self-contained: no pdf.js id, no pdf.js JS wiring. -->
+                <button
+                  id="temperedBack"
+                  type="button"
+                  title="Back to Tempered Studio"
+                  aria-label="Back to Tempered Studio"
+                  style="height:28px;margin:2px 8px 2px 2px;padding:0 12px;border:1px solid rgba(128,128,128,.45);border-radius:6px;background:transparent;color:inherit;font:inherit;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:5px;white-space:nowrap"
+                >← Studio</button>
                 <button
                   id="viewsManagerToggleButton"
                   class="toolbarButton"
