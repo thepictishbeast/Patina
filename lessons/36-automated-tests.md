@@ -178,4 +178,4 @@ scary? Tell me, and I'll tune the wrap-up.
 ---
 
 <!-- lesson-nav -->
-[← Lesson 35b — Capstone II: the thread pool & graceful shutdown](35b-thread-pool.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 37 — More About Cargo & crates.io →](37-more-about-cargo.md)
+[← Lesson 35b — Capstone II: the thread pool & graceful shutdown](35b-thread-pool.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 37 — Documenting Rust: doc comments & doc-tests →](37-doc-comments.md)
