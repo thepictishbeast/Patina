@@ -217,4 +217,4 @@ folders) help — or did "`mod` is not `include`" trip you up? Tell me, and I'll
 ---
 
 <!-- lesson-nav -->
-[← Lesson 20 — Error Handling: `Result`, `?`, `panic!`](20-error-handling.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 22 — Paths & Visibility (`pub`) →](22-paths-and-visibility.md)
+[← Lesson 20c — The ? operator](20c-question-mark.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 22 — Paths & Visibility (`pub`) →](22-paths-and-visibility.md)

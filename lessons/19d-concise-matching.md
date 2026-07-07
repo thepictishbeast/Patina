@@ -99,4 +99,4 @@ like a tool or a trap? Tell me, and I'll pitch Lesson 20 to match.
 ---
 
 <!-- lesson-nav -->
-[← Lesson 19c — match patterns in depth](19c-match-in-depth.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 20 — Error Handling: `Result`, `?`, `panic!` →](20-error-handling.md)
+[← Lesson 19c — match patterns in depth](19c-match-in-depth.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 20 — Result: errors are values →](20-result.md)
