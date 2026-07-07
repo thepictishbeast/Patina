@@ -80,13 +80,16 @@ silently become a wrong number; it halted the program at the exact moment of
 overflow and pointed at `small + 1`: "attempt to add with overflow." The fix is a
 roomier type (`u32`).
 
-> One thing to file away: this guard is on in the normal `cargo run` (debug) build.
-> An optimized `cargo run --release` build *wraps* `255 + 1` around to `0` instead
-> of panicking — which is exactly why catching the mistake early, in debug, matters.
+> One thing to file away: this overflow guard is on while you're learning and
+> testing. A speed-optimized build handles overflow differently — the full story
+> is in the Book, §3.2 "Integer Overflow" (read more there when you're curious;
+> build modes get taught in Lesson 37).
 
 ## 5. Predict-then-run practice (your turn — write this yourself)
 
-`cargo new numbers`. Predict before each run:
+Type these in the app's **🧪 Sandbox** (⋯ menu), then take on the two matching
+exercises via the **Practice this lesson** links at the bottom. *(On your own
+machine, `cargo new numbers` works too.)* Predict before each run:
 
 1. Make one binding of **each** kind — an integer, a float, a `bool`, and a `char`
    — and print them on one line. Predict the line first.

@@ -111,8 +111,9 @@ whole lesson of this error.
 
 ## 5. Predict-then-run practice (your turn — write this yourself)
 
-Open a fresh playground or `cargo new hello`. Then, *before running anything*,
-predict on paper:
+Type these in the app's **🧪 Sandbox** (in the ⋯ menu) — it compiles and runs
+right here, offline. *(On your own machine, a playground or `cargo new hello`
+works too.)* Then, *before running anything*, predict on paper:
 
 1. Type `main` yourself with one `println!` that prints your own name (not
    "Hello, world!" — make it yours). **Predict the exact line it will print**, then

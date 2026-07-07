@@ -56,6 +56,10 @@ Prints:
 The crew size is: 7
 ```
 
+> **Read `{crew_size}` as "print the value of `crew_size` here."** Curly braces
+> inside `println!`'s quotes drop a binding's value into the text. That's all you
+> need for now — printing gets its full lesson in Lesson 8.
+
 **Now a 30-second rep — you type this one.** The kind can also be spelled out by
 hand. Type this version yourself; the only new part is `: i32` (Rust's default
 whole number):
@@ -153,8 +157,11 @@ So: names are locked by default; `mut` is the explicit opt-out. We'll dig into
 
 ## 5. Predict-then-run practice (your turn — write this yourself)
 
-Open a fresh playground or `cargo new variables`. Then, *before running anything*,
-predict on paper:
+Type these in the app's **🧪 Sandbox** (⋯ menu) and predict before each run.
+When you're done, take on the matching exercise — the **Practice this lesson**
+link at the bottom jumps straight into it. *(On your own machine, a playground or
+`cargo new variables` works too.)* Then, *before running anything*, predict on
+paper:
 
 1. Write `main` with a binding of your own — pick any name and any whole-number
    value (not `x`, not `5` — make it yours). Print it once with `println!`.

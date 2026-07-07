@@ -85,6 +85,8 @@ Read it slowly:
 - It points at the original `5` as *"expected due to this value"* — the kind was
   fixed the moment you wrote `count = 5`.
 - `^^^^^^ expected integer, found &str` — `"five"` is text (`&str`), not a number.
+  (Read `&str` simply as "a piece of text" for now — text gets its full lesson in
+  Lesson 12.)
 
 So `mut` let the **value** change, but the **kind** (whole number) was locked at
 the first assignment. Changing the *kind* is a different move — and it's exactly
@@ -92,8 +94,10 @@ what Lesson 3 is about.
 
 ## 5. Predict-then-run practice (your turn — write this yourself)
 
-Open a fresh `cargo new mutability` (or a playground). Write each piece, and
-**predict before every run**:
+Type these in the app's **🧪 Sandbox** (⋯ menu), then take on the matching
+exercise via the **Practice this lesson** link at the bottom. *(On your own
+machine, `cargo new mutability` or a playground works too.)* Write each piece,
+and **predict before every run**:
 
 1. Make a `mut` name for something that *counts* — your choice (not `score`, not
    `count`). Print it, change it to a new number, print it again. Predict the two

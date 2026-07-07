@@ -91,7 +91,9 @@ promise. The fix: pass `3`, not `3.0`.
 
 ## 5. Predict-then-run practice (your turn — write this yourself)
 
-`cargo new functions`. Predict before each run:
+Type these in the app's **🧪 Sandbox** (⋯ menu), then take on the two matching
+exercises via the **Practice this lesson** links at the bottom. *(On your own
+machine, `cargo new functions` works too.)* Predict before each run:
 
 1. Write a function that takes two numbers and returns one — your choice (a sum, a
    larger-of-two, anything). Call it from `main` and print the result. Predict the

@@ -51,7 +51,10 @@ semicolon after `a + 1` and `y` would be `()` — nothing.)
 ## 4. Common pitfalls / real compiler errors — the stray semicolon
 
 Here's the classic. A function that promises to give back an `i32`, but whose last
-line ends in a semicolon:
+line ends in a semicolon. (Functions get their full lesson **next**, in Lesson 7 —
+for now read `fn plus_one(x: i32) -> i32` as "a recipe named `plus_one` that takes
+a whole number and promises a whole number back," and `println!("{}", …)` as "print
+whatever fills the `{}`.")
 
 ```rust
 fn plus_one(x: i32) -> i32 {
@@ -92,7 +95,8 @@ new way:
 
 ## 5. Predict-then-run practice (your turn — write this yourself)
 
-`cargo new semicolons`. Predict before each run:
+Type these in the app's **🧪 Sandbox** (⋯ menu). *(On your own machine,
+`cargo new semicolons` works too.)* Predict before each run:
 
 1. Write `let n = { ... };` where the block does a little arithmetic and its last
    line has **no** semicolon. Predict the printed value, then run.

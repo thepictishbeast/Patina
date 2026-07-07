@@ -68,6 +68,11 @@ reply is 3 chars
 `"   yes   "` (text) → trimmed text `"yes"` → its length `3` (a number), all under
 one name, no `mut` anywhere.
 
+> **Read `reply.trim()` as "ask `reply` for a trimmed copy of itself"** and
+> `reply.len()` as "ask `reply` for its length." The `.something()` shape is a
+> *method call* — you'll write your own callable functions in Lesson 7; here just
+> read them.
+
 ## 4. Common pitfalls / real compiler errors
 
 Shadowing obeys **scope** — a shadow made inside a `{ }` block only lasts inside
@@ -102,7 +107,8 @@ up in every later lesson.)
 
 ## 5. Predict-then-run practice (your turn — write this yourself)
 
-`cargo new shadowing`. Predict before each run:
+Type these in the app's **🧪 Sandbox** (⋯ menu). *(On your own machine,
+`cargo new shadowing` works too.)* Predict before each run:
 
 1. Take a name, then shadow it **twice** with arithmetic (like the `x` example, but
    your own numbers). Predict the final printed value before running.

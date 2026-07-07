@@ -79,7 +79,8 @@ This is the one rule to carry away: **a `const` always needs its type written ou
 
 ## 5. Predict-then-run practice (your turn — write this yourself)
 
-`cargo new constants`. Predict before each run:
+Type these in the app's **🧪 Sandbox** (⋯ menu). *(On your own machine,
+`cargo new constants` works too.)* Predict before each run:
 
 1. Declare a `const` of your own **above** `main` (SCREAMING_SNAKE_CASE, with a
    type — pick `u32` or `i32`). Print it. Predict the line first.

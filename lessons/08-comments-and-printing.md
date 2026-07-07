@@ -24,7 +24,8 @@ This closes out the foundations.
 - `{name}` drops a variable straight into the text. A bare `{}` is a **placeholder**
   filled by the arguments listed after the string, left to right.
 - `format!` works exactly like `println!` but instead of printing, it **returns**
-  the finished `String` — so you can keep it in a binding.
+  the finished text — an owned `String` value you can keep in a binding. (Text
+  types get their full lesson in Lesson 12; for now "a `String`" = "text you own.")
 
 ## 3. A tiny example to read
 
@@ -54,8 +55,9 @@ printed.
 
 ## 4. Common pitfalls / real compiler errors — `{}` vs `{:?}`
 
-`{}` works for things with one obvious text form (numbers, text, bools). Point it at
-a whole array and:
+`{}` works for things with one obvious text form (numbers, text, bools). Point it
+at a whole *array* — `[1, 2, 3]` is a fixed list of values, arriving properly in
+Lesson 13 — and:
 
 ```rust
 fn main() {
@@ -88,7 +90,8 @@ inspecting.**
 
 ## 5. Predict-then-run practice (your turn — write this yourself)
 
-`cargo new printing`. Predict before each run:
+Type these in the app's **🧪 Sandbox** (⋯ menu). *(On your own machine,
+`cargo new printing` works too.)* Predict before each run:
 
 1. Print one line that mixes an inline `{var}` and a positional `{}`. Predict the
    exact line first.
