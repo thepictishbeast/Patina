@@ -2192,7 +2192,7 @@
           reveals.forEach(x => x.addEventListener('toggle', check));
         }
       }
-      d.querySelectorAll('.quizback').forEach(a => a.onclick = e => { e.preventDefault(); renderQuizzes(null); });
+      d.querySelectorAll('.quizback').forEach(a => a.onclick = e => { e.preventDefault(); showView('quizzes'); });
       wirePhaseBackLinks(d);
       d.scrollTop = 0;
     }
@@ -2229,7 +2229,7 @@
         const backlinks = await phaseBackLinks(id);
         d.innerHTML = back + '<div class="bookbody">' + mdToHtml(c.markdown.replace(/<!--[\s\S]*?-->/g, '')) + '</div>' + backlinks;
       }
-      d.querySelectorAll('.cheatback').forEach(a => a.onclick = e => { e.preventDefault(); renderCheatsheets(null); });
+      d.querySelectorAll('.cheatback').forEach(a => a.onclick = e => { e.preventDefault(); showView('cheatsheets'); });
       wirePhaseBackLinks(d);
       d.scrollTop = 0;
     }
@@ -2461,7 +2461,7 @@
         + (md ? '<div class="bookbody">' + mdToHtml(md) + '</div>'
               : '<p>Study guide unavailable.</p>');
       d.querySelectorAll('.lessonback').forEach(a =>
-        a.onclick = e => { e.preventDefault(); renderLessons(null); });
+        a.onclick = e => { e.preventDefault(); showView('lessons'); });
       d.scrollTop = 0;
     }
 
@@ -2660,7 +2660,10 @@
           + cheatHtml + bookHtml + practiceHtml + quizHtml + prevNextHtml;
         markLessonRead(id); // reading it = progress (✓ in the list + Journey counts)
       }
-      d.querySelectorAll('.lessonback').forEach(a => a.onclick = e => { e.preventDefault(); renderLessons(null); });
+      // Route "back to list" through showView (not renderLessons directly) so the
+      // list re-gets its "← Learn" hub button — otherwise drilling in then back
+      // strands you in Lessons with no in-app path to the hub (Paul).
+      d.querySelectorAll('.lessonback').forEach(a => a.onclick = e => { e.preventDefault(); showView('lessons'); });
       d.querySelectorAll('.lessonnavto').forEach(a =>
         a.onclick = e => { e.preventDefault(); renderLessons(a.dataset.id); });
       d.querySelectorAll('.quizlink').forEach(a =>
