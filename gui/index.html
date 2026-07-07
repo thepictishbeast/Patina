@@ -163,16 +163,22 @@
   .bookbody { font-size:15.5px; }
   .bookbody p { margin:0 0 13px; }
   .bookbody > :first-child { margin-top:0; }
-  .docview code { background:var(--bg-3); padding:1.5px 5px; border-radius:5px; font-family:var(--mono); font-size:0.86em; }
-  .docview pre { background:var(--bg-3); border:1px solid var(--line); padding:13px 15px; border-radius:9px; overflow:auto; margin:12px 0; line-height:1.55; }
-  .docview pre code { background:none; padding:0; border-radius:0; font-size:12.5px; white-space:pre; }
+  /* The lesson DRAWER (#lessonDrawerBody.ldrawer-body — read a lesson while coding
+     in Practice) carries .bookbody/.lessonbody but NOT .docview, whose base rule
+     sets a full-height page layout we don't want in a slide-out panel. So the
+     rich-text rules below list .ldrawer-body alongside .docview — one source of
+     truth, no drift — otherwise the drawer showed inline code with a transparent
+     bg + default monospace, and unstyled code blocks / Run+Copy buttons. */
+  .docview code, .ldrawer-body code { background:var(--bg-3); padding:1.5px 5px; border-radius:5px; font-family:var(--mono); font-size:0.86em; }
+  .docview pre, .ldrawer-body pre { background:var(--bg-3); border:1px solid var(--line); padding:13px 15px; border-radius:9px; overflow:auto; margin:12px 0; line-height:1.55; }
+  .docview pre code, .ldrawer-body pre code { background:none; padding:0; border-radius:0; font-size:12.5px; white-space:pre; }
   /* token highlighting for rendered Rust code blocks (escape-then-tokenize) */
-  .docview pre code .tok-k { color:var(--tok-k); }
-  .docview pre code .tok-s { color:var(--tok-s); }
-  .docview pre code .tok-c { color:var(--tok-c); font-style:italic; }
-  .docview pre code .tok-n { color:var(--tok-n); }
-  .docview pre code .tok-t { color:var(--tok-t); }
-  .docview pre code .tok-m { color:var(--tok-m); }
+  .docview pre code .tok-k, .ldrawer-body pre code .tok-k { color:var(--tok-k); }
+  .docview pre code .tok-s, .ldrawer-body pre code .tok-s { color:var(--tok-s); }
+  .docview pre code .tok-c, .ldrawer-body pre code .tok-c { color:var(--tok-c); font-style:italic; }
+  .docview pre code .tok-n, .ldrawer-body pre code .tok-n { color:var(--tok-n); }
+  .docview pre code .tok-t, .ldrawer-body pre code .tok-t { color:var(--tok-t); }
+  .docview pre code .tok-m, .ldrawer-body pre code .tok-m { color:var(--tok-m); }
   /* The EDITABLE editor's highlight overlay uses the same tok-* classes but was
      NOT inheriting these colors (they were scoped to .docview pre code only), so
      editor code rendered monochrome — "no syntax highlighting" (Paul). Color the
@@ -183,13 +189,13 @@
   .editor #editorHL .tok-n { color:var(--tok-n); }
   .editor #editorHL .tok-t { color:var(--tok-t); }
   .editor #editorHL .tok-m { color:var(--tok-m); }
-  .docview blockquote { margin:10px 0; padding:6px 14px; border-left:3px solid var(--note); background:var(--bg-2); color:var(--fg-dim); border-radius:0 6px 6px 0; line-height:1.6; }
+  .docview blockquote, .ldrawer-body blockquote { margin:10px 0; padding:6px 14px; border-left:3px solid var(--note); background:var(--bg-2); color:var(--fg-dim); border-radius:0 6px 6px 0; line-height:1.6; }
   .docview ol { padding-left:22px; } .docview ol li { line-height:1.7; }
-  .docview a { color:var(--note); }
+  .docview a, .ldrawer-body a { color:var(--note); }
   .docview h4 { font-size:12.5px; margin:12px 0 5px; } .docview h5, .docview h6 { font-size:12px; color:var(--fg-dim); margin:10px 0 4px; }
-  .docview table { border-collapse:collapse; margin:12px 0; font-size:12.5px; display:block; overflow-x:auto; }
-  .docview th, .docview td { border:1px solid var(--line); padding:5px 11px; text-align:left; }
-  .docview thead th { background:var(--bg-3); font-weight:600; }
+  .docview table, .ldrawer-body table { border-collapse:collapse; margin:12px 0; font-size:12.5px; display:block; overflow-x:auto; }
+  .docview th, .docview td, .ldrawer-body th, .ldrawer-body td { border:1px solid var(--line); padding:5px 11px; text-align:left; }
+  .docview thead th, .ldrawer-body thead th { background:var(--bg-3); font-weight:600; }
   /* Glossary tab term cards */
   .docview .gloss-term { border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:8px; padding:11px 14px; margin:10px 0; }
   .docview .gloss-name { font-size:14px; color:var(--fg); margin:0 0 5px; letter-spacing:0; text-transform:none; }
@@ -232,21 +238,21 @@
     white-space:pre-wrap; word-break:break-word; min-height:44px; max-height:34vh; overflow:auto; }
   .docview .sbxout.err { color:#ffd9d0; }
   /* Runnable code examples in lessons/book: ▷ Run + ✎ Open in Sandbox under a block. */
-  .docview .coderun-bar { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 0; }
-  .docview .coderun-btn { background:var(--bg-2); color:var(--fg-dim); border:1px solid var(--line);
+  .docview .coderun-bar, .ldrawer-body .coderun-bar { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 0; }
+  .docview .coderun-btn, .ldrawer-body .coderun-btn { background:var(--bg-2); color:var(--fg-dim); border:1px solid var(--line);
     border-radius:8px; padding:4px 13px; font-size:12px; font-weight:600; cursor:pointer; }
-  .docview .coderun-btn:hover:not(:disabled) { color:var(--fg); border-color:var(--accent); }
-  .docview .coderun-btn:disabled { opacity:.55; cursor:default; }
-  .docview .coderun-out { background:#0a0a0a; color:#e8e8e8; border:1px solid var(--line); border-radius:8px;
+  .docview .coderun-btn:hover:not(:disabled), .ldrawer-body .coderun-btn:hover:not(:disabled) { color:var(--fg); border-color:var(--accent); }
+  .docview .coderun-btn:disabled, .ldrawer-body .coderun-btn:disabled { opacity:.55; cursor:default; }
+  .docview .coderun-out, .ldrawer-body .coderun-out { background:#0a0a0a; color:#e8e8e8; border:1px solid var(--line); border-radius:8px;
     padding:9px 12px; margin:9px 0 14px; font-family:var(--mono); font-size:12px; line-height:1.5;
     white-space:pre-wrap; word-break:break-word; max-height:30vh; overflow:auto; }
-  .docview .coderun-out.err { color:#ffd9d0; }
+  .docview .coderun-out.err, .ldrawer-body .coderun-out.err { color:#ffd9d0; }
   /* ⧉ Copy on code blocks (lessons/book) */
-  .docview .codewrap { position:relative; }
-  .docview .codecopy { position:absolute; top:6px; right:6px; background:var(--bg-2); color:var(--fg-dim);
+  .docview .codewrap, .ldrawer-body .codewrap { position:relative; }
+  .docview .codecopy, .ldrawer-body .codecopy { position:absolute; top:6px; right:6px; background:var(--bg-2); color:var(--fg-dim);
     border:1px solid var(--line); border-radius:6px; padding:2px 8px; font-size:11px; font-weight:600;
     cursor:pointer; user-select:none; }
-  .docview .codecopy:hover { color:var(--fg); border-color:var(--accent); }
+  .docview .codecopy:hover, .ldrawer-body .codecopy:hover { color:var(--fg); border-color:var(--accent); }
   /* Sandbox files bar — several independent named scratch buffers. */
   .docview .sbxfiles { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:2px 0 10px; }
   .docview .sbxfile { display:inline-flex; align-items:center; border:1px solid var(--line); border-radius:7px; overflow:hidden; }
