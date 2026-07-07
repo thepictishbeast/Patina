@@ -1,18 +1,31 @@
 # Improvement Loop — toward the greatest Rust learning platform
 
-> **✅ RELEASE-READINESS BASELINE (textbook-integration `829565d`, verified 2026-07-07).** Full CI gate
-> (`scripts/check.sh`) **12 passed, 0 failed — "all gates green, branch is mergeable"** — re-run after the
-> whole v0.4 feature burst since the last baseline: the **Sandbox** (new `POST /api/sandbox` server endpoint +
-> ⋯-menu view, web + mobile Termux), **runnable code examples** in lessons/Book (▷ Run whole programs inline),
-> **glossary tap-to-define** (lessons + Book, common-word stoplist), the **PDF viewer in-app back button**,
-> the **prose readability pass**, the **Learn back-nav** fix, and the completed **"never hand the answer"
-> exercise comment sweep** (all 11 phases). Gates: `rustfmt --check` clean · `clippy --workspace --all-targets
-> -D warnings` **clean (zero warnings — the sandbox_handler + everything else)** · `cargo test --workspace`
-> all pass · `cargo doc` clean · smoke · **browser e2e (isolated store) green** (incl. sandbox, runnable-code,
-> glossary, pdf-back, both-theme a11y) · `verify-exercises.sh` **71 verified** · cli smoke · gui-transforms ·
-> book anchors all resolve · language-seam guard clean · wasm32 pure-core build. **The branch is mergeable**
-> whenever Paul wants `textbook-integration` → `main` (#29; `docs/REVIEW-GUIDE.md` is the reading path). This
-> tick = full-gate verification after the feature burst; no code change.
+> **✅ RELEASE-READINESS BASELINE (textbook-integration `4aa6d39`, verified 2026-07-07).** Full CI gate
+> (`scripts/check.sh`) **13 passed, 0 failed — "all gates green, branch is mergeable"** — re-run after the
+> next ~10-tick burst since `829565d`: the **content-refresh pipeline** (version-gated re-seed for existing
+> stores, server + CLI, shared `rpro_runner::CONTENT_VERSION`, three real bumps delivered), **nav parity on
+> all four reading surfaces** (Book/quiz/cheatsheet prev-next, matching lessons), the **lesson-drawer styling
+> parity**, **6 new/aliased glossary terms** (constant, expression, statement, macro, type annotation, cargo,
+> + variable→binding), the **Study-Guide 38-lesson fix**, and the **cargo-deny clear** (anyhow 1.0.103
+> advisory fix + `publish = false` across the workspace + allow-wildcard-paths). Gates: rustfmt · clippy -D
+> warnings · cargo test --workspace · cargo doc · smoke · browser e2e (isolated store, incl. the new
+> lesson-drawer / book-nav / quiz-cheat-nav specs + both-theme a11y) · verify-exercises **71** · cli smoke ·
+> gui-transforms · book anchors · language-seam guard · wasm32 pure-core · **cargo-deny (advisories/bans/
+> licenses/sources)**. Mergeable for #29 whenever Paul wants.
+
+> **🎯 PRIORITY PROGRAM — Paul's 2026-07-07 directive (supersedes "rotate the polish"):** heavy improvements,
+> executed incrementally by the loop. Workstreams:
+> **A. Curriculum** — (A1) baby-steps pacing audit: one atomic subject per lesson, never jump ahead;
+> (A2) lessons SHORT — depth moves to "read more in the textbook" links (split/trim the 2 300–2 800-word
+> lessons); (A3) CREATE MORE LESSONS (Paul un-gated lesson authoring — split dense topics into more, smaller
+> steps); (A4) lesson↔exercise follow-along: each lesson marches straight into its exercises and each
+> exercise names its lesson section — tight two-way coupling.
+> **B. UI/UX** — (B1) FULLSCREEN IDE mode: file explorer + editor + fullscreen terminal/console as SEPARATE
+> switchable views; (B2) keep the learning area but arrange it better; (B3) textbooks easier to access +
+> quick back-and-forth switching (remember position per book); (B4) book readability pass; (B5) animations
+> (transitions, success moments); (B6) GAMIFY learning (offline-local XP/levels/streaks/badges — fun, cool,
+> modern, helpful).
+> Each tick: pick the next bounded chunk from A/B, verify live, ship. Board tasks #36–#41 track these.
 
 Living backlog for the open-ended improvement loop (started 2026-06-23). Goal:
 make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
@@ -1436,7 +1449,8 @@ changes. **Throttle agent fan-out** — concurrent heavy workflows hit the rate 
   Assist/Dev under-differentiated (#18); G3 lessons Phases 2-9 (blocked, #16/#17); G4
   content interactivity exercise-only (#17/#24); G5 functional/advanced exercises thin
   (blocked, #14/#15); G6 editor pane clips framing comments (#25).
-- ✅ **Glossary: type annotation + cargo terms — closes remaining gaps (2026-07-07, TS `045333a`).** The two remaining beginner gaps that resolved to nothing: `type annotation` (beginners see `: u32`/`: i32` constantly; "type inference" was defined but not the annotation) + `cargo` (the write-it-yourself practice sections use `cargo new`, lesson 37 is about Cargo). Both plain, analogy-free, conceptual, charter-honoring; `cargo` has `book_chapter=""` (no bundled Cargo chapter → "read more" omitted). 65→67. **CONTENT_VERSION 3→4**; live store refreshed (marker 3→4), tap-to-define links "annotation"/"type annotations"/"cargo run" in Book ch03-02 + "Cargo" in lesson 37 (and correctly NOT "cargo" inside `code`). Also ran the FULLER gate this tick: **`cargo doc -D warnings` clean + full workspace test green (13 crates, tui 43/serve 22/state 30)** — no regression from the accumulated content-refresh/CLI work. rpro-glossary 3/3, e2e 26/26, gui-transform. ⚠ **PUSH PENDING: GitHub git-transport 403 (secondary rate limit — API shows token valid + push=true + not rate-limited; both read+write 403). Commits `045333a`+docs are LOCAL; next tick must retry the push (cooldown).**
+- ✅ **cargo-deny gate cleared + fresh 13/13 mergeable baseline (2026-07-07, TS `4aa6d39`).** First full-gate run since the ~10-tick burst found the (post-`829565d`) cargo-deny gate failing on two axes: **advisories** — anyhow 1.0.102 hit the newly published RUSTSEC advisory (anyhow#451, stacked-borrows UB in `downcast_mut`); time-triggered, not caused by our changes; `cargo update -p anyhow` → 1.0.103. **bans/wildcard** — cargo-deny counts version-less `{ path = … }` deps as wildcards and only exempts UNPUBLISHED crates: set `publish = false` once in `[workspace.package]` + inherited in all 13 crates (correct regardless — internal crates, GitHub-release distribution, guards against accidental `cargo publish`), then `allow-wildcard-paths = true` (a real `version = "*"` still fails). cargo-deny: all four axes ok; workspace tests 26/26 suites; **full gate 13 passed, 0 failed** → baseline block refreshed to `4aa6d39`. Also this tick: the 403'd push from last tick landed on retry (GitHub git-transport secondary rate limit — cooled down; lesson: don't hammer retries). **And: Paul's 2026-07-07 heavy-improvements directive captured as the PRIORITY PROGRAM block above + board tasks #36–#41.**
+- ✅ **Glossary: type annotation + cargo terms — closes remaining gaps (2026-07-07, TS `045333a`).** The two remaining beginner gaps that resolved to nothing: `type annotation` (beginners see `: u32`/`: i32` constantly; "type inference" was defined but not the annotation) + `cargo` (the write-it-yourself practice sections use `cargo new`, lesson 37 is about Cargo). Both plain, analogy-free, conceptual, charter-honoring; `cargo` has `book_chapter=""` (no bundled Cargo chapter → "read more" omitted). 65→67. **CONTENT_VERSION 3→4**; live store refreshed (marker 3→4), tap-to-define links "annotation"/"type annotations"/"cargo run" in Book ch03-02 + "Cargo" in lesson 37 (and correctly NOT "cargo" inside `code`). Also ran the FULLER gate this tick: **`cargo doc -D warnings` clean + full workspace test green (13 crates, tui 43/serve 22/state 30)** — no regression from the accumulated content-refresh/CLI work. rpro-glossary 3/3, e2e 26/26, gui-transform. (The push 403'd — GitHub git-transport secondary rate limit, credential verified fine — and landed cleanly on the next tick's retry after the cooldown.)
 - ✅ **Study Guide: fix stale lesson count 37→38 + add Lesson 0 (2026-07-07, TS `9173620`; WEB-only — rides next mobile release).** Rotated to a fresh surface (audited it + cheatsheets this tick — all excellent, in sync). Found a concrete staleness bug: Lesson 0 (Hello World) was added but the Study Guide still said "37 lessons" and its stage table started at Lesson 1, omitting it — while the app's Journey correctly renders 38 lessons / 12 stages (verified live from the roadmap grouping). Fixed the count + folded Lesson 0 into Foundations (0–8, "hello world & reading a real compiler error"). Applied to BOTH the canonical `STUDY-GUIDE.md` and the byte-identical `gui/study-guide.md` (kept in sync). `study-guide.md` is served from `gui/` on disk (NOT the store) → no CONTENT_VERSION bump; live immediately. Verified LIVE 390×844 (served guide reads "38 lessons"; table Foundations row 0–8; 12 rows, chips intact, no errors); gui-transform.
 - ✅ **Glossary: macro term + variable alias (2026-07-07, TS `3a48efb`).** The two most fundamental first-hour vocab gaps had NO tap-to-define coverage. **macro:** lesson 00 (the FIRST lesson) is entirely about `println!` being a macro + the `!`, yet tapping "macro" gave nothing — added a plain, analogy-free definition (what a macro is, why the `!`). No bundled macros chapter → `book_chapter=""` (all 3 "read more" sites already omit the link when empty; source cites ch.19.5 honestly). **variable:** beginners say "variable" but the term is "binding" and neither resolved — added "variable"/"variables" as aliases on `binding` + noted "often just called a variable" in its def. Bumped `CONTENT_VERSION` 2→3; verified end-to-end (guard 65 terms; live store refreshed marker 2→3; live tap-to-define links "macro" in lesson 00, "variables" in lesson 01). rpro-glossary 3/3, serve 22/22 + cli 7/7, e2e 26/26, gui-transform. **Remaining gaps (future tick): cargo, module, type annotation resolve to nothing.**
 - ✅ **Quizzes & Cheatsheets prev/next navigation (2026-07-07, TS `7522c54`; WEB-only — rides next mobile release).** Completes reading-surface nav parity: lessons + Book let you advance without returning to the list, but quizzes/cheatsheets offered only "← all …". Added the same prev/next footer to both via a shared `prevNextNav(items, id, cls)` helper + memoized `quizList()`/`cheatList()` (mirrors `bookChapters()`), reusing the Book's `.booknav` styling; cards reuse `.quizjump`/`.cheatjump`, now wired in the single-item view too. Verified LIVE 390×844 (quiz #2 → prev "Phase 1 Quiz" / next "Phase 3 Quiz"; next advances; ends omit the missing side) + new `tests/e2e/quiz-cheat-nav.spec.js` (both surfaces) + book-nav + a11y both themes **24/24**, gui-transform. **All four reading surfaces (lessons/Book/quizzes/cheatsheets) now navigate identically.**
