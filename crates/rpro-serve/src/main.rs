@@ -677,6 +677,14 @@ async fn book_handler(
     }
 }
 
+/// Bundled content revision. Bump this whenever the shipped `exercises/`,
+/// `book/`, `glossary/`, `lessons/`, `quizzes/`, or `cheatsheets/` change in a
+/// way existing installs should pick up (e.g. the "never hand the answer"
+/// exercise sweep, new glossary terms, lesson rewrites). [`ensure_seeded`]
+/// re-copies the read-only content dirs of any store whose recorded version is
+/// older — so an already-seeded store isn't frozen on its first-run copies.
+const CONTENT_VERSION: u32 = 1;
+
 /// Ensure the chosen `store_root` is runnable: it must have an `exercises/` tree
 /// and a progress file with a `Current` entry, plus the embedded `book/` for the
 /// in-app reader. If the root is empty we seed it by copying the workspace's
@@ -685,6 +693,12 @@ async fn book_handler(
 /// This is what makes "usable in a browser" true out of the box: a fresh
 /// `cargo run` lands on a real, runnable exercise — and the Book tab has the
 /// chapters — rather than an empty store.
+///
+/// A store seeded by an *older* build also gets its read-only content refreshed
+/// here (gated on [`CONTENT_VERSION`]) — otherwise every content improvement
+/// after first run stayed invisible to existing users. Only regenerable content
+/// is overwritten: `progress.json` (progress) is left untouched, and in-progress
+/// editor edits live in the browser (localStorage), never in the store.
 fn ensure_seeded(
     store_root: &Path,
     workspace_exercises: &Path,
@@ -697,8 +711,24 @@ fn ensure_seeded(
     let store = Store::at(store_root.to_path_buf());
     let ex_dir = store.root().join("exercises");
 
-    // Copy exercises in if we don't have any yet.
-    if rpro_runner::discover(&ex_dir).map_or(true, |v| v.is_empty()) {
+    // One-shot content refresh (see [`CONTENT_VERSION`]): a store whose recorded
+    // version is older than the bundled one — including any pre-marker store,
+    // which reads as 0 — re-copies the content dirs below. `progress.json` is
+    // never touched, so progress survives; `copy_dir_recursive` overwrites in
+    // place. The marker is written only after a successful pass (end of fn), so
+    // an interrupted seed simply retries next boot.
+    // `marker` is the fixed operator-config store root joined with a literal
+    // filename — no wire/client input reaches this path (as with the seeding
+    // reads below). nosemgrep
+    let marker = store.root().join(".content-version");
+    let stored_ver = std::fs::read_to_string(&marker) // nosemgrep
+        .ok()
+        .and_then(|s| s.trim().parse::<u32>().ok())
+        .unwrap_or(0);
+    let refresh = stored_ver < CONTENT_VERSION;
+
+    // Copy exercises in if we don't have any yet — or refresh on a version bump.
+    if refresh || rpro_runner::discover(&ex_dir).map_or(true, |v| v.is_empty()) {
         copy_dir_recursive(workspace_exercises, &ex_dir)?;
     }
 
@@ -707,7 +737,7 @@ fn ensure_seeded(
     // server-fixed; nothing here comes from the wire.
     let book_dir = store.root().join("book");
     let have_book = rpro_book::Book::load(&book_dir).is_ok_and(|b| !b.is_empty());
-    if !have_book && workspace_book.is_dir() {
+    if (refresh || !have_book) && workspace_book.is_dir() {
         copy_dir_recursive(workspace_book, &book_dir)?;
     }
 
@@ -716,7 +746,7 @@ fn ensure_seeded(
     // a build-time path) so it ships with the portable store the Android seam
     // copies. Server-fixed dir; nothing here comes from the wire.
     let gloss_dir = store.root().join("glossary");
-    if !gloss_dir.join("glossary.toml").exists() && workspace_glossary.is_dir() {
+    if (refresh || !gloss_dir.join("glossary.toml").exists()) && workspace_glossary.is_dir() {
         copy_dir_recursive(workspace_glossary, &gloss_dir)?;
     }
 
@@ -728,7 +758,7 @@ fn ensure_seeded(
     // wire data — exactly like the book/glossary seeding above.
     let lessons_dir = store.root().join("lessons");
     let have_lessons = std::fs::read_dir(&lessons_dir).is_ok_and(|mut rd| rd.next().is_some()); // nosemgrep
-    if !have_lessons && workspace_lessons.is_dir() {
+    if (refresh || !have_lessons) && workspace_lessons.is_dir() {
         copy_dir_recursive(workspace_lessons, &lessons_dir)?;
     }
 
@@ -736,7 +766,7 @@ fn ensure_seeded(
     // `/api/quizzes`. Server-fixed dir; nothing from the wire.
     let quizzes_dir = store.root().join("quizzes");
     let have_quizzes = std::fs::read_dir(&quizzes_dir).is_ok_and(|mut rd| rd.next().is_some()); // nosemgrep
-    if !have_quizzes && workspace_quizzes.is_dir() {
+    if (refresh || !have_quizzes) && workspace_quizzes.is_dir() {
         copy_dir_recursive(workspace_quizzes, &quizzes_dir)?;
     }
 
@@ -744,7 +774,7 @@ fn ensure_seeded(
     // `/api/cheatsheets`. Server-fixed dir; nothing from the wire.
     let cheats_dir = store.root().join("cheatsheets");
     let have_cheats = std::fs::read_dir(&cheats_dir).is_ok_and(|mut rd| rd.next().is_some()); // nosemgrep
-    if !have_cheats && workspace_cheatsheets.is_dir() {
+    if (refresh || !have_cheats) && workspace_cheatsheets.is_dir() {
         copy_dir_recursive(workspace_cheatsheets, &cheats_dir)?;
     }
 
@@ -765,6 +795,13 @@ fn ensure_seeded(
                     .map_err(|e| std::io::Error::other(e.to_string()))?;
             }
         }
+    }
+
+    // Record the content version now that seeding/refresh succeeded, so the
+    // refresh runs once per bump rather than every boot. Written last so a
+    // failure above (a `?` early-return) leaves the marker stale and retries.
+    if refresh {
+        std::fs::write(&marker, CONTENT_VERSION.to_string())?; // nosemgrep
     }
     Ok(())
 }
@@ -1252,6 +1289,94 @@ mod tests {
         };
         let app = build_router(state, &manifest.join("../../gui"));
         (dir, app)
+    }
+
+    // A store seeded by an OLDER build must pick up later content improvements
+    // (the exercise "never hand the answer" sweep, new glossary terms, lesson
+    // rewrites) on upgrade — without resetting the learner's progress. Pin the
+    // version-gated refresh: corrupt a seeded exercise + the glossary, roll the
+    // `.content-version` marker back to a pre-refresh value, re-seed, and assert
+    // the stale files are restored from the bundle while progress survives.
+    #[test]
+    fn content_refresh_restores_stale_files_and_keeps_progress() {
+        use std::fs;
+        let dir = tempfile::tempdir().unwrap();
+        let manifest = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+        let root = dir.path();
+        let seed = || {
+            ensure_seeded(
+                root,
+                &manifest.join("../../exercises"),
+                &manifest.join("../../book"),
+                &manifest.join("../../glossary"),
+                &manifest.join("../../lessons"),
+                &manifest.join("../../quizzes"),
+                &manifest.join("../../cheatsheets"),
+            )
+            .unwrap();
+        };
+
+        // First-run seed: a fresh store gets content + the current-version marker.
+        seed();
+        let marker = root.join(".content-version");
+        assert_eq!(
+            fs::read_to_string(&marker).unwrap().trim(),
+            CONTENT_VERSION.to_string(),
+            "a freshly seeded store records the current content version"
+        );
+
+        // Note which exercise is Current — it must survive the refresh.
+        let store = Store::at(root.to_path_buf());
+        let current_id = store
+            .load_progress()
+            .unwrap()
+            .entries
+            .iter()
+            .find(|(_, e)| e.status == ExerciseStatus::Current)
+            .map(|(id, _)| id.clone())
+            .expect("a fresh store has a Current exercise");
+
+        // Simulate an old store: corrupt a seeded exercise + the glossary, and
+        // roll the marker back so the store looks pre-refresh (version 0).
+        let victim_ex = rpro_runner::discover(&root.join("exercises"))
+            .unwrap()
+            .into_iter()
+            .next()
+            .expect("the seeded store has exercises")
+            .source;
+        fs::write(&victim_ex, "// STALE spoiler comment\nfn main() {}\n").unwrap();
+        let gloss = root.join("glossary/glossary.toml");
+        let good_gloss = fs::read_to_string(&gloss).unwrap();
+        fs::write(&gloss, "# STALE glossary\n").unwrap();
+        fs::write(&marker, "0").unwrap();
+
+        // Re-run: the version gate (0 < CONTENT_VERSION) refreshes the content dirs.
+        seed();
+
+        assert!(
+            !fs::read_to_string(&victim_ex).unwrap().contains("STALE"),
+            "the stale exercise source was refreshed from the bundle"
+        );
+        assert_eq!(
+            fs::read_to_string(&gloss).unwrap(),
+            good_gloss,
+            "the stale glossary was refreshed from the bundle"
+        );
+        assert_eq!(
+            fs::read_to_string(&marker).unwrap().trim(),
+            CONTENT_VERSION.to_string(),
+            "the marker is bumped back to the current version after refresh"
+        );
+
+        // Progress preserved: the same exercise is still Current (not reset to #1).
+        let after = store.load_progress().unwrap();
+        assert!(
+            after
+                .entries
+                .get(&current_id)
+                .is_some_and(|e| e.status == ExerciseStatus::Current),
+            "the learner's Current exercise survived the content refresh"
+        );
     }
 
     async fn body_string(res: axum::response::Response) -> String {
