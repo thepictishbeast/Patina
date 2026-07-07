@@ -1,13 +1,8 @@
 // Inspired by Rustlings (MIT/Apache-2.0) — github.com/rust-lang/rustlings
-
-// CONCEPT: a type that contains ITSELF has no fixed size. Here each `Cons` holds
-// the next `List` directly, so to lay `List` out in memory the compiler would
-// need infinite space. The fix is to store the inner value behind a pointer of
-// KNOWN size — a small handle on the stack that points at the value on the heap.
-
-// Run it and read the E0072 error top-to-bottom: the `help:` line names the exact
-// smart pointer the compiler wants. Give `List` a known size without changing
-// which values it holds.
+//
+// `List` contains itself, so it has no known size and won't compile. Give it a
+// known size without changing which values it holds. Run it and read the compiler
+// error top-to-bottom, including its `help:` line.
 
 enum List {
     Cons(i32, List),
@@ -17,5 +12,5 @@ enum List {
 fn main() {
     use List::{Cons, Nil};
     let list = Cons(1, Cons(2, Nil));
-    let _ = list; // `List` won't compile until it has a known size
+    let _ = list;
 }
