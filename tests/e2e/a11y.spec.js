@@ -112,5 +112,13 @@ for (const theme of ['dark', 'light']) {
       await page.locator('.hubcard').first().waitFor();
       expect(await blockingViolations(page, `learn-hub/${theme}`), 'learn hub').toEqual([]);
     });
+
+    test(`the 🧪 Sandbox`, async ({ page }) => {
+      await prep(page, theme);
+      await page.goto('/');
+      await page.evaluate(() => showView('sandbox'));
+      await page.locator('#sbxhost .cm-content').waitFor();
+      expect(await blockingViolations(page, `sandbox/${theme}`), 'sandbox').toEqual([]);
+    });
   });
 }

@@ -303,6 +303,74 @@ async fn run_handler(
     }
 }
 
+/// The Sandbox body: just the free-play code. No op whitelist — Sandbox always
+/// compiles + runs (it is not tied to any exercise or predicted outcome).
+#[derive(Debug, Deserialize)]
+struct SandboxBody {
+    code: String,
+}
+
+/// `POST /api/sandbox` — compile + run ARBITRARY code as a free-play scratchpad
+/// (the Sandbox tab). Same LOCAL toolchain as `/api/run`, but it never resolves or
+/// records against an exercise: no `resolve_current`, no `record_run`, no advance.
+/// Progress is untouched. Executes user code exactly like an exercise Run already
+/// does (same trust model: loopback, single-user, offline), in its own `run/sandbox`
+/// scratch dir.
+async fn sandbox_handler(
+    State(state): State<AppState>,
+    body: Result<Json<SandboxBody>, axum::extract::rejection::JsonRejection>,
+) -> impl IntoResponse {
+    let Json(SandboxBody { code }) = match body {
+        Ok(j) => j,
+        Err(rej) => return rej.into_response(),
+    };
+    if code.len() > MAX_SOURCE_BYTES {
+        return (StatusCode::PAYLOAD_TOO_LARGE, "source too large").into_response();
+    }
+    let root = state.store_root.clone();
+    let run_dir = root.join("run").join("sandbox");
+    let joined = tokio::task::spawn_blocking(move || {
+        write_scaffold(&run_dir, &code).map_err(|e| e.to_string())?;
+        let core = Core::new(
+            Box::new(RustLanguage),
+            Box::new(LocalProcess),
+            Box::new(Store::at(root)),
+        );
+        let src = ExerciseSource {
+            id: ExerciseId("sandbox".to_string()),
+            dir: run_dir.display().to_string(),
+            entry: "src/main.rs".into(),
+        };
+        pollster::block_on(core.run(&src, &RunOp::Run)).map_err(|e| format!("{e}"))
+    })
+    .await;
+    match joined {
+        Ok(Ok(outcome)) => Json(RunResponse {
+            passed: outcome.status == Some(0),
+            status: outcome.status,
+            raw_stdout: outcome.raw_stdout,
+            raw_stderr: outcome.raw_stderr,
+            duration_ms: outcome.duration_ms,
+            diagnostics: outcome.diagnostics,
+            exercise: "sandbox".to_string(),
+            advanced_to: None,
+        })
+        .into_response(),
+        Ok(Err(msg)) => Json(RunResponse {
+            status: None,
+            raw_stdout: String::new(),
+            raw_stderr: format!("could not run the toolchain: {msg}"),
+            passed: false,
+            duration_ms: 0,
+            diagnostics: Vec::new(),
+            exercise: "sandbox".to_string(),
+            advanced_to: None,
+        })
+        .into_response(),
+        Err(_) => (StatusCode::INTERNAL_SERVER_ERROR, "run task failed").into_response(),
+    }
+}
+
 /// Resolve the current exercise with its full metadata + starter code, so the
 /// front end can render the *real* exercise (title, code, book refs) rather than
 /// a static placeholder. Returns the discovered [`rpro_runner::Exercise`] and its
@@ -889,6 +957,7 @@ async fn cheatsheets_handler(
 fn build_router(state: AppState, gui_dir: &Path) -> Router {
     Router::new()
         .route("/api/run", post(run_handler))
+        .route("/api/sandbox", post(sandbox_handler))
         .route("/api/current", axum::routing::get(current_handler))
         .route("/api/select", post(select_handler))
         .route("/api/exercises", axum::routing::get(exercises_handler))
