@@ -120,5 +120,13 @@ for (const theme of ['dark', 'light']) {
       await page.locator('#sbxhost .cm-content').waitFor();
       expect(await blockingViolations(page, `sandbox/${theme}`), 'sandbox').toEqual([]);
     });
+
+    test(`the 🛠 IDE`, async ({ page }) => {
+      await prep(page, theme);
+      await page.goto('/');
+      await page.evaluate(() => showView('ide'));
+      await page.locator('.ide-file').first().waitFor();
+      expect(await blockingViolations(page, `ide/${theme}`), 'ide').toEqual([]);
+    });
   });
 }

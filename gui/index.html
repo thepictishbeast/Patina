@@ -237,6 +237,64 @@
     padding:11px 13px; margin-top:12px; font-family:var(--mono); font-size:12.6px; line-height:1.5;
     white-space:pre-wrap; word-break:break-word; min-height:44px; max-height:34vh; overflow:auto; }
   .docview .sbxout.err { color:#ffd9d0; }
+  /* ── Fullscreen IDE (Paul 2026-07-07): file explorer + editor + terminal as
+     three SEPARATE sub-views, each fullscreen-able. Renders in #docview; the
+     workspace file API (server-resolved by id, never a path) backs the tree. */
+  .docview .ide-h { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:0 0 10px; }
+  .docview .ide-h h1 { margin:0; }
+  .docview .ide-sub { color:var(--fg-dim); font-size:12.5px; margin:0 0 12px; }
+  .ide-tabs { display:flex; gap:6px; }
+  .ide-tab { background:var(--bg-2); color:var(--fg-dim); border:1px solid var(--line); border-radius:9px;
+    padding:6px 14px; font-size:13px; font-weight:600; cursor:pointer; }
+  .ide-tab:hover { color:var(--fg); border-color:var(--accent); }
+  .ide-tab.active { color:var(--fg); background:var(--bg-3); box-shadow:inset 0 -2px 0 var(--accent); }
+  .ide-full { margin-left:auto; background:var(--bg-2); color:var(--fg-dim); border:1px solid var(--line);
+    border-radius:9px; padding:6px 12px; font-size:13px; font-weight:600; cursor:pointer; }
+  .ide-full:hover { color:var(--fg); border-color:var(--accent); }
+  .ide-panel { display:none; }
+  .ide-panel.active { display:block; }
+  /* Files explorer: phase groups, each file a row with a status dot. */
+  .ide-group { margin:0 0 14px; }
+  .ide-group-h { font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--fg-dim);
+    margin:0 0 6px; font-weight:700; }
+  .ide-file { display:flex; align-items:center; gap:9px; width:100%; text-align:left; background:var(--bg-2);
+    border:1px solid var(--line); border-radius:9px; padding:9px 12px; margin:5px 0; cursor:pointer;
+    color:var(--fg); font-size:13.5px; }
+  .ide-file:hover, .ide-file:focus-visible { border-color:var(--accent); outline:none; }
+  .ide-file.open { box-shadow:inset 2px 0 0 var(--accent); }
+  .ide-file .ide-dot { width:8px; height:8px; border-radius:50%; flex:0 0 auto; background:var(--fg-dim); }
+  .ide-file.st-current .ide-dot { background:var(--accent); }
+  .ide-file.st-done .ide-dot { background:#36c46b; }
+  .ide-file.st-locked .ide-dot { background:transparent; border:1px solid var(--fg-dim); }
+  .ide-file .ide-fname { font-family:var(--mono); font-size:12.5px; }
+  .ide-file .ide-ftitle { color:var(--fg-dim); font-size:12px; margin-left:auto; text-align:right;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:52%; }
+  .ide-file.st-locked .ide-fname::after { content:' 🔒'; }
+  /* Editor + terminal sub-views reuse the Sandbox host/console styling. */
+  .docview .ide-host { border:1px solid var(--line); border-radius:10px; background:var(--bg-2);
+    height:52vh; min-height:220px; overflow:hidden; }
+  .docview .ide-host .cm-editor { height:100%; }
+  .ide-bar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:0 0 10px; }
+  .ide-openname { font-family:var(--mono); font-size:12.5px; color:var(--fg-dim); }
+  .docview .ideout { background:#0a0a0a; color:#e8e8e8; border:1px solid var(--line); border-radius:10px;
+    padding:12px 14px; font-family:var(--mono); font-size:12.6px; line-height:1.55;
+    white-space:pre-wrap; word-break:break-word; height:56vh; min-height:220px; overflow:auto; }
+  .docview .ideout .con-g { color:#36c46b; } .docview .ideout .con-r { color:#ff5c5c; }
+  .docview .ideout .con-b { color:#5aa9ff; } .docview .ideout .con-d { color:#9aa7b4; }
+  .ide-empty { color:var(--fg-dim); font-size:13px; padding:20px 4px; }
+  /* Fullscreen: the active IDE panel fills the viewport, chrome tucked to a bar. */
+  body.ide-full-on #docview.docview { max-width:none; padding:10px 12px; }
+  body.ide-full-on .docview .ide-host { height:calc(100vh - 150px); }
+  body.ide-full-on .docview .ideout { height:calc(100vh - 150px); }
+  body.ide-full-on .docview .ide-sub, body.ide-full-on header, body.ide-full-on .footer { display:none; }
+  body.ide-full-on .docview .learnback { display:none; }
+  @media (max-width:760px) {
+    .docview .ide-host, body.ide-full-on .docview .ide-host { height:56vh; }
+    .docview .ideout, body.ide-full-on .docview .ideout { height:58vh; }
+    .ide-file .ide-ftitle { display:none; }
+    body.ide-full-on .docview .ide-host { height:calc(100vh - 165px); }
+    body.ide-full-on .docview .ideout { height:calc(100vh - 165px); }
+  }
   /* Runnable code examples in lessons/book: ▷ Run + ✎ Open in Sandbox under a block. */
   .docview .coderun-bar, .ldrawer-body .coderun-bar { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 0; }
   .docview .coderun-btn, .ldrawer-body .coderun-btn { background:var(--bg-2); color:var(--fg-dim); border:1px solid var(--line);
@@ -838,6 +896,7 @@
       <button class="menuitem" data-goto="glossary" role="menuitem">📔 Glossary</button>
       <button class="menuitem" data-goto="cheatsheets" role="menuitem">📋 Cheat sheets</button>
       <button class="menuitem" data-goto="sandbox" id="menuSandbox" role="menuitem">🧪 Sandbox</button>
+      <button class="menuitem" data-goto="ide" id="menuIde" role="menuitem">🛠 IDE</button>
     </div>
   </div>
 
@@ -1355,6 +1414,215 @@
       } catch (e) {
         sbxRender('Could not reach the local compiler (the offline server must be running).', false, 'error');
       }
+    }
+
+    // ── Fullscreen IDE (Paul 2026-07-07): a distraction-free place to READ and
+    //    WRITE the course's exercise files — file explorer, editor, and terminal
+    //    as three SEPARATE sub-views, each fullscreen-able. It is a WORKSHOP, not a
+    //    second learning flow: it never grades, advances progress, or reveals an
+    //    answer (all that stays in Practice). Files come from the server-resolved
+    //    workspace API (keyed by exercise id, never a path); runs go through the
+    //    progress-neutral sandbox path, exactly like the 🧪 Sandbox. Rebuilt from
+    //    localStorage on each visit (freshDocview wipes the DOM), mirroring Sandbox.
+    // Shared CodeMirror 6 extension set (theme + Rust highlighting + keymaps),
+    // matching the Sandbox editor so the IDE looks and behaves identically. New
+    // for the IDE; Practice/Sandbox keep their inline copies untouched.
+    function makeEditorExtensions(ariaLabel, onRun) {
+      const hl = CM.HighlightStyle.define([
+        { tag: [CM.tags.keyword, CM.tags.controlKeyword, CM.tags.operatorKeyword, CM.tags.moduleKeyword], color: 'var(--tok-k)' },
+        { tag: [CM.tags.string, CM.tags.special(CM.tags.string), CM.tags.character], color: 'var(--tok-s)' },
+        { tag: [CM.tags.comment, CM.tags.lineComment, CM.tags.blockComment], color: 'var(--tok-c)', fontStyle: 'italic' },
+        { tag: [CM.tags.number, CM.tags.bool, CM.tags.atom], color: 'var(--tok-n)' },
+        { tag: [CM.tags.typeName, CM.tags.className, CM.tags.namespace], color: 'var(--tok-t)' },
+        { tag: [CM.tags.macroName, CM.tags.function(CM.tags.variableName), CM.tags.function(CM.tags.propertyName)], color: 'var(--tok-m)' },
+      ]);
+      const theme = CM.EditorView.theme({
+        '&': { background: 'transparent', color: 'var(--fg)', fontSize: '13px', height: '100%' },
+        '.cm-content': { fontFamily: 'var(--mono)', padding: '10px 0', caretColor: 'var(--accent)' },
+        '.cm-scroller': { fontFamily: 'var(--mono)', lineHeight: '1.55', overflow: 'auto' },
+        '.cm-gutters': { background: 'transparent', border: 'none', color: 'var(--fg-dim)' },
+        '.cm-lineNumbers .cm-gutterElement': { padding: '0 6px 0 8px', minWidth: '22px' },
+        '&.cm-focused .cm-cursor': { borderLeftColor: 'var(--accent)' },
+        '.cm-selectionBackground, &.cm-focused .cm-selectionBackground': { background: 'var(--accent-soft)' },
+      });
+      return [
+        CM.lineNumbers(), CM.history(), CM.drawSelection(), CM.rust(),
+        CM.syntaxHighlighting(hl), theme, CM.EditorView.lineWrapping,
+        CM.EditorView.contentAttributes.of({ 'aria-label': ariaLabel }),
+        CM.keymap.of([{ key: 'Mod-Enter', run: () => { if (onRun) onRun(); return true; } }]),
+        CM.keymap.of([CM.indentWithTab, ...CM.defaultKeymap, ...CM.historyKeymap, ...CM.closeBracketsKeymap]),
+      ];
+    }
+    let ideView = null;                 // the IDE's CodeMirror instance (per visit)
+    let ideOpen = null;                 // { id, name, status, content } currently open
+    const IDE_KEY = 'ts-ide-state';     // { sub:'files'|'editor'|'terminal', openId }
+    function ideLoad() {
+      try { const s = JSON.parse(localStorage.getItem(IDE_KEY) || 'null'); if (s && s.sub) return s; } catch (_) {}
+      return { sub: 'files', openId: null };
+    }
+    function ideSave(s) { try { localStorage.setItem(IDE_KEY, JSON.stringify(s)); } catch (_) {} }
+    // Render ANSI run output into the IDE's own console (a second <pre>, distinct
+    // id from the Practice/Sandbox consoles) using the shared conRender mapper.
+    function ideConWrite(s, isErr) {
+      const e = document.getElementById('ideout'); if (!e) return;
+      e.classList.toggle('err', !!isErr);
+      e.innerHTML = conRender(String(s || '').replace(/\r/g, ''));
+      e.scrollTop = e.scrollHeight;
+    }
+    function ideShowSub(sub) {
+      const st = ideLoad(); st.sub = sub; ideSave(st);
+      document.querySelectorAll('.ide-tab').forEach(t => {
+        const on = t.dataset.sub === sub;
+        t.classList.toggle('active', on); t.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+      document.querySelectorAll('.ide-panel').forEach(p => p.classList.toggle('active', p.dataset.sub === sub));
+      if (sub === 'editor' && ideView) setTimeout(() => { try { ideView.focus(); } catch (_) {} }, 0);
+    }
+    // Load one exercise file into the editor (GET /api/workspace/file?id=…). A
+    // locked file returns 423 — offer the same jump-ahead the Practice list does
+    // (POST /api/select force, then re-fetch), so the explorer is not a lockout
+    // bypass but honours the same gate.
+    async function ideOpenFile(id, status) {
+      try {
+        let res = await fetch('api/workspace/file?id=' + encodeURIComponent(id));
+        if (res.status === 423) {
+          if (!confirm('That exercise is locked — jump ahead and open it anyway?')) return;
+          await fetch('api/select', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, force: true }) });
+          res = await fetch('api/workspace/file?id=' + encodeURIComponent(id));
+        }
+        if (res.status === 409) { alert('That exercise is already completed — reset it in Practice to edit it again.'); return; }
+        if (!res.ok) { alert('Could not open the file (HTTP ' + res.status + ').'); return; }
+        const f = await res.json();
+        ideOpen = { id: f.id, name: f.name, status: f.status, content: f.content };
+        const st = ideLoad(); st.openId = f.id; ideSave(st);
+        ideShowSub('editor');
+        ideRenderEditor();
+      } catch (_) { alert('Could not reach the local server.'); }
+    }
+    function ideRenderEditor() {
+      const host = document.getElementById('idehost'); if (!host) return;
+      const nameEl = document.getElementById('ideopenname');
+      if (nameEl) nameEl.textContent = ideOpen ? ideOpen.name : '(no file open)';
+      host.innerHTML = ''; ideView = null;
+      if (!ideOpen) { host.innerHTML = '<div class="ide-empty">Pick a file in <b>Files</b> to open it here.</div>'; return; }
+      if (window.CM) {
+        ideView = new CM.EditorView({
+          doc: ideOpen.content,
+          extensions: makeEditorExtensions('IDE Rust editor', () => ideRun()),
+          parent: host,
+        });
+        try { ideView.scrollDOM.setAttribute('tabindex', '0'); } catch (_) {}
+        try { window.ideView = ideView; } catch (_) {}
+      } else {
+        host.innerHTML = '<textarea id="ideta" spellcheck="false" style="width:100%;height:100%;background:transparent;color:var(--fg);border:0;font-family:var(--mono);font-size:13px;padding:10px">' + esc(ideOpen.content) + '</textarea>';
+      }
+    }
+    function ideEditorText() {
+      return ideView ? ideView.state.doc.toString()
+        : (document.getElementById('ideta') ? document.getElementById('ideta').value : (ideOpen ? ideOpen.content : ''));
+    }
+    // Save the buffer to the exercise source (PUT /api/workspace/file). Same gates
+    // as select: 409 done, 423 locked. This is a real persist (survives restarts),
+    // unlike the Sandbox's localStorage-only buffers.
+    async function ideSaveFile() {
+      if (!ideOpen) return;
+      const status = document.getElementById('idestatus');
+      const content = ideEditorText();
+      if (status) status.textContent = 'saving…';
+      try {
+        const res = await fetch('api/workspace/file', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: ideOpen.id, content }) });
+        if (res.status === 409) { if (status) status.textContent = 'done — reset in Practice to edit'; return; }
+        if (res.status === 423) { if (status) status.textContent = 'locked'; return; }
+        if (!res.ok) { if (status) status.textContent = 'save failed (' + res.status + ')'; return; }
+        ideOpen.content = content;
+        if (status) status.textContent = 'saved ✓';
+      } catch (_) { if (status) status.textContent = 'save failed (offline?)'; }
+    }
+    // Run the open buffer through the progress-neutral sandbox path (web
+    // /api/sandbox, mobile Termux 'sandbox' op) and show the output in the IDE
+    // terminal. Deliberately NOT /api/run: the IDE never advances progress or
+    // triggers the exercise's predict-gate — that stays in Practice.
+    function ideRun() {
+      if (!ideOpen) { ideShowSub('editor'); return; }
+      const status = document.getElementById('idestatus');
+      ideShowSub('terminal');
+      ideConWrite('compiling + running…', false);
+      if (status) status.textContent = 'running…';
+      runCode(ideEditorText(), r => {
+        ideConWrite((r.text || '').trim() || (r.note || '(no output)'), !r.passed);
+        if (status) status.textContent = r.note ? r.note : (r.passed ? 'ran ✓' : 'error ✗');
+      });
+    }
+    async function renderIde(sub) {
+      const d = freshDocview();
+      ideView = null; // the old host was wiped by freshDocview
+      const st = ideLoad();
+      d.innerHTML =
+        '<div class="ide-h"><h1>🛠 IDE</h1>'
+        + '<div class="ide-tabs" role="tablist" aria-label="IDE views">'
+        + '<button class="ide-tab" data-sub="files" role="tab">🗂 Files</button>'
+        + '<button class="ide-tab" data-sub="editor" role="tab">✎ Editor</button>'
+        + '<button class="ide-tab" data-sub="terminal" role="tab">▤ Terminal</button>'
+        + '</div>'
+        + '<button class="ide-full" id="idefull" type="button" aria-pressed="false" title="Toggle fullscreen">⛶ Fullscreen</button>'
+        + '</div>'
+        + '<p class="ide-sub">A workshop for the course’s exercise files — read, edit, and run them offline. Nothing here changes your progress or reveals answers; do graded work in 📝 Practice.</p>'
+        + '<div class="ide-panel" data-sub="files" role="tabpanel" aria-label="Files"><div id="idetree"><div class="ide-empty">Loading files…</div></div></div>'
+        + '<div class="ide-panel" data-sub="editor" role="tabpanel" aria-label="Editor">'
+        + '<div class="ide-bar"><span class="ide-openname" id="ideopenname">(no file open)</span>'
+        + '<button class="run" id="iderun" title="Run (Ctrl/Cmd+Enter)">▷ Run</button>'
+        + '<button class="ghost" id="idesave" title="Save to the exercise file">💾 Save</button>'
+        + '<span class="badge" id="idestatus">ready</span></div>'
+        + '<div class="ide-host" id="idehost"></div></div>'
+        + '<div class="ide-panel" data-sub="terminal" role="tabpanel" aria-label="Terminal">'
+        + '<pre class="ideout" id="ideout" aria-live="polite" aria-label="Program output" tabindex="0">Run a file (from the Editor) to see its output here.</pre></div>';
+      // Wire the sub-view tabs + fullscreen toggle.
+      d.querySelectorAll('.ide-tab').forEach(t => t.onclick = () => ideShowSub(t.dataset.sub));
+      const full = document.getElementById('idefull');
+      if (full) full.onclick = () => {
+        const on = document.body.classList.toggle('ide-full-on');
+        full.setAttribute('aria-pressed', on ? 'true' : 'false');
+        full.textContent = on ? '⤢ Exit fullscreen' : '⛶ Fullscreen';
+      };
+      document.getElementById('iderun').onclick = () => ideRun();
+      document.getElementById('idesave').onclick = () => ideSaveFile();
+      // Restore the open file (if any) into the editor, then show the last sub-view.
+      if (st.openId) { await ideOpenFile(st.openId, null); }
+      else { ideRenderEditor(); }
+      await ideRenderTree();
+      ideShowSub((sub || st.sub) || 'files');
+      d.scrollTop = 0;
+    }
+    // Build the explorer tree from GET /api/workspace: phase groups, each file a
+    // clickable row with a status dot. Carries only id/name/title/status — the
+    // server sends no answer-bearing metadata, and .toml files never appear.
+    async function ideRenderTree() {
+      const tree = document.getElementById('idetree'); if (!tree) return;
+      let data;
+      try {
+        const res = await fetch('api/workspace');
+        if (!res.ok) { tree.innerHTML = '<div class="ide-empty">Could not load files (HTTP ' + res.status + ').</div>'; return; }
+        data = await res.json();
+      } catch (_) { tree.innerHTML = '<div class="ide-empty">Could not reach the local server.</div>'; return; }
+      const groups = (data && data.groups) || [];
+      if (!groups.length) { tree.innerHTML = '<div class="ide-empty">No exercise files found.</div>'; return; }
+      tree.textContent = '';
+      groups.forEach(gp => {
+        const g = document.createElement('div'); g.className = 'ide-group';
+        const h = document.createElement('div'); h.className = 'ide-group-h'; h.textContent = gp.dir;
+        g.appendChild(h);
+        (gp.files || []).forEach(f => {
+          const btn = document.createElement('button'); btn.type = 'button';
+          btn.className = 'ide-file st-' + (f.status || 'locked') + (ideOpen && ideOpen.id === f.id ? ' open' : '');
+          btn.innerHTML = '<span class="ide-dot" aria-hidden="true"></span>'
+            + '<span class="ide-fname">' + esc(f.name) + '</span>'
+            + '<span class="ide-ftitle">' + esc(f.title || '') + '</span>';
+          btn.setAttribute('aria-label', f.name + ' — ' + (f.title || '') + ' (' + (f.status || 'locked') + ')');
+          btn.onclick = () => ideOpenFile(f.id, f.status);
+          g.appendChild(btn);
+        });
+        tree.appendChild(g);
+      });
     }
 
     // ── Runnable code examples in lessons/book ──────────────────────────────────
@@ -2424,6 +2692,9 @@
     const LEARN_VIEWS = ['learn', 'lessons', 'quizzes', 'cheatsheets', 'book', 'glossary', 'library', 'roadmap', 'studyguide', 'logs'];
     async function showView(view, chapter, anchor) {
       curView = view;
+      // Leaving the IDE always drops its fullscreen body class, so the state can
+      // never bleed into another view (the class hides the header/footer).
+      if (view !== 'ide') document.body.classList.remove('ide-full-on');
       // Practice tab lights for the IDE; the Learn tab lights for the hub AND any
       // of its sub-views (a lesson, a quiz, the book, …).
       document.querySelectorAll('.tab[data-view]').forEach(t => {
@@ -2461,6 +2732,8 @@
         await renderLibrary(chapter || null, anchor || null);
       } else if (view === 'sandbox') {
         await renderSandbox();
+      } else if (view === 'ide') {
+        await renderIde(chapter || null); // `chapter` doubles as an optional sub-view id
       }
       // A "← Learn" back button on every Learn SUB-view (not the hub) so you can
       // always return to the hub in-app, without Android's back button (Paul).
