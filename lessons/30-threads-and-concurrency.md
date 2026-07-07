@@ -432,4 +432,4 @@ run to run while `Result: 10` never does? Tell me, and I'll fold it into the Pha
 ---
 
 <!-- lesson-nav -->
-[← Lesson 29 — Smart Pointers: `Box`, `Rc`, `RefCell`, `Deref`, `Drop`](29-smart-pointers.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 31 — Async / Await: `async fn`, `.await`, `Future` →](31-async-await.md)
+[← Lesson 29d — RefCell: interior mutability](29d-refcell.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 31 — Async / Await: `async fn`, `.await`, `Future` →](31-async-await.md)

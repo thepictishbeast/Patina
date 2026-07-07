@@ -129,4 +129,4 @@ Tell me, and I'll fold it into the Phase-7 review.
 ---
 
 <!-- lesson-nav -->
-[← Lesson 28 — Iterators: the next() cursor](28-iterator-cursor.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 29 — Smart Pointers: `Box`, `Rc`, `RefCell`, `Deref`, `Drop` →](29-smart-pointers.md)
+[← Lesson 28 — Iterators: the next() cursor](28-iterator-cursor.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 29 — Box: values on the heap →](29-box.md)
