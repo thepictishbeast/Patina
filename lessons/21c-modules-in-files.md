@@ -124,4 +124,4 @@ directory) come out identical? Tell me, and I'll tune Lesson 22 to match.
 ---
 
 <!-- lesson-nav -->
-[← Lesson 21b — Modules & the module tree](21b-modules.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 22 — Paths & Visibility (`pub`) →](22-paths-and-visibility.md)
+[← Lesson 21b — Modules & the module tree](21b-modules.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 22 — Paths: naming items across modules →](22-paths.md)
