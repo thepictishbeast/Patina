@@ -33,4 +33,28 @@ test.describe('Runnable code examples in lessons/book', () => {
     await page.locator('.tab[data-view="practice"]').click();
     await expect(page.locator('#exTitle')).toHaveText(progressBefore);
   });
+
+  test('an example opens in the Sandbox as a NEW file, without clobbering existing scratch', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForSelector('#exTitle');
+    await page.evaluate(() => { try { localStorage.removeItem('ts-sandbox-files'); localStorage.removeItem('ts-sandbox-code'); } catch (_) {} });
+
+    // Seed the scratch file with distinct code.
+    await page.evaluate(() => showView('sandbox'));
+    await page.waitForSelector('#sbxhost .cm-content');
+    await page.evaluate(() => window.sbxView.dispatch({ changes: { from: 0, to: window.sbxView.state.doc.length, insert: 'fn main(){ println!("KEEP-SCRATCH"); }' } }));
+
+    // From a lesson example, tap "Open in Sandbox".
+    await page.evaluate(() => showView('lessons', '00-hello-world'));
+    await page.waitForSelector('#docview .coderun-bar');
+    await page.locator('#docview .coderun-btn', { hasText: 'Open in Sandbox' }).first().click();
+    await page.waitForSelector('#sbxhost .cm-content');
+
+    // A new "example" file is active with the example's code (not the scratch's)…
+    await expect(page.locator('#sbxfiles .sbxfile.active .sbxfile-name')).toContainText('example');
+    expect(await page.evaluate(() => window.sbxView.state.doc.toString())).not.toContain('KEEP-SCRATCH');
+    // …and the scratch file is preserved intact.
+    await page.locator('#sbxfiles .sbxfile-name', { hasText: 'scratch' }).click();
+    expect(await page.evaluate(() => window.sbxView.state.doc.toString())).toContain('KEEP-SCRATCH');
+  });
 });

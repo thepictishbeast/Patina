@@ -227,10 +227,10 @@
     padding:11px 13px; margin-top:12px; font-family:var(--mono); font-size:12.6px; line-height:1.5;
     white-space:pre-wrap; word-break:break-word; min-height:44px; max-height:34vh; overflow:auto; }
   .docview .sbxout.err { color:#ffd9d0; }
-  /* Runnable code examples in lessons/book: a ▷ Run under a whole-program block. */
-  .docview .coderun-bar { margin:-8px 0 0; }
+  /* Runnable code examples in lessons/book: ▷ Run + ✎ Open in Sandbox under a block. */
+  .docview .coderun-bar { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 0; }
   .docview .coderun-btn { background:var(--bg-2); color:var(--fg-dim); border:1px solid var(--line);
-    border-radius:0 0 8px 8px; padding:4px 13px; font-size:12px; font-weight:600; cursor:pointer; }
+    border-radius:8px; padding:4px 13px; font-size:12px; font-weight:600; cursor:pointer; }
   .docview .coderun-btn:hover:not(:disabled) { color:var(--fg); border-color:var(--accent); }
   .docview .coderun-btn:disabled { opacity:.55; cursor:default; }
   .docview .coderun-out { background:#0a0a0a; color:#e8e8e8; border:1px solid var(--line); border-radius:8px;
@@ -1216,6 +1216,17 @@
       sbxFiles.active = Math.max(0, sbxFiles.active - 1); sbxSaveFiles();
       sbxSetDoc(sbxActive().code); sbxRenderFilesBar();
     }
+    // Open a code example (from a lesson/book) in the Sandbox as a NEW file, then
+    // switch to the Sandbox — so a learner can tinker + re-run it freely without
+    // clobbering their other scratch files (multi-file makes this safe).
+    function sbxOpenWithCode(code) {
+      const m = sbxLoadFiles();
+      const n = m.files.filter(f => /^example/.test(f.name)).length + 1;
+      m.files.push({ name: 'example ' + n, code });
+      m.active = m.files.length - 1;
+      sbxFiles = m; sbxSaveFiles();
+      showView('sandbox');
+    }
     async function renderSandbox() {
       const d = freshDocview();
       sbxView = null; // the old host was wiped by freshDocview
@@ -1358,6 +1369,10 @@
         const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'coderun-btn';
         btn.textContent = '▷ Run'; btn.setAttribute('aria-label', 'Run this example');
         bar.appendChild(btn);
+        const edit = document.createElement('button'); edit.type = 'button'; edit.className = 'coderun-btn';
+        edit.textContent = '✎ Open in Sandbox'; edit.setAttribute('aria-label', 'Open this example in the Sandbox to edit and re-run');
+        edit.onclick = () => sbxOpenWithCode(code);
+        bar.appendChild(edit);
         const out = document.createElement('pre'); out.className = 'coderun-out'; out.hidden = true; out.setAttribute('aria-live', 'polite'); out.setAttribute('tabindex', '0');
         pre.insertAdjacentElement('afterend', out);
         pre.insertAdjacentElement('afterend', bar); // order: pre, bar, out
