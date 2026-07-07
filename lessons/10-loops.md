@@ -254,4 +254,4 @@ tune Lesson 11 (`match`) to where you are.
 ---
 
 <!-- lesson-nav -->
-[← Lesson 9 — `if` / `else if` / `else` (as an expression)](09-if-else-expressions.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 11 — `match` (intro) →](11-match-intro.md)
+[← Lesson 9b — if is an expression: branching that produces a value](09b-if-as-expression.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 11 — `match` (intro) →](11-match-intro.md)

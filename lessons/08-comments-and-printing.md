@@ -124,4 +124,4 @@ you want unpacked? Tell me.
 ---
 
 <!-- lesson-nav -->
-[← Lesson 7 — Functions](07-functions.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 9 — `if` / `else if` / `else` (as an expression) →](09-if-else-expressions.md)
+[← Lesson 7 — Functions](07-functions.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 9 — if / else if / else: making the program choose →](09-if-else.md)
