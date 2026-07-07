@@ -251,63 +251,75 @@
     padding:11px 13px; margin-top:12px; font-family:var(--mono); font-size:12.6px; line-height:1.5;
     white-space:pre-wrap; word-break:break-word; min-height:44px; max-height:34vh; overflow:auto; }
   .docview .sbxout.err { color:#ffd9d0; }
-  /* ── Fullscreen IDE (Paul 2026-07-07): file explorer + editor + terminal as
-     three SEPARATE sub-views, each fullscreen-able. Renders in #docview; the
-     workspace file API (server-resolved by id, never a path) backs the tree. */
-  .docview .ide-h { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:0 0 10px; }
-  .docview .ide-h h1 { margin:0; }
-  .docview .ide-sub { color:var(--fg-dim); font-size:12.5px; margin:0 0 12px; }
-  .ide-tabs { display:flex; gap:6px; }
-  .ide-tab { background:var(--bg-2); color:var(--fg-dim); border:1px solid var(--line); border-radius:9px;
-    padding:6px 14px; font-size:13px; font-weight:600; cursor:pointer; }
-  .ide-tab:hover { color:var(--fg); border-color:var(--accent); }
-  .ide-tab.active { color:var(--fg); background:var(--bg-3); box-shadow:inset 0 -2px 0 var(--accent); }
-  .ide-full { margin-left:auto; background:var(--bg-2); color:var(--fg-dim); border:1px solid var(--line);
-    border-radius:9px; padding:6px 12px; font-size:13px; font-weight:600; cursor:pointer; }
-  .ide-full:hover { color:var(--fg); border-color:var(--accent); }
-  .ide-panel { display:none; }
-  .ide-panel.active { display:block; }
+  /* ── The IDE (Paul 2026-07-07): a REAL IDE layout — the file explorer is a
+     sidebar that lives ALONGSIDE the editor (a slide-over drawer on a phone),
+     so you open files WITHOUT ever leaving the editor. Terminal is a collapsible
+     bottom panel. Fully offline: web = the local rpro-serve; mobile = the
+     embedded server + Termux run. Renders in #docview; the workspace API is
+     keyed by exercise id (never a path), so answer files can't be reached. */
+  .docview .ide-h { display:flex; align-items:center; gap:7px; flex-wrap:wrap; margin:0 0 8px; }
+  .docview .ide-h h1 { margin:0; font-size:19px; }
+  .ide-hbtn { background:var(--bg-2); color:var(--fg-dim); border:1px solid var(--line); border-radius:9px;
+    padding:6px 11px; font-size:13px; font-weight:600; cursor:pointer; }
+  .ide-hbtn:hover, .ide-hbtn:focus-visible { color:var(--fg); border-color:var(--accent); outline:none; }
+  .ide-hbtn.on { color:var(--fg); background:var(--bg-3); border-color:var(--accent); }
+  .ide-openname { font-family:var(--mono); font-size:12px; color:var(--fg-dim); margin-left:2px;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:38vw; }
+  .ide-spacer { flex:1 1 auto; }
+  /* The workspace: explorer sidebar + main (editor over terminal), side by side. */
+  .ide-body { display:flex; gap:10px; position:relative; align-items:stretch; }
+  .ide-sidebar { flex:0 0 232px; overflow:auto; border:1px solid var(--line); border-radius:10px;
+    background:var(--bg-2); padding:10px 11px; height:60vh; }
+  .ide-sidebar.closed { display:none; }
+  .ide-main { flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:10px; }
+  .ide-editwrap { display:flex; flex-direction:column; gap:8px; flex:1 1 auto; min-height:0; }
+  .ide-toolbar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .docview .ide-host { border:1px solid var(--line); border-radius:10px; background:var(--bg-2);
+    height:60vh; min-height:220px; overflow:hidden; }
+  .docview .ide-host .cm-editor { height:100%; }
+  .ide-term { display:flex; flex-direction:column; gap:6px; }
+  .ide-term.closed { display:none; }
+  .ide-termbar { display:flex; align-items:center; gap:8px; font-size:11.5px; color:var(--fg-dim); }
+  .docview .ideout { background:#0a0a0a; color:#e8e8e8; border:1px solid var(--line); border-radius:10px;
+    padding:12px 14px; font-family:var(--mono); font-size:12.6px; line-height:1.55;
+    white-space:pre-wrap; word-break:break-word; height:26vh; min-height:120px; overflow:auto; }
+  .docview .ideout.err { color:#ffd9d0; }
+  .docview .ideout .con-g { color:#36c46b; } .docview .ideout .con-r { color:#ff5c5c; }
+  .docview .ideout .con-b { color:#5aa9ff; } .docview .ideout .con-d { color:#9aa7b4; }
   /* Files explorer: phase groups, each file a row with a status dot. */
-  .ide-group { margin:0 0 14px; }
-  .ide-group-h { font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--fg-dim);
-    margin:0 0 6px; font-weight:700; }
-  .ide-file { display:flex; align-items:center; gap:9px; width:100%; text-align:left; background:var(--bg-2);
-    border:1px solid var(--line); border-radius:9px; padding:9px 12px; margin:5px 0; cursor:pointer;
-    color:var(--fg); font-size:13.5px; }
-  .ide-file:hover, .ide-file:focus-visible { border-color:var(--accent); outline:none; }
-  .ide-file.open { box-shadow:inset 2px 0 0 var(--accent); }
-  .ide-file .ide-dot { width:8px; height:8px; border-radius:50%; flex:0 0 auto; background:var(--fg-dim); }
+  .ide-group { margin:0 0 12px; }
+  .ide-group-h { font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--fg-dim);
+    margin:0 0 5px; font-weight:700; }
+  .ide-file { display:flex; align-items:center; gap:8px; width:100%; text-align:left; background:transparent;
+    border:1px solid transparent; border-radius:8px; padding:6px 8px; margin:2px 0; cursor:pointer;
+    color:var(--fg); font-size:12.5px; }
+  .ide-file:hover, .ide-file:focus-visible { background:var(--bg-3); border-color:var(--line); outline:none; }
+  .ide-file.open { background:var(--bg-3); box-shadow:inset 2px 0 0 var(--accent); }
+  .ide-file .ide-dot { width:7px; height:7px; border-radius:50%; flex:0 0 auto; background:var(--fg-dim); }
   .ide-file.st-current .ide-dot { background:var(--accent); }
   .ide-file.st-done .ide-dot { background:#36c46b; }
   .ide-file.st-locked .ide-dot { background:transparent; border:1px solid var(--fg-dim); }
-  .ide-file .ide-fname { font-family:var(--mono); font-size:12.5px; }
-  .ide-file .ide-ftitle { color:var(--fg-dim); font-size:12px; margin-left:auto; text-align:right;
-    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:52%; }
+  .ide-file .ide-fname { font-family:var(--mono); font-size:11.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .ide-file.st-locked .ide-fname::after { content:' 🔒'; }
-  /* Editor + terminal sub-views reuse the Sandbox host/console styling. */
-  .docview .ide-host { border:1px solid var(--line); border-radius:10px; background:var(--bg-2);
-    height:52vh; min-height:220px; overflow:hidden; }
-  .docview .ide-host .cm-editor { height:100%; }
-  .ide-bar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:0 0 10px; }
-  .ide-openname { font-family:var(--mono); font-size:12.5px; color:var(--fg-dim); }
-  .docview .ideout { background:#0a0a0a; color:#e8e8e8; border:1px solid var(--line); border-radius:10px;
-    padding:12px 14px; font-family:var(--mono); font-size:12.6px; line-height:1.55;
-    white-space:pre-wrap; word-break:break-word; height:56vh; min-height:220px; overflow:auto; }
-  .docview .ideout .con-g { color:#36c46b; } .docview .ideout .con-r { color:#ff5c5c; }
-  .docview .ideout .con-b { color:#5aa9ff; } .docview .ideout .con-d { color:#9aa7b4; }
-  .ide-empty { color:var(--fg-dim); font-size:13px; padding:20px 4px; }
-  /* Fullscreen: the active IDE panel fills the viewport, chrome tucked to a bar. */
-  body.ide-full-on #docview.docview { max-width:none; padding:10px 12px; }
-  body.ide-full-on .docview .ide-host { height:calc(100vh - 150px); }
-  body.ide-full-on .docview .ideout { height:calc(100vh - 150px); }
-  body.ide-full-on .docview .ide-sub, body.ide-full-on header, body.ide-full-on .footer { display:none; }
-  body.ide-full-on .docview .learnback { display:none; }
+  .ide-empty { color:var(--fg-dim); font-size:12.5px; padding:14px 4px; }
+  .ide-scrim { display:none; }
+  /* Fullscreen: the workspace fills the viewport, chrome tucked away. */
+  body.ide-full-on #docview.docview { max-width:none; padding:8px 10px; }
+  body.ide-full-on header, body.ide-full-on .footer { display:none; }
+  body.ide-full-on .docview .learnback, body.ide-full-on .docview .ide-blurb { display:none; }
+  body.ide-full-on .ide-sidebar, body.ide-full-on .docview .ide-host { height:calc(100vh - 118px); }
+  /* Phone: the sidebar becomes a slide-over drawer OVER the editor — the editor
+     is never hidden; tapping a file opens it and closes the drawer. */
   @media (max-width:760px) {
-    .docview .ide-host, body.ide-full-on .docview .ide-host { height:56vh; }
-    .docview .ideout, body.ide-full-on .docview .ideout { height:58vh; }
-    .ide-file .ide-ftitle { display:none; }
-    body.ide-full-on .docview .ide-host { height:calc(100vh - 165px); }
-    body.ide-full-on .docview .ideout { height:calc(100vh - 165px); }
+    .ide-sidebar { position:absolute; top:0; left:0; z-index:12; width:min(80vw,280px); flex-basis:auto;
+      height:100%; box-shadow:var(--shadow); transform:translateX(0); transition:transform .22s ease; }
+    .ide-sidebar.closed { display:block; transform:translateX(-104%); }
+    .ide-scrim.show { display:block; position:absolute; inset:0; z-index:11; background:rgba(0,0,0,.4); }
+    .docview .ide-host { height:52vh; }
+    .docview .ideout { height:34vh; }
+    .ide-openname { max-width:32vw; }
+    body.ide-full-on .docview .ide-host { height:calc(100vh - 128px); }
+    body.ide-full-on .ide-sidebar { height:calc(100vh - 128px); }
   }
   /* Runnable code examples in lessons/book: ▷ Run + ✎ Open in Sandbox under a block. */
   .docview .coderun-bar, .ldrawer-body .coderun-bar { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 0; }
@@ -1634,10 +1646,11 @@
     }
     let ideView = null;                 // the IDE's CodeMirror instance (per visit)
     let ideOpen = null;                 // { id, name, status, content } currently open
-    const IDE_KEY = 'ts-ide-state';     // { sub:'files'|'editor'|'terminal', openId }
+    const IDE_KEY = 'ts-ide-state';     // { openId, sidebarOpen, termOpen }
+    const isPhone = () => window.matchMedia('(max-width:760px)').matches;
     function ideLoad() {
-      try { const s = JSON.parse(localStorage.getItem(IDE_KEY) || 'null'); if (s && s.sub) return s; } catch (_) {}
-      return { sub: 'files', openId: null };
+      try { const s = JSON.parse(localStorage.getItem(IDE_KEY) || 'null'); if (s && typeof s === 'object') return s; } catch (_) {}
+      return { openId: null, sidebarOpen: true, termOpen: false };
     }
     function ideSave(s) { try { localStorage.setItem(IDE_KEY, JSON.stringify(s)); } catch (_) {} }
     // Render ANSI run output into the IDE's own console (a second <pre>, distinct
@@ -1648,19 +1661,28 @@
       e.innerHTML = conRender(String(s || '').replace(/\r/g, ''));
       e.scrollTop = e.scrollHeight;
     }
-    function ideShowSub(sub) {
-      const st = ideLoad(); st.sub = sub; ideSave(st);
-      document.querySelectorAll('.ide-tab').forEach(t => {
-        const on = t.dataset.sub === sub;
-        t.classList.toggle('active', on); t.setAttribute('aria-selected', on ? 'true' : 'false');
-      });
-      document.querySelectorAll('.ide-panel').forEach(p => p.classList.toggle('active', p.dataset.sub === sub));
-      if (sub === 'editor' && ideView) setTimeout(() => { try { ideView.focus(); } catch (_) {} }, 0);
+    // The file explorer is a SIDEBAR that lives beside the editor (a slide-over
+    // drawer on a phone) — opening a file never leaves the editor. These toggle
+    // the sidebar and the terminal panel; the editor is always present.
+    function ideSetSidebar(open) {
+      const sb = document.getElementById('idetree'), scrim = document.getElementById('idescrim');
+      const btn = document.getElementById('idefilesbtn');
+      if (sb) sb.classList.toggle('closed', !open);
+      if (scrim) scrim.classList.toggle('show', open && isPhone());
+      if (btn) { btn.classList.toggle('on', open); btn.setAttribute('aria-expanded', open ? 'true' : 'false'); }
+      const st = ideLoad(); st.sidebarOpen = open; ideSave(st);
+    }
+    function ideSetTerm(open) {
+      const t = document.getElementById('ideterm'), btn = document.getElementById('idetermbtn');
+      if (t) t.classList.toggle('closed', !open);
+      if (btn) { btn.classList.toggle('on', open); btn.setAttribute('aria-expanded', open ? 'true' : 'false'); }
+      const st = ideLoad(); st.termOpen = open; ideSave(st);
     }
     // Load one exercise file into the editor (GET /api/workspace/file?id=…). A
     // locked file returns 423 — offer the same jump-ahead the Practice list does
     // (POST /api/select force, then re-fetch), so the explorer is not a lockout
-    // bypass but honours the same gate.
+    // bypass but honours the same gate. The editor stays visible throughout; on a
+    // phone the drawer closes so you see your file.
     async function ideOpenFile(id, status) {
       try {
         let res = await fetch('api/workspace/file?id=' + encodeURIComponent(id));
@@ -1674,16 +1696,18 @@
         const f = await res.json();
         ideOpen = { id: f.id, name: f.name, status: f.status, content: f.content };
         const st = ideLoad(); st.openId = f.id; ideSave(st);
-        ideShowSub('editor');
         ideRenderEditor();
+        ideMarkOpenInTree();
+        if (isPhone()) ideSetSidebar(false); // a phone drawer steps aside for the editor
+        if (ideView) setTimeout(() => { try { ideView.focus(); } catch (_) {} }, 0);
       } catch (_) { alert('Could not reach the local server.'); }
     }
     function ideRenderEditor() {
       const host = document.getElementById('idehost'); if (!host) return;
       const nameEl = document.getElementById('ideopenname');
-      if (nameEl) nameEl.textContent = ideOpen ? ideOpen.name : '(no file open)';
+      if (nameEl) nameEl.textContent = ideOpen ? ideOpen.name : 'no file open — pick one in 📂 Files';
       host.innerHTML = ''; ideView = null;
-      if (!ideOpen) { host.innerHTML = '<div class="ide-empty">Pick a file in <b>Files</b> to open it here.</div>'; return; }
+      if (!ideOpen) { host.innerHTML = '<div class="ide-empty">Open a file from the <b>📂 Files</b> explorer to edit it here.</div>'; return; }
       if (window.CM) {
         ideView = new CM.EditorView({
           doc: ideOpen.content,
@@ -1699,6 +1723,11 @@
     function ideEditorText() {
       return ideView ? ideView.state.doc.toString()
         : (document.getElementById('ideta') ? document.getElementById('ideta').value : (ideOpen ? ideOpen.content : ''));
+    }
+    // Re-highlight the open file's row in the sidebar without a full re-fetch.
+    function ideMarkOpenInTree() {
+      document.querySelectorAll('#idetree .ide-file').forEach(el =>
+        el.classList.toggle('open', !!ideOpen && el.dataset.id === ideOpen.id));
     }
     // Save the buffer to the exercise source (PUT /api/workspace/file). Same gates
     // as select: 409 done, 423 locked. This is a real persist (survives restarts),
@@ -1719,12 +1748,12 @@
     }
     // Run the open buffer through the progress-neutral sandbox path (web
     // /api/sandbox, mobile Termux 'sandbox' op) and show the output in the IDE
-    // terminal. Deliberately NOT /api/run: the IDE never advances progress or
-    // triggers the exercise's predict-gate — that stays in Practice.
+    // terminal — which opens automatically. Deliberately NOT /api/run: the IDE
+    // never advances progress or triggers the exercise's predict-gate.
     function ideRun() {
-      if (!ideOpen) { ideShowSub('editor'); return; }
+      if (!ideOpen) return;
       const status = document.getElementById('idestatus');
-      ideShowSub('terminal');
+      ideSetTerm(true);
       ideConWrite('compiling + running…', false);
       if (status) status.textContent = 'running…';
       runCode(ideEditorText(), r => {
@@ -1732,44 +1761,64 @@
         if (status) status.textContent = r.note ? r.note : (r.passed ? 'ran ✓' : 'error ✗');
       });
     }
-    async function renderIde(sub) {
+    async function renderIde() {
       const d = freshDocview();
       ideView = null; // the old host was wiped by freshDocview
       const st = ideLoad();
+      // Warm the emoji-subset woff2 that holds the IDE-only glyphs (📂 🖥) so
+      // their unicode-range subset is fetched BEFORE first paint — otherwise
+      // they FOUT as tofu boxes for a beat on the very first IDE open (the rest
+      // of the app never uses these codepoints, so nothing else loads them).
+      try { document.fonts.load('16px "Noto Color Emoji"', '📂🖥'); } catch (_) {}
       d.innerHTML =
-        '<div class="ide-h"><h1>🛠 IDE</h1>'
-        + '<div class="ide-tabs" role="tablist" aria-label="IDE views">'
-        + '<button class="ide-tab" data-sub="files" role="tab">🗂 Files</button>'
-        + '<button class="ide-tab" data-sub="editor" role="tab">✎ Editor</button>'
-        + '<button class="ide-tab" data-sub="terminal" role="tab">▤ Terminal</button>'
+        '<div class="ide-h">'
+        + '<button class="ide-hbtn" id="idefilesbtn" type="button" aria-expanded="true" title="Toggle the file explorer">📂 Files</button>'
+        + '<h1>🛠 IDE</h1>'
+        + '<span class="ide-openname" id="ideopenname">no file open</span>'
+        + '<span class="ide-spacer"></span>'
+        + '<button class="ide-hbtn" id="idetermbtn" type="button" aria-expanded="false" title="Toggle the terminal">▤ Terminal</button>'
+        + '<button class="ide-hbtn" id="idefull" type="button" aria-pressed="false" title="Enter fullscreen">🖥 Fullscreen</button>'
         + '</div>'
-        + '<button class="ide-full" id="idefull" type="button" aria-pressed="false" title="Toggle fullscreen">⛶ Fullscreen</button>'
-        + '</div>'
-        + '<p class="ide-sub">A workshop for the course’s exercise files — read, edit, and run them offline. Nothing here changes your progress or reveals answers; do graded work in 📝 Practice.</p>'
-        + '<div class="ide-panel" data-sub="files" role="tabpanel" aria-label="Files"><div id="idetree"><div class="ide-empty">Loading files…</div></div></div>'
-        + '<div class="ide-panel" data-sub="editor" role="tabpanel" aria-label="Editor">'
-        + '<div class="ide-bar"><span class="ide-openname" id="ideopenname">(no file open)</span>'
-        + '<button class="run" id="iderun" title="Run (Ctrl/Cmd+Enter)">▷ Run</button>'
-        + '<button class="ghost" id="idesave" title="Save to the exercise file">💾 Save</button>'
-        + '<span class="badge" id="idestatus">ready</span></div>'
-        + '<div class="ide-host" id="idehost"></div></div>'
-        + '<div class="ide-panel" data-sub="terminal" role="tabpanel" aria-label="Terminal">'
-        + '<pre class="ideout" id="ideout" aria-live="polite" aria-label="Program output" tabindex="0">Run a file (from the Editor) to see its output here.</pre></div>';
-      // Wire the sub-view tabs + fullscreen toggle.
-      d.querySelectorAll('.ide-tab').forEach(t => t.onclick = () => ideShowSub(t.dataset.sub));
+        + '<p class="ide-blurb" style="color:var(--fg-dim);font-size:12px;margin:0 0 10px">A workshop over the course’s files — the explorer stays beside the editor; read, edit &amp; run offline. Nothing here changes progress or reveals answers.</p>'
+        + '<div class="ide-body">'
+        +   '<div class="ide-scrim" id="idescrim"></div>'
+        +   '<aside class="ide-sidebar" id="idetree" aria-label="File explorer"><div class="ide-empty">Loading files…</div></aside>'
+        +   '<div class="ide-main">'
+        +     '<div class="ide-editwrap">'
+        +       '<div class="ide-toolbar"><button class="run" id="iderun" title="Run (Ctrl/Cmd+Enter)">▷ Run</button>'
+        +       '<button class="ghost" id="idesave" title="Save to the exercise file">💾 Save</button>'
+        +       '<span class="badge" id="idestatus">ready</span></div>'
+        +       '<div class="ide-host" id="idehost"></div>'
+        +     '</div>'
+        +     '<div class="ide-term closed" id="ideterm">'
+        +       '<div class="ide-termbar">▤ Terminal — output of your last Run</div>'
+        +       '<pre class="ideout" id="ideout" aria-live="polite" aria-label="Program output" tabindex="0">Run a file to see its output here.</pre>'
+        +     '</div>'
+        +   '</div>'
+        + '</div>';
+      document.getElementById('idefilesbtn').onclick = () => ideSetSidebar(document.getElementById('idetree').classList.contains('closed'));
+      document.getElementById('idetermbtn').onclick = () => ideSetTerm(document.getElementById('ideterm').classList.contains('closed'));
+      document.getElementById('idescrim').onclick = () => ideSetSidebar(false);
       const full = document.getElementById('idefull');
       if (full) full.onclick = () => {
+        // Toggle the body class only; keep a CONFIRMED-color glyph (🖥) fixed and
+        // convey state via aria-pressed/title/.on — a glyph swap risked tofu
+        // (⛶/⤢ are outside the bundled Noto subset, so they render as boxes).
         const on = document.body.classList.toggle('ide-full-on');
         full.setAttribute('aria-pressed', on ? 'true' : 'false');
-        full.textContent = on ? '⤢ Exit fullscreen' : '⛶ Fullscreen';
+        full.classList.toggle('on', on);
+        full.title = on ? 'Exit fullscreen' : 'Enter fullscreen';
+        full.textContent = on ? '🖥 Exit' : '🖥 Fullscreen';
       };
       document.getElementById('iderun').onclick = () => ideRun();
       document.getElementById('idesave').onclick = () => ideSaveFile();
-      // Restore the open file (if any) into the editor, then show the last sub-view.
+      await ideRenderTree();
       if (st.openId) { await ideOpenFile(st.openId, null); }
       else { ideRenderEditor(); }
-      await ideRenderTree();
-      ideShowSub((sub || st.sub) || 'files');
+      // Restore panel state: on a phone default the drawer OPEN when no file is
+      // chosen yet (so you can pick one), else respect the saved flags.
+      ideSetSidebar(isPhone() ? (!ideOpen) : (st.sidebarOpen !== false));
+      ideSetTerm(!!st.termOpen);
       d.scrollTop = 0;
     }
     // Build the explorer tree from GET /api/workspace: phase groups, each file a
@@ -1782,7 +1831,7 @@
         const res = await fetch('api/workspace');
         if (!res.ok) { tree.innerHTML = '<div class="ide-empty">Could not load files (HTTP ' + res.status + ').</div>'; return; }
         data = await res.json();
-      } catch (_) { tree.innerHTML = '<div class="ide-empty">Could not reach the local server.</div>'; return; }
+      } catch (_) { tree.innerHTML = '<div class="ide-empty">Could not reach the local files.</div>'; return; }
       const groups = (data && data.groups) || [];
       if (!groups.length) { tree.innerHTML = '<div class="ide-empty">No exercise files found.</div>'; return; }
       tree.textContent = '';
@@ -1791,11 +1840,11 @@
         const h = document.createElement('div'); h.className = 'ide-group-h'; h.textContent = gp.dir;
         g.appendChild(h);
         (gp.files || []).forEach(f => {
-          const btn = document.createElement('button'); btn.type = 'button';
+          const btn = document.createElement('button'); btn.type = 'button'; btn.dataset.id = f.id;
           btn.className = 'ide-file st-' + (f.status || 'locked') + (ideOpen && ideOpen.id === f.id ? ' open' : '');
           btn.innerHTML = '<span class="ide-dot" aria-hidden="true"></span>'
-            + '<span class="ide-fname">' + esc(f.name) + '</span>'
-            + '<span class="ide-ftitle">' + esc(f.title || '') + '</span>';
+            + '<span class="ide-fname">' + esc(f.name) + '</span>';
+          btn.title = (f.title || f.name) + ' · ' + (f.status || 'locked');
           btn.setAttribute('aria-label', f.name + ' — ' + (f.title || '') + ' (' + (f.status || 'locked') + ')');
           btn.onclick = () => ideOpenFile(f.id, f.status);
           g.appendChild(btn);
@@ -2916,7 +2965,7 @@
       } else if (view === 'sandbox') {
         await renderSandbox();
       } else if (view === 'ide') {
-        await renderIde(chapter || null); // `chapter` doubles as an optional sub-view id
+        await renderIde();
       }
       // A "← Learn" back button on every Learn SUB-view (not the hub) so you can
       // always return to the hub in-app, without Android's back button (Paul).
@@ -4066,7 +4115,7 @@
     });
 
     // ── phone progressive disclosure: exercise-list accordion + folded terminal ──
-    const isPhone = () => window.matchMedia('(max-width:760px)').matches;
+    // (isPhone is declared once near the IDE block above and shared here)
     (() => {
       const pane = document.querySelector('main > .pane:first-child');
       const ttl = document.getElementById('exTitle');
