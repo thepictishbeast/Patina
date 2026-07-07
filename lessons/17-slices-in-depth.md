@@ -188,4 +188,4 @@ me, and I'll shape the Phase-4 review around it.
 ---
 
 <!-- lesson-nav -->
-[← Lesson 16 — References & Borrowing](16-references-and-borrowing.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 18 — Structs (your own types) →](18-structs.md)
+[← Lesson 16b — Mutable references & the borrowing rules](16b-mutable-references.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 18 — Structs (your own types) →](18-structs.md)
