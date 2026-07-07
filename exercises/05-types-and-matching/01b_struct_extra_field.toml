@@ -1,0 +1,20 @@
+id = "types/01b_struct_extra_field"
+title = "A struct literal sets only the fields the struct declares"
+difficulty = "beginner"
+estimated_minutes = 5
+concept = "struct-construction"
+expected_error_code = "E0560"
+solution_outline = """
+The struct `User` declares exactly two fields — `name` and `active`. A
+struct literal must match that set: it may not add a field the type never
+declared. The failing line invents `admin`, so remove `admin: false` and
+the literal matches the definition again. (This is the mirror image of the
+missing-field error: too few fields fails, too many fails too — the set
+must match exactly. If you truly need an `admin` flag, it belongs in the
+struct definition, not the literal.)
+"""
+
+[[book_refs]]
+chapter = "ch05-01-defining-structs"
+anchor = "defining-and-instantiating-structs"
+why = "Instantiating a struct: you set its declared fields. The failing line adds a field that is not in the definition, which this section's rules forbid."
