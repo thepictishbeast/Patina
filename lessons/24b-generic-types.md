@@ -160,4 +160,4 @@ compiler explained it? Tell me, and I'll pitch Lesson 25 to match.
 ---
 
 <!-- lesson-nav -->
-[← Lesson 24 — Generic functions](24-generic-functions.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 25 — Traits: Defining Shared Behavior →](25-traits.md)
+[← Lesson 24 — Generic functions](24-generic-functions.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 25 — Traits: declare and implement →](25-traits-declare-implement.md)

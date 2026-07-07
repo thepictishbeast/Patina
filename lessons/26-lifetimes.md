@@ -338,4 +338,4 @@ Phase-6 review.
 ---
 
 <!-- lesson-nav -->
-[← Lesson 25 — Traits: Defining Shared Behavior](25-traits.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 27 — Closures: Anonymous Functions That Capture →](27-closures.md)
+[← Lesson 25b — Trait bounds: demanding behaviour](25b-trait-bounds.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 27 — Closures: Anonymous Functions That Capture →](27-closures.md)
