@@ -343,4 +343,4 @@ it into the Phase-6 review.
 ---
 
 <!-- lesson-nav -->
-[← Lesson 24 — Generics: `<T>` type parameters](24-generics.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 26 — Lifetimes: annotations (`'a`), the borrow checker, elision →](26-lifetimes.md)
+[← Lesson 24b — Generic structs, enums & methods](24b-generic-types.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 26 — Lifetimes: annotations (`'a`), the borrow checker, elision →](26-lifetimes.md)

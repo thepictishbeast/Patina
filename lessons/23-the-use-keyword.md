@@ -213,4 +213,4 @@ arbitrary or sensible? Tell me, and I'll shape the Phase-6 review around it.
 ---
 
 <!-- lesson-nav -->
-[← Lesson 22 — Paths & Visibility (`pub`)](22-paths-and-visibility.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 24 — Generics: `<T>` type parameters →](24-generics.md)
+[← Lesson 22 — Paths & Visibility (`pub`)](22-paths-and-visibility.md) · [↑ Study Guide](../STUDY-GUIDE.md) · [Lesson 24 — Generic functions: the `<T>` placeholder →](24-generic-functions.md)
