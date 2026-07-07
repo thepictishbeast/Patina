@@ -441,3 +441,24 @@ aliases = ["dereference", "dereferencing", "deref", "star operator", "* operator
 definition = "Dereferencing follows a reference to reach the value it points at, written with a leading `*` (as in `*r`). A reference such as `&x` is a borrow that lets you use a value without owning it; putting `*` in front of the reference gives you the underlying value itself. Many everyday uses need no explicit `*` because the compiler inserts it for you — for example when you call a method through a reference — but you write it yourself when you need the value rather than the reference, such as doing arithmetic or a comparison through one."
 book_chapter = "ch04-02-references-and-borrowing"
 source = "The Rust Book, ch.4.2 \"References and Borrowing\""
+
+[[term]]
+name = "constant"
+aliases = ["const", "constants"]
+definition = "A constant is a name bound to a value that can never change and is fixed when the program is compiled. You declare it with `const` rather than a regular binding, you must always write out its type, and by convention its name is in SCREAMING_SNAKE_CASE (as in `const MAX_LEVEL: u32 = 100`). A constant may be declared in any scope, including the top level of a file, and stays valid for the whole run of the program."
+book_chapter = "ch03-01-variables-and-mutability"
+source = "The Rust Book, ch.3.1 \"Variables and Mutability\""
+
+[[term]]
+name = "expression"
+aliases = ["expressions", "evaluates to a value"]
+definition = "An expression is a piece of code that evaluates to a value. Most of Rust is built from expressions — `5 + 6`, a function call, a `match`, even a block written `{ ... }` can produce a value. Because a block is itself an expression, the last line of a function body, written with no trailing semicolon, becomes the value that block hands back."
+book_chapter = "ch03-03-how-functions-work"
+source = "The Rust Book, ch.3.3 \"Functions\""
+
+[[term]]
+name = "statement"
+aliases = ["statements"]
+definition = "A statement is a piece of code that performs an action but does not evaluate to a value. A `let` binding is a statement, and so is any expression once a semicolon is placed after it — the semicolon discards the value. Because a statement has no value, there is nothing to hand back or read out of it; that is the counterpart to an expression, which does produce a value."
+book_chapter = "ch03-03-how-functions-work"
+source = "The Rust Book, ch.3.3 \"Functions\""
