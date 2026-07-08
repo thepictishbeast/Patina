@@ -78,6 +78,16 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   per-surface color flag plumbed through Core/command_plan (web on, TUI off).
 
 ### Editor / IDE
+- ✅ **"↑ Top" affordance for long reading views + scroll-wiring consolidation (`071ed13`, 2026-07-08, #40).**
+  Reading-position memory now lands you deep in long chapters (some 15k+ px) / lessons; a subtle "↑ Top" button
+  appears once you scroll well down, hides near the bottom (never covers prev/next), and one tap returns to the
+  top (smooth, or instant under prefers-reduced-motion). Consolidated the two inline position-save listeners
+  (Book + lesson) into ONE `wireReadingScroll(d, posKey)` helper owning both persistence + button toggle
+  (reduce-sprawl). ⚠ IMPL TRAP (caught live): the button must live on `<body>`, NOT inside `.docview` — that
+  element's fade animation leaves a computed `transform: matrix(1,0,0,1,0,0)` which establishes a containing
+  block, so a `position:fixed` child anchors to the SCROLLED content (rendered off-screen at y=-149) instead of
+  the viewport. `freshDocview()` resets the button per view change. GUI-shell, no CV bump. Verified live 390×844
+  (bottom-right x=307/y=794, all show/hide/click/leave states) + a new book-nav e2e; full suite **101/101**.
 - ✅ **Lesson reading-position memory — B3, the lesson twin (`5f2289d`, 2026-07-08).** Completes B3 across BOTH
   long-form surfaces: `renderLessons` now persists per-lesson scrollTop (localStorage `ts-lesson-pos:<id>`,
   debounced ~250ms, offline) and resumes on a plain reopen, so tapping a concept chip / "Read in the Book" /
