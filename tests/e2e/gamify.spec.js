@@ -62,6 +62,11 @@ test.describe('Gamification', () => {
     await expect(page.locator('#xppanel .badge')).toHaveCount(7);
     expect(await page.locator('#xppanel .badge.earned').count()).toBeGreaterThanOrEqual(3);
     expect(await page.locator('#xppanel .badge.locked').count()).toBeGreaterThan(0);
+    // A locked badge is a clear goal, not a mystery lock: it shows progress
+    // ("10/20") and names the criterion in its tooltip.
+    const twenty = page.locator('#xppanel .badge.locked', { hasText: 'Twenty done' });
+    await expect(twenty.locator('.bgoal')).toHaveText('10/20');
+    await expect(twenty).toHaveAttribute('title', /Solve 20 exercises/);
     // Esc closes it.
     await page.keyboard.press('Escape');
     await expect(page.locator('#xppanel')).toHaveCount(0);

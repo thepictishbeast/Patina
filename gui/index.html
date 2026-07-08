@@ -736,10 +736,15 @@
   .xppanel .badgegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:9px}
   .badge{display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;
     border:1px solid var(--line);border-radius:10px;padding:9px 6px;background:var(--bg-3)}
-  .badge.locked{opacity:.4;filter:grayscale(1)}
+  /* Dim only the ICON on a locked badge, so its name + progress stay readable
+     (the progress "12/20" is the whole point of showing a locked badge). */
+  .badge.locked{background:var(--bg-2)}
+  .badge.locked .bi{opacity:.45;filter:grayscale(1)}
   .badge .bi{font-size:22px;line-height:1}
   .badge .bn{font-size:10.5px;color:var(--fg-dim);font-weight:600}
   .badge.earned .bn{color:var(--fg)}
+  .badge .bgoal{font-size:9.5px;font-weight:700;color:var(--fg-dim);letter-spacing:.02em}
+  .badge .bgoal.earned{color:var(--done)}
   .xptoast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%) translateY(10px) scale(.96);z-index:85;
     background:linear-gradient(135deg,var(--accent),#ffb37a);color:#1a1207;border-radius:12px;padding:11px 18px;
     font-size:13.5px;font-weight:700;box-shadow:var(--shadow);opacity:0;pointer-events:none;
@@ -1204,14 +1209,17 @@
     const GAMIFY_KEY = 'ts-gamify';
     const XP_PER_EXERCISE = 10;        // xp = doneExercises * this
     const LEVEL_SIZE = 5;              // exercises per level
+    // `kind`+`goal`+`need` let a LOCKED badge show HOW to earn it and how close you
+    // are ("12/20"), instead of a mystery lock. `test` stays the source of truth
+    // for awarding (kind/goal are display only, derived to match it).
     const BADGES = [
-      { id: 'first',  icon: '🌱', name: 'First step',    test: (d) => d >= 1 },
-      { id: 'five',   icon: '⭐', name: 'Getting going',  test: (d) => d >= 5 },
-      { id: 'ten',    icon: '🔟', name: 'Double digits',  test: (d) => d >= 10 },
-      { id: 'twenty', icon: '🏅', name: 'Twenty done',    test: (d) => d >= 20 },
-      { id: 'fifty',  icon: '🏆', name: 'Fifty strong',   test: (d) => d >= 50 },
-      { id: 's3',     icon: '🔥', name: '3-day streak',   test: (d, s) => s >= 3 },
-      { id: 's7',     icon: '🔥', name: 'Week strong',    test: (d, s) => s >= 7 },
+      { id: 'first',  icon: '🌱', name: 'First step',    kind: 'done',   goal: 1,  need: 'Solve 1 exercise',         test: (d) => d >= 1 },
+      { id: 'five',   icon: '⭐', name: 'Getting going',  kind: 'done',   goal: 5,  need: 'Solve 5 exercises',        test: (d) => d >= 5 },
+      { id: 'ten',    icon: '🔟', name: 'Double digits',  kind: 'done',   goal: 10, need: 'Solve 10 exercises',       test: (d) => d >= 10 },
+      { id: 'twenty', icon: '🏅', name: 'Twenty done',    kind: 'done',   goal: 20, need: 'Solve 20 exercises',       test: (d) => d >= 20 },
+      { id: 'fifty',  icon: '🏆', name: 'Fifty strong',   kind: 'done',   goal: 50, need: 'Solve 50 exercises',       test: (d) => d >= 50 },
+      { id: 's3',     icon: '🔥', name: '3-day streak',   kind: 'streak', goal: 3,  need: 'Practise 3 days running',  test: (d, s) => s >= 3 },
+      { id: 's7',     icon: '🔥', name: 'Week strong',    kind: 'streak', goal: 7,  need: 'Practise 7 days running',  test: (d, s) => s >= 7 },
     ];
     // Level (1-based) and progress toward the next, from the best-ever done count.
     function xpLevel(best) { return Math.floor(best / LEVEL_SIZE) + 1; }
@@ -1301,8 +1309,14 @@
         + toNext + ' more to level up</p>'
         + '<div class="badgegrid">' + BADGES.map(b => {
             const got = (s.earned || []).includes(b.id);
-            return '<div class="badge ' + (got ? 'earned' : 'locked') + '" title="' + esc(b.name) + (got ? '' : ' (locked)') + '">'
-              + '<span class="bi" aria-hidden="true">' + b.icon + '</span><span class="bn">' + esc(b.name) + '</span></div>';
+            // Locked → show the criterion ("Solve 20 exercises") + how close you are
+            // ("12/20"), so a badge is a clear goal, not a mystery lock.
+            const cur = b.kind === 'streak' ? (s.streak || 0) : (s.bestDone || 0);
+            const sub = got
+              ? '<span class="bgoal earned">earned ✓</span>'
+              : '<span class="bgoal">' + Math.min(cur, b.goal) + '/' + b.goal + (b.kind === 'streak' ? ' 🔥' : '') + '</span>';
+            return '<div class="badge ' + (got ? 'earned' : 'locked') + '" title="' + esc(b.name) + (got ? ' — earned' : ' — ' + esc(b.need)) + '">'
+              + '<span class="bi" aria-hidden="true">' + b.icon + '</span><span class="bn">' + esc(b.name) + '</span>' + sub + '</div>';
           }).join('') + '</div>';
       document.body.appendChild(p);
       if (chip) chip.setAttribute('aria-expanded', 'true');
