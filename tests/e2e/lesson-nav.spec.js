@@ -229,3 +229,49 @@ test.describe('Lessons: glossary tap-to-define', () => {
     expect(bad.stoplisted, 'no common-English word linked (stoplist)').toBe(0);
   });
 });
+
+// B3 ("remember your place") — the lesson twin of the Book's ts-book-pos memory.
+// A lesson used to snap back to the top every reopen, so tapping a concept chip /
+// "Read in the Book" / "Practice this" and returning lost your spot. Position is
+// now persisted per lesson (localStorage, offline). Pin the resume-on-reopen.
+test.describe('Lessons: reading-position memory (B3)', () => {
+  test('a lesson resumes your scroll position on a plain reopen', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 }); // guarantees a scrollable lesson
+    await page.goto('/');
+    await page.waitForSelector('#exTitle');
+    const ids = await page.evaluate(async () => (await (await fetch('api/lessons')).json()).lessons.map((l) => l.id));
+    const lid = ids[5] || ids[2];
+
+    // Open the lesson (showView sizes #docview) and wait until it's actually tall
+    // enough to scroll — the body arrives via several awaited fetches.
+    await page.evaluate((id) => showView('lessons', id), lid);
+    await page.waitForFunction(() => {
+      const dv = document.querySelector('#docview');
+      return dv && document.querySelector('#docview .lessonbody') && dv.scrollHeight - dv.clientHeight > 40;
+    }, null, { timeout: 5000 });
+    const target = await page.evaluate(() => {
+      const dv = document.querySelector('#docview');
+      const t = Math.max(80, Math.min(500, Math.round((dv.scrollHeight - dv.clientHeight) * 0.5)));
+      dv.scrollTop = t;
+      dv.dispatchEvent(new Event('scroll'));
+      return t;
+    });
+    expect(target, 'the lesson is tall enough to scroll').toBeGreaterThan(40);
+    await page.waitForFunction((id) => localStorage.getItem('ts-lesson-pos:' + id) !== null, lid);
+
+    // Leave to the lesson LIST, then reopen the SAME lesson with no anchor.
+    await page.evaluate(() => showView('lessons'));
+    await page.waitForSelector('#docview .continuecta, #docview .booktoc');
+    await page.evaluate((id) => showView('lessons', id), lid);
+    await page.waitForSelector('#docview .lessonbody');
+
+    // Restore runs after an awaited linkify → poll for the offset to be reapplied.
+    await page.waitForFunction(
+      (want) => Math.abs((document.querySelector('#docview')?.scrollTop || 0) - want) <= 3,
+      target,
+      { timeout: 4000 },
+    );
+    const restored = await page.evaluate(() => document.querySelector('#docview').scrollTop);
+    expect(restored, 'resumed where we left off, not the top').toBeGreaterThan(10);
+  });
+});

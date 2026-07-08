@@ -4067,6 +4067,17 @@
         wireRunnableCode(d.querySelector('.lessonbody'));
         wireCodeCopy(d.querySelector('.lessonbody'));
         markLessonRead(id); // reading it = progress (✓ in the list + Journey counts)
+        // B3 "remember your place" (lesson twin of ts-book-pos): persist scroll
+        // position per lesson (debounced), so tapping a concept chip, "Read in the
+        // Book", or "Practice this" and coming back resumes where you were reading.
+        // Offline localStorage; freshDocview()'s new node per render → no leak.
+        let _lessonPosT = null;
+        d.addEventListener('scroll', () => {
+          clearTimeout(_lessonPosT);
+          _lessonPosT = setTimeout(() => {
+            try { localStorage.setItem('ts-lesson-pos:' + id, String(Math.round(d.scrollTop))); } catch (_) {}
+          }, 250);
+        }, { passive: true });
       }
       // Route "back to list" through showView (not renderLessons directly) so the
       // list re-gets its "← Learn" hub button — otherwise drilling in then back
@@ -4095,7 +4106,12 @@
       });
       d.querySelectorAll('.practicelink').forEach(a =>
         a.onclick = e => { e.preventDefault(); openExercise(a.dataset.id); });
-      d.scrollTop = 0;
+      // Resume where you left off in this lesson (0 if never read / not found).
+      // Clamps if the lesson changed length. Opening a DIFFERENT lesson (prev/next)
+      // has its own key, so a fresh lesson still starts at the top.
+      let lessonPos = 0;
+      try { lessonPos = parseInt(localStorage.getItem('ts-lesson-pos:' + id) || '0', 10) || 0; } catch (_) {}
+      d.scrollTop = lessonPos;
     }
 
     // Select an exercise (mirroring the list's soft-gate) and jump to Practice —
