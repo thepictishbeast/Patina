@@ -78,6 +78,15 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   per-surface color flag plumbed through Core/command_plan (web on, TUI off).
 
 ### Editor / IDE
+- ✅ **Lesson reading-position memory — B3, the lesson twin (`5f2289d`, 2026-07-08).** Completes B3 across BOTH
+  long-form surfaces: `renderLessons` now persists per-lesson scrollTop (localStorage `ts-lesson-pos:<id>`,
+  debounced ~250ms, offline) and resumes on a plain reopen, so tapping a concept chip / "Read in the Book" /
+  "Practice this" and returning no longer snaps to the top. A different lesson (prev/next) uses its own key →
+  fresh lessons still open at the top; clamps on length change; freshDocview()'s new-node-per-render → no leak.
+  Mirrors the proven ts-book-pos pattern. GUI-shell only, no CV bump. Verified live 390×844 (05-scalar-types,
+  maxScroll 3211) + a new lesson-nav e2e; full suite **100/100**. NOTE: a subtle test trap — calling
+  renderLessons() directly leaves #docview hidden/unsized (maxScroll 0); drive via showView('lessons', id) so
+  the view is activated before measuring scroll.
 - ✅ **Book reading-position memory — B3 "remember position per book" (`94576dc`, 2026-07-08).** Every view render
   reset `scrollTop` to 0, so opening a long Rust Book chapter, scrolling halfway, leaving to look something up,
   and coming back dumped you at the top. `renderBook` now persists the scroll offset per chapter (debounced
