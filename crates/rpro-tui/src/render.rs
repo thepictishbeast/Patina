@@ -1300,8 +1300,8 @@ mod tests {
         );
         assert!(!s.contains("```"), "code fence line not hidden:\n{s}");
         assert!(
-            s.contains("Read this code listing"),
-            "missing link-out callout:\n{s}"
+            s.contains("Write and run this example"),
+            "missing offline-first listing callout:\n{s}"
         );
         // Blockquote rendered as a marked rail, not a literal `>` (ascii mode → `|`).
         assert!(

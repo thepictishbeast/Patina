@@ -35,6 +35,20 @@ book_chapter = "ch03-01-variables-and-mutability"
 source = "The Rust Book, ch.3.1 \"Variables and Mutability\""
 
 [[term]]
+name = "duplicate definition"
+aliases = ["duplicate-definition", "defined multiple times", "duplicate name"]
+definition = "Each name can be defined only once within a scope. Declaring two items with the SAME name in one module — two functions, two structs, two constants — is an error, because the compiler cannot tell which one you mean. This is unlike a `let` binding, where re-using a name simply shadows the earlier one. To fix it, give each definition its own distinct name (or move one into a separate module)."
+book_chapter = "ch03-03-how-functions-work"
+source = "The Rust Book, ch.3.3 \"Functions\""
+
+[[term]]
+name = "dereferencing"
+aliases = ["dereference-non-reference", "dereference", "the star operator"]
+definition = "The `*` operator FOLLOWS a reference to reach the value it points to — the mirror of `&`, which makes a reference. Because it follows a reference, `*` only works on a reference (or a smart pointer that acts like one). Writing `*x` where `x` is a plain value rather than a reference is an error: there is nothing to follow, since you already hold the value directly."
+book_chapter = "ch04-02-references-and-borrowing"
+source = "The Rust Book, ch.4.2 \"References and Borrowing\""
+
+[[term]]
 name = "type inference"
 aliases = ["type-inference", "type-inference-limits", "inference", "annotation"]
 definition = "The compiler working out a value's type from how it is written and used, so you don't always have to spell the type out. When the value is ambiguous and the compiler can't tell which type you mean, it stops and asks you to annotate the type explicitly."
