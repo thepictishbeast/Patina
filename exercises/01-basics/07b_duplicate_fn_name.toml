@@ -1,0 +1,20 @@
+id = "basics/07b_duplicate_fn_name"
+title = "Two items can't share a name in the same scope"
+difficulty = "beginner"
+estimated_minutes = 5
+concept = "duplicate-definition"
+expected_error_code = "E0428"
+solution_outline = """
+Two functions both named `greet` collide — E0428 "the name `greet` is
+defined multiple times". A name is unique within its scope, so rename one
+(these are really a greeting and a farewell): keep `greet` for the "Hello!"
+one and rename the other to something like `farewell`, then call BOTH from
+main (`greet(); farewell();`). Renaming without calling the new name still
+compiles, but leaves an unused-function warning — calling each keeps it
+clean.
+"""
+
+[[book_refs]]
+chapter = "ch03-03-how-functions-work"
+anchor = "functions"
+why = "Defining functions: each `fn` introduces a name into the scope, and two definitions can't claim the same name — which is exactly what the failing code does."
