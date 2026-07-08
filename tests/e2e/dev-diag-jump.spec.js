@@ -19,7 +19,11 @@ async function runInAssist(page, request) {
   await page.locator('.pbtn[data-pred="fails"]').click();
   await page.locator('#runbtn').click();
   await expect(page.locator('#statusline')).toContainText(/failed|passed/, { timeout: 30_000 });
-  await expect(page.locator('.diag .diagcode')).toContainText(/E0\d{3}/, { timeout: 30_000 });
+  // rustc emits the primary E0308 AND a cascading E0282 (type-annotations-needed),
+  // so several .diagcode spans render — assert on the FIRST (the primary), matching
+  // how the rest of this file targets .first(). A bare locator here trips
+  // Playwright strict mode (>1 match) and is NOT a missing-diagnostic failure.
+  await expect(page.locator('.diag .diagcode').first()).toContainText(/E0\d{3}/, { timeout: 30_000 });
 }
 
 test.describe('Assist/Dev diagnostic jump-to-line', () => {
