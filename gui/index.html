@@ -1533,9 +1533,10 @@
       sbxFiles.active = Math.max(0, sbxFiles.active - 1); sbxSaveFiles();
       sbxSetDoc(sbxActive().code); sbxRenderFilesBar();
     }
-    // Open a code example (from a lesson/book) in the Sandbox as a NEW file, then
-    // switch to the Sandbox — so a learner can tinker + re-run it freely without
-    // clobbering their other scratch files (multi-file makes this safe).
+    // Open a code example (from a lesson/book) as a NEW scratch file, then jump to
+    // the IDE focused on it — so a learner can tinker + re-run it freely without
+    // clobbering their other scratch files. showView('sandbox') routes to the
+    // unified IDE in scratch mode (the Sandbox and the IDE are one thing now).
     function sbxOpenWithCode(code) {
       const m = sbxLoadFiles();
       const n = m.files.filter(f => /^example/.test(f.name)).length + 1;
@@ -1544,6 +1545,11 @@
       sbxFiles = m; sbxSaveFiles();
       showView('sandbox');
     }
+    // ⚠ DEAD as of 2026-07-08: the standalone Sandbox view was merged into the IDE
+    // — showView('sandbox') now renders the IDE in scratch mode, so nothing calls
+    // renderSandbox / sbxRenderFilesBar / sbxSwitchTo / sbxNewFile / sbxDeleteActive
+    // / sbxSetDoc anymore. Kept one tick to avoid disturbing the mobile Termux run
+    // callback (sbxRender/sbxPending) it shares; slated for excision next cleanup tick.
     async function renderSandbox() {
       const d = freshDocview();
       sbxView = null; // the old host was wiped by freshDocview
@@ -1896,7 +1902,7 @@
         if (status) status.textContent = r.note ? r.note : (r.passed ? 'ran ✓' : 'error ✗');
       });
     }
-    async function renderIde() {
+    async function renderIde(entry) {
       const d = freshDocview();
       ideView = null; // the old host was wiped by freshDocview
       const st = ideLoad();
@@ -1952,7 +1958,14 @@
       document.getElementById('idereset').onclick = () => ideReset();
       document.getElementById('idedelete').onclick = () => { if (ideOpen && ideOpen.scratch) ideDeleteScratch(ideOpen.sbxIdx); };
       await ideRenderTree();
-      if (st.openId) { await ideOpenFile(st.openId, null); }
+      // Entered via the 🧪 Sandbox route → land straight on a scratch file: the
+      // Sandbox IS the IDE now (Paul: "the sandbox and fullscreen ide should be
+      // the same thing"), one environment for both exercise and scratch files.
+      if (entry === 'scratch') {
+        if (!sbxFiles) sbxFiles = sbxLoadFiles();
+        ideOpenScratch(sbxFiles.files[sbxFiles.active] ? sbxFiles.active : 0);
+      }
+      else if (st.openId) { await ideOpenFile(st.openId, null); }
       else if (st.openScratch != null && sbxFiles && sbxFiles.files[st.openScratch]) { ideOpenScratch(st.openScratch); }
       else { ideRenderEditor(); }
       // Restore panel state: on a phone default the drawer OPEN when no file is
@@ -2051,7 +2064,7 @@
         btn.textContent = '▷ Run'; btn.setAttribute('aria-label', 'Run this example');
         bar.appendChild(btn);
         const edit = document.createElement('button'); edit.type = 'button'; edit.className = 'coderun-btn';
-        edit.textContent = '✎ Open in Sandbox'; edit.setAttribute('aria-label', 'Open this example in the Sandbox to edit and re-run');
+        edit.textContent = '✎ Open in the IDE'; edit.setAttribute('aria-label', 'Open this example in the IDE as a scratch file to edit and re-run');
         edit.onclick = () => sbxOpenWithCode(code);
         bar.appendChild(edit);
         const out = document.createElement('pre'); out.className = 'coderun-out'; out.hidden = true; out.setAttribute('aria-live', 'polite'); out.setAttribute('tabindex', '0');
@@ -3226,9 +3239,11 @@
       } else if (view === 'library') {
         await renderLibrary(chapter || null, anchor || null);
       } else if (view === 'sandbox') {
-        await renderSandbox();
+        // The Sandbox is now the IDE opened on a free-play scratch file — one
+        // coding environment, not two separate views (Paul 2026-07-08).
+        await renderIde('scratch');
       } else if (view === 'ide') {
-        await renderIde();
+        await renderIde(chapter || null);
       }
       // A "← Learn" back button on every Learn SUB-view (not the hub) so you can
       // always return to the hub in-app, without Android's back button (Paul).

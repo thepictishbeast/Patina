@@ -40,27 +40,28 @@ test.describe('Runnable code examples in lessons/book', () => {
     await expect(page.locator('#exTitle')).toHaveText(progressBefore);
   });
 
-  test('an example opens in the Sandbox as a NEW file, without clobbering existing scratch', async ({ page }) => {
+  test('an example opens in the IDE as a NEW scratch file, without clobbering existing scratch', async ({ page }) => {
     await page.goto('/');
     await page.waitForSelector('#exTitle');
     await page.evaluate(() => { try { localStorage.removeItem('ts-sandbox-files'); localStorage.removeItem('ts-sandbox-code'); } catch (_) {} });
 
-    // Seed the scratch file with distinct code.
+    // Seed the default scratch file with distinct code (auto-persists to the store).
     await page.evaluate(() => showView('sandbox'));
-    await page.waitForSelector('#sbxhost .cm-content');
-    await page.evaluate(() => window.sbxView.dispatch({ changes: { from: 0, to: window.sbxView.state.doc.length, insert: 'fn main(){ println!("KEEP-SCRATCH"); }' } }));
+    await page.waitForSelector('#idehost .cm-editor');
+    await page.evaluate(() => window.ideView.dispatch({ changes: { from: 0, to: window.ideView.state.doc.length, insert: 'fn main(){ println!("KEEP-SCRATCH"); }' } }));
+    await expect.poll(() => page.evaluate(() => (localStorage.getItem('ts-sandbox-files') || '').includes('KEEP-SCRATCH'))).toBe(true);
 
-    // From a lesson example, tap "Open in Sandbox".
+    // From a lesson example, tap "Open in the IDE" → the example opens in the IDE.
     await page.evaluate(() => showView('lessons', '00-hello-world'));
     await page.waitForSelector('#docview .coderun-bar');
-    await page.locator('#docview .coderun-btn', { hasText: 'Open in Sandbox' }).first().click();
-    await page.waitForSelector('#sbxhost .cm-content');
+    await page.locator('#docview .coderun-btn', { hasText: 'Open in the IDE' }).first().click();
+    await page.waitForSelector('#idehost .cm-editor');
 
-    // A new "example" file is active with the example's code (not the scratch's)…
-    await expect(page.locator('#sbxfiles .sbxfile.active .sbxfile-name')).toContainText('example');
-    expect(await page.evaluate(() => window.sbxView.state.doc.toString())).not.toContain('KEEP-SCRATCH');
-    // …and the scratch file is preserved intact.
-    await page.locator('#sbxfiles .sbxfile-name', { hasText: 'scratch' }).click();
-    expect(await page.evaluate(() => window.sbxView.state.doc.toString())).toContain('KEEP-SCRATCH');
+    // A new "example" scratch file is active with the example's code (not the scratch's)…
+    await expect(page.locator('#ideopenname')).toContainText('example');
+    expect(await page.evaluate(() => window.ideView.state.doc.toString())).not.toContain('KEEP-SCRATCH');
+    // …and the seeded scratch file is preserved intact (open it from the tree).
+    await page.locator('.ide-file.st-scratch .ide-fname', { hasText: /^scratch$/ }).click();
+    await expect.poll(() => page.evaluate(() => window.ideView.state.doc.toString())).toContain('KEEP-SCRATCH');
   });
 });

@@ -34,7 +34,9 @@ test.describe('Fullscreen IDE', () => {
     expect(tree).not.toContain('.toml');
     expect(tree).not.toContain('solution_outline');
     expect(tree).not.toContain('expected_error_code');
-    for (const name of await page.locator('.ide-fname').allInnerTexts()) {
+    // EXERCISE rows (the only ones with data-id) are always .rs sources; free-play
+    // scratch rows + the "New scratch" button are the learner's own UI, not sources.
+    for (const name of await page.locator('.ide-file[data-id] .ide-fname').allInnerTexts()) {
       expect(name.trim()).toMatch(/\.rs$/);
     }
   });
