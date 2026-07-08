@@ -54,4 +54,45 @@ test.describe('Book reader: prev/next chapter navigation', () => {
     await expect(page.locator('#docview .booknav-next')).toHaveCount(0);
     await expect(page.locator('#docview .booknav-prev')).toHaveAttribute('data-ch', ids[ids.length - 2]);
   });
+
+  // B3 ("remember your place"): a long chapter used to snap back to the top every
+  // time you reopened it — so leaving to look something up lost your spot. Position
+  // is now persisted per chapter (localStorage, fully offline). This pins that a
+  // plain reopen resumes where you left off, while an explicit anchor still wins.
+  test('a chapter resumes your scroll position on a plain reopen', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 }); // guarantees the chapter scrolls
+    await page.goto('/');
+    await page.waitForSelector('#exTitle');
+    const ids = await tocIds(page);
+    const chId = ids[2] || ids[1];
+
+    // Open the chapter and scroll partway down; the save is debounced (~250ms).
+    await page.evaluate((id) => renderBook(id), chId);
+    await page.waitForSelector('#docview .bookbody');
+    const target = await page.evaluate(() => {
+      const dv = document.querySelector('#docview');
+      const max = dv.scrollHeight - dv.clientHeight;
+      const t = Math.max(80, Math.min(500, Math.round(max * 0.5)));
+      dv.scrollTop = t;
+      dv.dispatchEvent(new Event('scroll'));
+      return t;
+    });
+    expect(target, 'the chapter is tall enough to scroll').toBeGreaterThan(40);
+    await page.waitForFunction((id) => localStorage.getItem('ts-book-pos:' + id) !== null, chId);
+
+    // Leave to the contents list, then reopen the SAME chapter with no anchor/term.
+    await page.evaluate(() => renderBook(null));
+    await page.waitForSelector('#docview .booktoc');
+    await page.evaluate((id) => renderBook(id), chId);
+    await page.waitForSelector('#docview .bookbody');
+
+    // It restores the saved offset (restore runs after an awaited linkify, so poll).
+    await page.waitForFunction(
+      (want) => Math.abs((document.querySelector('#docview')?.scrollTop || 0) - want) <= 3,
+      target,
+      { timeout: 4000 },
+    );
+    const restored = await page.evaluate(() => document.querySelector('#docview').scrollTop);
+    expect(restored, 'resumed where we left off, not the top').toBeGreaterThan(10);
+  });
 });

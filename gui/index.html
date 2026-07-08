@@ -4281,6 +4281,17 @@
         glossaryLinkify(d.querySelector('.bookbody'), await glossaryTerms());
         wireRunnableCode(d.querySelector('.bookbody'));
         wireCodeCopy(d.querySelector('.bookbody'));
+        // B3 "remember your place": persist scroll position per chapter (debounced),
+        // so leaving to look something up and coming back resumes where you were
+        // reading. Fully offline (localStorage). freshDocview() makes a new node each
+        // render, so this listener GCs with the old view — no leak.
+        let _bookPosT = null;
+        d.addEventListener('scroll', () => {
+          clearTimeout(_bookPosT);
+          _bookPosT = setTimeout(() => {
+            try { localStorage.setItem('ts-book-pos:' + chapter, String(Math.round(d.scrollTop))); } catch (_) {}
+          }, 250);
+        }, { passive: true });
       }
       wire();
       // Scroll priority: a book_ref anchor (heading id) wins; else a search term
@@ -4299,7 +4310,14 @@
           hit.classList.add('bshit-flash');
           setTimeout(() => hit.classList.remove('bshit-flash'), 1600);
         } else { d.scrollTop = 0; }
-      } else { d.scrollTop = 0; }
+      } else {
+        // No explicit anchor/term → resume where you left off in this chapter (0 if
+        // never read). Assigning past the new scrollHeight simply clamps, so this is
+        // safe even if the chapter content changed since last visit.
+        let savedPos = 0;
+        try { savedPos = parseInt(localStorage.getItem('ts-book-pos:' + chapter) || '0', 10) || 0; } catch (_) {}
+        d.scrollTop = savedPos;
+      }
     }
     document.querySelectorAll('.tab[data-view]').forEach(t => t.onclick = () => showView(t.dataset.view));
 
