@@ -78,6 +78,15 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   per-surface color flag plumbed through Core/command_plan (web on, TUI off).
 
 ### Editor / IDE
+- ✅ **Learn-hub icon dedup (`bbd9635`, 2026-07-08, live-QA find).** A 390×844 Playwright QA pass of the whole
+  app (landing/Practice, Learn hub, Lesson 0, ⋯ menu) found the app in genuinely strong shape — correct
+  baby-steps exercise ordering, rich micro-animations WITH reduced-motion guards, per-exercise + phase-complete
+  success moments, excellent lesson rendering. The one real defect: the hub's Reference section drew **Glossary
+  and Library with the identical 📚 icon** (adjacent cards), and it disagreed with the ⋯ menu's `📔 Glossary`.
+  Fixed the hub card to 📔 (matches the menu, disambiguates the pair). Verified live + e2e 9/9. Also RULED OUT a
+  suspected bug: the ~72 lessons that say "type in the 🧪 Sandbox (⋯ menu)" are still correct — the ⋯ menu keeps
+  a 🧪 Sandbox entry (→ IDE scratch) alongside 🛠 IDE, and a blank scratch is the right target for the
+  "write it yourself" sections. (Checked before touching any lesson.)
 - ◐ **Mobile UI overhaul (Paul 2026-06-30: "heavily improve the mobile UI … more beauty … simple and intuitive
   yet fully capable and powerful").** Pass 1 (`<pending>`): on a phone the editor header was visibly broken — the
   Learn/Assist/Dev switcher clipped to "Lea" and the "read & edit, then Run" label crammed the reset; the
