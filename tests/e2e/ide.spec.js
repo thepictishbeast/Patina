@@ -198,4 +198,41 @@ test.describe('Fullscreen IDE', () => {
     // …and the choice persists across a reload.
     await expect.poll(() => page.evaluate(() => localStorage.getItem('ts-ide-groups'))).toContain(':false');
   });
+
+  test('opening a file reveals it even when its phase group is collapsed', async ({ page }) => {
+    // A restored / jumped-ahead file can live inside a collapsed phase — its
+    // highlight would be hidden behind the fold. Opening it must expand its group.
+    await page.goto('/');
+    await page.evaluate(() => { localStorage.removeItem('ts-ide-groups'); localStorage.removeItem('ts-ide-state'); });
+    await page.evaluate(() => showView('ide'));
+    await page.waitForSelector('.ide-group-h');
+    const id = await page.evaluate(async () => {
+      const d = await (await fetch('api/workspace')).json();
+      const ids = d.groups.flatMap(g => g.files.map(f => f.id));
+      for (const i of ids) { if ((await fetch('api/workspace/file?id=' + encodeURIComponent(i))).status === 200) return i; }
+      return null;
+    });
+    expect(id, 'an openable exercise file exists').toBeTruthy();
+    // Collapse the group holding it, and confirm its row is now hidden.
+    const collapsed = await page.evaluate((fid) => {
+      const row = [...document.querySelectorAll('.ide-file[data-id]')].find(el => el.dataset.id === fid);
+      const grp = row.closest('.ide-group');
+      grp.querySelector('.ide-group-h').click();
+      return grp.classList.contains('collapsed');
+    }, id);
+    expect(collapsed, 'its group collapses').toBe(true);
+    expect(await page.evaluate((fid) =>
+      [...document.querySelectorAll('.ide-file[data-id]')].find(el => el.dataset.id === fid).offsetParent === null, id),
+      'the row is hidden while folded').toBe(true);
+    // Open the file → its group re-expands, the row is visible and marked open.
+    await page.evaluate((fid) => ideOpenFile(fid, null), id);
+    await page.waitForSelector('#idehost .cm-editor, #idehost textarea');
+    const revealed = await page.evaluate((fid) => {
+      const row = [...document.querySelectorAll('.ide-file[data-id]')].find(el => el.dataset.id === fid);
+      return { open: !row.closest('.ide-group').classList.contains('collapsed'), visible: row.offsetParent !== null, marked: row.classList.contains('open') };
+    }, id);
+    expect(revealed.open, 'group re-expanded').toBe(true);
+    expect(revealed.visible, 'row visible again').toBe(true);
+    expect(revealed.marked, 'row highlighted as open').toBe(true);
+  });
 });

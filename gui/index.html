@@ -1687,14 +1687,30 @@
       return ideView ? ideView.state.doc.toString()
         : (document.getElementById('ideta') ? document.getElementById('ideta').value : (ideOpen ? ideOpen.content : ''));
     }
-    // Re-highlight the open file's row in the sidebar without a full re-fetch.
+    // Re-highlight the open file's row in the sidebar without a full re-fetch,
+    // and REVEAL it: a restored or jumped-ahead file can sit inside a collapsed
+    // phase group (the tree folds by phase), which would hide its highlight — so
+    // expand that group and scroll the row into view. Only touches the DOM (no
+    // persisted toggle), so the user's explicit fold choices survive the next
+    // full render.
     function ideMarkOpenInTree() {
+      let openRow = null;
       document.querySelectorAll('#idetree .ide-file').forEach(el => {
         const isOpen = !!ideOpen && (ideOpen.scratch
           ? el.dataset.scratchIdx === String(ideOpen.sbxIdx)
           : el.dataset.id === ideOpen.id);
         el.classList.toggle('open', isOpen);
+        if (isOpen) openRow = el;
       });
+      if (openRow) {
+        const grp = openRow.closest('.ide-group');
+        if (grp && grp.classList.contains('collapsed')) {
+          grp.classList.remove('collapsed');
+          const h = grp.querySelector('.ide-group-h');
+          if (h) h.setAttribute('aria-expanded', 'true');
+        }
+        try { openRow.scrollIntoView({ block: 'nearest' }); } catch (_) {}
+      }
     }
     // Save the buffer to the exercise source on DISK (PUT /api/workspace/file).
     // Same gates as select: 409 done, 423 locked. This commits to disk (survives
