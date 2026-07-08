@@ -124,6 +124,25 @@ test.describe('Books woven into the path (chapter deep-links)', () => {
     expect(await links.count()).toBeGreaterThan(1); // one per phase
   });
 
+  test('the Journey shows an always-present per-stage progress bar that fills with reads', async ({ page }) => {
+    await page.goto('/');
+    // Fresh: every stage still shows a progress bar (measurable from day one).
+    await page.evaluate(() => localStorage.setItem('ts-lessons-read', '[]'));
+    await page.evaluate(() => showView('roadmap'));
+    const bars = page.locator('.roadphase .roadprog');
+    const phases = await page.locator('.roadphase').count();
+    expect(await bars.count(), 'a progress bar on every stage').toBe(phases);
+    await expect(bars.first().locator('.roadprog-n')).toHaveText(/^0\/\d+$/); // 0/N when nothing read
+    // Read the first few lessons → the first stage(s) fill and can complete (✓ + .done).
+    const ids = await page.evaluate(async () => (await (await fetch('api/lessons')).json()).lessons.map(l => l.id));
+    await page.evaluate((s) => localStorage.setItem('ts-lessons-read', JSON.stringify(s)), ids.slice(0, 6));
+    await page.evaluate(() => showView('roadmap'));
+    // The bar fill width animates from 0 toward the read fraction (>0 once settled).
+    const firstBar = page.locator('.roadphase .roadprog-bar i').first();
+    await expect.poll(() => firstBar.evaluate(el => parseFloat(el.style.width) || 0)).toBeGreaterThan(0);
+    expect(await page.locator('.roadphase .roadprog.done').count(), 'a fully-read stage is marked done').toBeGreaterThan(0);
+  });
+
   test('a Rust Book chapter offers the gentler Patina lesson, and it opens', async ({ page }) => {
     await page.goto('/');
     // A chapter with a primary Patina lesson (ch04-01 → 15-ownership) shows the
