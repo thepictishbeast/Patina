@@ -486,6 +486,19 @@
   .booknav .booknav-dir { font-size:11px; color:var(--note); font-weight:600; }
   .booknav .booknav-ttl { font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .booknav > span { flex:1 1 0; } /* empty placeholder keeps a lone next-link right-aligned */
+  /* "↑ Top" affordance for long reading views (Book chapter + lesson). Lives on
+     <body> so it anchors to the viewport corner (the .docview's fade transform makes
+     it a containing block, which would mis-anchor a fixed child). Appears only once
+     you've scrolled well down, and hides near the bottom so it never covers the
+     prev/next footer. One tap back to the top. */
+  .totop { position:fixed; right:16px; bottom:18px; z-index:40;
+    padding:8px 13px; border-radius:999px; background:var(--bg-2); color:var(--fg);
+    border:1px solid var(--line); box-shadow:var(--shadow); font-size:12.5px; font-weight:600;
+    cursor:pointer; opacity:0; pointer-events:none; transform:translateY(6px);
+    transition:opacity .2s ease, transform .2s ease; }
+  .totop:hover { border-color:var(--accent); }
+  .totop.show { opacity:.94; pointer-events:auto; transform:none; }
+  @media (prefers-reduced-motion: reduce) { .totop { transition:none; } }
   .pane { border-right:1px solid var(--line); display:flex; flex-direction:column; min-height:0; min-width:0; }
   .pane:last-child { border-right:none; }
   .pane h2 { font-size:11px; text-transform:uppercase; letter-spacing:.12em; color:var(--fg-dim);
@@ -1451,6 +1464,9 @@
       const old = document.getElementById('docview');
       const d = old.cloneNode(false); // same id/attrs (incl. hidden state), no children
       old.replaceWith(d);
+      // Reset the body-anchored "↑ Top" button on every view change; only a reading
+      // view (via wireReadingScroll) re-shows it once you scroll down.
+      document.getElementById('totop')?.classList.remove('show');
       return d;
     }
     function renderLogs(filter) {
@@ -4067,17 +4083,8 @@
         wireRunnableCode(d.querySelector('.lessonbody'));
         wireCodeCopy(d.querySelector('.lessonbody'));
         markLessonRead(id); // reading it = progress (✓ in the list + Journey counts)
-        // B3 "remember your place" (lesson twin of ts-book-pos): persist scroll
-        // position per lesson (debounced), so tapping a concept chip, "Read in the
-        // Book", or "Practice this" and coming back resumes where you were reading.
-        // Offline localStorage; freshDocview()'s new node per render → no leak.
-        let _lessonPosT = null;
-        d.addEventListener('scroll', () => {
-          clearTimeout(_lessonPosT);
-          _lessonPosT = setTimeout(() => {
-            try { localStorage.setItem('ts-lesson-pos:' + id, String(Math.round(d.scrollTop))); } catch (_) {}
-          }, 250);
-        }, { passive: true });
+        // Persist reading position (B3, lesson twin) + reveal the "↑ Top" button.
+        wireReadingScroll(d, 'ts-lesson-pos:' + id);
       }
       // Route "back to list" through showView (not renderLessons directly) so the
       // list re-gets its "← Learn" hub button — otherwise drilling in then back
@@ -4224,6 +4231,42 @@
       s = s.replace(/^[ \t]*\{\{#[^\n]*\}\}[ \t]*\r?\n?/gm, '');
       return s;
     }
+    // Shared reading-view scroll behaviour for the Book chapter + lesson views:
+    //   1. persist the reading position under `posKey` (debounced, offline) so
+    //      leaving and coming back resumes where you were (B3), and
+    //   2. reveal a subtle "↑ Top" button once you've scrolled well down, hidden
+    //      again near the bottom so it never covers the prev/next footer.
+    // `d` is freshDocview()'s new node each render, so the button + listener GC with
+    // the old view — no leak, no double-wiring.
+    function wireReadingScroll(d, posKey) {
+      // One viewport-fixed button on <body> (get-or-create). It can't live inside the
+      // .docview: that element's fade transform makes it a containing block, so a
+      // fixed child would anchor to the scrolled content instead of the viewport.
+      let btn = document.getElementById('totop');
+      if (!btn) {
+        btn = document.createElement('button');
+        btn.id = 'totop';
+        btn.className = 'totop';
+        btn.type = 'button';
+        btn.setAttribute('aria-label', 'Back to top');
+        btn.textContent = '↑ Top';
+        document.body.appendChild(btn);
+      }
+      // Rebind the click to THIS render's scroll container (d changes each render).
+      btn.onclick = () => {
+        const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        d.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' });
+      };
+      let saveT = null;
+      d.addEventListener('scroll', () => {
+        const max = d.scrollHeight - d.clientHeight;
+        btn.classList.toggle('show', d.scrollTop > 600 && d.scrollTop < max - 80);
+        clearTimeout(saveT);
+        saveT = setTimeout(() => {
+          try { localStorage.setItem(posKey, String(Math.round(d.scrollTop))); } catch (_) {}
+        }, 250);
+      }, { passive: true });
+    }
     async function renderBook(chapter, anchor, term) {
       const d = freshDocview();
       const refs = curBookRefs || [];
@@ -4297,17 +4340,8 @@
         glossaryLinkify(d.querySelector('.bookbody'), await glossaryTerms());
         wireRunnableCode(d.querySelector('.bookbody'));
         wireCodeCopy(d.querySelector('.bookbody'));
-        // B3 "remember your place": persist scroll position per chapter (debounced),
-        // so leaving to look something up and coming back resumes where you were
-        // reading. Fully offline (localStorage). freshDocview() makes a new node each
-        // render, so this listener GCs with the old view — no leak.
-        let _bookPosT = null;
-        d.addEventListener('scroll', () => {
-          clearTimeout(_bookPosT);
-          _bookPosT = setTimeout(() => {
-            try { localStorage.setItem('ts-book-pos:' + chapter, String(Math.round(d.scrollTop))); } catch (_) {}
-          }, 250);
-        }, { passive: true });
+        // Persist reading position (B3) + reveal the "↑ Top" button as you scroll.
+        wireReadingScroll(d, 'ts-book-pos:' + chapter);
       }
       wire();
       // Scroll priority: a book_ref anchor (heading id) wins; else a search term

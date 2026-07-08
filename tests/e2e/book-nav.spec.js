@@ -95,4 +95,39 @@ test.describe('Book reader: prev/next chapter navigation', () => {
     const restored = await page.evaluate(() => document.querySelector('#docview').scrollTop);
     expect(restored, 'resumed where we left off, not the top').toBeGreaterThan(10);
   });
+
+  // Long chapters (some are 15k+ px tall) now offer a subtle "↑ Top" button once you
+  // scroll down. It lives on <body> (viewport-anchored, since the .docview's fade
+  // transform makes it a containing block), hides near the bottom so it never covers
+  // the prev/next footer, and resets when you leave the view.
+  test('a long chapter shows a "↑ Top" button that returns you to the top', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/');
+    await page.waitForSelector('#exTitle');
+    await page.evaluate(() => showView('book', 'ch04-01-what-is-ownership'));
+    await page.waitForSelector('#docview .bookbody');
+    await page.waitForFunction(() => {
+      const dv = document.querySelector('#docview');
+      return dv && dv.scrollHeight - dv.clientHeight > 900;
+    }, null, { timeout: 5000 });
+
+    const btn = page.locator('#totop');
+    // Hidden at the top.
+    await page.evaluate(() => { const dv = document.querySelector('#docview'); dv.scrollTop = 0; dv.dispatchEvent(new Event('scroll')); });
+    await expect(btn).not.toHaveClass(/\bshow\b/);
+    // Scrolled well down → it appears, anchored to the viewport's bottom-right corner.
+    await page.evaluate(() => { const dv = document.querySelector('#docview'); dv.scrollTop = 1200; dv.dispatchEvent(new Event('scroll')); });
+    await expect(btn).toHaveClass(/\bshow\b/);
+    const box = await btn.boundingBox();
+    expect(box.x + box.width, 'near the right edge').toBeGreaterThan(300);
+    expect(box.x + box.width, 'within the viewport').toBeLessThanOrEqual(390);
+    expect(box.y, 'near the bottom').toBeGreaterThan(700);
+    expect(box.y + box.height, 'within the viewport').toBeLessThanOrEqual(844);
+    // Clicking returns to the top.
+    await btn.click();
+    await page.waitForFunction(() => (document.querySelector('#docview')?.scrollTop || 0) < 5, null, { timeout: 2000 });
+    // Leaving the reading view hides it again (reset in freshDocview).
+    await page.evaluate(() => showView('lessons'));
+    await expect(btn).not.toHaveClass(/\bshow\b/);
+  });
 });
