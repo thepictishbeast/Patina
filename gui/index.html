@@ -301,6 +301,11 @@
   .ide-file.st-locked .ide-dot { background:transparent; border:1px solid var(--fg-dim); }
   .ide-file .ide-fname { font-family:var(--mono); font-size:11.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .ide-file.st-locked .ide-fname::after { content:' 🔒'; }
+  .ide-file.st-scratch .ide-dot { background:#c9a227; }
+  .ide-file-new { display:flex; align-items:center; gap:6px; width:100%; text-align:left; background:transparent;
+    border:1px dashed var(--line); border-radius:8px; padding:5px 8px; margin:3px 0 2px; cursor:pointer;
+    color:var(--fg-dim); font-family:var(--mono); font-size:11px; }
+  .ide-file-new:hover, .ide-file-new:focus-visible { background:var(--bg-3); border-color:var(--accent); color:var(--fg); outline:none; }
   .ide-empty { color:var(--fg-dim); font-size:12.5px; padding:14px 4px; }
   .ide-scrim { display:none; }
   /* Fullscreen: the IDE becomes a FIXED overlay filling the whole viewport, all
@@ -1750,7 +1755,15 @@
       // app-close, and is the ONLY persistence on mobile, where Save's PUT can't
       // reach the embedded server). Falls back to the file's on-disk content.
       let startDoc = ideOpen.content, restored = false;
-      try { const b = localStorage.getItem(IDE_BUF + ideOpen.id); if (b != null && b !== ideOpen.content) { startDoc = b; restored = true; } } catch (_) {}
+      if (!ideOpen.scratch) { // scratch files persist in the Sandbox store, not a disk draft
+        try { const b = localStorage.getItem(IDE_BUF + ideOpen.id); if (b != null && b !== ideOpen.content) { startDoc = b; restored = true; } } catch (_) {}
+      }
+      // Toolbar adapts to the file kind: a scratch file auto-saves to the browser
+      // (no disk Save / Reset), but can be deleted; an exercise file has Save + Reset.
+      const saveB = document.getElementById('idesave'), resetB = document.getElementById('idereset'), delB = document.getElementById('idedelete');
+      if (saveB) saveB.hidden = !!ideOpen.scratch;
+      if (resetB) resetB.hidden = !!ideOpen.scratch;
+      if (delB) delB.hidden = !ideOpen.scratch;
       if (window.CM) {
         ideView = new CM.EditorView({
           doc: startDoc,
@@ -1776,12 +1789,54 @@
     function ideBufSave() {
       if (!ideOpen) return;
       const status = document.getElementById('idestatus');
+      const t = ideEditorText();
+      // Scratch files live in the Sandbox store (localStorage), not on disk — every
+      // edit is persisted straight there, so they survive with no Save needed.
+      if (ideOpen.scratch) {
+        if (sbxFiles && sbxFiles.files[ideOpen.sbxIdx]) { sbxFiles.files[ideOpen.sbxIdx].code = t; sbxSaveFiles(); }
+        ideOpen.content = t;
+        if (status) status.textContent = 'scratch · saved in your browser ✓';
+        return;
+      }
       try {
-        const t = ideEditorText();
         if (t === ideOpen.content) localStorage.removeItem(IDE_BUF + ideOpen.id);
         else localStorage.setItem(IDE_BUF + ideOpen.id, t);
         if (status) status.textContent = (t === ideOpen.content) ? 'ready' : 'edited ✏️ · draft kept offline';
       } catch (_) {}
+    }
+    // ── Scratch files INSIDE the IDE (Paul: the Sandbox and the IDE are one thing) ──
+    // The IDE tree carries a "🧪 Scratch" group of free-play files (the same
+    // localStorage store the Sandbox view uses, sbxFiles). Opening/editing/running a
+    // scratch file all happen right here — no separate Sandbox needed.
+    function ideOpenScratch(idx) {
+      if (!sbxFiles) sbxFiles = sbxLoadFiles();
+      const f = sbxFiles.files[idx]; if (!f) return;
+      sbxFiles.active = idx; sbxSaveFiles();
+      ideOpen = { scratch: true, name: f.name, sbxIdx: idx, content: f.code };
+      const st = ideLoad(); st.openId = null; st.openScratch = idx; ideSave(st);
+      ideRenderEditor();
+      ideMarkOpenInTree();
+      if (isPhone()) ideSetSidebar(false);
+      if (ideView) setTimeout(() => { try { ideView.focus(); } catch (_) {} }, 0);
+    }
+    function ideNewScratch() {
+      if (!sbxFiles) sbxFiles = sbxLoadFiles();
+      const n = sbxFiles.files.length + 1;
+      let name = (prompt('Name the new scratch file:', 'scratch' + n) || '').trim();
+      if (!name) name = 'scratch' + n;
+      sbxFiles.files.push({ name, code: SBX_DEFAULT }); sbxSaveFiles();
+      ideRenderTree();
+      ideOpenScratch(sbxFiles.files.length - 1);
+    }
+    function ideDeleteScratch(idx) {
+      if (!sbxFiles) sbxFiles = sbxLoadFiles();
+      if (sbxFiles.files.length <= 1) { alert('Keep at least one scratch file.'); return; }
+      if (!confirm('Delete scratch “' + sbxFiles.files[idx].name + '”? Its code will be lost.')) return;
+      sbxFiles.files.splice(idx, 1);
+      if (sbxFiles.active >= sbxFiles.files.length) sbxFiles.active = sbxFiles.files.length - 1;
+      sbxSaveFiles();
+      if (ideOpen && ideOpen.scratch && ideOpen.sbxIdx === idx) { ideOpen = null; const st = ideLoad(); st.openScratch = null; ideSave(st); ideRenderEditor(); }
+      ideRenderTree();
     }
     // Discard the current draft and reload the file's on-disk content — the escape
     // hatch that keeps draft-persistence from trapping you in your own edits.
@@ -1798,8 +1853,12 @@
     }
     // Re-highlight the open file's row in the sidebar without a full re-fetch.
     function ideMarkOpenInTree() {
-      document.querySelectorAll('#idetree .ide-file').forEach(el =>
-        el.classList.toggle('open', !!ideOpen && el.dataset.id === ideOpen.id));
+      document.querySelectorAll('#idetree .ide-file').forEach(el => {
+        const isOpen = !!ideOpen && (ideOpen.scratch
+          ? el.dataset.scratchIdx === String(ideOpen.sbxIdx)
+          : el.dataset.id === ideOpen.id);
+        el.classList.toggle('open', isOpen);
+      });
     }
     // Save the buffer to the exercise source on DISK (PUT /api/workspace/file).
     // Same gates as select: 409 done, 423 locked. This commits to disk (survives
@@ -1855,7 +1914,7 @@
         + '<button class="ide-hbtn" id="idetermbtn" type="button" aria-expanded="false" title="Toggle the terminal">▤ Terminal</button>'
         + '<button class="ide-hbtn" id="idefull" type="button" aria-pressed="false" title="Enter fullscreen">🖥 Fullscreen</button>'
         + '</div>'
-        + '<p class="ide-blurb" style="color:var(--fg-dim);font-size:12px;margin:0 0 10px">A workshop over the course’s files — the explorer stays beside the editor; read, edit &amp; run offline. Nothing here changes progress or reveals answers.</p>'
+        + '<p class="ide-blurb" style="color:var(--fg-dim);font-size:12px;margin:0 0 10px">One offline coding environment — the course’s exercise files AND your own 🧪 Scratch files, side by side. Read, edit &amp; run; nothing here changes progress or reveals answers.</p>'
         + '<div class="ide-body">'
         +   '<div class="ide-scrim" id="idescrim"></div>'
         +   '<aside class="ide-sidebar" id="idetree" aria-label="File explorer"><div class="ide-empty">Loading files…</div></aside>'
@@ -1864,6 +1923,7 @@
         +       '<div class="ide-toolbar"><button class="run" id="iderun" title="Run (Ctrl/Cmd+Enter)">▷ Run</button>'
         +       '<button class="ghost" id="idesave" title="Save your edits to the file on disk">💾 Save</button>'
         +       '<button class="ghost" id="idereset" title="Discard your edits and reload the file">↺ Reset</button>'
+        +       '<button class="ghost" id="idedelete" hidden title="Delete this scratch file">🗑 Delete</button>'
         +       '<span class="badge" id="idestatus">ready</span></div>'
         +       '<div class="ide-host" id="idehost"></div>'
         +     '</div>'
@@ -1890,8 +1950,10 @@
       document.getElementById('iderun').onclick = () => ideRun();
       document.getElementById('idesave').onclick = () => ideSaveFile();
       document.getElementById('idereset').onclick = () => ideReset();
+      document.getElementById('idedelete').onclick = () => { if (ideOpen && ideOpen.scratch) ideDeleteScratch(ideOpen.sbxIdx); };
       await ideRenderTree();
       if (st.openId) { await ideOpenFile(st.openId, null); }
+      else if (st.openScratch != null && sbxFiles && sbxFiles.files[st.openScratch]) { ideOpenScratch(st.openScratch); }
       else { ideRenderEditor(); }
       // Restore panel state: on a phone default the drawer OPEN when no file is
       // chosen yet (so you can pick one), else respect the saved flags.
@@ -1899,27 +1961,47 @@
       ideSetTerm(!!st.termOpen);
       d.scrollTop = 0;
     }
-    // Build the explorer tree from GET /api/workspace: phase groups, each file a
-    // clickable row with a status dot. Carries only id/name/title/status — the
-    // server sends no answer-bearing metadata, and .toml files never appear.
+    // Build the explorer tree: a "🧪 Scratch" group of free-play files FIRST
+    // (client-side, always available), then the course's exercise files from GET
+    // /api/workspace (phase groups; server sends only id/name/title/status — no
+    // answer-bearing metadata, .toml files never appear).
+    function ideAppendScratchGroup(tree) {
+      if (!sbxFiles) sbxFiles = sbxLoadFiles();
+      const g = document.createElement('div'); g.className = 'ide-group';
+      const h = document.createElement('div'); h.className = 'ide-group-h'; h.textContent = '🧪 Scratch';
+      g.appendChild(h);
+      sbxFiles.files.forEach((f, i) => {
+        const btn = document.createElement('button'); btn.type = 'button'; btn.dataset.scratchIdx = i;
+        btn.className = 'ide-file st-scratch' + (ideOpen && ideOpen.scratch && ideOpen.sbxIdx === i ? ' open' : '');
+        btn.innerHTML = '<span class="ide-dot" aria-hidden="true"></span><span class="ide-fname">' + esc(f.name) + '</span>';
+        btn.title = f.name + ' · free-play scratch file'; btn.setAttribute('aria-label', 'Scratch file ' + f.name);
+        btn.onclick = () => ideOpenScratch(i);
+        g.appendChild(btn);
+      });
+      const add = document.createElement('button'); add.type = 'button'; add.className = 'ide-file ide-file-new';
+      add.innerHTML = '<span class="ide-fname">＋ New scratch</span>';
+      add.title = 'Create a new scratch file'; add.setAttribute('aria-label', 'New scratch file');
+      add.onclick = () => ideNewScratch();
+      g.appendChild(add);
+      tree.appendChild(g);
+    }
     async function ideRenderTree() {
       const tree = document.getElementById('idetree'); if (!tree) return;
-      let data;
+      tree.textContent = '';
+      ideAppendScratchGroup(tree); // free-play scratch files — always available
+      let groups = [];
       try {
         const res = await fetch('api/workspace');
-        if (!res.ok) { tree.innerHTML = '<div class="ide-empty">Could not load files (HTTP ' + res.status + ').</div>'; return; }
-        data = await res.json();
-      } catch (_) { tree.innerHTML = '<div class="ide-empty">Could not reach the local files.</div>'; return; }
-      const groups = (data && data.groups) || [];
-      if (!groups.length) { tree.innerHTML = '<div class="ide-empty">No exercise files found.</div>'; return; }
-      tree.textContent = '';
+        if (res.ok) { const data = await res.json(); groups = (data && data.groups) || []; }
+        else { tree.insertAdjacentHTML('beforeend', '<div class="ide-empty">Could not load exercise files (HTTP ' + res.status + ').</div>'); }
+      } catch (_) { tree.insertAdjacentHTML('beforeend', '<div class="ide-empty">Could not reach the exercise files.</div>'); }
       groups.forEach(gp => {
         const g = document.createElement('div'); g.className = 'ide-group';
         const h = document.createElement('div'); h.className = 'ide-group-h'; h.textContent = gp.dir;
         g.appendChild(h);
         (gp.files || []).forEach(f => {
           const btn = document.createElement('button'); btn.type = 'button'; btn.dataset.id = f.id;
-          btn.className = 'ide-file st-' + (f.status || 'locked') + (ideOpen && ideOpen.id === f.id ? ' open' : '');
+          btn.className = 'ide-file st-' + (f.status || 'locked') + (ideOpen && !ideOpen.scratch && ideOpen.id === f.id ? ' open' : '');
           btn.innerHTML = '<span class="ide-dot" aria-hidden="true"></span>'
             + '<span class="ide-fname">' + esc(f.name) + '</span>';
           btn.title = (f.title || f.name) + ' · ' + (f.status || 'locked');
