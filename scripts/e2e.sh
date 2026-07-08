@@ -42,4 +42,17 @@ curl -s --retry-connrefused --retry 30 --retry-delay 1 -o /dev/null "$BASE/" \
   || { echo "e2e: server never came up"; cat "$STATE/server.log"; exit 1; }
 
 cd tests/e2e
-RPRO_BASE="$BASE" npx playwright test "$@"
+# The 'compile' specs (dev-diag-jump/tutor/recall-chip/web) mutate ONE shared
+# store; run in parallel they race — a passing run marks whatever's CURRENTLY
+# selected Done, so recall-chip's pass can mark another spec's just-selected
+# exercise Done → a 409 flake. Fix: on a FULL run, run the 'ui' project parallel
+# (fast, no such races) but the 'compile' project SERIALLY (--workers=1), so no
+# two store-writing specs overlap. A targeted run (a named spec) keeps the single
+# fast pass — one spec alone never races with itself.
+if [ "$#" -eq 0 ]; then
+  RPRO_BASE="$BASE" npx playwright test --project=ui;        ui_rc=$?
+  RPRO_BASE="$BASE" npx playwright test --project=compile --workers=1; co_rc=$?
+  exit $(( ui_rc + co_rc ))
+else
+  RPRO_BASE="$BASE" npx playwright test "$@"
+fi
