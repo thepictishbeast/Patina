@@ -88,15 +88,31 @@ test.describe('Quizzes: completion tracking', () => {
 });
 
 test.describe('Books woven into the path (chapter deep-links)', () => {
-  test('a lesson carries a book cross-link with a real chapter page', async ({ page }) => {
+  test('a lesson carries a book cross-link — precise in-app chapter when mapped, PDF page otherwise', async ({ page }) => {
     await page.goto('/');
-    await page.evaluate(() => showView('lessons'));
-    // A PHASE lesson (the first lesson is now the hello-world intro — no book link).
-    await page.locator('.lessonjump[data-id="01-bindings-and-immutability"]').click();
-    const book = page.locator('.lessonbook .booklink');
-    await expect(book).toBeVisible();
-    await expect(book).toHaveAttribute('data-file', /\.pdf$/);
-    await expect(book).toHaveAttribute('data-page', /^\d+$/); // deep-links to a page
+    // A lesson mapped (LESSON_BOOK) to a bundled Rust Book chapter → a topic-precise
+    // IN-APP chapter link, and clicking it opens that exact bundled chapter.
+    await page.evaluate(() => showView('lessons', '01-bindings-and-immutability'));
+    await page.waitForSelector('#docview .lessonbody');
+    const ch = page.locator('.lessonbook .bookchlink');
+    await expect(ch).toBeVisible();
+    const chId = await ch.getAttribute('data-ch');
+    expect(chId).toMatch(/^ch\d/);
+    const chapterOk = await page.evaluate(
+      async (id) => ((await fetch('api/book?chapter=' + id).then((r) => r.json())).markdown || '').length > 0,
+      chId,
+    );
+    expect(chapterOk, 'maps to a real bundled chapter').toBe(true);
+    await ch.click();
+    await expect(page.locator('#docview')).toContainText('contents'); // landed in the in-app Book
+
+    // A phased lesson WITHOUT a chapter mapping falls back to the per-phase PDF page.
+    await page.evaluate(() => showView('lessons', '17-slices-in-depth'));
+    await page.waitForSelector('#docview .lessonbody');
+    const pdf = page.locator('.lessonbook .booklink');
+    await expect(pdf).toBeVisible();
+    await expect(pdf).toHaveAttribute('data-file', /\.pdf$/);
+    await expect(pdf).toHaveAttribute('data-page', /^\d+$/); // deep-links to a page
   });
 
   test('the Journey shows per-phase chapter book links with pages', async ({ page }) => {

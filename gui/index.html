@@ -2667,6 +2667,71 @@
       'unsafe-raw-pointers': '34-unsafe',
     };
 
+    // Each Patina lesson → the canonical chapter of the bundled Rust Book that
+    // covers the same topic (file stems in book/; see /api/book). Lets a lesson
+    // link straight to the exact in-app chapter — topic-precise and offline —
+    // instead of only the coarse per-phase PDF. Partial by design: only lessons
+    // with a clear 1:1 chapter get the precise link; the rest fall back to the
+    // PDF "Read deeper" shelf. This is the reciprocal of the Book's book_refs and
+    // completes lesson↔Book switching (#41). Values MUST be real book/ stems.
+    const LESSON_BOOK = {
+      '01-bindings-and-immutability': 'ch03-01-variables-and-mutability',
+      '02-mutability': 'ch03-01-variables-and-mutability',
+      '03-shadowing': 'ch03-01-variables-and-mutability',
+      '04-constants': 'ch03-01-variables-and-mutability',
+      '05-scalar-types': 'ch03-02-data-types',
+      '05b-integer-overflow': 'ch03-02-data-types',
+      '13-tuples': 'ch03-02-data-types',
+      '13b-arrays': 'ch03-02-data-types',
+      '06-expressions-statements-semicolon': 'ch03-03-how-functions-work',
+      '07-functions': 'ch03-03-how-functions-work',
+      '09-if-else': 'ch03-05-control-flow',
+      '09b-if-as-expression': 'ch03-05-control-flow',
+      '10-loop-and-break': 'ch03-05-control-flow',
+      '10b-while': 'ch03-05-control-flow',
+      '10c-for-and-ranges': 'ch03-05-control-flow',
+      '15-ownership': 'ch04-01-what-is-ownership',
+      '15b-moves': 'ch04-01-what-is-ownership',
+      '15c-copy-and-clone': 'ch04-01-what-is-ownership',
+      '16-shared-references': 'ch04-02-references-and-borrowing',
+      '16b-mutable-references': 'ch04-02-references-and-borrowing',
+      '18-defining-structs': 'ch05-01-defining-structs',
+      '18b-methods-and-impl': 'ch05-03-method-syntax',
+      '19-enums': 'ch06-01-defining-an-enum',
+      '19b-option': 'ch06-01-defining-an-enum',
+      '11-match-intro': 'ch06-02-match',
+      '19c-match-in-depth': 'ch06-02-match',
+      '19d-concise-matching': 'ch06-02-match',
+      '22-paths': 'ch07-03-paths-for-referring-to-an-item-in-the-module-tree',
+      '22b-privacy-and-pub': 'ch07-03-paths-for-referring-to-an-item-in-the-module-tree',
+      '23-the-use-keyword': 'ch07-04-bringing-paths-into-scope-with-the-use-keyword',
+      '14-vec': 'ch08-01-vectors',
+      '12-string-vs-str': 'ch08-02-strings',
+      '14b-hashmap': 'ch08-03-hash-maps',
+      '20-result': 'ch09-02-recoverable-errors-with-result',
+      '20c-question-mark': 'ch09-02-recoverable-errors-with-result',
+      '24-generic-functions': 'ch10-01-syntax',
+      '24b-generic-types': 'ch10-01-syntax',
+      '25-traits-declare-implement': 'ch10-02-traits',
+      '25b-trait-bounds': 'ch10-02-traits',
+      '26-lifetime-annotations': 'ch10-03-lifetime-syntax',
+      '26b-lifetime-elision': 'ch10-03-lifetime-syntax',
+      '26c-lifetimes-in-structs': 'ch10-03-lifetime-syntax',
+      '27-closure-syntax': 'ch13-01-closures',
+      '27b-closure-capture': 'ch13-01-closures',
+      '28-iterator-cursor': 'ch13-02-iterators',
+      '28b-adapter-chains': 'ch13-02-iterators',
+      '29-box': 'ch15-01-box',
+      '29c-rc': 'ch15-04-rc',
+      '29d-refcell': 'ch15-05-interior-mutability',
+      '30-spawning-threads': 'ch16-01-threads',
+      '30b-channels': 'ch16-02-message-passing',
+      '30c-shared-state': 'ch16-03-shared-state',
+      '32-trait-objects': 'ch18-02-trait-objects',
+      '34-unsafe': 'ch20-01-unsafe-rust',
+      '34b-operator-overloading': 'ch20-02-advanced-traits',
+    };
+
     function renderCurrent(j) {
       const ed = editorEl();
       if (!j || !j.exercise) {
@@ -3725,11 +3790,18 @@
         // Companion original text: link to the phase's book in the offline Library,
         // so a curious learner can read the same topic in depth (#32 — books woven
         // into the lesson flow, not a separate shelf). Read fully offline.
-        const bk = phaseBook(quizId);
-        const bkLabel = bk.chapter ? `${bk.short} — “${bk.chapter}”` : bk.short;
-        const bookHtml = quizId
-          ? `<p class="lessonbook">📖 Read deeper: <a href="#" class="booklink" data-file="${esc(bk.file)}" data-page="${esc(bk.page)}">${esc(bkLabel)} (offline) →</a></p>`
-          : '';
+        // Topic-precise switch to the canonical Rust Book: link straight to the
+        // exact IN-APP chapter (fast, offline, cleanly rendered) when this lesson
+        // maps to one; otherwise fall back to the coarser per-phase PDF shelf.
+        const chap = LESSON_BOOK[id];
+        let bookHtml = '';
+        if (chap) {
+          bookHtml = `<p class="lessonbook">📖 Read this topic in the Rust Book: <a href="#" class="bookchlink" data-ch="${esc(chap)}">the chapter (offline) →</a></p>`;
+        } else if (quizId) {
+          const bk = phaseBook(quizId);
+          const bkLabel = bk.chapter ? `${bk.short} — “${bk.chapter}”` : bk.short;
+          bookHtml = `<p class="lessonbook">📖 Read deeper: <a href="#" class="booklink" data-file="${esc(bk.file)}" data-page="${esc(bk.page)}">${esc(bkLabel)} (offline) →</a></p>`;
+        }
         d.innerHTML = back + prevNextHtml + '<div class="bookbody lessonbody">' + mdToHtml(md) + '</div>'
           + cheatHtml + bookHtml + practiceHtml + quizHtml + prevNextHtml;
         glossaryLinkify(d.querySelector('.lessonbody'), await glossaryTerms());
@@ -3749,6 +3821,9 @@
         a.onclick = e => { e.preventDefault(); showView('cheatsheets', a.dataset.cheat); });
       d.querySelectorAll('.booklink').forEach(a =>
         a.onclick = e => { e.preventDefault(); showView('library', a.dataset.file, a.dataset.page); });
+      // Topic-precise switch to the canonical in-app Rust Book chapter.
+      d.querySelectorAll('.bookchlink').forEach(a =>
+        a.onclick = e => { e.preventDefault(); showView('book', a.dataset.ch); });
       // Wire the nav bar: a `.md` href routes to that lesson; the Study Guide link
       // renders the curriculum study guide — all in-app, no page navigation.
       d.querySelectorAll('.lessonnavlink').forEach(a => {
