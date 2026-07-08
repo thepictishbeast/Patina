@@ -1,0 +1,19 @@
+id = "ownership/02b_deref_non_reference"
+title = "The `*` operator only dereferences a reference"
+difficulty = "beginner"
+estimated_minutes = 5
+concept = "dereference-non-reference"
+expected_error_code = "E0614"
+solution_outline = """
+`count` is a plain `i32`, not a reference (`&i32`), so there is nothing for
+`*` to follow — hence E0614 "type `{integer}` cannot be dereferenced". You
+only reach *through* a reference with `*`; a value you already hold is used
+directly. Drop the `*` and use `count` as-is. (The mirror of `&`: `&` makes
+a reference to a value, `*` follows a reference back to the value — you need
+one before you can do the other.)
+"""
+
+[[book_refs]]
+chapter = "ch04-02-references-and-borrowing"
+anchor = "references-and-borrowing"
+why = "This section introduces references and the `*` dereference operator — `*` follows a reference, so it has no meaning on a plain value like the one on the failing line."
