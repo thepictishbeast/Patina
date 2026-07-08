@@ -166,4 +166,36 @@ test.describe('Fullscreen IDE', () => {
     expect(await page.evaluate(() => window.ideView.state.doc.toString().includes('// DRAFT-MARK'))).toBe(false);
     expect(await page.evaluate((id) => localStorage.getItem('ts-ide-buf:' + id), openId)).toBeNull();
   });
+
+  test('the tree folds by phase — a long list opens on the current phase; toggles persist', async ({ page }) => {
+    // 76 exercise files across ~16 phases made the explorer a long scroll. Each
+    // phase is now a collapsible group (header button + file-count badge); the
+    // phase holding the CURRENT exercise stays open, the rest collapse, and an
+    // explicit toggle is remembered (localStorage ts-ide-groups).
+    await page.goto('/');
+    await page.evaluate(() => { localStorage.removeItem('ts-ide-groups'); localStorage.removeItem('ts-ide-state'); });
+    await page.evaluate(() => showView('ide'));
+    await page.waitForSelector('.ide-group-h');
+    // Every group is a header button carrying a count badge.
+    const headers = page.locator('.ide-group-h');
+    const nHeaders = await headers.count();
+    expect(nHeaders, 'multiple phase groups').toBeGreaterThan(3);
+    expect(await page.locator('.ide-grp-count').count(), 'a count badge per group').toBe(nHeaders);
+    // Most groups start collapsed → far fewer rows are visible than exist.
+    const total = await page.locator('.ide-file[data-id]').count();
+    const visible = await page.locator('.ide-file[data-id]:visible').count();
+    expect(total, 'all exercise files still render in the DOM').toBeGreaterThan(20);
+    expect(visible, 'collapsed phases hide their rows').toBeLessThan(total);
+    // The current exercise's row is in the open phase (visible without expanding).
+    expect(await page.locator('.ide-file.st-current:visible').count()).toBe(
+      await page.locator('.ide-file.st-current').count());
+    // Clicking a collapsed group's header reveals its rows…
+    const collapsedHeader = page.locator('.ide-group.collapsed .ide-group-h').first();
+    await expect(collapsedHeader).toBeVisible();
+    const before = await page.locator('.ide-file[data-id]:visible').count();
+    await collapsedHeader.click();
+    await expect.poll(() => page.locator('.ide-file[data-id]:visible').count()).toBeGreaterThan(before);
+    // …and the choice persists across a reload.
+    await expect.poll(() => page.evaluate(() => localStorage.getItem('ts-ide-groups'))).toContain(':false');
+  });
 });

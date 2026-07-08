@@ -277,10 +277,19 @@
   .docview .ideout.err { color:#ffd9d0; }
   .docview .ideout .con-g { color:#36c46b; } .docview .ideout .con-r { color:#ff5c5c; }
   .docview .ideout .con-b { color:#5aa9ff; } .docview .ideout .con-d { color:#9aa7b4; }
-  /* Files explorer: phase groups, each file a row with a status dot. */
-  .ide-group { margin:0 0 12px; }
-  .ide-group-h { font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--fg-dim);
-    margin:0 0 5px; font-weight:700; }
+  /* Files explorer: COLLAPSIBLE phase groups, each file a row with a status dot. */
+  .ide-group { margin:0 0 6px; }
+  .ide-group-h { display:flex; align-items:center; gap:6px; width:100%; text-align:left; background:transparent;
+    border:0; cursor:pointer; font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--fg-dim);
+    margin:4px 0 3px; padding:3px 4px; font-weight:700; border-radius:6px; }
+  .ide-group-h:hover, .ide-group-h:focus-visible { color:var(--fg); background:var(--bg-3); outline:none; }
+  .ide-grp-chev { flex:0 0 auto; font-size:9px; transition:transform .15s ease; }
+  .ide-group.collapsed .ide-grp-chev { transform:rotate(-90deg); }
+  .ide-grp-name { flex:1 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .ide-grp-count { flex:0 0 auto; font-size:10px; color:var(--fg-dim); background:var(--bg-3); border-radius:8px;
+    padding:1px 7px; font-weight:600; letter-spacing:0; }
+  .ide-group.collapsed .ide-grp-body { display:none; }
+  @media (prefers-reduced-motion: reduce) { .ide-grp-chev { transition:none; } }
   .ide-file { display:flex; align-items:center; gap:8px; width:100%; text-align:left; background:transparent;
     border:1px solid transparent; border-radius:8px; padding:6px 8px; margin:2px 0; cursor:pointer;
     color:var(--fg); font-size:12.5px; }
@@ -1795,28 +1804,55 @@
       ideSetTerm(!!st.termOpen);
       d.scrollTop = 0;
     }
+    // Per-group collapse state — phase groups get long (76 files across ~16
+    // phases), so each folds. Persisted by group key; a group with no saved value
+    // uses the caller's default (the phase holding the CURRENT exercise stays
+    // open, the rest collapse — mirrors the Lessons list's stage grouping).
+    const IDE_GROUPS_KEY = 'ts-ide-groups';
+    function ideGroupsState() { try { return JSON.parse(localStorage.getItem(IDE_GROUPS_KEY) || '{}') || {}; } catch (_) { return {}; } }
+    function ideGroupsSave(s) { try { localStorage.setItem(IDE_GROUPS_KEY, JSON.stringify(s)); } catch (_) {} }
+    // A collapsible explorer group: a header BUTTON (chevron + name + file count)
+    // that folds its body. Returns { g, body } for the caller to fill with rows.
+    function ideMakeGroup(key, label, count, collapsed) {
+      const g = document.createElement('div'); g.className = 'ide-group' + (collapsed ? ' collapsed' : '');
+      const h = document.createElement('button'); h.type = 'button'; h.className = 'ide-group-h';
+      h.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+      h.innerHTML = '<span class="ide-grp-chev" aria-hidden="true">▾</span>'
+        + '<span class="ide-grp-name">' + esc(label) + '</span>'
+        + (count != null ? '<span class="ide-grp-count">' + count + '</span>' : '');
+      h.title = (collapsed ? 'Expand ' : 'Collapse ') + label;
+      const body = document.createElement('div'); body.className = 'ide-grp-body';
+      h.onclick = () => {
+        const nowCollapsed = !g.classList.contains('collapsed');
+        g.classList.toggle('collapsed', nowCollapsed);
+        h.setAttribute('aria-expanded', nowCollapsed ? 'false' : 'true');
+        h.title = (nowCollapsed ? 'Expand ' : 'Collapse ') + label;
+        const s = ideGroupsState(); s[key] = nowCollapsed; ideGroupsSave(s);
+      };
+      g.appendChild(h); g.appendChild(body);
+      return { g, body };
+    }
     // Build the explorer tree: a "🧪 Scratch" group of free-play files FIRST
     // (client-side, always available), then the course's exercise files from GET
     // /api/workspace (phase groups; server sends only id/name/title/status — no
-    // answer-bearing metadata, .toml files never appear).
+    // answer-bearing metadata, .toml files never appear). Every group is foldable.
     function ideAppendScratchGroup(tree) {
       if (!sbxFiles) sbxFiles = sbxLoadFiles();
-      const g = document.createElement('div'); g.className = 'ide-group';
-      const h = document.createElement('div'); h.className = 'ide-group-h'; h.textContent = '🧪 Scratch';
-      g.appendChild(h);
+      const collapsed = !!ideGroupsState()['🧪 Scratch']; // scratch defaults OPEN (short, frequently used)
+      const { g, body } = ideMakeGroup('🧪 Scratch', '🧪 Scratch', sbxFiles.files.length, collapsed);
       sbxFiles.files.forEach((f, i) => {
         const btn = document.createElement('button'); btn.type = 'button'; btn.dataset.scratchIdx = i;
         btn.className = 'ide-file st-scratch' + (ideOpen && ideOpen.scratch && ideOpen.sbxIdx === i ? ' open' : '');
         btn.innerHTML = '<span class="ide-dot" aria-hidden="true"></span><span class="ide-fname">' + esc(f.name) + '</span>';
         btn.title = f.name + ' · free-play scratch file'; btn.setAttribute('aria-label', 'Scratch file ' + f.name);
         btn.onclick = () => ideOpenScratch(i);
-        g.appendChild(btn);
+        body.appendChild(btn);
       });
       const add = document.createElement('button'); add.type = 'button'; add.className = 'ide-file ide-file-new';
       add.innerHTML = '<span class="ide-fname">＋ New scratch</span>';
       add.title = 'Create a new scratch file'; add.setAttribute('aria-label', 'New scratch file');
       add.onclick = () => ideNewScratch();
-      g.appendChild(add);
+      body.appendChild(add);
       tree.appendChild(g);
     }
     async function ideRenderTree() {
@@ -1829,10 +1865,16 @@
         if (res.ok) { const data = await res.json(); groups = (data && data.groups) || []; }
         else { tree.insertAdjacentHTML('beforeend', '<div class="ide-empty">Could not load exercise files (HTTP ' + res.status + ').</div>'); }
       } catch (_) { tree.insertAdjacentHTML('beforeend', '<div class="ide-empty">Could not reach the exercise files.</div>'); }
-      groups.forEach(gp => {
-        const g = document.createElement('div'); g.className = 'ide-group';
-        const h = document.createElement('div'); h.className = 'ide-group-h'; h.textContent = gp.dir;
-        g.appendChild(h);
+      const saved = ideGroupsState();
+      // Default: keep the phase holding the CURRENT exercise open (or the first
+      // phase if none is current), collapse the rest — a long tree opens on
+      // "where you are". An explicit user toggle (saved) always wins.
+      const anyCurrent = groups.some(gp => (gp.files || []).some(f => f.status === 'current'));
+      groups.forEach((gp, gi) => {
+        const hasCurrent = (gp.files || []).some(f => f.status === 'current');
+        const dflt = anyCurrent ? !hasCurrent : (gi !== 0); // true = collapsed
+        const collapsed = (gp.dir in saved) ? !!saved[gp.dir] : dflt;
+        const { g, body } = ideMakeGroup(gp.dir, gp.dir, (gp.files || []).length, collapsed);
         (gp.files || []).forEach(f => {
           const btn = document.createElement('button'); btn.type = 'button'; btn.dataset.id = f.id;
           btn.className = 'ide-file st-' + (f.status || 'locked') + (ideOpen && !ideOpen.scratch && ideOpen.id === f.id ? ' open' : '');
@@ -1841,7 +1883,7 @@
           btn.title = (f.title || f.name) + ' · ' + (f.status || 'locked');
           btn.setAttribute('aria-label', f.name + ' — ' + (f.title || '') + ' (' + (f.status || 'locked') + ')');
           btn.onclick = () => ideOpenFile(f.id, f.status);
-          g.appendChild(btn);
+          body.appendChild(btn);
         });
         tree.appendChild(g);
       });
