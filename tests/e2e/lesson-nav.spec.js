@@ -53,6 +53,34 @@ test.describe('Lessons: type-to-filter', () => {
     await expect(page.locator('.booktoc li:visible')).toHaveCount(total);
     await expect(page.locator('.lessonnomatch')).toBeHidden();
   });
+
+  test('full-text search surfaces body matches (not just titles) and opens them', async ({ page }) => {
+    await page.goto('/');
+    await page.evaluate(() => showView('lessons'));
+    await page.waitForSelector('.lessonfilter');
+    const bh = page.locator('.lessonbodyhits');
+    // "borrow" appears in more lesson BODIES than titles → a "found in the text" list
+    // (server /api/lessons?q=, ranked; the desktop e2e server supports it).
+    await page.locator('.lessonfilter').fill('borrow');
+    await expect.poll(() => bh.locator('.lbh-list li').count(), { timeout: 6000 }).toBeGreaterThan(0);
+    await expect(bh.locator('.lbh-h')).toContainText(/found in the text/i);
+    const first = bh.locator('.lbh-list li').first();
+    await expect(first.locator('small'), 'each body hit shows a snippet').not.toHaveText('');
+    await expect(first.locator('.bscount'), 'and a match count').toHaveText(/\d+/);
+    // opening a body hit navigates into that lesson
+    await first.locator('.lessonjump').click();
+    await expect(page.locator('.lessonback')).toBeVisible();
+    // gibberish → no title AND no body match → the no-match note; body section hidden
+    await page.evaluate(() => showView('lessons'));
+    await page.waitForSelector('.lessonfilter');
+    await page.locator('.lessonfilter').fill('zzznotawordzz');
+    await expect(page.locator('.lessonnomatch')).toBeVisible();
+    await expect(bh).toBeHidden();
+    // clearing restores the full stage list; the body section stays hidden
+    await page.locator('.lessonfilter').fill('');
+    await expect(bh).toBeHidden();
+    await expect.poll(() => page.locator('.lstage:visible').count()).toBeGreaterThan(1);
+  });
 });
 
 test.describe('Quizzes: completion tracking', () => {
