@@ -247,6 +247,23 @@ check(mdToHtml('### The API of Mutex<T>').includes('id="the-api-of-mutext"'),
   const dangling = Object.entries(mapping).filter(([, t]) => !lessons.has(t)).sort();
   check(dangling.length === 0,
     'every CONCEPT_LESSON target exists in lessons/' + (dangling.length ? ` — DANGLING: ${dangling.map(([c, t]) => `${c}→${t}`).join(', ')}` : ''));
+  // Concept → GLOSSARY resolution: every concept renders as a tappable definition
+  // chip in Practice, so an unresolved one is a SILENT dead chip. golden_corpus.rs
+  // guards this too, but it's NOT in the fast per-tick gate — which is how two dead
+  // chips (duplicate-definition, dereference-non-reference) shipped unseen. Mirror
+  // rpro-glossary::normalize (lowercase; collapse -/_/whitespace to one space;
+  // trim — mirrors its split_whitespace().join(" ")) over term names AND aliases,
+  // so this catches a dead chip per-tick without a cargo build. Keep this faithful
+  // to the Rust: a looser norm here would false-green while golden_corpus.rs fails.
+  const norm = s => s.toLowerCase().replace(/[-_\s]+/g, ' ').trim();
+  const gloss = readFileSync(join(root, 'glossary', 'glossary.toml'), 'utf8');
+  const glossKeys = new Set();
+  for (const m of gloss.matchAll(/^\s*name\s*=\s*"([^"]+)"/gm)) glossKeys.add(norm(m[1]));
+  for (const m of gloss.matchAll(/^\s*aliases\s*=\s*\[([^\]]*)\]/gm))
+    for (const a of m[1].matchAll(/"([^"]+)"/g)) glossKeys.add(norm(a[1]));
+  const deadChips = [...concepts].filter(c => !glossKeys.has(norm(c))).sort();
+  check(deadChips.length === 0,
+    'every exercise concept resolves in the glossary — no dead chip' + (deadChips.length ? ` — DEAD: ${deadChips.join(', ')}` : ''));
 }
 
 console.log('');
