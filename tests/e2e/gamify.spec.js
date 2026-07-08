@@ -34,6 +34,24 @@ test.describe('Gamification', () => {
     await expect(page.locator('#xpLv')).toHaveText('Lv 2');
   });
 
+  test('the completion celebration shows the next exercise’s friendly title, not its id', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForSelector('#xpchip');
+    // The popup should read like a learner ("Next up: Defining structs"), not a
+    // dev slug ("Next up: types/01_struct_build").
+    const shown = await page.evaluate(() => {
+      celebrate('types/01_struct_build', 'Build a struct: every field must be set');
+      const c = document.getElementById('celebrate');
+      return { text: c.textContent, showing: c.classList.contains('show') };
+    });
+    expect(shown.showing).toBe(true);
+    expect(shown.text).toContain('Build a struct');
+    expect(shown.text).not.toContain('types/01_struct_build');
+    // Falls back to the id when no title is available (never blank).
+    const fallback = await page.evaluate(() => { celebrate('x/y', null); return document.getElementById('celebrate').textContent; });
+    expect(fallback).toContain('x/y');
+  });
+
   test('the badge panel opens with earned + locked badges', async ({ page }) => {
     await page.goto('/');
     await page.waitForSelector('#xpchip');

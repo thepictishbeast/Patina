@@ -1313,15 +1313,17 @@
     }
     // Ephemeral congrats on COMPLETING an exercise (fires on advance, so once per
     // exercise — no re-run spam). Animates in, holds, fades out; non-interactive.
-    function celebrate(nextId) {
+    function celebrate(nextId, nextTitle) {
       let c = document.getElementById('celebrate');
       if (!c) {
         c = document.createElement('div'); c.id = 'celebrate';
         c.setAttribute('role', 'status'); c.setAttribute('aria-live', 'polite');
         document.body.appendChild(c);
       }
+      // Show the friendly lesson title ("Sometimes the compiler needs a type
+      // annotation"), not the raw id slug ("basics/02_annotation_needed").
       c.innerHTML = '<div class="cg-h">🎉 Exercise complete!</div>'
-        + (nextId ? '<div class="cg-s">Next up: ' + esc(nextId) + '</div>'
+        + (nextId ? '<div class="cg-s">Next up: ' + esc(nextTitle || nextId) + '</div>'
                   : '<div class="cg-s">That was the last one — nice work.</div>');
       c.classList.remove('show'); void c.offsetWidth; // restart the CSS animation
       c.classList.add('show');
@@ -2063,10 +2065,11 @@
         } catch (_) {}
         try { const exs = await fetch('api/exercises').then(r => r.json()); if (exs) renderList(exs); } catch (_) {}
         if (advancedTo) {
-          term.writeln(''); term.writeln(g('✓ exercise complete — advancing to ' + advancedTo));
-          try { const cur = await fetch('api/current').then(r => r.json()); renderCurrent(cur); } catch (_) {}
+          let nextTitle = null;
+          try { const cur = await fetch('api/current').then(r => r.json()); renderCurrent(cur); nextTitle = cur && cur.title; } catch (_) {}
+          term.writeln(''); term.writeln(g('✓ exercise complete — advancing to ' + (nextTitle || advancedTo)));
           statusEl().textContent = 'advanced ✓';
-          celebrate(advancedTo);
+          celebrate(advancedTo, nextTitle);
         }
       }
       // Gate ONCE per exercise (Paul): the prediction persists after a run so you
@@ -2131,10 +2134,11 @@
         try { const exs = await fetch('api/exercises').then(r => r.json()); if (exs) renderList(exs); } catch (_) {}
         try { const rev = await fetch('api/review').then(r => r.json()); renderReview(rev); } catch (_) {}
         if (out.advanced_to) {
-          term.writeln(''); term.writeln(g('✓ exercise complete — advancing to ' + out.advanced_to));
-          try { const cur = await fetch('api/current').then(r => r.json()); renderCurrent(cur); } catch (_) {}
+          let nextTitle = null;
+          try { const cur = await fetch('api/current').then(r => r.json()); renderCurrent(cur); nextTitle = cur && cur.title; } catch (_) {}
+          term.writeln(''); term.writeln(g('✓ exercise complete — advancing to ' + (nextTitle || out.advanced_to)));
           statusEl().textContent = 'advanced ✓';
-          celebrate(out.advanced_to);
+          celebrate(out.advanced_to, nextTitle);
         }
       } catch (e) {
         logEvent('net', 'info', 'local /api/run unavailable (' + (e && e.message || e) + ') — routing to on-device path');
