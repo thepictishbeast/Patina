@@ -78,6 +78,17 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   per-surface color flag plumbed through Core/command_plan (web on, TUI off).
 
 ### Editor / IDE
+- ✅ **Book HTML-comment leak fixed — B4 readability (`4359a52`, 2026-07-08).** The in-app Rust Book rendered its
+  mdBook editorial comments as LITERAL text: a bare `<!-- Old headings… -->` paragraph atop many chapters + inline
+  `<!-- ignore -->` mid-sentence. Root cause: `mdToHtml` esc()apes `<` before parsing, so an un-stripped comment
+  survives as visible `&lt;!-- … --&gt;` (not an invisible HTML comment). 182 comments across the chapters. The
+  lesson renderer already stripped these; `cleanBookMarkdown` now does too (single + multi-line, before fence
+  handling; Rust code has no `<!-- -->` so examples are safe). Render-time + source-preserving → flows to mobile
+  WebView. Verified in-page through the REAL pipeline on 4 comment-bearing chapters (raw had comments, rendered
+  has none) + 3 new gui-transform guards; full e2e **101/101**. GUI-shell, no CV bump. ⚠ DEBUG NOTE: `showView('book',id)`
+  from a fresh page load flaked to an empty `.bookbody` in the probe — the DEFINITIVE check was a direct in-page
+  unit call `mdToHtml(cleanBookMarkdown(realMarkdown))`, not a rendered-DOM read. **FOLLOW-UP (next tick):** the
+  Rust `clean_mdbook_source` (rpro-book, TUI/CLI reader) has the SAME gap — no `<!-- -->` strip; bounded twin fix.
 - ✅ **"↑ Top" affordance for long reading views + scroll-wiring consolidation (`071ed13`, 2026-07-08, #40).**
   Reading-position memory now lands you deep in long chapters (some 15k+ px) / lessons; a subtle "↑ Top" button
   appears once you scroll well down, hides near the bottom (never covers prev/next), and one tap returns to the
