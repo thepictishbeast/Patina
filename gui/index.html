@@ -307,6 +307,15 @@
     color:var(--fg-dim); font-family:var(--mono); font-size:11px; }
   .ide-file-new:hover, .ide-file-new:focus-visible { background:var(--bg-3); border-color:var(--accent); color:var(--fg); outline:none; }
   .ide-empty { color:var(--fg-dim); font-size:12.5px; padding:14px 4px; }
+  /* Explorer filter box — jump to any file by name across all phases. */
+  .ide-filterwrap { padding:0 0 8px; }
+  .ide-filter { width:100%; box-sizing:border-box; background:var(--bg-2); color:var(--fg); border:1px solid var(--line);
+    border-radius:8px; padding:6px 9px; font:inherit; font-size:12px; }
+  .ide-filter:focus { outline:none; border-color:var(--accent); }
+  .ide-file.filter-hide, .ide-group.filter-hide { display:none; }
+  /* While filtering, matching groups reveal their rows regardless of fold state. */
+  .ide-treelist.filtering .ide-group.filter-open .ide-grp-body { display:block; }
+  .ide-treelist.filtering .ide-group.filter-open .ide-grp-chev { visibility:hidden; }
   .ide-scrim { display:none; }
   /* Fullscreen: the IDE becomes a FIXED overlay filling the whole viewport, all
      other chrome tucked away, and its sidebar/editor/terminal FLEX to fill the
@@ -1769,7 +1778,10 @@
         + '<p class="ide-blurb" style="color:var(--fg-dim);font-size:12px;margin:0 0 10px">One offline coding environment — the course’s exercise files AND your own 🧪 Scratch files, side by side. Read, edit &amp; run; nothing here changes progress or reveals answers.</p>'
         + '<div class="ide-body">'
         +   '<div class="ide-scrim" id="idescrim"></div>'
-        +   '<aside class="ide-sidebar" id="idetree" aria-label="File explorer"><div class="ide-empty">Loading files…</div></aside>'
+        +   '<aside class="ide-sidebar" id="idetree" aria-label="File explorer">'
+        +     '<div class="ide-filterwrap"><input id="idefilter" class="ide-filter" type="search" placeholder="🔎 Filter files…" aria-label="Filter files by name" autocomplete="off" autocapitalize="off" spellcheck="false"></div>'
+        +     '<div class="ide-treelist" id="idetreelist"><div class="ide-empty">Loading files…</div></div>'
+        +   '</aside>'
         +   '<div class="ide-main">'
         +     '<div class="ide-editwrap">'
         +       '<div class="ide-toolbar"><button class="run" id="iderun" title="Run (Ctrl/Cmd+Enter)">▷ Run</button>'
@@ -1786,6 +1798,7 @@
         +   '</div>'
         + '</div>';
       document.getElementById('idefilesbtn').onclick = () => ideSetSidebar(document.getElementById('idetree').classList.contains('closed'));
+      { const flt = document.getElementById('idefilter'); if (flt) { flt.oninput = () => ideFilterTree(flt.value); flt.onkeydown = e => { if (e.key === 'Escape') { flt.value = ''; ideFilterTree(''); } }; } }
       document.getElementById('idetermbtn').onclick = () => ideSetTerm(document.getElementById('ideterm').classList.contains('closed'));
       document.getElementById('idescrim').onclick = () => ideSetSidebar(false);
       const full = document.getElementById('idefull');
@@ -1872,7 +1885,7 @@
       tree.appendChild(g);
     }
     async function ideRenderTree() {
-      const tree = document.getElementById('idetree'); if (!tree) return;
+      const tree = document.getElementById('idetreelist'); if (!tree) return;
       tree.textContent = '';
       ideAppendScratchGroup(tree); // free-play scratch files — always available
       let groups = [];
@@ -1902,6 +1915,35 @@
           body.appendChild(btn);
         });
         tree.appendChild(g);
+      });
+      // If a filter is active (e.g. the tree re-rendered after a scratch add), re-apply it.
+      const flt = document.getElementById('idefilter');
+      if (flt && flt.value.trim()) ideFilterTree(flt.value);
+    }
+    // Live filter over the whole tree by file name: matching rows show (their
+    // group forced open regardless of fold state), non-matching rows + empty
+    // groups hide. Clearing the box restores the folded view untouched. Purely
+    // visual — never re-fetches, never persists (the fold prefs stay the user's).
+    function ideFilterTree(qRaw) {
+      const list = document.getElementById('idetreelist'); if (!list) return;
+      const q = (qRaw || '').trim().toLowerCase();
+      list.classList.toggle('filtering', !!q);
+      if (!q) {
+        list.querySelectorAll('.ide-file, .ide-group').forEach(el => el.classList.remove('filter-hide'));
+        list.querySelectorAll('.ide-group').forEach(g => g.classList.remove('filter-open'));
+        return;
+      }
+      list.querySelectorAll('.ide-group').forEach(g => {
+        let anyMatch = false;
+        g.querySelectorAll('.ide-file').forEach(r => {
+          if (r.classList.contains('ide-file-new')) { r.classList.add('filter-hide'); return; } // the "+ New" action isn't a file
+          const name = (r.querySelector('.ide-fname') ? r.querySelector('.ide-fname').textContent : '').toLowerCase();
+          const hit = name.indexOf(q) !== -1;
+          r.classList.toggle('filter-hide', !hit);
+          if (hit) anyMatch = true;
+        });
+        g.classList.toggle('filter-hide', !anyMatch);   // hide phases with no match
+        g.classList.toggle('filter-open', anyMatch);    // reveal matches even if folded
       });
     }
 

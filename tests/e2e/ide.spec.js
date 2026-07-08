@@ -235,4 +235,27 @@ test.describe('Fullscreen IDE', () => {
     expect(revealed.visible, 'row visible again').toBe(true);
     expect(revealed.marked, 'row highlighted as open').toBe(true);
   });
+
+  test('the filter box jumps to files by name across every phase', async ({ page }) => {
+    await page.goto('/');
+    await page.evaluate(() => { localStorage.removeItem('ts-ide-groups'); localStorage.removeItem('ts-ide-state'); });
+    await page.evaluate(() => showView('ide'));
+    await page.waitForSelector('.ide-group-h');
+    const filter = page.locator('#idefilter');
+    await expect(filter).toBeVisible();
+    const totalGroups = await page.locator('.ide-group').count();
+    // A token that matches exactly one file — it shows even if its phase was folded.
+    await filter.fill('immutable');
+    await expect.poll(async () => (await page.locator('.ide-file[data-id]:visible .ide-fname').allInnerTexts()).length).toBeGreaterThan(0);
+    const names = await page.locator('.ide-file[data-id]:visible .ide-fname').allInnerTexts();
+    expect(names.every(n => n.toLowerCase().includes('immutable')), 'only matching files show').toBe(true);
+    // Phases with no match are hidden entirely.
+    expect(await page.locator('.ide-group:visible').count(), 'non-matching phases hidden').toBeLessThan(totalGroups);
+    // A nonsense query hides every file row.
+    await filter.fill('zzzznotafile');
+    await expect.poll(() => page.locator('.ide-file[data-id]:visible').count()).toBe(0);
+    // Clearing restores the folded view — multiple phase headers visible again.
+    await filter.fill('');
+    await expect.poll(() => page.locator('.ide-group:visible').count()).toBeGreaterThan(1);
+  });
 });
