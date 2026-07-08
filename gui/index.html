@@ -303,11 +303,18 @@
   .ide-file.st-locked .ide-fname::after { content:' 🔒'; }
   .ide-empty { color:var(--fg-dim); font-size:12.5px; padding:14px 4px; }
   .ide-scrim { display:none; }
-  /* Fullscreen: the workspace fills the viewport, chrome tucked away. */
-  body.ide-full-on #docview.docview { max-width:none; padding:8px 10px; }
+  /* Fullscreen: the IDE becomes a FIXED overlay filling the whole viewport, all
+     other chrome tucked away, and its sidebar/editor/terminal FLEX to fill the
+     space — no brittle `vh` math that left a gap and never truly filled. */
   body.ide-full-on header, body.ide-full-on .footer { display:none; }
   body.ide-full-on .docview .learnback, body.ide-full-on .docview .ide-blurb { display:none; }
-  body.ide-full-on .ide-sidebar, body.ide-full-on .docview .ide-host { height:calc(100vh - 118px); }
+  body.ide-full-on #docview.docview {
+    position:fixed; inset:0; height:100vh; max-width:none; margin:0; padding:8px 10px; z-index:60;
+    overflow:hidden; display:flex; flex-direction:column; gap:8px; }
+  body.ide-full-on .ide-body { flex:1 1 auto; min-height:0; }
+  body.ide-full-on .ide-main { min-height:0; }
+  body.ide-full-on .ide-sidebar { height:auto; }                       /* stretches to the ide-body */
+  body.ide-full-on .docview .ide-host { flex:1 1 auto; height:auto; min-height:0; } /* editor fills; terminal takes its share */
   /* Phone: the sidebar becomes a slide-over drawer OVER the editor — the editor
      is never hidden; tapping a file opens it and closes the drawer. */
   @media (max-width:760px) {
@@ -318,8 +325,8 @@
     .docview .ide-host { height:52vh; }
     .docview .ideout { height:34vh; }
     .ide-openname { max-width:32vw; }
-    body.ide-full-on .docview .ide-host { height:calc(100vh - 128px); }
-    body.ide-full-on .ide-sidebar { height:calc(100vh - 128px); }
+    /* In fullscreen the flex rules above fill the viewport; the editor flexes and
+       the terminal keeps its own height (no fixed-height override needed here). */
   }
   /* Runnable code examples in lessons/book: ▷ Run + ✎ Open in Sandbox under a block. */
   .docview .coderun-bar, .ldrawer-body .coderun-bar { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 0; }

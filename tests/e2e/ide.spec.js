@@ -83,10 +83,20 @@ test.describe('Fullscreen IDE', () => {
     await expect(page.locator('#idehost')).toBeVisible();
     await page.locator('#idetermbtn').click();
     await expect(page.locator('#ideterm')).toHaveClass(/closed/);
-    // Fullscreen adds the body class; leaving the IDE must remove it (so the
-    // hidden header/footer can never bleed into another view).
+    // Fullscreen adds the body class AND the IDE must actually FILL the viewport
+    // (Paul: "the fullscreen ide isnt fullscreen"): the #docview overlay covers the
+    // whole screen edge-to-edge, and the header is hidden.
     await page.locator('#idefull').click();
     expect(await page.evaluate(() => document.body.classList.contains('ide-full-on'))).toBe(true);
+    const fill = await page.evaluate(() => {
+      const r = document.getElementById('docview').getBoundingClientRect();
+      return { top: Math.round(r.top), left: Math.round(r.left), fills: Math.round(r.width) === innerWidth && Math.round(r.height) === innerHeight,
+        headerHidden: getComputedStyle(document.querySelector('header')).display === 'none' };
+    });
+    expect(fill.fills, 'the IDE fills the whole viewport in fullscreen').toBe(true);
+    expect(fill.top).toBe(0); expect(fill.left).toBe(0);
+    expect(fill.headerHidden).toBe(true);
+    // Leaving the IDE must remove it (so the hidden header can't bleed into another view).
     await page.evaluate(() => showView('practice'));
     expect(await page.evaluate(() => document.body.classList.contains('ide-full-on'))).toBe(false);
   });
