@@ -413,6 +413,18 @@
   .docview .hubmin { margin:16px 0 0; }
   .docview .hubcard-min { color:var(--fg-dim); text-decoration:none; font-size:13px; }
   .docview .hubcard-min:hover { color:var(--accent); }
+  /* Unified "search everything" box + categorized results on the Learn hub. */
+  .docview .hubsearchwrap { margin:2px 0 12px; }
+  .docview .hubsearch { width:100%; box-sizing:border-box; background:var(--bg-2); color:var(--fg); border:1px solid var(--line);
+    border-radius:10px; padding:9px 12px; font:inherit; font-size:13.5px; }
+  .docview .hubsearch:focus { outline:none; border-color:var(--accent); }
+  .docview #hubresults .hubsec { font-size:11px; color:var(--fg-dim); text-transform:uppercase; letter-spacing:.05em; font-weight:700; margin:12px 0 4px; }
+  .docview #hubresults .hubhits { list-style:none; padding:0; margin:0; }
+  .docview #hubresults .hubhits li { padding:6px 2px; border-bottom:1px solid var(--line); }
+  .docview #hubresults .hubhit { font-size:13.5px; color:var(--fg); text-decoration:none; font-weight:600; }
+  .docview #hubresults .hubhit:hover { color:var(--accent); text-decoration:underline; }
+  .docview #hubresults .hubhits small { display:block; margin:2px 0 0; color:var(--fg-dim); font-size:12px; }
+  .docview .hubnomatch { color:var(--fg-dim); }
   /* One-tap resume: jump to your first unread lesson. */
   /* #b7410e (the darker brand orange) not var(--accent): white on the bright
      dark-theme accent is only ~3.5:1; on #b7410e it's 5.56:1 — passes WCAG AA in
@@ -3614,6 +3626,9 @@
         + (sub ? `<small class="hubsub">${esc(sub)}</small>` : '') + '</span></a>';
       d.innerHTML = '<h1>📚 Learn</h1>'
         + '<p style="color:var(--fg-dim)">Your offline curriculum, references, and progress — everything but the editor lives here.</p>'
+        + '<div class="hubsearchwrap"><input id="hubsearch" class="hubsearch" type="search" placeholder="🔎 Search everything — lessons, the Book, cheatsheets, glossary…" aria-label="Search all learning material" autocomplete="off" autocapitalize="off" spellcheck="false"></div>'
+        + '<div id="hubresults" hidden aria-live="polite"></div>'
+        + '<div id="hubbody">'
         + (exTotal || lessons.length
             ? `<div class="hubprog">📝 <b>${exDone}/${exTotal}</b> exercises · 🎓 <b>${nRead}/${lessons.length}</b> lessons · ❓ <b>${nQuiz}/${quizzes.length}</b> quizzes</div>` : '')
         + (firstUnread ? `<button class="continuecta" data-id="${esc(firstUnread.id)}">▶ ${nRead ? 'Continue' : 'Start'} — ${esc(firstUnread.title)}</button>` : '')
@@ -3629,11 +3644,63 @@
           + card('glossary', '📚', 'Glossary', 'plain-language terms')
           + card('library', '📚', 'Library', '9 original books (PDF)')
         + '</div>'
-        + '<p class="hubmin"><a href="#" class="hubcard-min" data-view="logs">🩺 Diagnostics &amp; logs</a></p>';
+        + '<p class="hubmin"><a href="#" class="hubcard-min" data-view="logs">🩺 Diagnostics &amp; logs</a></p>'
+        + '</div>';
       d.querySelector('.continuecta')?.addEventListener('click', function () { showView('lessons', this.dataset.id); });
       d.querySelectorAll('.hubcard, .hubcard-min').forEach(a =>
         a.onclick = e => { e.preventDefault(); showView(a.dataset.view); });
+      { const hs = document.getElementById('hubsearch');
+        if (hs) { let t = null;
+          hs.addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => hubSearch(hs.value), 220); });
+          hs.addEventListener('keydown', e => { if (e.key === 'Escape') { hs.value = ''; hubSearch(''); } }); } }
       d.scrollTop = 0;
+    }
+    // Unified "search everything" over the bundled learning material — lessons,
+    // the Rust Book and cheatsheets (server ?q=, ranked with snippets) plus the
+    // glossary (client-filtered, it's small). One place to find where a concept
+    // lives; fully offline (every endpoint is mirrored on mobile). Purely additive
+    // — the per-view searches stay for in-context use.
+    let _hubSeq = 0;
+    async function hubSearch(qRaw) {
+      const box = document.getElementById('hubresults'), body = document.getElementById('hubbody');
+      if (!box) return;
+      const q = (qRaw || '').trim();
+      if (!q) { box.hidden = true; box.innerHTML = ''; if (body) body.hidden = false; return; }
+      const seq = ++_hubSeq;
+      const j = (u) => fetch(u).then(r => r.json()).catch(() => ({}));
+      const [les, bk, ch, gl] = await Promise.all([
+        j('api/lessons?q=' + encodeURIComponent(q)),
+        j('api/book?q=' + encodeURIComponent(q)),
+        j('api/cheatsheets?q=' + encodeURIComponent(q)),
+        j('api/glossary'),
+      ]);
+      if (seq !== _hubSeq) return; // a newer keystroke won
+      const ql = q.toLowerCase();
+      const hitRow = (kind, id, title, count, snippet) =>
+        `<li><a href="#" class="hubhit" data-kind="${kind}" data-id="${esc(id)}">${esc(title)}`
+        + (count ? `<span class="bscount">${count | 0}</span>` : '') + '</a>'
+        + (snippet ? `<small>${esc(snippet)}</small>` : '') + '</li>';
+      const section = (title, rows) => rows ? `<h3 class="hubsec">${title}</h3><ul class="hubhits">${rows}</ul>` : '';
+      const lesRows = (les.hits || []).map(h => hitRow('lesson', h.id, h.title, h.count, h.snippet)).join('');
+      const bkRows = (bk.hits || []).map(h => hitRow('book', h.chapter, h.title, h.count, h.snippet)).join('');
+      const chRows = (ch.hits || []).map(h => hitRow('cheat', h.id, h.title, h.count, h.snippet)).join('');
+      const glHits = ((gl.terms) || []).filter(t =>
+        (t.name || '').toLowerCase().includes(ql)
+        || (t.definition || '').toLowerCase().includes(ql)
+        || (t.aliases || []).some(a => String(a).toLowerCase().includes(ql))).slice(0, 8);
+      const glRows = glHits.map(t => hitRow('gloss', t.name, t.name, 0, (t.definition || '').slice(0, 130))).join('');
+      const html = section('🎓 Lessons', lesRows) + section('📖 The Rust Book', bkRows)
+        + section('📋 Cheatsheets', chRows) + section('📚 Glossary', glRows);
+      box.innerHTML = html || `<p class="hubnomatch">No matches for “${esc(q)}”.</p>`;
+      box.hidden = false; if (body) body.hidden = true;
+      box.querySelectorAll('.hubhit').forEach(a => a.onclick = e => {
+        e.preventDefault();
+        const k = a.dataset.kind, id = a.dataset.id;
+        if (k === 'lesson') showView('lessons', id);
+        else if (k === 'book') showView('book', id);
+        else if (k === 'cheat') showView('cheatsheets', id);
+        else showView('glossary', id); // glossary opens with the term highlighted (if supported)
+      });
     }
 
     // The curriculum Study Guide — a top-level "how to work through this" doc
