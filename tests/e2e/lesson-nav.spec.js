@@ -123,6 +123,19 @@ test.describe('Books woven into the path (chapter deep-links)', () => {
     await expect(links.first()).toHaveAttribute('data-page', /^\d+$/);
     expect(await links.count()).toBeGreaterThan(1); // one per phase
   });
+
+  test('a Rust Book chapter offers the gentler Patina lesson, and it opens', async ({ page }) => {
+    await page.goto('/');
+    // A chapter with a primary Patina lesson (ch04-01 → 15-ownership) shows the
+    // reciprocal switch; clicking it opens that lesson.
+    await page.evaluate(() => showView('book', 'ch04-01-what-is-ownership'));
+    await page.waitForSelector('#docview .bookbody');
+    const patina = page.locator('.bookpatina .patinalink');
+    await expect(patina).toBeVisible();
+    await expect(patina).toHaveAttribute('data-lesson', /^\d/); // a real lesson stem
+    await patina.click();
+    await expect(page.locator('#docview .lessonbody')).toBeVisible(); // landed in a lesson
+  });
 });
 
 test.describe('Lessons: glossary tap-to-define', () => {

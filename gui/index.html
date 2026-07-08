@@ -2732,6 +2732,20 @@
       '34b-operator-overloading': 'ch20-02-advanced-traits',
     };
 
+    // The reverse of LESSON_BOOK, derived (no second hand-maintained map): each
+    // bundled Book chapter → the PRIMARY Patina lesson on that topic (the lowest-
+    // numbered lesson that maps to it — i.e. the intro, not a follow-up split).
+    // Lets a Book chapter offer the gentler step-by-step lesson, completing the
+    // bidirectional lesson↔Book switching (#41).
+    const BOOK_LESSON = (() => {
+      const m = {}, numOf = (s) => parseInt(s, 10) || 0;
+      for (const [lesson, chap] of Object.entries(LESSON_BOOK)) {
+        const cur = m[chap];
+        if (!cur || numOf(lesson) < numOf(cur) || (numOf(lesson) === numOf(cur) && lesson < cur)) m[chap] = lesson;
+      }
+      return m;
+    })();
+
     function renderCurrent(j) {
       const ed = editorEl();
       if (!j || !j.exercise) {
@@ -4006,7 +4020,15 @@
             + (next ? `<a href="#" class="bookjump booknav-next" data-ch="${esc(next.id)}"><span class="booknav-dir">next →</span><span class="booknav-ttl">${esc(next.title)}</span></a>` : '<span></span>')
             + '</nav>'
           : '';
-        d.innerHTML = back + '<div class="bookbody">' + mdToHtml(cleanBookMarkdown(ch.markdown)) + '</div>' + navRow;
+        // The reciprocal of the lesson's "read the chapter" link: offer the gentler
+        // step-by-step Patina lesson on this topic (bidirectional switching, #41).
+        const patinaLesson = BOOK_LESSON[chapter];
+        const patinaHtml = patinaLesson
+          ? `<p class="lessonbook bookpatina">📗 New to this topic? <a href="#" class="patinalink lesson-link" data-lesson="${esc(patinaLesson)}">Learn it step-by-step in the Patina lesson →</a></p>`
+          : '';
+        d.innerHTML = back + patinaHtml + '<div class="bookbody">' + mdToHtml(cleanBookMarkdown(ch.markdown)) + '</div>' + navRow;
+        d.querySelectorAll('.patinalink').forEach(a =>
+          a.onclick = e => { e.preventDefault(); showView('lessons', a.dataset.lesson); });
         // Tap-to-define here too: a beginner reading an early chapter hits terms
         // from LATER ones (a forward reference like `closure` or `Vec`) — tapping
         // reveals the plain-language definition. Skips code, so examples are
