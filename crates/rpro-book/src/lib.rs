@@ -92,7 +92,14 @@ impl Chapter {
 /// [`Chapter`].
 #[must_use]
 pub fn clean_mdbook_source(source: &str, url: &str) -> String {
-    let callout = format!("📖 Read this code listing in the Rust Book: {url}");
+    // Offline-first framing: the listing files aren't bundled, so nudge the reader
+    // to WRITE and run the example themselves in the Sandbox (charter: learn by
+    // doing, don't hand finished code) — and label the online listing honestly as
+    // online, rather than the old "Read this in the Rust Book: <url>" that told an
+    // offline reader to go somewhere they can't reach.
+    let callout = format!(
+        "📝 Write and run this example yourself in the 🧪 Sandbox — the full listing is online at: {url}"
+    );
     let mut out = String::new();
     // Suppress a run of identical link callouts (adjacent includes collapse to one).
     let push_callout = |out: &mut String| {

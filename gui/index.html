@@ -3848,6 +3848,32 @@
         a.onclick = e => { e.preventDefault(); renderBook(a.dataset.ch, null, a.dataset.term); });
     }
 
+    // The bundled Book chapters are RAW mdBook source: the actual code listings
+    // live in a `listings/` tree that ISN'T shipped (offline size), so every
+    // `{{#rustdoc_include …}}` / `{{#include …}}` used to leak into the reader as
+    // literal `{{#…}}` noise inside an empty code block — 364 of them across the
+    // 33 chapters. Rather than show that, surface what IS useful: the mdBook
+    // `<Listing number caption>` context, plus a nudge to write the example in the
+    // Sandbox (charter: learn by doing, don't hand finished code). Pure display —
+    // the source files are untouched, and this runs for web AND mobile (both
+    // render the Book through this same path).
+    function cleanBookMarkdown(md) {
+      if (!md) return md;
+      let s = md;
+      // A code/console fence whose only content is an include directive → a clean
+      // one-line placeholder (rust = an example to try; console/text = its output).
+      s = s.replace(/```(\w*)[ \t]*\r?\n[ \t]*\{\{#[^\n]*\}\}[ \t]*\r?\n```/g, (_m, lang) =>
+        (/^(console|text|output|bash|sh)$/i.test(lang)
+          ? '*↪ Program output — run the example to see it.*'
+          : '*↪ Code example — write and run it yourself in the 🧪 Sandbox.*'));
+      // mdBook <Listing> wrapper → a bold caption line the reader can actually use.
+      s = s.replace(/<Listing\b[^>]*\bnumber="([^"]*)"[^>]*\bcaption="([^"]*)"[^>]*>/g, (_m, n, cap) => `**Listing ${n}.** ${cap}\n`);
+      s = s.replace(/<Listing\b[^>]*\bcaption="([^"]*)"[^>]*>/g, (_m, cap) => `**${cap}**\n`);
+      s = s.replace(/<\/?Listing\b[^>]*>/g, '');
+      // Any stray directive left (bare, not in a fence) → drop the line.
+      s = s.replace(/^[ \t]*\{\{#[^\n]*\}\}[ \t]*\r?\n?/gm, '');
+      return s;
+    }
     async function renderBook(chapter, anchor, term) {
       const d = freshDocview();
       const refs = curBookRefs || [];
@@ -3868,7 +3894,7 @@
         const items = toc.chapters || [];
         d.innerHTML = '<h1>📖 The Rust Book</h1>'
           + '<div class="booksearch"><input id="bsq" type="search" placeholder="Search the book…" aria-label="Search the Rust Book" autocomplete="off" autocapitalize="off" spellcheck="false"><div id="bsr" class="bsresults" aria-live="polite"></div></div>'
-          + `<p style="color:var(--fg-dim)">${items.length} embedded chapters — click one to read. Source is raw Book text, so a few include directives show through.</p>`
+          + `<p style="color:var(--fg-dim)">${items.length} embedded chapters — click one to read, fully offline.</p>`
           + quick
           + (items.length
             ? '<ul class="booktoc">' + items.map(c =>
@@ -3905,7 +3931,7 @@
             + (next ? `<a href="#" class="bookjump booknav-next" data-ch="${esc(next.id)}"><span class="booknav-dir">next →</span><span class="booknav-ttl">${esc(next.title)}</span></a>` : '<span></span>')
             + '</nav>'
           : '';
-        d.innerHTML = back + '<div class="bookbody">' + mdToHtml(ch.markdown) + '</div>' + navRow;
+        d.innerHTML = back + '<div class="bookbody">' + mdToHtml(cleanBookMarkdown(ch.markdown)) + '</div>' + navRow;
         // Tap-to-define here too: a beginner reading an early chapter hits terms
         // from LATER ones (a forward reference like `closure` or `Vec`) — tapping
         // reveals the plain-language definition. Skips code, so examples are
