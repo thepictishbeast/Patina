@@ -3893,7 +3893,7 @@
               bh.innerHTML = extra.length
                 ? '<h2 class="lbh-h">📄 Also found in the text of</h2><ul class="lbh-list">'
                   + extra.map(h => `<li><a href="#" class="lessonjump" data-id="${esc(h.id)}">${esc(h.title)}`
-                    + `<span class="bscount">${h.count}</span></a><small>${esc(h.snippet)}</small></li>`).join('')
+                    + `<span class="bscount">${h.count | 0}</span></a><small>${esc(h.snippet)}</small></li>`).join('')
                   + '</ul>'
                 : '';
               bh.hidden = extra.length === 0;
