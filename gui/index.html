@@ -784,8 +784,13 @@
     17%{transform:translateX(-50%) scale(1)}
     82%{opacity:1;transform:translateX(-50%) scale(1)}
     100%{opacity:0;transform:translateX(-50%) scale(.96)}}
+  /* Bigger, GOLD variant for a phase-completion milestone (a whole topic done). */
+  #celebrate.milestone{border-color:#e0a92e;background:linear-gradient(160deg,var(--bg-2),rgba(224,169,46,.15));padding:15px 26px}
+  #celebrate.milestone .cg-h{color:#e0a92e;font-size:19px}
+  #celebrate.milestone.show{animation:celebpop 3.6s ease forwards}
   @media (prefers-reduced-motion: reduce){
     #celebrate.show{animation:celebfade 2.6s ease forwards}
+    #celebrate.milestone.show{animation:celebfade 3.6s ease forwards}
     @keyframes celebfade{0%{opacity:0}8%{opacity:1}82%{opacity:1}100%{opacity:0}}}
   /* 🩺 Logs view */
   .docview .logbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:6px 0 12px}
@@ -1358,9 +1363,35 @@
       c.innerHTML = '<div class="cg-h">🎉 Exercise complete!</div>'
         + (nextId ? '<div class="cg-s">Next up: ' + esc(nextTitle || nextId) + '</div>'
                   : '<div class="cg-s">That was the last one — nice work.</div>');
-      c.classList.remove('show'); void c.offsetWidth; // restart the CSS animation
+      c.classList.remove('show', 'milestone'); void c.offsetWidth; // restart the CSS animation
       c.classList.add('show');
       clearTimeout(celebrate._t); celebrate._t = setTimeout(() => c.classList.remove('show'), 2600);
+    }
+    // Milestone: finishing the LAST exercise of a phase is a bigger moment than one
+    // exercise. If the just-completed exercise's phase is now fully done (and we
+    // haven't celebrated it before), show a gold "Phase complete!" instead of the
+    // usual popup. Detection is client-side from the exercises list already in hand
+    // (phase = id prefix); dedupe in localStorage so re-runs don't re-fire.
+    const PHASE_CELEB_KEY = 'ts-phase-celebrated';
+    function maybeCelebratePhase(exs, phase) {
+      if (!phase || !exs) return false;
+      const inPhase = ((exs.exercises) || []).filter(e => String(e.id).split('/')[0] === phase);
+      if (!inPhase.length || !inPhase.every(e => e.status === 'done')) return false;
+      let seen; try { seen = new Set(JSON.parse(localStorage.getItem(PHASE_CELEB_KEY) || '[]')); } catch (_) { seen = new Set(); }
+      if (seen.has(phase)) return false;
+      seen.add(phase); try { localStorage.setItem(PHASE_CELEB_KEY, JSON.stringify([...seen])); } catch (_) {}
+      celebratePhase(phase);
+      return true;
+    }
+    function celebratePhase(phase) {
+      const name = String(phase).replace(/-/g, ' ').replace(/\b\w/g, m => m.toUpperCase());
+      let c = document.getElementById('celebrate');
+      if (!c) { c = document.createElement('div'); c.id = 'celebrate'; c.setAttribute('role', 'status'); c.setAttribute('aria-live', 'polite'); document.body.appendChild(c); }
+      c.innerHTML = '<div class="cg-h">🏆 Phase complete!</div>'
+        + '<div class="cg-s">You finished <b>' + esc(name) + '</b> — every exercise done. On to the next topic!</div>';
+      c.classList.remove('show', 'milestone'); void c.offsetWidth;
+      c.classList.add('show', 'milestone');
+      clearTimeout(celebrate._t); celebrate._t = setTimeout(() => c.classList.remove('show', 'milestone'), 3600);
     }
     async function copyText(s) {
       s = s == null ? '' : String(s);
@@ -2126,13 +2157,15 @@
           const rec = JSON.parse(AndroidSeam.recordRun(curExercise, passed, passed && termuxOp !== 'check'));
           advancedTo = rec && rec.advanced_to;
         } catch (_) {}
-        try { const exs = await fetch('api/exercises').then(r => r.json()); if (exs) renderList(exs); } catch (_) {}
+        let exsData = null;
+        try { exsData = await fetch('api/exercises').then(r => r.json()); if (exsData) renderList(exsData); } catch (_) {}
+        const completedPhase = curExercise ? String(curExercise).split('/')[0] : null;
         if (advancedTo) {
           let nextTitle = null;
           try { const cur = await fetch('api/current').then(r => r.json()); renderCurrent(cur); nextTitle = cur && cur.title; } catch (_) {}
           term.writeln(''); term.writeln(g('✓ exercise complete — advancing to ' + (nextTitle || advancedTo)));
           statusEl().textContent = 'advanced ✓';
-          celebrate(advancedTo, nextTitle);
+          if (!maybeCelebratePhase(exsData, completedPhase)) celebrate(advancedTo, nextTitle);
         }
       }
       // Gate ONCE per exercise (Paul): the prediction persists after a run so you
@@ -2194,14 +2227,18 @@
         statusEl().textContent = out.passed ? 'passed' : 'failed';
         // Refresh the list/gauge/attempts after every run; if a pass advanced
         // the learner, load the next exercise into the editor.
-        try { const exs = await fetch('api/exercises').then(r => r.json()); if (exs) renderList(exs); } catch (_) {}
+        let exsData = null;
+        try { exsData = await fetch('api/exercises').then(r => r.json()); if (exsData) renderList(exsData); } catch (_) {}
+        // Capture the completed exercise's phase BEFORE renderCurrent overwrites curExercise.
+        const completedPhase = curExercise ? String(curExercise).split('/')[0] : null;
         try { const rev = await fetch('api/review').then(r => r.json()); renderReview(rev); } catch (_) {}
         if (out.advanced_to) {
           let nextTitle = null;
           try { const cur = await fetch('api/current').then(r => r.json()); renderCurrent(cur); nextTitle = cur && cur.title; } catch (_) {}
           term.writeln(''); term.writeln(g('✓ exercise complete — advancing to ' + (nextTitle || out.advanced_to)));
           statusEl().textContent = 'advanced ✓';
-          celebrate(out.advanced_to, nextTitle);
+          // A completed phase is the bigger moment — else the usual exercise popup.
+          if (!maybeCelebratePhase(exsData, completedPhase)) celebrate(out.advanced_to, nextTitle);
         }
       } catch (e) {
         logEvent('net', 'info', 'local /api/run unavailable (' + (e && e.message || e) + ') — routing to on-device path');

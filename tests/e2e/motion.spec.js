@@ -69,4 +69,29 @@ test.describe('Motion polish', () => {
     expect(parseFloat(viewDur)).toBeLessThan(0.01);
     await ctx.close();
   });
+
+  test('finishing a whole phase fires a gold milestone celebration (once)', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForSelector('#exTitle');
+    await page.evaluate(() => localStorage.removeItem('ts-phase-celebrated'));
+    // The detector: a fully-done phase fires once then dedupes; a partial phase never does.
+    const logic = await page.evaluate(() => {
+      const allDone = { exercises: [{ id: 'x/a', status: 'done' }, { id: 'x/b', status: 'done' }] };
+      const partial = { exercises: [{ id: 'y/a', status: 'done' }, { id: 'y/b', status: 'current' }] };
+      return {
+        first: maybeCelebratePhase(allDone, 'x'),
+        again: maybeCelebratePhase(allDone, 'x'),
+        partial: maybeCelebratePhase(partial, 'y'),
+      };
+    });
+    expect(logic.first, 'a fully-done phase celebrates').toBe(true);
+    expect(logic.again, 'the same phase never re-celebrates').toBe(false);
+    expect(logic.partial, 'a partial phase does not celebrate').toBe(false);
+    // The milestone popup is the distinct GOLD variant with a phase name.
+    await page.evaluate(() => celebratePhase('control-flow'));
+    const c = page.locator('#celebrate');
+    await expect(c).toHaveClass(/milestone/);
+    await expect(c.locator('.cg-h')).toHaveText(/Phase complete/);
+    await expect(c.locator('.cg-s')).toContainText('Control Flow');
+  });
 });
