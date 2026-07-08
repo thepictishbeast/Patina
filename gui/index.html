@@ -308,10 +308,13 @@
   .ide-file-new:hover, .ide-file-new:focus-visible { background:var(--bg-3); border-color:var(--accent); color:var(--fg); outline:none; }
   .ide-empty { color:var(--fg-dim); font-size:12.5px; padding:14px 4px; }
   /* Explorer filter box — jump to any file by name across all phases. */
-  .ide-filterwrap { padding:0 0 8px; }
-  .ide-filter { width:100%; box-sizing:border-box; background:var(--bg-2); color:var(--fg); border:1px solid var(--line);
+  .ide-filterwrap { display:flex; gap:6px; align-items:stretch; padding:0 0 8px; }
+  .ide-filter { flex:1 1 auto; min-width:0; box-sizing:border-box; background:var(--bg-2); color:var(--fg); border:1px solid var(--line);
     border-radius:8px; padding:6px 9px; font:inherit; font-size:12px; }
   .ide-filter:focus { outline:none; border-color:var(--accent); }
+  .ide-foldall { flex:0 0 auto; background:var(--bg-2); color:var(--fg-dim); border:1px solid var(--line); border-radius:8px;
+    padding:0 9px; cursor:pointer; font-size:12px; line-height:1; }
+  .ide-foldall:hover, .ide-foldall:focus-visible { color:var(--fg); border-color:var(--accent); outline:none; }
   .ide-file.filter-hide, .ide-group.filter-hide { display:none; }
   /* While filtering, matching groups reveal their rows regardless of fold state. */
   .ide-treelist.filtering .ide-group.filter-open .ide-grp-body { display:block; }
@@ -1779,7 +1782,7 @@
         + '<div class="ide-body">'
         +   '<div class="ide-scrim" id="idescrim"></div>'
         +   '<aside class="ide-sidebar" id="idetree" aria-label="File explorer">'
-        +     '<div class="ide-filterwrap"><input id="idefilter" class="ide-filter" type="search" placeholder="🔎 Filter files…" aria-label="Filter files by name" autocomplete="off" autocapitalize="off" spellcheck="false"></div>'
+        +     '<div class="ide-filterwrap"><input id="idefilter" class="ide-filter" type="search" placeholder="🔎 Filter files…" aria-label="Filter files by name" autocomplete="off" autocapitalize="off" spellcheck="false"><button id="idefoldall" class="ide-foldall" type="button" title="Collapse all phases" aria-label="Collapse or expand all phases">▾</button></div>'
         +     '<div class="ide-treelist" id="idetreelist"><div class="ide-empty">Loading files…</div></div>'
         +   '</aside>'
         +   '<div class="ide-main">'
@@ -1799,6 +1802,7 @@
         + '</div>';
       document.getElementById('idefilesbtn').onclick = () => ideSetSidebar(document.getElementById('idetree').classList.contains('closed'));
       { const flt = document.getElementById('idefilter'); if (flt) { flt.oninput = () => ideFilterTree(flt.value); flt.onkeydown = e => { if (e.key === 'Escape') { flt.value = ''; ideFilterTree(''); } }; } }
+      { const fa = document.getElementById('idefoldall'); if (fa) fa.onclick = () => ideFoldAll(); }
       document.getElementById('idetermbtn').onclick = () => ideSetTerm(document.getElementById('ideterm').classList.contains('closed'));
       document.getElementById('idescrim').onclick = () => ideSetSidebar(false);
       const full = document.getElementById('idefull');
@@ -1844,6 +1848,7 @@
     // that folds its body. Returns { g, body } for the caller to fill with rows.
     function ideMakeGroup(key, label, count, collapsed) {
       const g = document.createElement('div'); g.className = 'ide-group' + (collapsed ? ' collapsed' : '');
+      g.dataset.gkey = key; // persistence key, so "fold all" can update every group
       const h = document.createElement('button'); h.type = 'button'; h.className = 'ide-group-h';
       h.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
       h.innerHTML = '<span class="ide-grp-chev" aria-hidden="true">▾</span>'
@@ -1919,6 +1924,7 @@
       // If a filter is active (e.g. the tree re-rendered after a scratch add), re-apply it.
       const flt = document.getElementById('idefilter');
       if (flt && flt.value.trim()) ideFilterTree(flt.value);
+      ideSyncFoldAll(); // point the fold-all button at its next action
     }
     // Live filter over the whole tree by file name: matching rows show (their
     // group forced open regardless of fold state), non-matching rows + empty
@@ -1945,6 +1951,31 @@
         g.classList.toggle('filter-hide', !anyMatch);   // hide phases with no match
         g.classList.toggle('filter-open', anyMatch);    // reveal matches even if folded
       });
+    }
+    // One-click fold/unfold of EVERY phase: if any group is open, collapse them
+    // all; otherwise expand them all. Persists each group's key so the choice
+    // sticks, and re-labels the button to its next action.
+    function ideFoldAll() {
+      const list = document.getElementById('idetreelist'); if (!list) return;
+      const groups = [...list.querySelectorAll('.ide-group')];
+      const collapse = groups.some(g => !g.classList.contains('collapsed')); // any open → collapse all
+      const s = ideGroupsState();
+      groups.forEach(g => {
+        g.classList.toggle('collapsed', collapse);
+        const h = g.querySelector('.ide-group-h');
+        if (h) { h.setAttribute('aria-expanded', collapse ? 'false' : 'true'); }
+        if (g.dataset.gkey) s[g.dataset.gkey] = collapse;
+      });
+      ideGroupsSave(s);
+      ideSyncFoldAll();
+    }
+    // Point the fold-all button at its NEXT action based on current state.
+    function ideSyncFoldAll() {
+      const fa = document.getElementById('idefoldall'); if (!fa) return;
+      const groups = [...document.querySelectorAll('#idetreelist .ide-group')];
+      const anyOpen = groups.some(g => !g.classList.contains('collapsed'));
+      fa.textContent = anyOpen ? '▾' : '▸';
+      fa.title = anyOpen ? 'Collapse all phases' : 'Expand all phases';
     }
 
     // ── Runnable code examples in lessons/book ──────────────────────────────────

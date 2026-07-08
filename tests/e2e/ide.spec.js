@@ -258,4 +258,28 @@ test.describe('Fullscreen IDE', () => {
     await filter.fill('');
     await expect.poll(() => page.locator('.ide-group:visible').count()).toBeGreaterThan(1);
   });
+
+  test('the fold-all button collapses / expands every phase and persists', async ({ page }) => {
+    await page.goto('/');
+    await page.evaluate(() => { localStorage.removeItem('ts-ide-groups'); localStorage.removeItem('ts-ide-state'); });
+    await page.evaluate(() => showView('ide'));
+    await page.waitForSelector('.ide-group-h');
+    const foldall = page.locator('#idefoldall');
+    await expect(foldall).toBeVisible();
+    const total = await page.locator('.ide-group').count();
+    expect(await page.locator('.ide-group:not(.collapsed)').count(), 'some phase is open initially').toBeGreaterThan(0);
+    // Collapse all → nothing open, no file rows visible (whole curriculum on one screen).
+    await foldall.click();
+    await expect.poll(() => page.locator('.ide-group:not(.collapsed)').count()).toBe(0);
+    expect(await page.locator('.ide-file:visible').count(), 'all rows hidden when fully folded').toBe(0);
+    // Expand all → every phase open.
+    await foldall.click();
+    await expect.poll(() => page.locator('.ide-group:not(.collapsed)').count()).toBe(total);
+    // Collapse all again, reload → the folded state persists.
+    await foldall.click();
+    await page.goto('/');
+    await page.evaluate(() => showView('ide'));
+    await page.waitForSelector('.ide-group-h');
+    expect(await page.locator('.ide-group:not(.collapsed)').count(), 'fold-all persisted across reload').toBe(0);
+  });
 });
