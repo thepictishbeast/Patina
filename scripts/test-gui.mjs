@@ -56,8 +56,8 @@ const deps = [
   "const RS_PRIM = /^(?:i8|i16|i32|i64|i128|isize|u8|u16|u32|u64|u128|usize|f32|f64|bool|char|str)$/;",
 ].join('\n');
 const moduleSrc = deps + '\n' + grabFn('highlightRust') + '\n' + grabFn('mdToHtml') +
-  '\n' + grabFn('hlLines') +
-  '\nexport { esc, highlightRust, mdToHtml, hlLines };\n';
+  '\n' + grabFn('hlLines') + '\n' + grabFn('cleanBookMarkdown') +
+  '\nexport { esc, highlightRust, mdToHtml, hlLines, cleanBookMarkdown };\n';
 
 const dir = mkdtempSync(join(tmpdir(), 'ts-gui-'));
 const modPath = join(dir, 'gui-extract.mjs');
@@ -65,7 +65,7 @@ writeFileSync(modPath, moduleSrc);
 let mod;
 try { mod = await import(pathToFileURL(modPath).href); }
 finally { rmSync(dir, { recursive: true, force: true }); }
-const { esc, highlightRust, mdToHtml, hlLines } = mod;
+const { esc, highlightRust, mdToHtml, hlLines, cleanBookMarkdown } = mod;
 
 let fails = 0;
 const ok = m => console.log('  ok   — ' + m);
@@ -151,6 +151,24 @@ check(mdToHtml('### Sub').includes('<h3 id="sub">Sub</h3>'), '`### x` → <h3> (
 check(mdToHtml('#### Deeper').includes('<h4 id="deeper">Deeper</h4>'), '`#### x` → <h4> (was literal before)');
 check(mdToHtml('###### Deepest').includes('<h6 id="deepest">Deepest</h6>'), '`###### x` → <h6>');
 check(!mdToHtml('#nospace heading').includes('<h1'), '`#nospace` (no space) is NOT a heading');
+
+// 7b. cleanBookMarkdown strips mdBook HTML-comment artifacts. Because mdToHtml
+// esc()apes `<` before parsing, an un-stripped `<!-- … -->` renders as LITERAL
+// visible text (e.g. "…Sized Trait <!-- ignore --> in Chapter 20"), not an
+// invisible comment. The Book's 182 editorial comments used to leak this way.
+{
+  const inlineSrc = 'Prose [label]<!-- ignore --> after.';
+  const inlineHtml = mdToHtml(cleanBookMarkdown(inlineSrc));
+  check(!/&lt;!--/.test(inlineHtml) && !inlineHtml.includes('ignore'),
+    'cleanBookMarkdown drops an inline `<!-- ignore -->` (no literal comment leaks)');
+  const blockSrc = '# T\n\n<!-- Old headings. Do not remove. -->\n\nBody.';
+  const blockHtml = mdToHtml(cleanBookMarkdown(blockSrc));
+  check(!blockHtml.includes('Old headings') && blockHtml.includes('Body.'),
+    'cleanBookMarkdown drops a bare `<!-- … -->` line but keeps the prose');
+  const multiSrc = 'A<!--\nmulti\nline\n-->B';
+  check(!/&lt;!--/.test(mdToHtml(cleanBookMarkdown(multiSrc))),
+    'cleanBookMarkdown drops a multi-line comment too');
+}
 
 // 8. GFM tables (the ch03 integer-types table renders as a real <table>).
 const tbl = mdToHtml('| Length | Signed |\n|--------|--------|\n| 8-bit | `i8` |\n| 16-bit | `i16` |');

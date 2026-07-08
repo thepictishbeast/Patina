@@ -4217,6 +4217,13 @@
     function cleanBookMarkdown(md) {
       if (!md) return md;
       let s = md;
+      // Strip HTML comments FIRST. They're mdBook editorial artifacts — bare
+      // `<!-- Old headings… -->` lines and inline `<!-- ignore -->` markers — and
+      // because mdToHtml esc()apes `<` before parsing, an un-stripped comment renders
+      // as LITERAL visible text (e.g. "…Sized Trait <!-- ignore --> in Chapter 20"),
+      // not an invisible HTML comment. The lesson renderer already drops these; the
+      // Book needs the same. (Rust code carries no `<!-- -->`, so examples are safe.)
+      s = s.replace(/<!--[\s\S]*?-->/g, '');
       // A code/console fence whose only content is an include directive → a clean
       // one-line placeholder (rust = an example to try; console/text = its output).
       s = s.replace(/```(\w*)[ \t]*\r?\n[ \t]*\{\{#[^\n]*\}\}[ \t]*\r?\n```/g, (_m, lang) =>
