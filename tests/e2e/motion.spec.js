@@ -21,6 +21,40 @@ test.describe('Motion polish', () => {
     expect(await page.evaluate(() => getComputedStyle(document.querySelector('.docview')).animationName)).toBe('fadein');
   });
 
+  test('a perfect prediction shows the verdict visibly and celebrates', async ({ page }) => {
+    // The predict-first payoff ("were you right?") lives in the VISIBLE locked
+    // summary (#predictbar collapses once answered, so the verdict must not hide
+    // with it). A perfect guess (outcome + code) earns a 🎯 pop; an imperfect one
+    // does not. Driven directly — no rustc round-trip needed.
+    await page.goto('/');
+    await page.waitForSelector('#exTitle');
+    await page.evaluate(() => showView('practice'));
+    await page.waitForSelector('#predictbar');
+    await page.locator('.pbtn', { hasText: 'fails' }).click(); // lock → #predictDone shows
+    const perfect = await page.evaluate(() => {
+      predict.code = 'E0384'; lastCode = 'E0384';
+      showPrediction({ passed: false, raw_stderr: 'error[E0384]: x' });
+      const d = document.getElementById('predictDone');
+      const r = d.getBoundingClientRect();
+      return { visible: getComputedStyle(d).display !== 'none' && r.height > 0,
+        text: d.textContent, celebrated: !!d.querySelector('.pv-perfect'), change: !!d.querySelector('#predictChange') };
+    });
+    expect(perfect.visible, 'the verdict is actually shown, not in the collapsed bar').toBe(true);
+    expect(perfect.text).toContain('🎯');
+    expect(perfect.text).toContain('nailed it');
+    expect(perfect.celebrated).toBe(true);
+    expect(perfect.change, 'can still re-predict').toBe(true);
+    // Right outcome but WRONG code → no celebration.
+    const imperfect = await page.evaluate(() => {
+      predict.code = 'E0502'; lastCode = 'E0384';
+      showPrediction({ passed: false, raw_stderr: 'error[E0384]: x' });
+      const d = document.getElementById('predictDone');
+      return { bull: d.textContent.includes('🎯'), celebrated: !!d.querySelector('.pv-perfect') };
+    });
+    expect(imperfect.bull, 'no bullseye when the code guess was wrong').toBe(false);
+    expect(imperfect.celebrated).toBe(false);
+  });
+
   test('prefers-reduced-motion collapses all of it', async ({ browser }) => {
     const ctx = await browser.newContext({ reducedMotion: 'reduce' });
     const page = await ctx.newPage();

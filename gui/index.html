@@ -590,6 +590,13 @@
     outline:none; }
   .pin:focus { border-color:var(--accent); }
   .pv { font-size:12.5px; font-weight:600; }
+  /* The predict verdict now shows in the (visible) locked summary. A PERFECT
+     prediction (outcome AND error code both right) earns a brief pop — reinforcing
+     the predict-first habit. The 🎯 stays under reduced motion. */
+  .pv-verdict { font-weight:600; }
+  .pv-perfect { display:inline-block; animation:predictNailed .8s cubic-bezier(.2,.8,.3,1) 1; }
+  @keyframes predictNailed { 0%{transform:scale(1)} 22%{transform:scale(1.13)} 55%{transform:scale(.98)} 100%{transform:scale(1)} }
+  @media (prefers-reduced-motion: reduce){ .pv-perfect{ animation:none } }
   .editor { margin:0 20px 14px; border:1px solid var(--line); border-radius:var(--radius); background:var(--bg-2);
     box-shadow:var(--shadow), inset 0 1px 0 var(--edge-hi); overflow:hidden; }
   .editor .bar { display:flex; align-items:center; gap:8px; padding:8px 12px; border-bottom:1px solid var(--line);
@@ -2525,14 +2532,32 @@
       const parts = [compRight
         ? '✓ outcome: right'
         : `✗ you said it ${predict.compiles ? 'passes' : 'fails'}, it ${actualPasses ? 'passed' : 'failed'}`];
-      if (predict.code.trim()) {
-        const guess = predict.code.trim().toUpperCase();
-        if (actualCode && guess === actualCode.toUpperCase()) parts.push(`✓ error ${actualCode} — nailed it`);
-        else if (actualCode) parts.push(`✗ error: you guessed ${guess}, it was ${actualCode}`);
-        else parts.push('(no error code this run)');
+      const guessed = predict.code.trim().toUpperCase();
+      let codeRight = !guessed;                 // no code guessed → outcome is what's judged
+      if (guessed) {
+        if (actualCode && guessed === actualCode.toUpperCase()) { parts.push(`✓ error ${actualCode} — nailed it`); codeRight = true; }
+        else if (actualCode) { parts.push(`✗ error: you guessed ${guessed}, it was ${actualCode}`); codeRight = false; }
+        else { parts.push('(no error code this run)'); codeRight = false; } // guessed a code, but it passed
       }
-      el.textContent = parts.join(' · ');
-      el.style.color = compRight ? 'var(--done)' : 'var(--error)';
+      // A PERFECT prediction: outcome right AND (no code guessed, or the code matched).
+      const perfect = compRight && codeRight;
+      const verdict = (perfect ? '🎯 ' : '') + parts.join(' · ');
+      const color = compRight ? 'var(--done)' : 'var(--error)';
+      // Surface the verdict where the learner ACTUALLY looks: the visible locked
+      // summary (#predictDone). #predictbar collapses to display:none once answered,
+      // so the old #predverdict inside it was written but never seen — the whole
+      // payoff of predict-first ("were you right?") was invisible. Keeps the
+      // "change" link (wired by delegation) so re-predicting still works.
+      const done = document.getElementById('predictDone');
+      if (done && !done.hidden) {
+        done.innerHTML = '✓ Predicted: <b>' + (predict.compiles ? 'passes' : 'fails') + '</b>'
+          + (predict.code ? ' (' + esc(predict.code) + ')' : '')
+          + ' · <span class="pv-verdict' + (perfect ? ' pv-perfect' : '') + '" style="color:' + color + '">' + esc(verdict) + '</span>'
+          + ' · <a href="#" id="predictChange">change</a>';
+        if (perfect) { const s = done.querySelector('.pv-perfect'); if (s) void s.offsetWidth; } // replay the pop
+      }
+      // Keep the legacy hidden span in sync (harmless if unseen).
+      if (el) { el.textContent = verdict; el.style.color = color; }
     }
     const lsKey = id => 'ts-edit:' + id;
 
