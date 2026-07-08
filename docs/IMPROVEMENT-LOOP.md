@@ -78,6 +78,15 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   per-surface color flag plumbed through Core/command_plan (web on, TUI off).
 
 ### Editor / IDE
+- ✅ **Book reading-position memory — B3 "remember position per book" (`94576dc`, 2026-07-08).** Every view render
+  reset `scrollTop` to 0, so opening a long Rust Book chapter, scrolling halfway, leaving to look something up,
+  and coming back dumped you at the top. `renderBook` now persists the scroll offset per chapter (debounced
+  ~250ms, localStorage `ts-book-pos:<chapter>`, fully offline) and resumes there on a plain reopen; an explicit
+  book_ref anchor or search-term jump still wins (deliberate intent). Clamps safely if the chapter changed;
+  freshDocview()'s new-node-per-render means the scroll listener GCs with the old view (no leak). Shared
+  gui/index.html → the Android WebView gets it via build-apk.sh (localStorage works offline there too). GUI-shell
+  only, no CV bump. Verified live 390×844 (scroll→leave→reopen restores the offset) + a new book-nav e2e; full
+  suite **99/99** green. Natural follow-ups (not done, low-pri): same for lessons; a "⤒ top" affordance.
 - ✅ **Learn-hub icon dedup (`bbd9635`, 2026-07-08, live-QA find).** A 390×844 Playwright QA pass of the whole
   app (landing/Practice, Learn hub, Lesson 0, ⋯ menu) found the app in genuinely strong shape — correct
   baby-steps exercise ordering, rich micro-animations WITH reduced-motion guards, per-exercise + phase-complete
