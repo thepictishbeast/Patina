@@ -643,6 +643,16 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   unresolved concept fails `cargo test` loudly instead of shipping a silent dead chip.** This closes the
   dead-chip class for good (fix + enforcement). NOTE for self when adding exercises: pick a `concept` that
   already resolves, or add its alias to glossary.toml in the SAME commit — golden_corpus will now enforce it.
+  **★ PER-TICK COMPANION GUARD (`f6c2545`, 2026-07-08)** — the golden_corpus guard above lives in
+  `cargo test --workspace`, which is NOT in the fast per-tick gate (e2e + gui-transform). That gap is exactly
+  how two dead chips (`duplicate-definition`, `dereference-non-reference`) shipped unseen last tick until a
+  periodic full check.sh caught them. Fix: `scripts/test-gui.mjs` — which already validates concept→lesson —
+  now also asserts every exercise `concept` resolves in glossary.toml, mirroring `rpro-glossary::norm`
+  **faithfully** (lowercase; collapse `-`/`_`/whitespace to one space; trim, matching its
+  `split_whitespace().join(" ")`) over term names AND aliases. A looser JS norm would false-green while
+  golden_corpus fails, so it's kept exact. Verified: 69 concepts all resolve against 363 glossary keys, and
+  negative-tested that a bogus concept is flagged. Now a dead chip fails the per-tick gate immediately, no
+  cargo build required — the class is caught at both cadences.
   **★ Convergence CONFIRMED + `docs/REVIEW-GUIDE.md` authored** (advisor-directed, after 4 filler ticks): ran a
   saturation pass to prove convergence rather than assume it — **(a) `cargo audit` = 0 vulnerabilities** (236
   deps, exit 0; #21's *corrective* part is a verified no-op, only the CI-enforce gate remains deferred); **(b)
