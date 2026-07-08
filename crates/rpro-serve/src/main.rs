@@ -1067,6 +1067,10 @@ async fn glossary_handler(
 #[derive(Debug, Deserialize)]
 struct LessonQuery {
     id: Option<String>,
+    /// Full-text search term. When present, the handler returns matching items
+    /// (id + title + match count + a snippet) instead of the list or one item —
+    /// mirrors `/api/book?q=`, shared across lessons/quizzes/cheatsheets.
+    q: Option<String>,
 }
 
 /// The first `# ` heading in a lesson's markdown, used as its title (falls back
@@ -1103,15 +1107,69 @@ fn md_files(root: &Path, subdir: &str) -> Vec<PathBuf> {
 /// SECURITY: `id` is matched against the actual file stems in the seeded dir —
 /// never joined onto a filesystem path — so a traversal value finds no match.
 /// The content dir is server-seeded; no client input chooses a file.
+/// A short, plain-text preview around the first match of `needle_lower` (already
+/// lowercased) in `md`: collapses whitespace, drops the loudest markdown noise,
+/// and stays on char boundaries so non-ASCII prose can't panic the slice.
+fn md_snippet(md: &str, needle_lower: &str) -> String {
+    let pos = md.to_lowercase().find(needle_lower).unwrap_or(0);
+    let mut start = pos.saturating_sub(60);
+    while start > 0 && !md.is_char_boundary(start) {
+        start -= 1;
+    }
+    let mut end = (pos + needle_lower.len() + 90).min(md.len());
+    while end < md.len() && !md.is_char_boundary(end) {
+        end += 1;
+    }
+    let clean = md[start..end]
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+        .replace(['#', '`', '*', '>'], "");
+    format!(
+        "{}{}{}",
+        if start > 0 { "…" } else { "" },
+        clean.trim(),
+        if end < md.len() { "…" } else { "" }
+    )
+}
+
 fn md_collection(
     root: &Path,
     subdir: &str,
     id: Option<String>,
+    query: Option<String>,
     list_key: &str,
     item_key: &str,
 ) -> axum::response::Response {
     let files = md_files(root, subdir);
     let mut obj = serde_json::Map::new();
+    // `?q=TERM` — full-text search over every item's markdown (shared by lessons,
+    // quizzes, cheatsheets). Returns hits {id, title, count, snippet} sorted by
+    // match count. Checked BEFORE `id` so a search never path-joins the term; it
+    // only reads item markdown already held in the store.
+    if let Some(term) = query.filter(|t| !t.trim().is_empty()) {
+        let needle = term.trim().to_lowercase();
+        let mut hits: Vec<serde_json::Value> = files
+            .iter()
+            .filter_map(|p| {
+                let id = p.file_stem()?.to_str()?.to_owned();
+                let md = std::fs::read_to_string(p).ok()?;
+                let count = md.to_lowercase().matches(&needle).count();
+                if count == 0 {
+                    return None;
+                }
+                Some(serde_json::json!({
+                    "id": id.clone(),
+                    "title": lesson_title(&md, &id),
+                    "count": count,
+                    "snippet": md_snippet(&md, &needle),
+                }))
+            })
+            .collect();
+        hits.sort_by(|a, b| b["count"].as_u64().cmp(&a["count"].as_u64()));
+        obj.insert("hits".to_owned(), serde_json::Value::Array(hits));
+        return Json(serde_json::Value::Object(obj)).into_response();
+    }
     let Some(id) = id else {
         let items: Vec<serde_json::Value> = files
             .iter()
@@ -1141,7 +1199,7 @@ async fn lessons_handler(
     State(state): State<AppState>,
     Query(q): Query<LessonQuery>,
 ) -> impl IntoResponse {
-    md_collection(&state.store_root, "lessons", q.id, "lessons", "lesson")
+    md_collection(&state.store_root, "lessons", q.id, q.q, "lessons", "lesson")
 }
 
 /// `GET /api/quizzes` — the per-phase self-check quizzes (predict-then-verify).
@@ -1149,7 +1207,7 @@ async fn quizzes_handler(
     State(state): State<AppState>,
     Query(q): Query<LessonQuery>,
 ) -> impl IntoResponse {
-    md_collection(&state.store_root, "quizzes", q.id, "quizzes", "quiz")
+    md_collection(&state.store_root, "quizzes", q.id, q.q, "quizzes", "quiz")
 }
 
 /// `GET /api/cheatsheets` — the per-phase quick-reference cheatsheets.
@@ -1161,6 +1219,7 @@ async fn cheatsheets_handler(
         &state.store_root,
         "cheatsheets",
         q.id,
+        q.q,
         "cheatsheets",
         "cheatsheet",
     )
@@ -1757,6 +1816,51 @@ mod tests {
         assert!(
             v["lesson"].is_null(),
             "a traversal-looking id resolves to no lesson"
+        );
+    }
+
+    #[tokio::test]
+    async fn lessons_full_text_search_returns_ranked_hits() {
+        let (_d, app) = seeded_app();
+        // `?q=` searches every lesson's markdown; a common term yields ranked hits.
+        let res = app
+            .clone()
+            .oneshot(get("/api/lessons?q=immutable"))
+            .await
+            .unwrap();
+        assert_eq!(res.status(), StatusCode::OK);
+        let v: serde_json::Value = serde_json::from_str(&body_string(res).await).unwrap();
+        let hits = v["hits"].as_array().expect("hits array");
+        assert!(
+            !hits.is_empty(),
+            "a common term matches at least one lesson"
+        );
+        assert!(hits.iter().all(|h| {
+            h["id"].as_str().is_some_and(|s| !s.is_empty())
+                && h["title"].as_str().is_some_and(|s| !s.is_empty())
+                && h["count"].as_u64().is_some_and(|c| c > 0)
+                && h["snippet"].as_str().is_some_and(|s| !s.is_empty())
+        }));
+        // Ranked by match count, high to low.
+        let counts: Vec<u64> = hits.iter().map(|h| h["count"].as_u64().unwrap()).collect();
+        assert!(
+            counts.windows(2).all(|w| w[0] >= w[1]),
+            "hits are sorted by match count"
+        );
+        // A term that appears nowhere → an empty hit list (not an error, not the list).
+        let res = app
+            .clone()
+            .oneshot(get("/api/lessons?q=zzznotawordzzz"))
+            .await
+            .unwrap();
+        let v: serde_json::Value = serde_json::from_str(&body_string(res).await).unwrap();
+        assert!(
+            v["hits"].as_array().expect("hits array present").is_empty(),
+            "a no-match search returns an empty hits array"
+        );
+        assert!(
+            v.get("lessons").is_none(),
+            "a search never falls back to the list"
         );
     }
 
