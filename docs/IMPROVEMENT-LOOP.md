@@ -78,6 +78,17 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   per-surface color flag plumbed through Core/command_plan (web on, TUI off).
 
 ### Editor / IDE
+- ✅ **TUI/CLI HTML-comment strip — the B4 twin, class CLOSED on every surface (`bafa44c`, 2026-07-10).** The
+  pre-scoped follow-up to `4359a52`: the Rust `clean_mdbook_source` (rpro-book, TUI/CLI book reader) had the same
+  gap as the GUI — no `<!-- -->` handling, so mdBook editorial comments rendered as literal text there too. Added
+  a dependency-free `strip_html_comments` pre-pass (single/multi-line; unterminated `<!--` drops the remainder,
+  matching browser/mdBook) + a unit test pinning comments-gone/prose-kept/code-and-its-`//`-comments-untouched.
+  Along the way clippy `-D warnings` flagged the first draft's single-pattern `match` (`single_match_else`) →
+  rewritten as `if let … else`. Verified: rpro-book 13/13, full workspace green, fmt + seam-guard clean.
+  Render-time fix, bundled sources unchanged → no CV bump. The HTML-comment leak class is now fixed on BOTH
+  renderers (GUI `cleanBookMarkdown` + Rust `clean_mdbook_source`), each with its own regression guard.
+  (Tick note: an interrupt hit between verify and commit; the working tree survived and gates were re-run
+  before committing — nothing was redone.)
 - ✅ **Book HTML-comment leak fixed — B4 readability (`4359a52`, 2026-07-08).** The in-app Rust Book rendered its
   mdBook editorial comments as LITERAL text: a bare `<!-- Old headings… -->` paragraph atop many chapters + inline
   `<!-- ignore -->` mid-sentence. Root cause: `mdToHtml` esc()apes `<` before parsing, so an un-stripped comment
