@@ -108,6 +108,10 @@ pub fn clean_mdbook_source(source: &str, url: &str) -> String {
             out.push('\n');
         }
     };
+    // Strip HTML comments first — mdBook chapters carry editorial ones (bare
+    // `<!-- Old headings… -->` lines, inline `<!-- ignore -->`) that would otherwise
+    // render as literal text on the TUI/CLI. Mirrors the GUI's cleanBookMarkdown.
+    let source = strip_html_comments(source);
     let mut lines = source.lines();
     while let Some(line) = lines.next() {
         let trimmed = line.trim_start();
@@ -160,6 +164,28 @@ pub fn clean_mdbook_source(source: &str, url: &str) -> String {
         out.push_str(line);
         out.push('\n');
     }
+    out
+}
+
+/// Remove HTML comments (`<!-- … -->`, single- or multi-line). mdBook chapters
+/// carry editorial comments that would render as literal text once the source is
+/// displayed. Written by hand (no regex dep) so it stays cheap and offline. Rust
+/// code carries no `<!-- -->`, so fenced examples are unaffected. An unterminated
+/// `<!--` drops the remainder, matching how a browser/mdBook swallow it.
+fn strip_html_comments(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    let mut rest = s;
+    while let Some(start) = rest.find("<!--") {
+        out.push_str(&rest[..start]);
+        if let Some(end) = rest[start + 4..].find("-->") {
+            rest = &rest[start + 4 + end + 3..];
+        } else {
+            // Unterminated `<!--` → drop the remainder (as a browser/mdBook would).
+            rest = "";
+            break;
+        }
+    }
+    out.push_str(rest);
     out
 }
 
@@ -387,6 +413,39 @@ mod tests {
         );
         assert!(!out.contains("does_not_compile"), "annotations stripped");
         assert!(out.contains("let x = 5;"), "code body kept");
+    }
+
+    #[test]
+    fn html_comments_stripped_but_prose_and_code_kept() {
+        // mdBook editorial comments (bare, inline, and multi-line) must not survive
+        // to the display source — they render as literal text otherwise. Real prose
+        // and Rust code (including its own `//` comments) are untouched.
+        let src = "<!-- Old headings. Do not remove. -->\n\nRead the Sized Trait <!-- ignore --> in Chapter 20.\n\n<!--\nmulti\nline\n-->\n\n```rust\nlet x = 5; // a real code comment\n```\n";
+        let out = clean_mdbook_source(src, URL);
+        assert!(
+            !out.contains("<!--") && !out.contains("-->"),
+            "no comment markers survive: {out}"
+        );
+        assert!(
+            !out.contains("Old headings"),
+            "bare comment content gone: {out}"
+        );
+        assert!(
+            !out.contains("ignore"),
+            "inline comment content gone: {out}"
+        );
+        assert!(
+            !out.contains("multi"),
+            "multi-line comment content gone: {out}"
+        );
+        assert!(
+            out.contains("Read the Sized Trait") && out.contains("in Chapter 20."),
+            "surrounding prose kept: {out}"
+        );
+        assert!(
+            out.contains("let x = 5; // a real code comment"),
+            "code and its // comment untouched: {out}"
+        );
     }
 
     #[test]
