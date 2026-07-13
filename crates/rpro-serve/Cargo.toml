@@ -17,6 +17,7 @@ rpro-state = { path = "../rpro-state" }
 rpro-storage-fs = { path = "../rpro-storage-fs" }
 rpro-lang = { path = "../rpro-lang" }
 rpro-lang-rust = { path = "../languages/rust" }
+rpro-lsp = { path = "../rpro-lsp" }
 rpro-core = { path = "../rpro-core" }
 rpro-toolchain-local = { path = "../rpro-toolchain-local" }
 rpro-runner = { path = "../rpro-runner" }

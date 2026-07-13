@@ -371,6 +371,73 @@ async fn sandbox_handler(
     }
 }
 
+/// What `/api/diagnostics` returns. `available` is false when no language server
+/// is installed (or it failed to answer) — the Dev editor then simply shows no
+/// live squiggles rather than an error, so the tier degrades gracefully offline.
+#[derive(serde::Serialize)]
+struct DiagnosticsResponse {
+    /// The file's diagnostics, in the same shape `/api/run` reports (so the Dev
+    /// editor renders live-analysis and compile diagnostics identically).
+    diagnostics: Vec<rpro_lang::Diagnostic>,
+    /// Whether a language server actually answered.
+    available: bool,
+}
+
+/// `POST /api/diagnostics` — the Dev tier's LIVE analysis. Writes the submitted
+/// `code` into a scratch workspace, asks the language plugin's configured server
+/// to analyse it, and returns its diagnostics — WITHOUT compiling or running, and
+/// without touching exercise progress. Loopback/single-user/offline trust model,
+/// same as `/api/run`. If no server is on `PATH`, `available` is false and the
+/// diagnostics list is empty (the editor just skips squiggles).
+async fn diagnostics_handler(
+    State(state): State<AppState>,
+    body: Result<Json<SandboxBody>, axum::extract::rejection::JsonRejection>,
+) -> impl IntoResponse {
+    let Json(SandboxBody { code }) = match body {
+        Ok(j) => j,
+        Err(rej) => return rej.into_response(),
+    };
+    if code.len() > MAX_SOURCE_BYTES {
+        return (StatusCode::PAYLOAD_TOO_LARGE, "source too large").into_response();
+    }
+
+    // Its own scratch workspace so live analysis never disturbs the exercise's
+    // run dir (used by `/api/run`). The server resolves the workspace from here.
+    let run_dir = state.store_root.join("run").join("diagnostics");
+
+    let joined =
+        tokio::task::spawn_blocking(move || -> Result<Vec<rpro_lang::Diagnostic>, String> {
+            write_scaffold(&run_dir, &code).map_err(|e| e.to_string())?;
+            let root_uri = format!("file://{}", run_dir.display());
+            let file_uri = format!("file://{}", run_dir.join("src/main.rs").display());
+            rpro_lsp::diagnostics(
+                &RustLanguage.lsp(),
+                &root_uri,
+                &file_uri,
+                &code,
+                rpro_lsp::DEFAULT_TIMEOUT,
+            )
+            .map_err(|e| e.to_string())
+        })
+        .await;
+
+    match joined {
+        Ok(Ok(diagnostics)) => Json(DiagnosticsResponse {
+            diagnostics,
+            available: true,
+        })
+        .into_response(),
+        // A missing/failing server is expected offline: report unavailable, not
+        // an error, so the editor degrades to "no live squiggles" cleanly.
+        Ok(Err(_)) => Json(DiagnosticsResponse {
+            diagnostics: Vec::new(),
+            available: false,
+        })
+        .into_response(),
+        Err(_) => (StatusCode::INTERNAL_SERVER_ERROR, "diagnostics task failed").into_response(),
+    }
+}
+
 /// Resolve the current exercise with its full metadata + starter code, so the
 /// front end can render the *real* exercise (title, code, book refs) rather than
 /// a static placeholder. Returns the discovered [`rpro_runner::Exercise`] and its
@@ -1232,6 +1299,7 @@ fn build_router(state: AppState, gui_dir: &Path) -> Router {
     Router::new()
         .route("/api/run", post(run_handler))
         .route("/api/sandbox", post(sandbox_handler))
+        .route("/api/diagnostics", post(diagnostics_handler))
         .route("/api/current", axum::routing::get(current_handler))
         .route("/api/select", post(select_handler))
         .route("/api/exercises", axum::routing::get(exercises_handler))
@@ -2112,6 +2180,28 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(res.status(), StatusCode::CONFLICT);
+    }
+
+    #[tokio::test]
+    async fn diagnostics_endpoint_is_wired_and_returns_a_valid_shape() {
+        // Route + response-shape guard. Holds whether or not a language server is
+        // installed: with one it may return diagnostics, without one it degrades
+        // to `available:false` + empty — either way a 200 with the right shape.
+        let (_d, app) = seeded_app();
+        let res = app
+            .oneshot(post_json(
+                "/api/diagnostics",
+                "{\"code\":\"fn main() {}\\n\"}",
+            ))
+            .await
+            .unwrap();
+        assert_eq!(res.status(), StatusCode::OK);
+        let v: serde_json::Value = serde_json::from_str(&body_string(res).await).unwrap();
+        assert!(v["available"].is_boolean(), "reports server availability");
+        assert!(
+            v["diagnostics"].is_array(),
+            "always returns a diagnostics list"
+        );
     }
 
     // ── workspace file API (the IDE) — contract tests ──────────────────────
