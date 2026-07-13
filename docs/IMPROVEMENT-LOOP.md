@@ -78,6 +78,24 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   per-surface color flag plumbed through Core/command_plan (web on, TUI off).
 
 ### Editor / IDE
+- ✅ **#19 Dev-tier IDE: reliable live diagnostics WIRED + settle-bug fixed (`f08505e`, 2026-07-13).** Closes the
+  core of #19. The CM6 Dev editor now debounce-POSTs the buffer to `/api/diagnostics` on every edit (via the
+  `markEdited` choke-point) and paints the analyzer's findings through the EXISTING `renderDiag` (parsed panel +
+  `cm-errline` gutter squiggle) — no run, no progress touch. Dev-tier only (`scheduleLiveDiag` early-returns off
+  Dev); requests serialise (one analyzer spawn at a time, mid-flight edits coalesce) + a seq guard drops stale
+  replies; `available:false`/offline is a silent no-op; leaving Dev cancels the pending check + resets the panel
+  (no stale "no problems" into Learn). ⚠ Wiring the GUI EXPOSED two backend reliability bugs (the endpoint had
+  looked "verified" but was flaky): (1) `diagnostics()` settled on rust-analyzer's initial EMPTY clear (published
+  on didOpen BEFORE analysis) whenever the real check landed >1.5 s later — a warm workspace made that the norm,
+  so broken code read "clean". FIX: advertise `workDoneProgress` + settle only once the server's reported work has
+  DRAINED (generic `progress_delta()` begin/end counter — no cargo/flycheck naming, seam-safe). (2) the shared
+  scratch dir served a STALE build-tool fingerprint (proved: `cargo check` → `Finished 0.00s` + exit 0 on
+  freshly-broken code). FIX: fresh isolated `run/diagnostics/<n>` per request, removed after use (cheap — no deps).
+  NOTE: correct now but ~2.5–3 s/request (analyzer spawned per call); a persistent-LSP session would make it
+  instant — see Open questions. Verified: rpro-lsp **11** unit + **2** live (real analyzer, incl. settle path),
+  rpro-serve **28**, clippy/fmt/seam-guard clean, a changing broken/clean sequence **12/12** correct over HTTP,
+  new Dev-tier e2e (`dev-live-diagnostics.spec.js`: squiggle appears/clears, Learn never calls it), live browser
+  390×844 shows the type error marked inline before any run.
 - ▶ **#19 Dev-tier IDE: `/api/diagnostics` endpoint (`af388d6`, 2026-07-13).** Wired `rpro_lsp::diagnostics()`
   into rpro-serve: `POST /api/diagnostics {code}` writes the code into an isolated `run/diagnostics` scratch
   workspace, asks the plugin's language server to analyse it, and returns diagnostics in the SAME JSON shape
@@ -1439,6 +1457,14 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   F-Droid + Obtainium · signed APT/dnf repos.
 
 ## Open questions for Paul
+- **Live Dev diagnostics work but lag ~3 s — invest in a persistent analyzer session? (2026-07-13, #19).** The
+  Dev tier now shows real rust-analyzer type errors inline as you type, without running (shipped `f08505e`, fully
+  verified). But each check spawns a fresh analyzer + fresh workspace, so a squiggle lands ~2.5–3 s after you
+  pause — CORRECT, just not instant. Making it feel live like a desktop IDE means a **persistent** LSP session in
+  rpro-serve (long-lived analyzer, incremental didChange sync) — a real but bounded piece of work. Options: (a)
+  ship as-is (correct, slightly laggy) and move on; (b) I build the persistent session next (~2–3 ticks). Also
+  note this is **desktop-only** — the phone has no analyzer, so it degrades to a silent no-op there (fine). Which
+  do you want? Default: leave as-is until you say build it.
 - **⚠ The single-tick UN-GATED backlog is running thin (2026-07-08) — where next?** After the v0.4 push the app is feature-complete + polished on every solo-shippable axis: the IDE (unified fullscreen editor + Sandbox + full explorer toolkit: collapsible phases / reveal-on-open / filter / fold-all), Practice (predict-first, hints, gamify, recall), the roadmap (now with animated per-stage progress), Learn hub, lessons (grouped + filter), book (search + cleanup), glossary (search), quizzes, cheatsheets. Content is **saturated** (41 error codes + all common runtime panics). Tests are green (92). The remaining high-value work is **gated or multi-surface**, and I'd like your call on which to prioritise:
   1. **#32 — combine the source books into ONE offline text + improve Patina.** Needs your *vision*: merge the prose into one narrative, or a unified TOC over Patina + Rust Book + the 9 bundled PDFs? This is the biggest remaining learning lever.
   2. **Lesson full-text search** (find where a concept is taught). Genuinely valuable but crosses the seam — needs a new `/api/lessons?q=` in BOTH rpro-serve (Rust) and the mobile embedded server (Java/JNI) to stay offline. ~2–3 ticks. Say go and I'll build it.
