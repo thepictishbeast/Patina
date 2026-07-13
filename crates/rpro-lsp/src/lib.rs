@@ -18,10 +18,11 @@
 use std::io::{BufRead, BufReader, Read, Write};
 use std::process::{Command, Stdio};
 use std::sync::mpsc;
+use std::sync::mpsc::RecvTimeoutError;
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
-use rpro_lang::LspSpec;
+use rpro_lang::{DiagLevel, Diagnostic, LspSpec, Span};
 use serde_json::{Value, json};
 use thiserror::Error;
 
@@ -104,6 +105,160 @@ pub fn server_info(spec: &LspSpec, timeout: Duration) -> Result<ServerInfo, LspE
         let _ = child.wait();
         Err(LspError::Timeout(timeout))
     }
+}
+
+/// Collect the diagnostics the server reports for one file of `code`.
+///
+/// Spawns the server described by `spec`, runs `initialize` (with `root_uri` as
+/// the workspace so a Rust server can resolve `std`/deps), opens `file_uri` with
+/// `code`, and returns that file's diagnostics — mapped to
+/// [`rpro_lang::Diagnostic`] — once the server's analysis settles. (Servers clear
+/// diagnostics on open then republish after analysing, so we keep the LATEST
+/// publish and return once the stream goes quiet.) An empty `Vec` means the file
+/// is clean. The exchange is bounded by `timeout`; on expiry the child is killed
+/// and whatever diagnostics arrived so far are returned.
+///
+/// `root_uri` and `file_uri` are `file://` URIs; `file_uri` must live under
+/// `root_uri`. This is the diagnostics half of the Dev-tier IDE (task #19): the
+/// caller (the serve layer) already has the exercise's real workspace on disk and
+/// points the server at it, so this crate stays free of temp-dir management.
+///
+/// # Errors
+///
+/// Same failure modes as [`server_info`]: [`LspError::Spawn`],
+/// [`LspError::NoStdio`], [`LspError::Protocol`], and [`LspError::Timeout`].
+pub fn diagnostics(
+    spec: &LspSpec,
+    root_uri: &str,
+    file_uri: &str,
+    code: &str,
+    timeout: Duration,
+) -> Result<Vec<Diagnostic>, LspError> {
+    // How long the diagnostics stream must be silent (after we've seen at least
+    // one publish for the file) before we treat analysis as settled. The server
+    // clears diagnostics on `didOpen`, then republishes once analysis finishes;
+    // waiting for quiescence captures that final state instead of the empty one.
+    const IDLE: Duration = Duration::from_millis(1500);
+
+    let mut child = Command::new(&spec.server)
+        .args(&spec.args)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::null())
+        .spawn()
+        .map_err(|source| LspError::Spawn {
+            server: spec.server.clone(),
+            source,
+        })?;
+
+    let mut stdin = child.stdin.take().ok_or(LspError::NoStdio)?;
+    let stdout = child.stdout.take().ok_or(LspError::NoStdio)?;
+
+    // A reader thread parses every framed message and forwards it, so the main
+    // thread can bound its waits (blocking `read_message` can't be timed out).
+    // It ends at EOF — when the child exits or is killed below.
+    let (msg_tx, msg_rx) = mpsc::channel::<Value>();
+    let reader = thread::spawn(move || {
+        let mut r = BufReader::new(stdout);
+        while let Ok(msg) = read_message(&mut r) {
+            if msg_tx.send(msg).is_err() {
+                break;
+            }
+        }
+    });
+
+    let deadline = Instant::now() + timeout;
+    let options: Value = spec
+        .init_options
+        .as_deref()
+        .and_then(|s| serde_json::from_str(s).ok())
+        .unwrap_or(Value::Null);
+
+    let outcome = (|| -> Result<Vec<Diagnostic>, LspError> {
+        write_msg(
+            &mut stdin,
+            &json!({
+                "jsonrpc": "2.0", "id": 1, "method": "initialize",
+                "params": {
+                    "processId": Value::Null,
+                    "rootUri": root_uri,
+                    "capabilities": { "textDocument": {
+                        "synchronization": { "didSave": false, "dynamicRegistration": false },
+                        "publishDiagnostics": { "relatedInformation": false }
+                    }},
+                    "initializationOptions": options,
+                }
+            }),
+        )?;
+        // Drain messages until the initialize response arrives (id 1).
+        loop {
+            let left = deadline
+                .checked_duration_since(Instant::now())
+                .ok_or(LspError::Timeout(timeout))?;
+            match msg_rx.recv_timeout(left) {
+                Ok(m) if m.get("id").and_then(Value::as_i64) == Some(1) => break,
+                Ok(_) => {}
+                Err(RecvTimeoutError::Timeout) => return Err(LspError::Timeout(timeout)),
+                Err(RecvTimeoutError::Disconnected) => {
+                    return Err(LspError::Protocol(
+                        "server exited during initialize".to_owned(),
+                    ));
+                }
+            }
+        }
+
+        write_msg(
+            &mut stdin,
+            &json!({ "jsonrpc": "2.0", "method": "initialized", "params": {} }),
+        )?;
+        write_msg(
+            &mut stdin,
+            &json!({
+                "jsonrpc": "2.0", "method": "textDocument/didOpen",
+                "params": { "textDocument": {
+                    "uri": file_uri, "languageId": "rust", "version": 1, "text": code
+                }}
+            }),
+        )?;
+
+        // Keep the LATEST publish for our file; return once the stream is idle
+        // (analysis settled) or the overall deadline is hit. A publish resets the
+        // idle window; unrelated traffic (progress/logs) keeps us alive while the
+        // server is still working.
+        let mut latest: Option<Vec<Diagnostic>> = None;
+        loop {
+            let left = deadline.saturating_duration_since(Instant::now());
+            if left.is_zero() {
+                break;
+            }
+            match msg_rx.recv_timeout(left.min(IDLE)) {
+                Ok(m) => {
+                    if let Some(diags) = publish_for(&m, file_uri) {
+                        latest = Some(diags);
+                    }
+                }
+                // Idle: settled if we already have the file's diagnostics; else
+                // keep waiting (analysis not done) until the deadline.
+                Err(RecvTimeoutError::Timeout) if latest.is_some() => break,
+                Err(RecvTimeoutError::Timeout) => {}
+                Err(RecvTimeoutError::Disconnected) => break,
+            }
+        }
+        Ok(latest.unwrap_or_default())
+    })();
+
+    // Best-effort clean shutdown, then guarantee the child dies and is reaped so
+    // the reader thread's pipe closes and it can join.
+    let _ = write_msg(
+        &mut stdin,
+        &json!({ "jsonrpc": "2.0", "id": 2, "method": "shutdown" }),
+    );
+    let _ = write_msg(&mut stdin, &json!({ "jsonrpc": "2.0", "method": "exit" }));
+    drop(stdin);
+    let _ = child.kill();
+    let _ = child.wait();
+    let _ = reader.join();
+    outcome
 }
 
 // Drive the four-step handshake over the server's stdio and return its info.
@@ -214,13 +369,69 @@ fn read_until_id<R: BufRead>(r: &mut R, id: i64) -> Result<Value, LspError> {
     ))
 }
 
+// Map one LSP diagnostic object (0-based `range`, numeric `severity`) to the
+// project-wide `rpro_lang::Diagnostic` (1-based `Span`) — the SAME shape the
+// compile path already produces, so the Dev editor renders both identically.
+fn map_diagnostic(d: &Value, file: &str) -> Option<Diagnostic> {
+    let message = d.get("message").and_then(Value::as_str)?.to_owned();
+    // LSP severities: 1 Error, 2 Warning, 3 Information, 4 Hint. Absent → Error
+    // per the spec ("client should interpret ... as Error"). 3/4 fold to Note.
+    let level = match d.get("severity").and_then(Value::as_i64) {
+        Some(2) => DiagLevel::Warning,
+        Some(3 | 4) => DiagLevel::Note,
+        _ => DiagLevel::Error,
+    };
+    // `code` may be a string (a lint/error code) or a number; normalise to text.
+    let code = d.get("code").and_then(|c| match c {
+        Value::String(s) => Some(s.clone()),
+        Value::Number(n) => Some(n.to_string()),
+        _ => None,
+    });
+    let span = d.get("range").and_then(|r| r.get("start")).map(|start| {
+        let line =
+            u32::try_from(start.get("line").and_then(Value::as_u64).unwrap_or(0)).unwrap_or(0);
+        let col =
+            u32::try_from(start.get("character").and_then(Value::as_u64).unwrap_or(0)).unwrap_or(0);
+        Span {
+            file: file.to_owned(),
+            line: line + 1, // LSP is 0-based; Span is 1-based
+            col: col + 1,
+        }
+    });
+    Some(Diagnostic {
+        code,
+        level,
+        message,
+        span,
+    })
+}
+
+// If `msg` is a `textDocument/publishDiagnostics` notification for `uri`, return
+// its diagnostics mapped to `rpro_lang::Diagnostic` (an empty Vec means the file
+// is currently clean). Any other message → `None` (keep reading).
+fn publish_for(msg: &Value, uri: &str) -> Option<Vec<Diagnostic>> {
+    if msg.get("method").and_then(Value::as_str) != Some("textDocument/publishDiagnostics") {
+        return None;
+    }
+    let params = msg.get("params")?;
+    if params.get("uri").and_then(Value::as_str) != Some(uri) {
+        return None; // a publish for some other file (e.g. a dependency)
+    }
+    let diags = params.get("diagnostics").and_then(Value::as_array)?;
+    Some(
+        diags
+            .iter()
+            .filter_map(|d| map_diagnostic(d, uri))
+            .collect(),
+    )
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{LspError, read_message, read_until_id};
+    use super::{LspError, encode, map_diagnostic, publish_for, read_message, read_until_id};
+    use rpro_lang::DiagLevel;
     use serde_json::json;
     use std::io::Cursor;
-
-    use super::encode;
 
     #[test]
     fn encode_then_read_roundtrips() {
@@ -261,4 +472,80 @@ mod tests {
         let mut cur = Cursor::new(Vec::new());
         assert!(matches!(read_message(&mut cur), Err(LspError::Protocol(_))));
     }
+
+    #[test]
+    fn map_diagnostic_translates_severity_range_and_code() {
+        // LSP is 0-based; Span is 1-based. Error=1, Warning=2, Info=3, Hint=4.
+        let d = json!({
+            "severity": 1,
+            "code": "some-error-code",
+            "message": "mismatched types",
+            "range": { "start": { "line": 4, "character": 8 }, "end": { "line": 4, "character": 9 } }
+        });
+        let got = map_diagnostic(&d, "file:///w/src/main.rs").unwrap();
+        assert_eq!(got.level, DiagLevel::Error);
+        assert_eq!(got.code.as_deref(), Some("some-error-code"));
+        assert_eq!(got.message, "mismatched types");
+        let span = got.span.unwrap();
+        assert_eq!((span.line, span.col), (5, 9), "0-based LSP → 1-based Span");
+        assert_eq!(span.file, "file:///w/src/main.rs");
+    }
+
+    #[test]
+    fn map_diagnostic_folds_severities_and_defaults_to_error() {
+        let warn = map_diagnostic(&json!({ "severity": 2, "message": "unused" }), "f").unwrap();
+        assert_eq!(warn.level, DiagLevel::Warning);
+        let info = map_diagnostic(&json!({ "severity": 3, "message": "note" }), "f").unwrap();
+        assert_eq!(info.level, DiagLevel::Note);
+        let hint = map_diagnostic(&json!({ "severity": 4, "message": "hint" }), "f").unwrap();
+        assert_eq!(hint.level, DiagLevel::Note);
+        // Absent severity → Error, per the LSP spec's client-default rule.
+        let none = map_diagnostic(&json!({ "message": "x" }), "f").unwrap();
+        assert_eq!(none.level, DiagLevel::Error);
+        assert!(none.span.is_none(), "no range → no span");
+    }
+
+    #[test]
+    fn map_diagnostic_normalises_a_numeric_code() {
+        let d = json!({ "severity": 1, "code": 308, "message": "m" });
+        assert_eq!(
+            map_diagnostic(&d, "f").unwrap().code.as_deref(),
+            Some("308")
+        );
+    }
+
+    #[test]
+    fn publish_for_matches_uri_and_maps_each_diagnostic() {
+        let uri = "file:///w/src/main.rs";
+        let msg = json!({
+            "method": "textDocument/publishDiagnostics",
+            "params": { "uri": uri, "diagnostics": [
+                { "severity": 1, "message": "boom", "range": { "start": { "line": 0, "character": 0 } } },
+                { "severity": 2, "message": "meh",  "range": { "start": { "line": 1, "character": 2 } } }
+            ]}
+        });
+        let diags = publish_for(&msg, uri).unwrap();
+        assert_eq!(diags.len(), 2);
+        assert_eq!(diags[0].level, DiagLevel::Error);
+        assert_eq!(diags[1].level, DiagLevel::Warning);
+        // An empty diagnostics array is a valid "file is clean" publish.
+        let clean = json!({ "method": "textDocument/publishDiagnostics",
+            "params": { "uri": uri, "diagnostics": [] } });
+        assert_eq!(publish_for(&clean, uri).unwrap().len(), 0);
+    }
+
+    #[test]
+    fn publish_for_ignores_other_uris_and_other_methods() {
+        let uri = "file:///w/src/main.rs";
+        let other_file = json!({ "method": "textDocument/publishDiagnostics",
+            "params": { "uri": "file:///w/src/dep.rs", "diagnostics": [] } });
+        assert!(publish_for(&other_file, uri).is_none());
+        let other_method = json!({ "method": "window/logMessage", "params": {} });
+        assert!(publish_for(&other_method, uri).is_none());
+    }
+
+    // The live end-to-end diagnostics check against the real server lives in
+    // tests/real_server.rs (alongside the handshake one) so this crate stays
+    // language-neutral: the server's name comes from the Rust plugin's `lsp()`
+    // spec, never a hard-coded literal here.
 }
