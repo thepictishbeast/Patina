@@ -112,11 +112,12 @@ pub fn server_info(spec: &LspSpec, timeout: Duration) -> Result<ServerInfo, LspE
 /// Spawns the server described by `spec`, runs `initialize` (with `root_uri` as
 /// the workspace so a Rust server can resolve `std`/deps), opens `file_uri` with
 /// `code`, and returns that file's diagnostics — mapped to
-/// [`rpro_lang::Diagnostic`] — once the server's analysis settles. (Servers clear
+/// [`rpro_lang::Diagnostic`] — once the server's analysis settles. Servers clear
 /// diagnostics on open then republish after analysing, so we keep the LATEST
-/// publish and return once the stream goes quiet.) An empty `Vec` means the file
-/// is clean. The exchange is bounded by `timeout`; on expiry the child is killed
-/// and whatever diagnostics arrived so far are returned.
+/// publish and return only once the server's reported work (`workDoneProgress`)
+/// has drained — not on the empty clear that precedes it. An empty `Vec` means the
+/// file is clean. The exchange is bounded by `timeout`; on expiry the child is
+/// killed and whatever diagnostics arrived so far are returned.
 ///
 /// `root_uri` and `file_uri` are `file://` URIs; `file_uri` must live under
 /// `root_uri`. This is the diagnostics half of the Dev-tier IDE (task #19): the
@@ -134,11 +135,15 @@ pub fn diagnostics(
     code: &str,
     timeout: Duration,
 ) -> Result<Vec<Diagnostic>, LspError> {
-    // How long the diagnostics stream must be silent (after we've seen at least
-    // one publish for the file) before we treat analysis as settled. The server
-    // clears diagnostics on `didOpen`, then republishes once analysis finishes;
-    // waiting for quiescence captures that final state instead of the empty one.
+    // Quiet windows used by the collection loop below. IDLE is the fallback for a
+    // server that reports no progress at all: settle on a quiet stream once we hold
+    // a publish. SETTLE confirms settling once the server's reported work has
+    // drained; it must exceed the server's inter-task gaps so a lull between two
+    // work items isn't mistaken for completion. The server clears diagnostics on
+    // `didOpen` then republishes once analysis finishes, so waiting for the work to
+    // drain captures that final state instead of the empty clear that precedes it.
     const IDLE: Duration = Duration::from_millis(1500);
+    const SETTLE: Duration = Duration::from_millis(800);
 
     let mut child = Command::new(&spec.server)
         .args(&spec.args)
@@ -182,10 +187,16 @@ pub fn diagnostics(
                 "params": {
                     "processId": Value::Null,
                     "rootUri": root_uri,
-                    "capabilities": { "textDocument": {
-                        "synchronization": { "didSave": false, "dynamicRegistration": false },
-                        "publishDiagnostics": { "relatedInformation": false }
-                    }},
+                    "capabilities": {
+                        // Advertise workDoneProgress so the server reports when it
+                        // is busy (indexing, building, checking). We settle only
+                        // once that reported work drains — see the collection loop.
+                        "window": { "workDoneProgress": true },
+                        "textDocument": {
+                            "synchronization": { "didSave": false, "dynamicRegistration": false },
+                            "publishDiagnostics": { "relatedInformation": false }
+                        }
+                    },
                     "initializationOptions": options,
                 }
             }),
@@ -221,26 +232,49 @@ pub fn diagnostics(
             }),
         )?;
 
-        // Keep the LATEST publish for our file; return once the stream is idle
-        // (analysis settled) or the overall deadline is hit. A publish resets the
-        // idle window; unrelated traffic (progress/logs) keeps us alive while the
-        // server is still working.
+        // Keep the LATEST publish for our file and return once analysis has truly
+        // settled. The subtlety: a server clears diagnostics on `didOpen` (an empty
+        // publish) BEFORE it has analysed anything, then does its work (indexing,
+        // building, checking) and republishes the real result. Settling on that
+        // first empty publish would report "clean" for broken code. So we track the
+        // server's reported work via `workDoneProgress` (begin/end) and only settle
+        // once that work has drained — i.e. the server is genuinely finished, not
+        // merely paused between the clear and the real check.
+        //
         let mut latest: Option<Vec<Diagnostic>> = None;
+        let mut active_work: i32 = 0; // net begin−end of workDoneProgress tasks
+        let mut saw_work = false; // did the server ever report progress?
         loop {
             let left = deadline.saturating_duration_since(Instant::now());
             if left.is_zero() {
                 break;
             }
-            match msg_rx.recv_timeout(left.min(IDLE)) {
+            // While work is outstanding, wait up to the deadline for it to finish;
+            // once the server is idle, a short quiet window confirms settling.
+            let quiet = if saw_work && active_work == 0 {
+                SETTLE
+            } else {
+                IDLE
+            };
+            match msg_rx.recv_timeout(left.min(quiet)) {
                 Ok(m) => {
+                    if let Some(d) = progress_delta(&m) {
+                        saw_work = true;
+                        active_work = (active_work + d).max(0);
+                    }
                     if let Some(diags) = publish_for(&m, file_uri) {
                         latest = Some(diags);
                     }
                 }
-                // Idle: settled if we already have the file's diagnostics; else
-                // keep waiting (analysis not done) until the deadline.
-                Err(RecvTimeoutError::Timeout) if latest.is_some() => break,
-                Err(RecvTimeoutError::Timeout) => {}
+                // Quiet window elapsed. Settle when we hold a publish AND the server
+                // is not mid-work: either it finished everything it reported
+                // (saw_work && active_work == 0) or it reports no progress at all.
+                Err(RecvTimeoutError::Timeout)
+                    if latest.is_some() && (!saw_work || active_work == 0) =>
+                {
+                    break;
+                }
+                Err(RecvTimeoutError::Timeout) => {} // still working — keep waiting
                 Err(RecvTimeoutError::Disconnected) => break,
             }
         }
@@ -426,9 +460,32 @@ fn publish_for(msg: &Value, uri: &str) -> Option<Vec<Diagnostic>> {
     )
 }
 
+// If `msg` is a `$/progress` work-done notification, report its effect on the
+// count of outstanding server tasks: `+1` when a task begins, `-1` when one
+// ends, `None` for a report (mid-task) or any other message. Tracking this net
+// count lets the collector tell "the server is still working" (so the initial
+// empty diagnostics are not yet final) from "the server has finished" (settle).
+fn progress_delta(msg: &Value) -> Option<i32> {
+    if msg.get("method").and_then(Value::as_str) != Some("$/progress") {
+        return None;
+    }
+    match msg
+        .get("params")
+        .and_then(|p| p.get("value"))
+        .and_then(|v| v.get("kind"))
+        .and_then(Value::as_str)
+    {
+        Some("begin") => Some(1),
+        Some("end") => Some(-1),
+        _ => None, // "report" (progress update) or malformed — no net change
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{LspError, encode, map_diagnostic, publish_for, read_message, read_until_id};
+    use super::{
+        LspError, encode, map_diagnostic, progress_delta, publish_for, read_message, read_until_id,
+    };
     use rpro_lang::DiagLevel;
     use serde_json::json;
     use std::io::Cursor;
@@ -532,6 +589,23 @@ mod tests {
         let clean = json!({ "method": "textDocument/publishDiagnostics",
             "params": { "uri": uri, "diagnostics": [] } });
         assert_eq!(publish_for(&clean, uri).unwrap().len(), 0);
+    }
+
+    #[test]
+    fn progress_delta_counts_begin_and_end_only() {
+        let begin = json!({ "method": "$/progress",
+            "params": { "token": "t", "value": { "kind": "begin", "title": "Indexing" } } });
+        assert_eq!(progress_delta(&begin), Some(1));
+        let end = json!({ "method": "$/progress",
+            "params": { "token": "t", "value": { "kind": "end" } } });
+        assert_eq!(progress_delta(&end), Some(-1));
+        // A mid-task "report" makes no net change to the outstanding-work count.
+        let report = json!({ "method": "$/progress",
+            "params": { "token": "t", "value": { "kind": "report", "percentage": 50 } } });
+        assert_eq!(progress_delta(&report), None);
+        // Non-progress traffic is ignored.
+        let other = json!({ "method": "textDocument/publishDiagnostics", "params": {} });
+        assert_eq!(progress_delta(&other), None);
     }
 
     #[test]

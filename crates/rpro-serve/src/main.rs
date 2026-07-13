@@ -27,6 +27,7 @@
 
 use std::net::Ipv4Addr;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use axum::Router;
 use axum::extract::{DefaultBodyLimit, Query, State};
@@ -93,6 +94,15 @@ const MAX_SOURCE_BYTES: usize = 256 * 1024;
 /// plus JSON escaping/overhead while tightening axum's 2 MiB default. Loopback,
 /// single-user — a sanity clamp, not a security boundary.
 const MAX_BODY_BYTES: usize = 1024 * 1024;
+
+/// Monotonic counter giving each live-diagnostics request its own scratch
+/// workspace (`run/diagnostics/<n>`). Isolation matters here: the language
+/// server resolves a workspace and its build tool caches per directory, so a
+/// SHARED scratch dir can hand back a stale "clean" result for freshly-broken
+/// code (the build tool's fingerprint short-circuits the re-check) and lets
+/// concurrent requests clobber each other. A fresh dir per request sidesteps
+/// both; it is cheap because the scaffold has no dependencies to rebuild.
+static DIAG_RUN_SEQ: AtomicU64 = AtomicU64::new(0);
 
 /// The JSON payload returned for every run (success *and* tool-error fold into
 /// the same shape, mirroring the TUI's `apply_run_result`, so the front end has
@@ -401,23 +411,33 @@ async fn diagnostics_handler(
         return (StatusCode::PAYLOAD_TOO_LARGE, "source too large").into_response();
     }
 
-    // Its own scratch workspace so live analysis never disturbs the exercise's
-    // run dir (used by `/api/run`). The server resolves the workspace from here.
-    let run_dir = state.store_root.join("run").join("diagnostics");
+    // A FRESH scratch workspace per request (see DIAG_RUN_SEQ): live analysis
+    // never disturbs the exercise's run dir, requests can't clobber each other,
+    // and — critically — a fresh dir has no stale build fingerprint, so broken
+    // code is never masked by a prior clean check. The server resolves the
+    // workspace from here; we remove it once analysis returns.
+    let seq = DIAG_RUN_SEQ.fetch_add(1, Ordering::Relaxed);
+    let run_dir = state
+        .store_root
+        .join("run")
+        .join("diagnostics")
+        .join(seq.to_string());
 
     let joined =
         tokio::task::spawn_blocking(move || -> Result<Vec<rpro_lang::Diagnostic>, String> {
             write_scaffold(&run_dir, &code).map_err(|e| e.to_string())?;
             let root_uri = format!("file://{}", run_dir.display());
             let file_uri = format!("file://{}", run_dir.join("src/main.rs").display());
-            rpro_lsp::diagnostics(
+            let result = rpro_lsp::diagnostics(
                 &RustLanguage.lsp(),
                 &root_uri,
                 &file_uri,
                 &code,
                 rpro_lsp::DEFAULT_TIMEOUT,
             )
-            .map_err(|e| e.to_string())
+            .map_err(|e| e.to_string());
+            let _ = std::fs::remove_dir_all(&run_dir); // best-effort: don't leak scratch dirs
+            result
         })
         .await;
 

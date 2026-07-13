@@ -2620,8 +2620,23 @@
       if (cmView && cmModeComp) cmView.dispatch({ effects: cmModeComp.reconfigure(cmDevExtensions()) });
       // Diagnostics are a tier feature — re-render the last run so switching tiers
       // updates the panel immediately (Learn withholds it; Assist/Dev show it).
-      if (lastOut) renderDiag(lastOut);
+      if (lastOut) {
+        renderDiag(lastOut);
+      } else if (m !== 'dev') {
+        // No run yet and we're leaving the live-analysis tier: reset to the neutral
+        // placeholder so a prior Dev live result ("no problems") doesn't linger —
+        // especially into Learn, whose whole point is "read the errors by hand".
+        document.getElementById('diag').innerHTML =
+          '<div class="diag note"><span class="lvl">[i]</span><span class="msg">no run yet'
+          + '<small>press Run / Check to see real diagnostics</small></span></div>';
+        diagMarks = new Set();
+        setEditorErrorLines([]);
+      }
       updateRunGate();
+      clearTimeout(liveDiagTimer); // drop any live check queued under the old tier
+      // Entering Dev on real code? Kick a live analyzer pass so the inline
+      // squiggles reflect the current buffer without waiting for a keystroke.
+      if (m === 'dev' && cmView && editorEl().value.trim()) scheduleLiveDiag();
     }
 
     // Run/Check are GATED in Learn until a prediction is locked (active recall).
@@ -2757,6 +2772,7 @@
       if (curExercise) { try { localStorage.setItem(lsKey(curExercise), ed.value); } catch (_) {} }
       diagMarks = new Set(); // editing invalidates the last run's line marks
       syncHL();
+      scheduleLiveDiag(); // Dev tier: re-check with the analyzer once typing settles
     }
 
     // Each exercise concept → the textbook lesson that teaches it, so an exercise
@@ -3063,6 +3079,58 @@
       }
       box.innerHTML = rows.join('');
       setEditorErrorLines(diagMarks); // paint the CM6 gutter marks for this run
+    }
+
+    // ── Live diagnostics (Dev tier) ─────────────────────────────────────────
+    // The Dev tier gets rust-analyzer-style inline checking WITHOUT running: as
+    // the learner pauses, POST the current buffer to /api/diagnostics and paint
+    // the returned spans through the SAME parsed panel + gutter marks that a Run
+    // uses (renderDiag), so a real type error squiggles in the editor before the
+    // code is ever executed. Learn/Assist stay run-based (Learn withholds the
+    // parsed panel entirely; Assist parses the actual Run/Check output).
+    //
+    // Each request spawns a fresh analyzer, so this is deliberately frugal: a
+    // debounce collapses bursts of keystrokes, an in-flight guard serialises to
+    // ONE analyzer at a time (a trailing run coalesces edits that arrived mid-
+    // flight), and a sequence number drops any response the newest edit has
+    // already superseded. If the server has no analyzer (available:false) or is
+    // unreachable (opened via file://), the panel is left untouched — never an
+    // error state, since live analysis is a bonus layer, not the source of truth.
+    let liveDiagTimer = null, liveDiagSeq = 0, liveDiagBusy = false, liveDiagPending = false;
+    function scheduleLiveDiag() {
+      if (mode !== 'dev') return;         // Dev is the live-analysis tier
+      clearTimeout(liveDiagTimer);
+      liveDiagTimer = setTimeout(runLiveDiag, 700); // debounce keystrokes
+    }
+    async function runLiveDiag() {
+      if (mode !== 'dev') return;
+      if (liveDiagBusy) { liveDiagPending = true; return; } // one analyzer spawn at a time
+      liveDiagBusy = true;
+      const box = document.getElementById('diag');
+      const code = editorEl().value;
+      const seq = ++liveDiagSeq;
+      try {
+        const r = await fetch('api/diagnostics', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code }),
+        }).then(x => x.json());
+        // Ignore a stale reply (a newer edit fired) or a tier switch mid-request.
+        if (seq === liveDiagSeq && mode === 'dev' && r && r.available) {
+          if (r.diagnostics && r.diagnostics.length) {
+            renderDiag({ diagnostics: r.diagnostics }); // reuse parsed panel + gutter marks
+          } else {
+            diagMarks = new Set();
+            setEditorErrorLines([]); // clean buffer → no squiggles
+            box.innerHTML = '<div class="diag note"><span class="lvl">[i]</span>'
+              + '<span class="msg">no problems<small>rust-analyzer sees no errors as you type — Run to test behaviour</small></span></div>';
+          }
+        }
+      } catch (_) { /* offline / no analyzer — leave the panel as-is */ }
+      finally {
+        liveDiagBusy = false;
+        if (liveDiagPending) { liveDiagPending = false; scheduleLiveDiag(); } // coalesce mid-flight edits
+      }
     }
 
     // Fetch the real list + current exercise and render them; if the server is
