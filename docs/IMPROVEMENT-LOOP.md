@@ -78,6 +78,21 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   per-surface color flag plumbed through Core/command_plan (web on, TUI off).
 
 ### Editor / IDE
+- ▶ **#19 Dev-tier IDE: live LSP diagnostics collected (`24d8b34`, 2026-07-13).** The diagnostics half of the
+  rust-analyzer IDE. rpro-lsp already did the initialize/shutdown handshake; this adds `diagnostics(spec,
+  root_uri, file_uri, code, timeout)` → initialize(+workspace root)→initialized→didOpen→collect
+  publishDiagnostics, mapped into the EXISTING `rpro_lang::Diagnostic` contract (0-based LSP range → 1-based
+  Span; severity 1/2/3-4 → Error/Warning/Note; string|number code → text) so the Dev editor renders LSP + compile
+  diagnostics identically. ⚠ KEY (found by TESTING, not assuming): the server clears diagnostics on didOpen then
+  republishes after analysis — so taking the *first* publish returns empty. Fix: a reader thread forwards every
+  framed message and we keep the LATEST publish for the file, returning on stream-idle (analysis settled) or the
+  deadline. Pure helpers (map_diagnostic/publish_for) unit-tested; the timing/effect path proven live. Kept
+  rpro-lsp LANGUAGE-NEUTRAL (server name comes from the plugin's LspSpec) — the live test lives in
+  tests/real_server.rs so no tool name/E-code is hard-coded outside doc comments (seam-guard would otherwise flag
+  the leak; it did, and I relocated the test). Verified: hermetic 10/10, fmt + clippy -D warnings + seam-guard
+  clean, workspace builds; `cargo test -p rpro-lsp -- --ignored` gets a real E0308 from rust-analyzer 1.95.0
+  mapped correctly (Error, line 1 col 26). NEXT increment: rpro-serve `/api/diagnostics` (Dev tier) → CM6 editor
+  live squiggles reusing the Assist diagnostic renderer.
 - ✅ **TUI/CLI HTML-comment strip — the B4 twin, class CLOSED on every surface (`bafa44c`, 2026-07-10).** The
   pre-scoped follow-up to `4359a52`: the Rust `clean_mdbook_source` (rpro-book, TUI/CLI book reader) had the same
   gap as the GUI — no `<!-- -->` handling, so mdBook editorial comments rendered as literal text there too. Added
