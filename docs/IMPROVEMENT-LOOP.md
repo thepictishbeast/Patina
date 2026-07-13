@@ -78,6 +78,17 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
   per-surface color flag plumbed through Core/command_plan (web on, TUI off).
 
 ### Editor / IDE
+- ▶ **#19 Dev-tier IDE: `/api/diagnostics` endpoint (`af388d6`, 2026-07-13).** Wired `rpro_lsp::diagnostics()`
+  into rpro-serve: `POST /api/diagnostics {code}` writes the code into an isolated `run/diagnostics` scratch
+  workspace, asks the plugin's language server to analyse it, and returns diagnostics in the SAME JSON shape
+  `/api/run` emits (so the editor renders live + compile diagnostics identically). No compile/run, no progress
+  touch. Degrades gracefully → `{available:false, diagnostics:[]}` when no server is on PATH. ⚠ verify trap: run
+  the binary from `CARGO_TARGET_DIR` (`/home/paul/.cache/ts-target/debug/rpro-serve`), NOT stale `./target/...`
+  (got a 405 from the old binary before spotting it). Verified LIVE (real rust-analyzer 1.95.0): type error →
+  `{code:"E0308",level:"Error",span:{line:1,col:26}}`+Note, `available:true`; clean code → `[]`. Hermetic
+  route/shape guard added (holds with/without a server); rpro-serve **28/28**, fmt + clippy + seam-guard clean.
+  NEXT (final #19 increment): CM6 Dev editor debounce-POSTs to /api/diagnostics + renders squiggles (reuse the
+  Assist diagnostic renderer) + a Dev-tier e2e. Then completion/hover.
 - ▶ **#19 Dev-tier IDE: live LSP diagnostics collected (`24d8b34`, 2026-07-13).** The diagnostics half of the
   rust-analyzer IDE. rpro-lsp already did the initialize/shutdown handshake; this adds `diagnostics(spec,
   root_uri, file_uri, code, timeout)` → initialize(+workspace root)→initialized→didOpen→collect
