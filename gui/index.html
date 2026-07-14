@@ -2823,7 +2823,10 @@
       'super-paths': '22-paths',
       'use-and-paths': '23-the-use-keyword',
       'generic-trait-bounds': '24-generic-functions',
-      'type-inference-limits': '24-generic-functions',
+      // basics/02_annotation_needed is an early E0282 ("type annotations needed":
+      // `let n = "42".parse()…`) — taught by the scalar-types lesson's `let x: i32`
+      // annotations, NOT the advanced generics lesson it used to point at.
+      'type-inference-limits': '05-scalar-types',
       'trait-implementation': '25-traits-declare-implement',
       'trait-in-scope': '25-traits-declare-implement',
       'supertrait': '25b-trait-bounds',
@@ -3841,7 +3844,9 @@
       const ov = document.getElementById('lessonDrawerOverlay');
       const body = document.getElementById('lessonDrawerBody');
       if (!dr || !ov || !body || !lessonId) return;
-      document.getElementById('lessonDrawerTitle').textContent = title || 'Lesson';
+      // Neutral placeholder while the lesson loads — the passed `title` is only a
+      // concept hint; the REAL lesson title (below) is what must head the drawer.
+      document.getElementById('lessonDrawerTitle').textContent = 'Lesson';
       const full = document.getElementById('lessonDrawerFull');
       if (full) full.onclick = e => { e.preventDefault(); closeLessonDrawer(); showView('lessons', lessonId); };
       body.innerHTML = '<p style="color:var(--fg-dim)">loading the lesson…</p>';
@@ -3849,6 +3854,13 @@
       requestAnimationFrame(() => { dr.classList.add('open'); ov.classList.add('open'); });
       try {
         const l = await fetch('api/lessons?id=' + encodeURIComponent(lessonId)).then(r => r.json()).then(j => j.lesson);
+        // The header must MATCH the content: show the lesson's own title, not the
+        // exercise's hyphenated concept slug (which read e.g. "Explicit-numeric-
+        // conversion" over a lesson actually titled "The scalar types"). Strip the
+        // title's inline markdown (`code`, *em*) so the plain-text header reads the
+        // same as the rendered body heading, e.g. "Mutability (mut)".
+        const lessonTitle = (l && l.title) ? l.title.replace(/[`*]/g, '') : (title || 'Lesson');
+        document.getElementById('lessonDrawerTitle').textContent = lessonTitle;
         let md = (l && l.markdown) || '';
         md = md.replace(/<!--[\s\S]*?-->/g, '').replace(/\n---\s*\n\s*\[[^\]]*Study Guide[\s\S]*$/i, ''); // drop HTML comments + the footer nav
         body.innerHTML = md ? '<div class="bookbody lessonbody">' + mdToHtml(md) + '</div>'

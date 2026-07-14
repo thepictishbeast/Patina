@@ -64,6 +64,41 @@ test.describe('Lesson drawer: rich-text parity with the Learn tab', () => {
     expect(info.copyPos, 'the Copy button is absolutely positioned in the corner').toBe('absolute');
   });
 
+  // Regression: the drawer HEADER must show the lesson's real title (matching the
+  // content), not the exercise's hyphenated concept slug. It used to read e.g.
+  // "Explicit-numeric-conversion" over a lesson actually titled "The scalar types".
+  test('header shows the real lesson title (matches content), not the concept slug', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForSelector('#lessonDrawerBody', { state: 'attached' });
+    // Pass a deliberately-wrong slug as the title hint; the drawer must ignore it
+    // and head itself with the LESSON's own title, stripped of inline markdown.
+    await page.evaluate(() => openLessonDrawer('02-mutability', 'wrong-concept-slug'));
+    await page.waitForSelector('#lessonDrawerBody .lessonbody');
+    await page.waitForTimeout(300);
+    const { header, bodyH } = await page.evaluate(() => ({
+      header: document.getElementById('lessonDrawerTitle').textContent.trim(),
+      bodyH: (document.querySelector('#lessonDrawerBody .lessonbody h1, #lessonDrawerBody .lessonbody h2') || {}).textContent?.trim() || '',
+    }));
+    expect(header, 'the slug hint must NOT be used as the header').not.toBe('wrong-concept-slug');
+    expect(header, 'header is the real lesson title').toContain('Mutability');
+    expect(header, 'header matches the rendered body heading exactly').toBe(bodyH);
+  });
+
+  // Regression: basics/02_annotation_needed (E0282 "type annotations needed") must
+  // open the scalar-types lesson that teaches `let x: i32`, NOT the advanced
+  // generics lesson it used to be mis-mapped to.
+  test('an exercise opens the lesson that actually teaches it', async ({ page, request }) => {
+    await request.post('/api/select', { data: { id: 'basics/02_annotation_needed', force: true } });
+    await page.goto('/');
+    await page.waitForSelector('#exTitle');
+    await page.evaluate(() => openLessonDrawer(curLessonId, curLessonTitle));
+    await page.waitForSelector('#lessonDrawerBody .lessonbody');
+    await page.waitForTimeout(300);
+    const header = await page.evaluate(() => document.getElementById('lessonDrawerTitle').textContent.trim());
+    expect(header, 'points at the scalar-types lesson').toContain('scalar types');
+    expect(header, 'NOT the generics lesson').not.toContain('Generic');
+  });
+
   test('glossary tap-to-define works inside the drawer, and never inside code', async ({ page }) => {
     await openDrawer(page);
     const defs = page.locator('#lessonDrawerBody .glossdef');
