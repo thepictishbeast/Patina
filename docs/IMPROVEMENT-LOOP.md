@@ -58,6 +58,18 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
 ## Backlog (status: ✅done · ▶next · ☐todo)
 
 ### Critical pedagogy
+- ✅ **Lesson drawer header now MATCHES its content + fixed one wrong exercise→lesson map (`d3c0dcf`, 2026-07-14).**
+  Paul: "the lesson tab on the left doesn't match the content in the actual lesson/practice/exercise." Two bugs:
+  (1) the Practice lesson drawer (`#lessonHandle` pull-tab → `#lessonDrawer`) headed itself with the exercise's
+  CONCEPT SLUG capitalised ("Explicit-numeric-conversion", "Function-arg-types") while the body showed a lesson
+  titled completely differently ("Lesson 5 — The scalar types…"). Fix: `openLessonDrawer` now titles from the
+  FETCHED lesson's own `title` (stripping inline markdown so the plain-text header reads the same as the rendered
+  body heading, e.g. "Mutability (mut)"). (2) `basics/02_annotation_needed` (early E0282 "type annotations needed",
+  `let n = "42".parse()…`) was mapped to `24-generic-functions` (advanced, off-topic) — remapped to `05-scalar-types`
+  (the `let x: i32` lesson), which also fixes the reverse "practice these" list on the generics lesson. Audited all
+  69 concept→lesson mappings; this was the only clearly-wrong one. `CONCEPT_LESSON` is GUI-only (mobile copy syncs
+  on next build). Verified: gui-transform coupling green, lesson-drawer e2e 5/5 (2 new regressions: header == body
+  heading & ≠ slug; 02_annotation_needed opens scalar-types not generics), live browser across several exercises.
 - ✅ **Hint ladder never hands the solution; force a real attempt first** (`af5d6fb`).
 - ✅ **Hint contract uniform across ALL THREE surfaces** (web/CLI/TUI) (`<pending>`): same shared
   text (`ExerciseMetadata::hint`) + force-attempt gate (no hint until ≥1 recorded attempt) + escalation
