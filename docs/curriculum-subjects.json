@@ -1,0 +1,787 @@
+{
+  "00-hello-world": {
+    "subject": "Teaches the skeleton of every Rust program: an entry point that runs and prints text to the screen.",
+    "teaches": [
+      "fn main entry point",
+      "println! macro and the ! marker",
+      "statements and the semicolon",
+      "curly-brace body blocks",
+      "E0423 (macro used as a function)"
+    ]
+  },
+  "01-bindings-and-immutability": {
+    "subject": "Teaches that naming a value with let binds it immutably by default so it can't be reassigned later.",
+    "teaches": [
+      "let bindings",
+      "immutability by default",
+      "type inference",
+      "explicit type annotation (: i32)",
+      "E0384 (cannot assign twice to immutable variable)"
+    ]
+  },
+  "02-mutability": {
+    "subject": "Teaches how mut opts a binding into being changeable while keeping its type fixed.",
+    "teaches": [
+      "let mut",
+      "reassignment of mutable values",
+      "type stays fixed after first assignment",
+      "E0308 (mismatched types)",
+      "&str vs integer"
+    ]
+  },
+  "03-shadowing": {
+    "subject": "Teaches shadowing: a second let with the same name makes a new binding that can change the value's type, unlike mut.",
+    "teaches": [
+      "shadowing via repeated let",
+      "changing a value's type across bindings",
+      "scope and block-local shadows",
+      "method calls (.trim(), .len())",
+      "shadowing vs mutation"
+    ]
+  },
+  "04-constants": {
+    "subject": "Teaches const for values fixed forever and known at compile time, requiring an explicit type.",
+    "teaches": [
+      "const declarations",
+      "required type annotation",
+      "SCREAMING_SNAKE_CASE convention",
+      "compile-time / file-scope constants",
+      "'missing type for const item' error"
+    ]
+  },
+  "05-scalar-types": {
+    "subject": "Teaches Rust's four scalar types and that Rust never converts between number types silently.",
+    "teaches": [
+      "integers (i32, u32, u8, i64) and signed/unsigned widths",
+      "floats (f64)",
+      "bool",
+      "char with single quotes",
+      "no silent numeric conversion (E0308)"
+    ]
+  },
+  "05b-integer-overflow": {
+    "subject": "Teaches that arithmetic overflowing an integer's width causes a runtime panic in debug builds rather than silent wrapping.",
+    "teaches": [
+      "integer overflow",
+      "runtime panic vs compile-time error",
+      "u8 range (0-255)",
+      "debug vs release build overflow behavior",
+      "'attempt to add with overflow' panic"
+    ]
+  },
+  "06-expressions-statements-semicolon": {
+    "subject": "Teaches the difference between expressions (produce values) and statements, and how a semicolon discards a value to produce unit ().",
+    "teaches": [
+      "expressions vs statements",
+      "semicolon discards a value",
+      "unit type ()",
+      "blocks as expressions (last line without semicolon)",
+      "E0308 from a stray semicolon in a returning function"
+    ]
+  },
+  "07-functions": {
+    "subject": "Teaches declaring functions with typed parameters and a return type, returning via the last expression.",
+    "teaches": [
+      "fn declarations and snake_case names",
+      "typed parameters (required types)",
+      "return type with ->",
+      "return-by-last-expression",
+      "E0308 (wrong argument type)"
+    ]
+  },
+  "08-comments-and-printing": {
+    "subject": "Teaches comment syntax and the full range of printing with println!, format!, and Display vs Debug formatting.",
+    "teaches": [
+      "comments (//, /* */, ///)",
+      "println! with {name} and positional {} placeholders",
+      "format! returning a String",
+      "{} Display vs {:?} Debug",
+      "E0277 (type doesn't implement Display)"
+    ]
+  },
+  "09-if-else": {
+    "subject": "Teaches branching: how to run one block of code when a condition is true and another otherwise, using if/else if/else with real bool conditions (no truthiness).",
+    "teaches": [
+      "if / else if / else",
+      "bool conditions and no-truthiness rule",
+      "comparison operators (>, ==, !=)",
+      "first-true-wins ordering",
+      "E0308 mismatched types (non-bool condition)"
+    ]
+  },
+  "09b-if-as-expression": {
+    "subject": "Teaches that an if/else is an expression that produces a value, so it can sit on the right of a let, with the requirement that every arm produce the same type.",
+    "teaches": [
+      "if as an expression",
+      "let number = if condition { 5 } else { 6 }",
+      "arms must agree on type",
+      "block value / semicolon rule",
+      "E0308 incompatible if/else arm types"
+    ]
+  },
+  "10-loop-and-break": {
+    "subject": "Teaches the loop keyword that repeats forever until break, and its unique power to carry a value out via break <value> because it has exactly one exit.",
+    "teaches": [
+      "loop and break",
+      "break with a value",
+      "compound assignment (+=)",
+      "loop labels (mentioned)",
+      "E0571 break with value from a while loop"
+    ]
+  },
+  "10b-while": {
+    "subject": "Teaches the while loop that repeats while a bool condition holds, checking the condition each pass and stopping when it becomes false.",
+    "teaches": [
+      "while loop",
+      "bool condition requirement",
+      "compound assignment (-=)",
+      "why while cannot break with a value",
+      "E0308 mismatched types (non-bool while condition)"
+    ]
+  },
+  "10c-for-and-ranges": {
+    "subject": "Teaches the for loop that walks each item of a collection or range without managing an index, so it cannot run off the end.",
+    "teaches": [
+      "for ... in loop",
+      "ranges: exclusive 1..4 vs inclusive 1..=4",
+      "print! vs println!",
+      "loop-variable scope",
+      "E0425 cannot find value in this scope"
+    ]
+  },
+  "11-match-intro": {
+    "subject": "Teaches match: hand it one value, list cases as patterns, and it runs the first arm that fits, with compiler-enforced exhaustiveness.",
+    "teaches": [
+      "match with pattern => result arms",
+      "_ catch-all wildcard",
+      "exhaustiveness checking",
+      "match as an expression",
+      "E0004 non-exhaustive patterns"
+    ]
+  },
+  "12-string-vs-str": {
+    "subject": "Teaches the difference between a borrowed fixed &str view and an owned growable String, and how to build and grow a String.",
+    "teaches": [
+      "&str (borrowed view) vs String (owned, growable)",
+      "String::from / to_string",
+      "push_str, format!, as_str",
+      "no integer indexing of strings (UTF-8)",
+      "E0277 str cannot be indexed by integer"
+    ]
+  },
+  "13-tuples": {
+    "subject": "Teaches tuples: bundling a fixed number of values of different types into one value, accessed by destructuring or by position.",
+    "teaches": [
+      "tuples of mixed types",
+      "arity as part of the type",
+      "destructuring vs .0/.1/.2 access",
+      "unit type ()",
+      "E0308 mismatched types (wrong destructure arity)"
+    ]
+  },
+  "13b-arrays": {
+    "subject": "Teaches arrays: a fixed-length row of same-type values whose length is part of the type [T; N], with bounds checks caught at compile time or run time.",
+    "teaches": [
+      "arrays [T; N] and [0; 3] shorthand",
+      "indexing and .len()",
+      "compile-time vs runtime bounds checks (panic)",
+      "off-by-one (<= vs <) walk",
+      "for as the safe fix for indexing"
+    ]
+  },
+  "13c-slices": {
+    "subject": "Teaches slices: a borrowed window &[T] into part of a sequence whose type erases the length, so one function accepts any size.",
+    "teaches": [
+      "slices &[i32] via &scores[1..3]",
+      "length erased from the type",
+      "&str is a slice of a String",
+      "borrowing marker &",
+      "runtime panic on out-of-range slice / UTF-8 char-boundary"
+    ]
+  },
+  "14-vec": {
+    "subject": "Teaches Vec<T>, the growable list whose length lives at run time, and the deliberate choice between indexing (which panics on a bad index) and .get() (which returns an Option).",
+    "teaches": [
+      "Vec<T>",
+      "vec! / push / pop",
+      "[] vs .get() (panic vs Option)",
+      "Vec::new()",
+      "runtime index-out-of-bounds panic"
+    ]
+  },
+  "14b-hashmap": {
+    "subject": "Teaches HashMap<K,V> as a key-to-value lookup table, including the required import, the entry/or_insert counting idiom, and its unordered nature.",
+    "teaches": [
+      "HashMap<K, V>",
+      "use std::collections::HashMap",
+      "insert / get (Option)",
+      "entry().or_insert() counting",
+      "E0433 (undeclared type import error)"
+    ]
+  },
+  "15-ownership": {
+    "subject": "Teaches Rust's ownership model: every value has one owner, and when the owner goes out of scope the value is dropped and freed automatically at build-time-proven safety.",
+    "teaches": [
+      "the three rules of ownership",
+      "owner / scope / drop",
+      "automatic freeing at end of block",
+      "stack vs heap (one-sentence model)",
+      "E0425 (value not in scope)"
+    ]
+  },
+  "15b-moves": {
+    "subject": "Teaches that assigning or passing a String moves ownership (invalidating the old name) so a value is never freed twice, and using the moved value is Rust's most famous compile error.",
+    "teaches": [
+      "move semantics",
+      "String assignment / function-argument moves",
+      "use-after-move",
+      "E0382 (borrow of moved value)",
+      "preview of borrowing as the fix"
+    ]
+  },
+  "15c-copy-and-clone": {
+    "subject": "Teaches the Copy trait (why small stack values duplicate on assignment instead of moving) versus non-Copy types that move, and .clone() as the explicit, visible deep copy.",
+    "teaches": [
+      "Copy trait",
+      "Clone / .clone() deep copy",
+      "Copy vs move distinction",
+      "Copy-or-custom-drop-never-both rule",
+      "reading the Copy line in E0382"
+    ]
+  },
+  "16-shared-references": {
+    "subject": "Teaches shared references (&T) that let code borrow a value to read it without taking ownership, so the original owner keeps the value and can have many simultaneous read-only borrows.",
+    "teaches": [
+      "shared reference &T",
+      "borrowing to read",
+      "&s / passing &String",
+      "many simultaneous shared borrows",
+      "E0507 (cannot move out of a shared reference)"
+    ]
+  },
+  "16b-mutable-references": {
+    "subject": "Teaches mutable references (&mut T) for borrowing to change a value, plus the two borrowing rules (shared xor mutable, references must stay valid) enforced by the borrow checker.",
+    "teaches": [
+      "mutable reference &mut T",
+      "shared xor mutable rule",
+      "E0499 (two mutable borrows)",
+      "E0502 (mutable while shared)",
+      "E0597 (reference outlives value)"
+    ]
+  },
+  "17-slices-in-depth": {
+    "subject": "Teaches that a slice is a borrow pointing into a collection, so while the slice is alive the collection is borrowed immutably — which turns stale-index bugs into compile errors.",
+    "teaches": [
+      "slices as borrows (&[T], &str)",
+      "fn first_word(s: &str) -> &str",
+      "slice pins the collection immutably",
+      "stale-index bug prevention",
+      "E0502 (mutate while slice/reference alive)"
+    ]
+  },
+  "18-defining-structs": {
+    "subject": "Teaches defining and instantiating structs to group related fields into one named owned type, including field-init shorthand, struct update, tuple structs, and unit structs.",
+    "teaches": [
+      "struct definition & instantiation",
+      "field access & field-init shorthand",
+      "struct update (..), tuple & unit structs",
+      "owned fields (String not &str)",
+      "E0106 (missing lifetime specifier)"
+    ]
+  },
+  "18b-methods-and-impl": {
+    "subject": "Teaches attaching behaviour to structs via impl blocks and methods, where the receiver (&self / &mut self / self) mirrors the Phase-4 borrow rules, plus associated functions called with ::.",
+    "teaches": [
+      "impl blocks & methods",
+      "receivers &self / &mut self / self",
+      "associated functions & Self / ::",
+      "self consumes (E0382 callback)",
+      "E0599 (no method found)"
+    ]
+  },
+  "18c-derive-debug": {
+    "subject": "Adding `#[derive(Debug)]` above a struct makes it printable with `{:?}` (compact) and `{:#?}` (pretty), and the compiler literally tells you to add that line when it's missing.",
+    "teaches": [
+      "#[derive(Debug)]",
+      "{:?} vs {:#?} formatting",
+      "E0277 (type doesn't implement Debug)",
+      "dbg! macro",
+      "compiler-suggested fixes"
+    ]
+  },
+  "19-enums": {
+    "subject": "An enum models a value that is one of several shapes, with variants that can be empty or carry data, and you attach methods with impl that match on self.",
+    "teaches": [
+      "enum definition",
+      "variant kinds (unit, struct-like, tuple-like)",
+      "variant as constructor",
+      "impl + match on self",
+      "E0532 (wrong variant shape)"
+    ]
+  },
+  "19b-option": {
+    "subject": "Rust has no null; instead the possibility of a missing value lives in the type `Option<T>` (Some/None), so the compiler forces you to handle absence.",
+    "teaches": [
+      "Option<T>",
+      "Some / None variants",
+      "no-null design",
+      "E0004 (non-exhaustive match)",
+      "E0277 (Option<T> is not a T)"
+    ]
+  },
+  "19c-match-in-depth": {
+    "subject": "The full match pattern vocabulary — binding inner data, multiple patterns, ranges, guards, and catch-alls — while the compiler still enforces exhaustiveness.",
+    "teaches": [
+      "binding patterns",
+      "| multiple patterns",
+      "..= ranges",
+      "match guards (if)",
+      "catch-all vs _",
+      "unreachable pattern warning"
+    ]
+  },
+  "19d-concise-matching": {
+    "subject": "Three short forms — `if let`, `while let`, and `let…else` — handle a single case by deliberately trading away exhaustiveness checking to keep the happy path flat.",
+    "teaches": [
+      "if let",
+      "while let",
+      "let…else (diverging else)",
+      "irrefutable vs refutable patterns",
+      "E0005 (refutable pattern in local binding)"
+    ]
+  },
+  "20-result": {
+    "subject": "In Rust a recoverable error is an ordinary value carried in the return type as `Result<T, E>` (Ok/Err), which you read with match or unwrap_or rather than hidden exceptions.",
+    "teaches": [
+      "Result<T, E>",
+      "Ok / Err variants",
+      "match on a Result",
+      "unwrap_or(default)",
+      "str::parse / turbofish",
+      "E0308 (mismatched types)"
+    ]
+  },
+  "20b-panic-unwrap-expect": {
+    "subject": "The blunt error path stops the program on the spot: `panic!` halts the thread, and `unwrap`/`expect` give the Ok/Some value or panic — a runtime crash, not a compile error.",
+    "teaches": [
+      "panic!",
+      ".unwrap()",
+      ".expect(\"context\")",
+      "runtime panic vs compile error",
+      "reading panic messages (ParseIntError/InvalidDigit)"
+    ]
+  },
+  "20c-question-mark": {
+    "subject": "The `?` operator is a whole error-handling match in one character: on Err it early-returns the error from the enclosing function, and on Ok it unwraps and continues.",
+    "teaches": [
+      "? operator",
+      "error propagation / early return",
+      "function must return Result or Option",
+      "From trait error conversion",
+      "E0277 (? in non-Result function)"
+    ]
+  },
+  "21-packages-and-crates": {
+    "subject": "Names the units of a Rust project: a crate is the smallest unit the compiler builds (binary with src/main.rs or library with src/lib.rs) and a package is a Cargo.toml plus one or more crates.",
+    "teaches": [
+      "crate (build unit)",
+      "binary vs library crate",
+      "crate root (main.rs / lib.rs)",
+      "package + Cargo.toml",
+      "fn main requirement",
+      "E0601 (main function not found)"
+    ]
+  },
+  "21b-modules": {
+    "subject": "A module (`mod`) is a named group inside a crate that provides organization and privacy, and nested modules form a tree rooted at `crate` addressed by `::` paths.",
+    "teaches": [
+      "mod (module definition)",
+      "module tree (crate root, parent/child/sibling)",
+      ":: paths / namespaces",
+      "pub (privacy preview)",
+      "E0425 (function not found in scope)"
+    ]
+  },
+  "21c-modules-in-files": {
+    "subject": "It teaches how a `mod name;` declaration (semicolon, no body) tells the compiler to load a module's body from a separate file so the directory layout mirrors the module tree.",
+    "teaches": [
+      "mod name; file-loading declaration",
+      "src/name.rs and submodule src/name/vegetables.rs layout",
+      "the older name/mod.rs style",
+      "\"mod is not an include\" (declared once, referred to by path)",
+      "E0583 file not found for module"
+    ]
+  },
+  "22-paths": {
+    "subject": "It teaches how to name an item in another module using `::`-separated paths, distinguishing absolute (crate::) from relative (self::/super::/sibling) forms.",
+    "teaches": [
+      "absolute paths with crate::",
+      "relative paths and super:: / self::",
+      "child modules can call ancestors' private items",
+      "prefer-absolute-paths guidance",
+      "E0425 cannot find function in this scope"
+    ]
+  },
+  "22b-privacy-and-pub": {
+    "subject": "It teaches that every item is private to code outside its module by default and that `pub` opens one specific item, with the trap that `pub mod` does not make the module's contents public.",
+    "teaches": [
+      "private-by-default visibility",
+      "pub opens a single item",
+      "pub mod does not publish contents (two-strike rule)",
+      "pub(crate) scope",
+      "modules are the privacy boundary",
+      "E0603 function is private"
+    ]
+  },
+  "22c-pub-structs-enums": {
+    "subject": "It teaches the asymmetry that a `pub struct` keeps its fields private (requiring a public constructor) while a `pub enum` makes all its variants public.",
+    "teaches": [
+      "pub struct with per-field privacy",
+      "public constructor / associated function requirement",
+      "pub enum opens all variants",
+      "privacy is module-based not type-based",
+      "E0616 private field (and E0451 for struct literals)"
+    ]
+  },
+  "23-the-use-keyword": {
+    "subject": "It teaches how the `use` keyword brings a path into scope once so code can call items by their short name, plus handling name clashes with `as` and the scope-locality trap.",
+    "teaches": [
+      "use to shorten paths",
+      "parent-module-for-functions vs full-path-for-types idiom",
+      "as for renaming to avoid clashes",
+      "pub use re-exporting and glob/nested imports",
+      "use is scope-local",
+      "E0433 unresolved module in this scope"
+    ]
+  },
+  "24-generic-functions": {
+    "subject": "It teaches how a generic type parameter `<T>` lets one function work for many types by leaving a type hole filled at each call, ending copy-paste-and-rename duplication.",
+    "teaches": [
+      "type parameter <T> declaration and use",
+      "a generic body must be valid for every T",
+      "Vec<T> and Option<T> as generics already used",
+      "E0369 binary operation > cannot be applied to &T",
+      "trait bound preview (PartialOrd)"
+    ]
+  },
+  "24b-generic-types": {
+    "subject": "It teaches how to put the `<T>` placeholder into struct definitions, enum definitions, and impl blocks so one type definition serves every element type.",
+    "teaches": [
+      "generic structs struct Point<T>",
+      "generic enums (how Option<T> is built)",
+      "impl<T> Point<T> with <T> declared after impl",
+      "monomorphization (zero runtime cost)",
+      "E0425 cannot find type T in this scope"
+    ]
+  },
+  "25-traits-declare-implement": {
+    "subject": "It teaches how to declare a trait as a set of method signatures and implement it for a type with `impl Trait for Type`, distinguishing required methods from default methods.",
+    "teaches": [
+      "trait keyword and method signatures",
+      "impl Trait for Type",
+      "required (no body) vs default (with body) methods",
+      "traits must be in scope to call; the orphan rule",
+      "E0046 not all trait items implemented"
+    ]
+  },
+  "25b-trait-bounds": {
+    "subject": "It teaches how a trait bound constrains a generic `T` to types implementing a trait so the body may use the trait's behaviour, closing Lesson 24's E0369 wall.",
+    "teaches": [
+      "impl Trait parameter syntax",
+      "generic bound <T: Summary>",
+      "where clauses",
+      "PartialOrd bound resolving largest<T>",
+      "E0277 trait bound not satisfied"
+    ]
+  },
+  "26-lifetime-annotations": {
+    "subject": "It teaches lifetime annotations (`'a`) as generics for how long references stay valid, needed when a function returns one of several input references so the compiler knows which it borrows from.",
+    "teaches": [
+      "lifetime annotation syntax 'a",
+      "fn longest<'a>(x: &'a str, y: &'a str) -> &'a str",
+      "annotations describe relationships, they don't change lifespans",
+      "E0106 missing lifetime specifier",
+      "E0597 does not live long enough"
+    ]
+  },
+  "26b-lifetime-elision": {
+    "subject": "It explains the compiler's lifetime elision rules — chiefly that a function with one input reference donates that lifetime to all outputs — so you know which functions demand a manual annotation and which don't.",
+    "teaches": [
+      "lifetime elision rules",
+      "single-input-reference rule",
+      "returning references without annotations",
+      "E0515 (returning a reference to a local)",
+      "&str slices"
+    ]
+  },
+  "26c-lifetimes-in-structs": {
+    "subject": "It teaches how to declare a lifetime on a struct so a field can hold a borrowed reference (&'a str) without owning it, guaranteeing the struct never outlives the data it borrows.",
+    "teaches": [
+      "struct lifetime parameter <'a>",
+      "borrowed &'a str fields",
+      "borrow vs own for struct fields",
+      "E0106 (missing lifetime specifier)",
+      "struct that borrows a slice"
+    ]
+  },
+  "27-closure-syntax": {
+    "subject": "It introduces closures as anonymous inline functions written with |param| bars, saved in variables or passed to methods, whose parameter/return types are inferred and locked on first use.",
+    "teaches": [
+      "closure syntax with |bars|",
+      "type inference locked on first use",
+      "passing closures to methods like sort_by_key",
+      "E0308 (mismatched types)",
+      "closures vs named fn"
+    ]
+  },
+  "27b-closure-capture": {
+    "subject": "It teaches how closures capture surrounding variables in one of three ways (immutable borrow, mutable borrow, or take ownership), with the body deciding the mode and the move keyword forcing ownership.",
+    "teaches": [
+      "three capture modes (borrow/mut-borrow/own)",
+      "move keyword",
+      "Fn/FnMut/FnOnce trait family",
+      "E0382 (use of moved value)",
+      "E0507 (cannot move out of captured variable)"
+    ]
+  },
+  "28-iterator-cursor": {
+    "subject": "It reveals that a for loop is driven by an iterator — a cursor implementing the Iterator trait whose next() returns Some/None — and that iter/iter_mut/into_iter choose read, mutate, or take-ownership access.",
+    "teaches": [
+      "Iterator trait and next()",
+      "iter vs iter_mut vs into_iter",
+      "iterator laziness",
+      "Option Some/None from next",
+      "E0382 (move via into_iter)"
+    ]
+  },
+  "28b-adapter-chains": {
+    "subject": "It teaches building readable iterator pipelines from lazy adapters (map, filter) plus a consumer (collect, sum) that actually drives the work, and why a chain with no consumer does nothing.",
+    "teaches": [
+      "map and filter adapters",
+      "collect consumer and its type annotation",
+      "sum consumer",
+      "iterator laziness / unused_must_use warning",
+      "adapters vs consumers"
+    ]
+  },
+  "29-box": {
+    "subject": "It introduces Box<T> as a smart pointer that stores a value on the heap behind a fixed-size pointer, chiefly to give recursive self-containing types a known size via indirection.",
+    "teaches": [
+      "Box<T> heap allocation",
+      "recursive types (cons list)",
+      "indirection to break infinite size",
+      "E0072 (recursive type has infinite size)",
+      "Box::new"
+    ]
+  },
+  "29b-deref-drop": {
+    "subject": "It explains the two traits behind smart pointers: Deref (why * follows a box like a reference) and Drop (an automatic cleanup hook that runs at scope-end in reverse creation order).",
+    "teaches": [
+      "Deref trait and the * operator",
+      "Drop trait and drop method",
+      "automatic cleanup at scope end",
+      "reverse creation drop order",
+      "smart pointer internals"
+    ]
+  },
+  "29c-rc": {
+    "subject": "It teaches Rc<T> as a reference-counted smart pointer enabling multiple shared read-only owners of one heap value, cleaned up only when the count reaches zero.",
+    "teaches": [
+      "Rc<T> reference counting",
+      "Rc::clone (cheap count bump, not data copy)",
+      "Rc::strong_count",
+      "shared read-only ownership",
+      "Drop-driven count decrement"
+    ]
+  },
+  "29d-refcell": {
+    "subject": "It teaches RefCell<T> as interior mutability — mutating a value through a shared, immutable-looking handle by moving the borrow check to runtime, panicking on violation, and combining with Rc as Rc<RefCell<T>>.",
+    "teaches": [
+      "RefCell<T> interior mutability",
+      "borrow() and borrow_mut()",
+      "runtime borrow checking (panic vs compile error)",
+      "Rc<RefCell<T>> combination",
+      "'already borrowed' runtime panic"
+    ]
+  },
+  "30-spawning-threads": {
+    "subject": "How to start a second line of work with a thread and safely hand it data, using thread::spawn to run a closure, join to wait for it, and move to give the thread ownership so borrows can't dangle.",
+    "teaches": [
+      "thread::spawn",
+      "JoinHandle / join",
+      "move closures",
+      "data races and fearless concurrency",
+      "E0373"
+    ]
+  },
+  "30b-channels": {
+    "subject": "How threads cooperate without sharing by sending values through a one-way channel, where send moves ownership so the sender can no longer touch the value.",
+    "teaches": [
+      "mpsc::channel",
+      "tx.send / rx.recv",
+      "receiving by iterating rx",
+      "multiple producers via tx.clone",
+      "ownership moves on send",
+      "E0382"
+    ]
+  },
+  "30c-shared-state": {
+    "subject": "How multiple threads safely share and mutate one value using Arc for many owners and Mutex for exclusive access, with the compiler's errors steering you to the Arc<Mutex<T>> design.",
+    "teaches": [
+      "Mutex<T> and .lock()",
+      "Arc<T>",
+      "Arc<Mutex<T>>",
+      "Send and Sync marker traits",
+      "E0382, E0277, E0594"
+    ]
+  },
+  "31-async-syntax": {
+    "subject": "The shape of async code: async fn returns a future rather than its value, async blocks are future-valued expressions, and .await runs a future to completion inside async contexts.",
+    "teaches": [
+      "async fn returning impl Future",
+      "async { } blocks",
+      ".await",
+      "async vs threads (cooperative concurrency vs parallelism)",
+      "E0308"
+    ]
+  },
+  "31b-futures-are-lazy": {
+    "subject": "The core async rule that a future does nothing until driven, which is why async code needs a runtime and why .await is restricted and main cannot be async on its own.",
+    "teaches": [
+      "futures are lazy (like iterators)",
+      "runtimes / executors",
+      ".await only in async contexts",
+      "async fn main is not allowed",
+      "E0728, E0752"
+    ]
+  },
+  "32-trait-objects": {
+    "subject": "How dyn Trait behind a pointer lets one collection or function hold many different concrete types and call their shared method via runtime dynamic dispatch.",
+    "teaches": [
+      "Box<dyn Trait> and &dyn Trait",
+      "dynamic vs static dispatch",
+      "fat pointers and vtables",
+      "dyn compatibility",
+      "E0308, E0038"
+    ]
+  },
+  "32b-encapsulation": {
+    "subject": "How keeping struct fields private and exposing only public methods enforces invariants in one place and lets you change internals without breaking callers.",
+    "teaches": [
+      "private fields vs pub methods",
+      "module privacy boundaries",
+      "invariants via private helpers",
+      "changing internals without breaking callers",
+      "E0616"
+    ]
+  },
+  "32c-states-as-types": {
+    "subject": "How giving each stage its own type (e.g. DraftPost vs PublishedPost) makes wrong-state operations unrepresentable, with transitions that consume self to retire the old state.",
+    "teaches": [
+      "one type per state (typestate)",
+      "methods only where valid",
+      "transitions consuming self by value",
+      "invalid states unrepresentable",
+      "E0599"
+    ]
+  },
+  "33-refutability": {
+    "subject": "The refutability rule that governs where patterns may sit: irrefutable patterns (always match) are needed for let/for/params, while refutable ones (can fail) require an else path via if let/while let/match.",
+    "teaches": [
+      "irrefutable vs refutable patterns",
+      "let/for/params need irrefutable",
+      "if let / let...else provide the else path",
+      "irrefutable if let is only a warning",
+      "E0005"
+    ]
+  },
+  "33b-guards-bindings-nested": {
+    "subject": "Three pattern power tools for match: match guards add a value condition to an arm, @ bindings capture a value while range-testing it, and nested destructuring reaches into layered data.",
+    "teaches": [
+      "match guards (if condition on an arm)",
+      "@ bindings (name @ pattern)",
+      "nested destructuring",
+      "guards ignored by exhaustiveness",
+      "E0004"
+    ]
+  },
+  "34-unsafe": {
+    "subject": "It teaches that `unsafe` is a small, auditable block that unlocks five compiler-unverifiable abilities (chiefly dereferencing raw pointers) without disabling the borrow checker.",
+    "teaches": [
+      "unsafe blocks and the five superpowers",
+      "raw pointers *const T / *mut T and &raw const / &raw mut",
+      "dereferencing a raw pointer requires unsafe (E0133)",
+      "unsafe does not turn off borrow checking (E0502)"
+    ]
+  },
+  "34b-operator-overloading": {
+    "subject": "It teaches operator overloading by implementing std::ops traits like Add on your own type, and explains associated types (type Output) so you can read forms like Future<Output = u32>.",
+    "teaches": [
+      "std::ops operator traits (Add, Sub, Mul)",
+      "a + b is sugar for Add::add(a, b)",
+      "associated types via type Output and type Item",
+      "reading Trait<Output = T> angle-bracket form",
+      "E0369 cannot add before implementing Add"
+    ]
+  },
+  "34c-macro-rules": {
+    "subject": "It teaches declarative macros with macro_rules! — pattern-to-template rules that generate code before compilation — by building a stripped-down my_vec! macro.",
+    "teaches": [
+      "macro_rules! pattern => template rules",
+      "captures like $x:expr (and ident, ty, stmt)",
+      "repetition $( ... ),* in pattern and template",
+      "the trailing-comma fix $(,)?",
+      "macros expand before compilation, marked by !"
+    ]
+  },
+  "35-single-threaded-server": {
+    "subject": "It builds a real single-threaded HTTP server with TcpListener/TcpStream so the learner feels why handling connections inline (one at a time) stalls behind a slow request.",
+    "teaches": [
+      "TcpListener::bind and listener.incoming()",
+      "TcpStream reading and write_all",
+      "anatomy of an HTTP response (status line, headers, blank line, body)",
+      "the inline single-threaded blocking flaw",
+      "E0596 missing mut on the stream parameter"
+    ]
+  },
+  "35b-thread-pool": {
+    "subject": "It fixes the single-threaded server by building a fixed-size thread pool with workers pulling boxed closure jobs from a shared channel, plus graceful shutdown via Drop and join.",
+    "teaches": [
+      "ThreadPool with workers and an mpsc channel",
+      "Job = Box<dyn FnOnce() + Send + 'static>",
+      "sharing the receiver via Arc<Mutex<Receiver>> (E0382)",
+      "graceful shutdown with Drop, Option::take, and join",
+      "worker lock-scope releasing the guard before running a job"
+    ]
+  },
+  "36-automated-tests": {
+    "subject": "It teaches writing automated tests that pass when they don't panic, using #[test] functions, assertion macros, and #[should_panic], run by cargo test.",
+    "teaches": [
+      "#[test] and cargo test runner",
+      "assert!, assert_eq!, assert_ne! (a test passes if it doesn't panic)",
+      "#[should_panic]",
+      "#[cfg(test)] mod tests with use super::*;",
+      "reading a failing test's left/right output"
+    ]
+  },
+  "37-doc-comments": {
+    "subject": "It teaches Markdown doc comments (/// and //!) that cargo doc renders into an HTML manual, and doc-tests — code examples that cargo test compiles and runs so docs can't drift from code.",
+    "teaches": [
+      "/// documents the item below; //! documents the enclosing item",
+      "Markdown doc comments and cargo doc --open",
+      "doc-tests: fenced examples run by cargo test",
+      "# Examples sections as part of the test suite",
+      "a lying doc example fails with left/right mismatch"
+    ]
+  },
+  "37b-shipping-with-cargo": {
+    "subject": "It surveys Cargo's shipping toolkit: release vs dev build profiles, publishing crates to crates.io with required metadata, workspaces of related crates, and cargo install.",
+    "teaches": [
+      "dev vs release profiles ([profile.dev]/[profile.release], opt-level)",
+      "cargo publish with required [package] description and license (yank is permanent, no delete)",
+      "workspaces ([workspace] members, shared Cargo.lock and target/)",
+      "cargo install for binary crates",
+      "measuring speed with --release, not the dev build"
+    ]
+  }
+}
