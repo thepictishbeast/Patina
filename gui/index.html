@@ -2378,8 +2378,14 @@
           ? `<div class="exphase" aria-hidden="true">${esc(phase.replace(/-/g, ' '))}`
             + `<span class="exphasecount${ps.done === ps.total ? ' done' : ''}">${ps.done}/${ps.total}${ps.done === ps.total ? ' ✓' : ''}</span></div>`
           : '';
-        return head + `<div class="ex ${st}${sel}" data-id="${esc(e.id)}" role="button" tabindex="0" aria-label="Switch to ${esc(e.id)}. Status: ${st}${tries}"><span class="chip" aria-hidden="true">${CHIP[st] || '•'}</span>`
-             + `<span class="t">${esc(e.id)}<small>[${st}]${tries}</small></span></div>`;
+        // Lead with the human TITLE (readable + shows the exercise's real order),
+        // not the raw `phase/NN_name` id — the id's number is a stable internal
+        // handle, not the learning position, so it can read out of sequence after a
+        // re-order. Keep the id as muted secondary text + in data-id/aria (selection
+        // and tests key off the id, never the label). Strip title markdown backticks.
+        const label = (e.title || e.id).replace(/`/g, '');
+        return head + `<div class="ex ${st}${sel}" data-id="${esc(e.id)}" role="button" tabindex="0" aria-label="Switch to ${esc(label)} (${esc(e.id)}). Status: ${st}${tries}"><span class="chip" aria-hidden="true">${CHIP[st] || '•'}</span>`
+             + `<span class="t">${esc(label)}<small>${esc(e.id)} · ${st}${tries}</small></span></div>`;
       }).join('') : '<div class="ex"><span class="t" style="color:var(--fg-dim)">no exercises</span></div>';
       // The list items LOOK clickable (pointer cursor) — make them switch the
       // current exercise (`POST /api/select`). The server validates the id and

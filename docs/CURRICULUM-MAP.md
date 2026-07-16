@@ -106,84 +106,84 @@ Exercises in the order the app serves them (`NN-phase/NN_name` file order). The 
 
 | # | Exercise | Concept | Err | → Lesson | L# | |
 |---|----------|---------|-----|----------|----|--|
-| 1 | `basics/01_immutable_assign` | mutability | E0384 | `02-mutability` | 2 |  |
-| 2 | `basics/02_annotation_needed` | type-inference-limits | E0284 | `05-scalar-types` | 5 |  |
-| 3 | `basics/03_fn_arg_type` | function-arg-types | E0308 | `07-functions` | 8 |  |
-| 4 | `basics/04_no_coercion` | explicit-numeric-conversion | E0308 | `05-scalar-types` | 5 | ⬅ **back** |
+| 1 | `basics/08_use_before_init` | binding | E0381 | `01-bindings-and-immutability` | 1 |  |
+| 2 | `basics/01_immutable_assign` | mutability | E0384 | `02-mutability` | 2 |  |
+| 3 | `basics/02_annotation_needed` | type-inference-limits | E0284 | `05-scalar-types` | 5 |  |
+| 4 | `basics/04_no_coercion` | explicit-numeric-conversion | E0308 | `05-scalar-types` | 5 |  |
 | 5 | `basics/05_integer_overflow` | integer-overflow | — | `05b-integer-overflow` | 6 |  |
-| 6 | `basics/06_mutable_method_needs_mut` | mutable-borrow-needs-mut | E0596 | `16b-mutable-references` | 26 |  |
-| 7 | `basics/07_fn_arg_count` | function-argument-count | E0061 | `07-functions` | 8 | ⬅ **back** |
+| 6 | `basics/03_fn_arg_type` | function-arg-types | E0308 | `07-functions` | 8 |  |
+| 7 | `basics/07_fn_arg_count` | function-argument-count | E0061 | `07-functions` | 8 |  |
 | 8 | `basics/07b_duplicate_fn_name` | duplicate-definition | E0428 | `07-functions` | 8 |  |
-| 9 | `basics/08_use_before_init` | binding | E0381 | `01-bindings-and-immutability` | 1 | ⬅ **back** |
-| 10 | `control-flow/01_if_expr` | if-as-expression | E0317 | `09b-if-as-expression` | 11 |  |
-| 11 | `control-flow/02_match_exhaustive` | match-exhaustiveness | E0004 | `11-match-intro` | 15 |  |
-| 12 | `control-flow/05_match_enum_data` | enum-data | E0532 | `19-enums` | 31 |  |
-| 13 | `control-flow/03_loop_break_value` | loop-break-value | E0308 | `10-loop-and-break` | 12 | ⬅ **back** |
-| 14 | `control-flow/04_for_scope` | loop-variable-scope | E0425 | `10c-for-and-ranges` | 14 |  |
-| 15 | `collections/01_vec_push_type` | vec-element-type | E0308 | `14-vec` | 20 |  |
-| 16 | `collections/02_string_vs_str` | string-vs-str | E0308 | `12-string-vs-str` | 16 | ⬅ **back** |
-| 17 | `collections/03_iter_collect` | iterator-collect | E0308 | `28b-adapter-chains` | 55 |  |
-| 18 | `collections/03b_tuple_field` | tuple-field-access | E0609 | `13-tuples` | 17 | ⬅ **back** |
-| 19 | `collections/04_vec_moved` | iterate-by-reference | E0382 | `28-iterator-cursor` | 54 |  |
-| 20 | `collections/05_hashmap_insert` | hashmap-insert-ownership | E0382 | `14b-hashmap` | 21 | ⬅ **back** |
-| 21 | `collections/06_index_out_of_bounds` | vec-index-bounds | — | `14-vec` | 20 | ⬅ **back** |
-| 22 | `collections/06b_array_length` | array-length-type | E0308 | `13b-arrays` | 18 | ⬅ **back** |
+| 9 | `basics/06_mutable_method_needs_mut` | mutable-borrow-needs-mut | E0596 | `16b-mutable-references` | 26 |  |
+| 10 | `control-flow/01_if_expr` | if-as-expression | E0317 | `09b-if-as-expression` | 11 | ⬅ **back** |
+| 11 | `control-flow/03_loop_break_value` | loop-break-value | E0308 | `10-loop-and-break` | 12 |  |
+| 12 | `control-flow/04_for_scope` | loop-variable-scope | E0425 | `10c-for-and-ranges` | 14 |  |
+| 13 | `control-flow/02_match_exhaustive` | match-exhaustiveness | E0004 | `11-match-intro` | 15 |  |
+| 14 | `control-flow/05_match_enum_data` | enum-data | E0532 | `19-enums` | 31 |  |
+| 15 | `collections/02_string_vs_str` | string-vs-str | E0308 | `12-string-vs-str` | 16 | ⬅ **back** |
+| 16 | `collections/09_return_owned_string` | string-vs-str | E0308 | `12-string-vs-str` | 16 |  |
+| 17 | `collections/03b_tuple_field` | tuple-field-access | E0609 | `13-tuples` | 17 |  |
+| 18 | `collections/06b_array_length` | array-length-type | E0308 | `13b-arrays` | 18 |  |
+| 19 | `collections/01_vec_push_type` | vec-element-type | E0308 | `14-vec` | 20 |  |
+| 20 | `collections/06_index_out_of_bounds` | vec-index-bounds | — | `14-vec` | 20 |  |
+| 21 | `collections/05_hashmap_insert` | hashmap-insert-ownership | E0382 | `14b-hashmap` | 21 |  |
+| 22 | `collections/08_use_after_move_into_fn` | move-semantics | E0382 | `15b-moves` | 23 |  |
 | 23 | `collections/07_fill_vec_needs_mut` | mutable-borrow-needs-mut | E0596 | `16b-mutable-references` | 26 |  |
-| 24 | `collections/08_use_after_move_into_fn` | move-semantics | E0382 | `15b-moves` | 23 | ⬅ **back** |
-| 25 | `collections/09_return_owned_string` | string-vs-str | E0308 | `12-string-vs-str` | 16 | ⬅ **back** |
-| 26 | `ownership/01_move` | move-semantics | E0382 | `15b-moves` | 23 |  |
-| 27 | `ownership/02_borrow` | borrow-checker-mut-vs-immut | E0502 | `16b-mutable-references` | 26 |  |
-| 28 | `ownership/02b_deref_non_reference` | dereference-non-reference | E0614 | `16-shared-references` | 25 | ⬅ **back** |
-| 29 | `ownership/03_dangling` | no-dangling-refs | E0515 | `16b-mutable-references` | 26 |  |
-| 30 | `ownership/04_move_out_of_borrow` | move-out-of-borrow | E0507 | `16-shared-references` | 25 | ⬅ **back** |
+| 24 | `collections/04_vec_moved` | iterate-by-reference | E0382 | `28-iterator-cursor` | 54 |  |
+| 25 | `collections/03_iter_collect` | iterator-collect | E0308 | `28b-adapter-chains` | 55 |  |
+| 26 | `ownership/01_move` | move-semantics | E0382 | `15b-moves` | 23 | ⬅ **back** |
+| 27 | `ownership/02b_deref_non_reference` | dereference-non-reference | E0614 | `16-shared-references` | 25 |  |
+| 28 | `ownership/04_move_out_of_borrow` | move-out-of-borrow | E0507 | `16-shared-references` | 25 |  |
+| 29 | `ownership/02_borrow` | borrow-checker-mut-vs-immut | E0502 | `16b-mutable-references` | 26 |  |
+| 30 | `ownership/03_dangling` | no-dangling-refs | E0515 | `16b-mutable-references` | 26 |  |
 | 31 | `ownership/05_double_mut_borrow` | borrow-checker-one-mut | E0499 | `16b-mutable-references` | 26 |  |
 | 32 | `ownership/06_assign_while_borrowed` | assign-while-borrowed | E0506 | `16b-mutable-references` | 26 |  |
 | 33 | `ownership/07_move_while_borrowed` | move-while-borrowed | E0505 | `16b-mutable-references` | 26 |  |
 | 34 | `types/01_struct_build` | struct-construction | E0063 | `18-defining-structs` | 28 |  |
 | 35 | `types/01b_struct_extra_field` | struct-construction | E0560 | `18-defining-structs` | 28 |  |
 | 36 | `types/02_field_privacy` | struct-field-privacy | E0616 | `18-defining-structs` | 28 |  |
-| 37 | `types/03_option_value` | option-extract-value | E0308 | `19b-option` | 32 |  |
-| 38 | `types/05_unwrap_none` | option-unwrap-panic | — | `20b-panic-unwrap-expect` | 36 |  |
-| 39 | `types/04_struct_method` | method-syntax | E0599 | `18b-methods-and-impl` | 29 | ⬅ **back** |
-| 40 | `types/05_refutable_let` | if-let | E0005 | `19d-concise-matching` | 34 |  |
-| 41 | `error-handling/01_result_is_not_t` | result-extract-value | E0308 | `20-result` | 35 |  |
-| 42 | `error-handling/02_question_mark_propagates` | error-propagation | E0277 | `20c-question-mark` | 37 |  |
-| 43 | `error-handling/03_unwrap_err_panics` | unwrap-panics-on-err | — | `20b-panic-unwrap-expect` | 36 | ⬅ **back** |
+| 37 | `types/04_struct_method` | method-syntax | E0599 | `18b-methods-and-impl` | 29 |  |
+| 38 | `types/03_option_value` | option-extract-value | E0308 | `19b-option` | 32 |  |
+| 39 | `types/05_refutable_let` | if-let | E0005 | `19d-concise-matching` | 34 |  |
+| 40 | `types/05_unwrap_none` | option-unwrap-panic | — | `20b-panic-unwrap-expect` | 36 |  |
+| 41 | `error-handling/01_result_is_not_t` | result-extract-value | E0308 | `20-result` | 35 | ⬅ **back** |
+| 42 | `error-handling/03_unwrap_err_panics` | unwrap-panics-on-err | — | `20b-panic-unwrap-expect` | 36 |  |
+| 43 | `error-handling/02_question_mark_propagates` | error-propagation | E0277 | `20c-question-mark` | 37 |  |
 | 44 | `error-handling/04_custom_error_from` | custom-error-from | E0277 | `20c-question-mark` | 37 |  |
 | 45 | `error-handling/05_question_mark_option_in_result` | question-mark-option-vs-result | E0277 | `20c-question-mark` | 37 |  |
-| 46 | `modules/01_private_module` | module-privacy | E0603 | `22b-privacy-and-pub` | 42 |  |
-| 47 | `modules/02_private_fn` | item-privacy | E0603 | `22b-privacy-and-pub` | 42 |  |
-| 48 | `modules/03_use_scope` | use-and-paths | E0433 | `23-the-use-keyword` | 44 |  |
-| 49 | `modules/04_super_path` | super-paths | E0425 | `22-paths` | 41 | ⬅ **back** |
+| 46 | `modules/04_super_path` | super-paths | E0425 | `22-paths` | 41 |  |
+| 47 | `modules/01_private_module` | module-privacy | E0603 | `22b-privacy-and-pub` | 42 |  |
+| 48 | `modules/02_private_fn` | item-privacy | E0603 | `22b-privacy-and-pub` | 42 |  |
+| 49 | `modules/03_use_scope` | use-and-paths | E0433 | `23-the-use-keyword` | 44 |  |
 | 50 | `modules/05_unresolved_import` | use-and-paths | E0432 | `23-the-use-keyword` | 44 |  |
-| 51 | `generics/01_bound` | generic-trait-bounds | E0369 | `24-generic-functions` | 45 |  |
-| 52 | `traits/01_display_bound` | trait-implementation | E0277 | `25-traits-declare-implement` | 47 |  |
-| 53 | `traits/02_trait_in_scope` | trait-in-scope | E0599 | `25-traits-declare-implement` | 47 |  |
-| 54 | `traits/03_trait_object_dyn` | trait-objects | E0308 | `32-trait-objects` | 65 |  |
-| 55 | `traits/04_missing_method` | trait-implementation | E0046 | `25-traits-declare-implement` | 47 | ⬅ **back** |
-| 56 | `lifetimes/01_longest` | lifetime-annotations | E0106 | `26-lifetime-annotations` | 49 |  |
-| 57 | `lifetimes/02_struct_lifetime` | struct-lifetime | E0106 | `26c-lifetimes-in-structs` | 51 |  |
-| 58 | `lifetimes/03_borrow_outlives_value` | borrow-must-not-outlive-value | E0597 | `16b-mutable-references` | 26 | ⬅ **back** |
-| 59 | `lifetimes/04_temporary_dropped` | borrow-must-not-outlive-value | E0716 | `16b-mutable-references` | 26 |  |
-| 60 | `closures/01_closure_type_lock` | closure-type-inference | E0308 | `27-closure-syntax` | 52 |  |
+| 51 | `lifetimes/03_borrow_outlives_value` | borrow-must-not-outlive-value | E0597 | `16b-mutable-references` | 26 | ⬅ **back** |
+| 52 | `lifetimes/04_temporary_dropped` | borrow-must-not-outlive-value | E0716 | `16b-mutable-references` | 26 |  |
+| 53 | `generics/01_bound` | generic-trait-bounds | E0369 | `24-generic-functions` | 45 |  |
+| 54 | `traits/01_display_bound` | trait-implementation | E0277 | `25-traits-declare-implement` | 47 |  |
+| 55 | `traits/02_trait_in_scope` | trait-in-scope | E0599 | `25-traits-declare-implement` | 47 |  |
+| 56 | `traits/04_missing_method` | trait-implementation | E0046 | `25-traits-declare-implement` | 47 |  |
+| 57 | `lifetimes/01_longest` | lifetime-annotations | E0106 | `26-lifetime-annotations` | 49 |  |
+| 58 | `lifetimes/02_struct_lifetime` | struct-lifetime | E0106 | `26c-lifetimes-in-structs` | 51 |  |
+| 59 | `traits/03_trait_object_dyn` | trait-objects | E0308 | `32-trait-objects` | 65 |  |
+| 60 | `closures/01_closure_type_lock` | closure-type-inference | E0308 | `27-closure-syntax` | 52 | ⬅ **back** |
 | 61 | `closures/02_fn_once_move` | closure-move-capture | E0382 | `27b-closure-capture` | 53 |  |
-| 62 | `iterators/01_collect_annotation` | iterator-collect-inference | E0283 | `28b-adapter-chains` | 55 |  |
-| 63 | `iterators/02_into_iter_moves` | iterator-into-iter-ownership | E0382 | `28-iterator-cursor` | 54 | ⬅ **back** |
+| 62 | `iterators/02_into_iter_moves` | iterator-into-iter-ownership | E0382 | `28-iterator-cursor` | 54 |  |
+| 63 | `iterators/01_collect_annotation` | iterator-collect-inference | E0283 | `28b-adapter-chains` | 55 |  |
 | 64 | `iterators/03_sum_annotation` | iterator-consumer-sum | E0283 | `28b-adapter-chains` | 55 |  |
 | 65 | `smart-pointers/01_recursive_box` | recursive-type-indirection | E0072 | `29-box` | 56 |  |
 | 66 | `smart-pointers/02_shared_ownership_rc` | shared-ownership | E0382 | `29c-rc` | 58 |  |
 | 67 | `smart-pointers/03_refcell_runtime_borrow` | interior-mutability | — | `29d-refcell` | 59 |  |
 | 68 | `concurrency/01_spawn_move` | thread-move-closures | E0373 | `30-spawning-threads` | 60 |  |
-| 69 | `concurrency/02_rc_not_send` | send-across-threads | E0277 | `30c-shared-state` | 62 |  |
-| 70 | `concurrency/03_arc_mutex` | shared-mutable-state | E0594 | `30c-shared-state` | 62 |  |
-| 71 | `concurrency/04_channel_send` | channel-message-passing | E0382 | `30b-channels` | 61 | ⬅ **back** |
-| 72 | `advanced/01_unsafe_deref` | unsafe-raw-pointers | E0133 | `34-unsafe` | 70 |  |
-| 73 | `advanced/02_orphan_rule_newtype` | orphan-rule-newtype | E0117 | `25b-trait-bounds` | 48 | ⬅ **back** |
-| 74 | `advanced/03_unsized_str` | dynamically-sized-types | E0277 | `32-trait-objects` | 65 |  |
-| 75 | `advanced/04_operator_overload_add` | operator-overloading | E0369 | `25-traits-declare-implement` | 47 | ⬅ **back** |
-| 76 | `advanced/05_supertrait_display` | supertrait | E0277 | `25b-trait-bounds` | 48 |  |
+| 69 | `concurrency/04_channel_send` | channel-message-passing | E0382 | `30b-channels` | 61 |  |
+| 70 | `concurrency/02_rc_not_send` | send-across-threads | E0277 | `30c-shared-state` | 62 |  |
+| 71 | `concurrency/03_arc_mutex` | shared-mutable-state | E0594 | `30c-shared-state` | 62 |  |
+| 72 | `advanced/04_operator_overload_add` | operator-overloading | E0369 | `25-traits-declare-implement` | 47 | ⬅ **back** |
+| 73 | `advanced/02_orphan_rule_newtype` | orphan-rule-newtype | E0117 | `25b-trait-bounds` | 48 |  |
+| 74 | `advanced/05_supertrait_display` | supertrait | E0277 | `25b-trait-bounds` | 48 |  |
+| 75 | `advanced/03_unsized_str` | dynamically-sized-types | E0277 | `32-trait-objects` | 65 |  |
+| 76 | `advanced/01_unsafe_deref` | unsafe-raw-pointers | E0133 | `34-unsafe` | 70 |  |
 
-**22 backward jumps** in the current order — the concrete reason the course doesn't walk Lesson 1 → 2 → 3 in step.
+**7 backward jumps** in the current order — the concrete reason the course doesn't walk Lesson 1 → 2 → 3 in step.
 
 
 ---
