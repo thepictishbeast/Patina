@@ -2809,7 +2809,10 @@
       'assign-while-borrowed': '16b-mutable-references',
       'borrow-checker-one-mut': '16b-mutable-references',
       'borrow-checker-mut-vs-immut': '16b-mutable-references',
-      'borrow-must-not-outlive-value': '16b-mutable-references',
+      // The two `lifetimes/` exercises (E0597 "borrowed value does not live long
+      // enough", E0716 "temporary dropped while borrowed") are lifetime errors —
+      // taught by the lifetime-annotations lesson, not the mutable-references one.
+      'borrow-must-not-outlive-value': '26-lifetime-annotations',
       'no-dangling-refs': '16b-mutable-references',
       'mutable-borrow-needs-mut': '16b-mutable-references',
       'struct-construction': '18-defining-structs',

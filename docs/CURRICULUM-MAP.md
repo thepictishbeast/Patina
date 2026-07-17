@@ -43,7 +43,7 @@ Each lesson, in the order the app presents it, with its subject and the exercise
 | 23 | **Lesson 15b — Moves: assignment hands ownership over**<br>`15b-moves` | Teaches that assigning or passing a String moves ownership (invalidating the old name) so a value is never freed twice, and using the moved value is Rust's most famous compile error. | `collections/08_use_after_move_into_fn`, `ownership/01_move` |
 | 24 | **Lesson 15c — Copy & Clone: when assignment duplicates**<br>`15c-copy-and-clone` | Teaches the Copy trait (why small stack values duplicate on assignment instead of moving) versus non-Copy types that move, and .clone() as the explicit, visible deep copy. | _— none yet_ |
 | 25 | **Lesson 16 — Shared references: borrow to *read***<br>`16-shared-references` | Teaches shared references (&T) that let code borrow a value to read it without taking ownership, so the original owner keeps the value and can have many simultaneous read-only borrows. | `ownership/02b_deref_non_reference`, `ownership/04_move_out_of_borrow` |
-| 26 | **Lesson 16b — Mutable references & the borrowing rules**<br>`16b-mutable-references` | Teaches mutable references (&mut T) for borrowing to change a value, plus the two borrowing rules (shared xor mutable, references must stay valid) enforced by the borrow checker. | `basics/06_mutable_method_needs_mut`, `collections/07_fill_vec_needs_mut`, `ownership/02_borrow`, `ownership/03_dangling`, `ownership/05_double_mut_borrow`, `ownership/06_assign_while_borrowed`, `ownership/07_move_while_borrowed`, `lifetimes/03_borrow_outlives_value`, `lifetimes/04_temporary_dropped` |
+| 26 | **Lesson 16b — Mutable references & the borrowing rules**<br>`16b-mutable-references` | Teaches mutable references (&mut T) for borrowing to change a value, plus the two borrowing rules (shared xor mutable, references must stay valid) enforced by the borrow checker. | `basics/06_mutable_method_needs_mut`, `collections/07_fill_vec_needs_mut`, `ownership/02_borrow`, `ownership/03_dangling`, `ownership/05_double_mut_borrow`, `ownership/06_assign_while_borrowed`, `ownership/07_move_while_borrowed` |
 | 27 | **Lesson 17 — Slices in Depth**<br>`17-slices-in-depth` | Teaches that a slice is a borrow pointing into a collection, so while the slice is alive the collection is borrowed immutably — which turns stale-index bugs into compile errors. | _— none yet_ |
 | 28 | **Lesson 18 — Structs: bundle your data**<br>`18-defining-structs` | Teaches defining and instantiating structs to group related fields into one named owned type, including field-init shorthand, struct update, tuple structs, and unit structs. | `types/01_struct_build`, `types/01b_struct_extra_field`, `types/02_field_privacy` |
 | 29 | **Lesson 18b — Methods & `impl` blocks**<br>`18b-methods-and-impl` | Teaches attaching behaviour to structs via impl blocks and methods, where the receiver (&self / &mut self / self) mirrors the Phase-4 borrow rules, plus associated functions called with ::. | `types/04_struct_method` |
@@ -66,7 +66,7 @@ Each lesson, in the order the app presents it, with its subject and the exercise
 | 46 | **Lesson 24b — Generic structs, enums & methods**<br>`24b-generic-types` | It teaches how to put the `<T>` placeholder into struct definitions, enum definitions, and impl blocks so one type definition serves every element type. | _— none yet_ |
 | 47 | **Lesson 25 — Traits: declare and implement**<br>`25-traits-declare-implement` | It teaches how to declare a trait as a set of method signatures and implement it for a type with `impl Trait for Type`, distinguishing required methods from default methods. | `traits/01_display_bound`, `traits/02_trait_in_scope`, `traits/04_missing_method`, `advanced/04_operator_overload_add` |
 | 48 | **Lesson 25b — Trait bounds: demanding behaviour from a generic `T`**<br>`25b-trait-bounds` | It teaches how a trait bound constrains a generic `T` to types implementing a trait so the body may use the trait's behaviour, closing Lesson 24's E0369 wall. | `advanced/02_orphan_rule_newtype`, `advanced/05_supertrait_display` |
-| 49 | **Lesson 26 — Lifetime annotations: the `longest` function**<br>`26-lifetime-annotations` | It teaches lifetime annotations (`'a`) as generics for how long references stay valid, needed when a function returns one of several input references so the compiler knows which it borrows from. | `lifetimes/01_longest` |
+| 49 | **Lesson 26 — Lifetime annotations: the `longest` function**<br>`26-lifetime-annotations` | It teaches lifetime annotations (`'a`) as generics for how long references stay valid, needed when a function returns one of several input references so the compiler knows which it borrows from. | `lifetimes/03_borrow_outlives_value`, `lifetimes/04_temporary_dropped`, `lifetimes/01_longest` |
 | 50 | **Lesson 26b — Lifetime elision: the annotations you never write**<br>`26b-lifetime-elision` | It explains the compiler's lifetime elision rules — chiefly that a function with one input reference donates that lifetime to all outputs — so you know which functions demand a manual annotation and which don't. | _— none yet_ |
 | 51 | **Lesson 26c — Lifetimes in structs: closing the Lesson 18 promise**<br>`26c-lifetimes-in-structs` | It teaches how to declare a lifetime on a struct so a field can hold a borrowed reference (&'a str) without owning it, guaranteeing the struct never outlives the data it borrows. | `lifetimes/02_struct_lifetime` |
 | 52 | **Lesson 27 — Closures: unnamed inline functions**<br>`27-closure-syntax` | It introduces closures as anonymous inline functions written with \|param\| bars, saved in variables or passed to methods, whose parameter/return types are inferred and locked on first use. | `closures/01_closure_type_lock` |
@@ -156,12 +156,12 @@ Exercises in the order the app serves them (`NN-phase/NN_name` file order). The 
 | 48 | `modules/02_private_fn` | item-privacy | E0603 | `22b-privacy-and-pub` | 42 |  |
 | 49 | `modules/03_use_scope` | use-and-paths | E0433 | `23-the-use-keyword` | 44 |  |
 | 50 | `modules/05_unresolved_import` | use-and-paths | E0432 | `23-the-use-keyword` | 44 |  |
-| 51 | `lifetimes/03_borrow_outlives_value` | borrow-must-not-outlive-value | E0597 | `16b-mutable-references` | 26 | ⬅ **back** |
-| 52 | `lifetimes/04_temporary_dropped` | borrow-must-not-outlive-value | E0716 | `16b-mutable-references` | 26 |  |
-| 53 | `generics/01_bound` | generic-trait-bounds | E0369 | `24-generic-functions` | 45 |  |
-| 54 | `traits/01_display_bound` | trait-implementation | E0277 | `25-traits-declare-implement` | 47 |  |
-| 55 | `traits/02_trait_in_scope` | trait-in-scope | E0599 | `25-traits-declare-implement` | 47 |  |
-| 56 | `traits/04_missing_method` | trait-implementation | E0046 | `25-traits-declare-implement` | 47 |  |
+| 51 | `generics/01_bound` | generic-trait-bounds | E0369 | `24-generic-functions` | 45 |  |
+| 52 | `traits/01_display_bound` | trait-implementation | E0277 | `25-traits-declare-implement` | 47 |  |
+| 53 | `traits/02_trait_in_scope` | trait-in-scope | E0599 | `25-traits-declare-implement` | 47 |  |
+| 54 | `traits/04_missing_method` | trait-implementation | E0046 | `25-traits-declare-implement` | 47 |  |
+| 55 | `lifetimes/03_borrow_outlives_value` | borrow-must-not-outlive-value | E0597 | `26-lifetime-annotations` | 49 |  |
+| 56 | `lifetimes/04_temporary_dropped` | borrow-must-not-outlive-value | E0716 | `26-lifetime-annotations` | 49 |  |
 | 57 | `lifetimes/01_longest` | lifetime-annotations | E0106 | `26-lifetime-annotations` | 49 |  |
 | 58 | `lifetimes/02_struct_lifetime` | struct-lifetime | E0106 | `26c-lifetimes-in-structs` | 51 |  |
 | 59 | `traits/03_trait_object_dyn` | trait-objects | E0308 | `32-trait-objects` | 65 |  |
@@ -183,7 +183,7 @@ Exercises in the order the app serves them (`NN-phase/NN_name` file order). The 
 | 75 | `advanced/03_unsized_str` | dynamically-sized-types | E0277 | `32-trait-objects` | 65 |  |
 | 76 | `advanced/01_unsafe_deref` | unsafe-raw-pointers | E0133 | `34-unsafe` | 70 |  |
 
-**7 backward jumps** in the current order — the concrete reason the course doesn't walk Lesson 1 → 2 → 3 in step.
+**6 backward jumps** in the current order — the concrete reason the course doesn't walk Lesson 1 → 2 → 3 in step.
 
 
 ---
@@ -199,7 +199,7 @@ Exercises in the order the app serves them (`NN-phase/NN_name` file order). The 
 
 - **Pile-ups**: several lessons carry many exercises while others carry none:
 
-  - **9×** `16b-mutable-references` — Lesson 16b — Mutable references & the borrowing rules
+  - **7×** `16b-mutable-references` — Lesson 16b — Mutable references & the borrowing rules
 
   - **4×** `25-traits-declare-implement` — Lesson 25 — Traits: declare and implement
 
@@ -208,6 +208,8 @@ Exercises in the order the app serves them (`NN-phase/NN_name` file order). The 
   - **3×** `18-defining-structs` — Lesson 18 — Structs: bundle your data
 
   - **3×** `20c-question-mark` — Lesson 20c — The `?` operator: pass the problem up
+
+  - **3×** `26-lifetime-annotations` — Lesson 26 — Lifetime annotations: the `longest` function
 
   - **3×** `28b-adapter-chains` — Lesson 28b — Adapter chains: `map`, `filter`, `collect`
 
@@ -247,33 +249,33 @@ Exercises in the order the app serves them (`NN-phase/NN_name` file order). The 
 | 28 | `ownership/05_double_mut_borrow` | `16b-mutable-references` | 26 |
 | 29 | `ownership/06_assign_while_borrowed` | `16b-mutable-references` | 26 |
 | 30 | `ownership/07_move_while_borrowed` | `16b-mutable-references` | 26 |
-| 31 | `lifetimes/03_borrow_outlives_value` | `16b-mutable-references` | 26 |
-| 32 | `lifetimes/04_temporary_dropped` | `16b-mutable-references` | 26 |
-| 33 | `types/01_struct_build` | `18-defining-structs` | 28 |
-| 34 | `types/01b_struct_extra_field` | `18-defining-structs` | 28 |
-| 35 | `types/02_field_privacy` | `18-defining-structs` | 28 |
-| 36 | `types/04_struct_method` | `18b-methods-and-impl` | 29 |
-| 37 | `control-flow/05_match_enum_data` | `19-enums` | 31 |
-| 38 | `types/03_option_value` | `19b-option` | 32 |
-| 39 | `types/05_refutable_let` | `19d-concise-matching` | 34 |
-| 40 | `error-handling/01_result_is_not_t` | `20-result` | 35 |
-| 41 | `types/05_unwrap_none` | `20b-panic-unwrap-expect` | 36 |
-| 42 | `error-handling/03_unwrap_err_panics` | `20b-panic-unwrap-expect` | 36 |
-| 43 | `error-handling/02_question_mark_propagates` | `20c-question-mark` | 37 |
-| 44 | `error-handling/04_custom_error_from` | `20c-question-mark` | 37 |
-| 45 | `error-handling/05_question_mark_option_in_result` | `20c-question-mark` | 37 |
-| 46 | `modules/04_super_path` | `22-paths` | 41 |
-| 47 | `modules/01_private_module` | `22b-privacy-and-pub` | 42 |
-| 48 | `modules/02_private_fn` | `22b-privacy-and-pub` | 42 |
-| 49 | `modules/03_use_scope` | `23-the-use-keyword` | 44 |
-| 50 | `modules/05_unresolved_import` | `23-the-use-keyword` | 44 |
-| 51 | `generics/01_bound` | `24-generic-functions` | 45 |
-| 52 | `traits/01_display_bound` | `25-traits-declare-implement` | 47 |
-| 53 | `traits/02_trait_in_scope` | `25-traits-declare-implement` | 47 |
-| 54 | `traits/04_missing_method` | `25-traits-declare-implement` | 47 |
-| 55 | `advanced/04_operator_overload_add` | `25-traits-declare-implement` | 47 |
-| 56 | `advanced/02_orphan_rule_newtype` | `25b-trait-bounds` | 48 |
-| 57 | `advanced/05_supertrait_display` | `25b-trait-bounds` | 48 |
+| 31 | `types/01_struct_build` | `18-defining-structs` | 28 |
+| 32 | `types/01b_struct_extra_field` | `18-defining-structs` | 28 |
+| 33 | `types/02_field_privacy` | `18-defining-structs` | 28 |
+| 34 | `types/04_struct_method` | `18b-methods-and-impl` | 29 |
+| 35 | `control-flow/05_match_enum_data` | `19-enums` | 31 |
+| 36 | `types/03_option_value` | `19b-option` | 32 |
+| 37 | `types/05_refutable_let` | `19d-concise-matching` | 34 |
+| 38 | `error-handling/01_result_is_not_t` | `20-result` | 35 |
+| 39 | `types/05_unwrap_none` | `20b-panic-unwrap-expect` | 36 |
+| 40 | `error-handling/03_unwrap_err_panics` | `20b-panic-unwrap-expect` | 36 |
+| 41 | `error-handling/02_question_mark_propagates` | `20c-question-mark` | 37 |
+| 42 | `error-handling/04_custom_error_from` | `20c-question-mark` | 37 |
+| 43 | `error-handling/05_question_mark_option_in_result` | `20c-question-mark` | 37 |
+| 44 | `modules/04_super_path` | `22-paths` | 41 |
+| 45 | `modules/01_private_module` | `22b-privacy-and-pub` | 42 |
+| 46 | `modules/02_private_fn` | `22b-privacy-and-pub` | 42 |
+| 47 | `modules/03_use_scope` | `23-the-use-keyword` | 44 |
+| 48 | `modules/05_unresolved_import` | `23-the-use-keyword` | 44 |
+| 49 | `generics/01_bound` | `24-generic-functions` | 45 |
+| 50 | `traits/01_display_bound` | `25-traits-declare-implement` | 47 |
+| 51 | `traits/02_trait_in_scope` | `25-traits-declare-implement` | 47 |
+| 52 | `traits/04_missing_method` | `25-traits-declare-implement` | 47 |
+| 53 | `advanced/04_operator_overload_add` | `25-traits-declare-implement` | 47 |
+| 54 | `advanced/02_orphan_rule_newtype` | `25b-trait-bounds` | 48 |
+| 55 | `advanced/05_supertrait_display` | `25b-trait-bounds` | 48 |
+| 56 | `lifetimes/03_borrow_outlives_value` | `26-lifetime-annotations` | 49 |
+| 57 | `lifetimes/04_temporary_dropped` | `26-lifetime-annotations` | 49 |
 | 58 | `lifetimes/01_longest` | `26-lifetime-annotations` | 49 |
 | 59 | `lifetimes/02_struct_lifetime` | `26c-lifetimes-in-structs` | 51 |
 | 60 | `closures/01_closure_type_lock` | `27-closure-syntax` | 52 |
