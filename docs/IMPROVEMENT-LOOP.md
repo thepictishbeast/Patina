@@ -58,6 +58,22 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
 ## Backlog (status: ✅done · ▶next · ☐todo)
 
 ### Critical pedagogy
+- ✅ **Course re-sequenced to lesson order — now OPENS on Lesson 1 (`042f159`+`8746c66`, 2026-07-16..17).**
+  Paul: "why isn't it starting on lesson 1" → "align the whole order" + "build a doc mapping lesson↔subject↔exercise
+  first, go slowly." Delivered in order: (1) `docs/CURRICULUM-MAP.md` + `docs/curriculum-subjects.json` +
+  `scripts/build-curriculum-map.py` (the bidirectional index/tool, `7798b1d`). (2) Re-sequenced all 76 exercises so
+  each section marches in lesson order — the first exercise is now `basics/08_use_before_init` → Lesson 1 (was
+  Lesson 2). MECHANISM (safety-driven): ids are STABLE (order = file-path order via `discover`; id is explicit in
+  each toml; progress is keyed by id), so it's pure file renames (git-tracked) + `CONTENT_VERSION` 43→44 so seeded
+  stores re-copy the reordered files (progress untouched). Renumbering ids was REJECTED — an existing store's
+  "current" would point at a deleted id → `resolve_current`→None→broken app. (3) Practice list now leads with the
+  exercise TITLE (id is a stable handle, not the position; kept as muted secondary + data-id/aria — e2e/selection
+  key off id). (4) Fixed a genuine mapping error: the two `lifetimes/` exercises (E0597/E0716) → `26-lifetime-
+  annotations` (were `16b-mutable-references`). Back-jumps 22→6; the 6 left are category-boundary outliers (an
+  exercise whose lesson sits outside its category's range — needs an id/category move, deferred). Verified:
+  rpro-serve 28, e2e green (1 known cross-spec flake, passes isolated), live fresh store confirms current exercise
+  + its lesson drawer are Lesson 1 and the list reads in lesson order. `CONCEPT_LESSON` is GUI-only (mobile syncs
+  on build). [[practice-layout-redesign]]
 - ✅ **Lesson drawer header now MATCHES its content + fixed one wrong exercise→lesson map (`d3c0dcf`, 2026-07-14).**
   Paul: "the lesson tab on the left doesn't match the content in the actual lesson/practice/exercise." Two bugs:
   (1) the Practice lesson drawer (`#lessonHandle` pull-tab → `#lessonDrawer`) headed itself with the exercise's

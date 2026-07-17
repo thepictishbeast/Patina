@@ -189,13 +189,11 @@ Exercises in the order the app serves them (`NN-phase/NN_name` file order). The 
 ---
 
 
-## 3 · Alignment analysis & re-sequencing blueprint
+## 3 · Alignment analysis
 
-**The headline problems**
+**Status: re-sequenced (2026-07).** Exercises were re-ordered so each section marches in lesson order and the course now OPENS on Lesson 1 (`basics/08_use_before_init` → "Lesson 1 — Bindings & Immutability"). Ids stayed stable (order is the file-path order; progress is keyed by id), so the re-order was pure file renames + a `CONTENT_VERSION` bump.
 
-- The **first** exercise points at **Lesson 2** while **Lesson 1** is practiced by the *last* basics exercise — so the course opens on Lesson 2 (the "why isn't it starting on Lesson 1" report).
-
-- Big forward leaps mid-section bounce the learner far ahead, then back.
+**Remaining back-jumps: 6.** Each is a *category-boundary* outlier — an exercise whose lesson genuinely sits outside its category's range (e.g. a trait exercise filed under `advanced`, an enums exercise under `control-flow`). Closing these needs moving the exercise to another category, which changes its id (and would orphan existing progress), so they're deferred as a curriculum decision.
 
 - **Pile-ups**: several lessons carry many exercises while others carry none:
 
