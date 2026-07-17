@@ -35,6 +35,13 @@ book_chapter = "ch03-01-variables-and-mutability"
 source = "The Rust Book, ch.3.1 \"Variables and Mutability\""
 
 [[term]]
+name = "expression"
+aliases = ["expressions", "statement", "statements", "semicolon", "expression statement", "expression vs statement"]
+definition = "An *expression* evaluates to a value (`5`, `x + 1`, an `if`/`match` block); a *statement* performs an action and produces nothing — the unit value `()`. A trailing `;` turns an expression into a statement by discarding its value, which is why a stray semicolon on a function's last line makes it return `()` instead of the value you intended."
+book_chapter = "ch03-03-how-functions-work"
+source = "The Rust Book, ch.3.3 \"How Functions Work\""
+
+[[term]]
 name = "duplicate definition"
 aliases = ["duplicate-definition", "defined multiple times", "duplicate name"]
 definition = "Each name can be defined only once within a scope. Declaring two items with the SAME name in one module — two functions, two structs, two constants — is an error, because the compiler cannot tell which one you mean. This is unlike a `let` binding, where re-using a name simply shadows the earlier one. To fix it, give each definition its own distinct name (or move one into a separate module)."

@@ -1,0 +1,19 @@
+id = "basics/09_shadow_type_change"
+title = "Change a value's type with shadowing, not `mut`"
+difficulty = "beginner"
+estimated_minutes = 5
+concept = "shadowing"
+expected_error_code = "E0308"
+solution_outline = """
+`mut` lets you change a binding's VALUE, but never its TYPE — so `spaces` stays a
+`&str` and can't hold the `usize` that `.len()` returns (E0308). The fix is
+*shadowing*: a second `let` with the same name makes a brand-new binding that can
+have a new type. Change `spaces = spaces.len();` to `let spaces = spaces.len();`
+(you can drop the `mut` — shadowing doesn't need it). Now the first `spaces` is the
+text and the second `spaces` is its length; each `let` is its own binding.
+"""
+
+[[book_refs]]
+chapter = "ch03-01-variables-and-mutability"
+anchor = "shadowing"
+why = "The Book's shadowing section shows this exact `spaces` example and why a fresh `let` — not `mut` — is what lets a name take on a new type."

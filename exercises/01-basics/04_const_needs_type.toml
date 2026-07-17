@@ -1,0 +1,17 @@
+id = "basics/10_const_needs_type"
+title = "A `const` must declare its type"
+difficulty = "beginner"
+estimated_minutes = 4
+concept = "constant"
+solution_outline = """
+Unlike a `let` binding, a `const` can't lean on type inference — it must state its
+type explicitly, so `const MAX_SCORE = 100;` fails with "missing type for `const`
+item". Add the type: `const MAX_SCORE: u32 = 100;` (constants are conventionally
+SCREAMING_SNAKE_CASE). A `const` is inlined at every use and has to be computable
+at compile time, so its type must be nailed down up front rather than inferred.
+"""
+
+[[book_refs]]
+chapter = "ch03-01-variables-and-mutability"
+anchor = "declaring-constants"
+why = "The Book's constants section explains that a `const` always requires an explicit type annotation and is fixed for the whole program — exactly what this exercise makes you supply."

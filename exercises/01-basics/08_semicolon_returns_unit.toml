@@ -1,0 +1,18 @@
+id = "basics/11_semicolon_returns_unit"
+title = "A stray `;` makes a function return nothing"
+difficulty = "beginner"
+estimated_minutes = 5
+concept = "expression-statement"
+expected_error_code = "E0308"
+solution_outline = """
+`double` promises to return an `i32`, but `n * 2;` ends in a semicolon — which
+turns the expression into a statement and throws its value away, so the body
+"implicitly returns `()`" and you get E0308 (expected `i32`, found `()`). A Rust
+function returns its LAST expression, and only when that line has NO trailing
+semicolon. Delete the `;` after `n * 2` and the value flows out as the return.
+"""
+
+[[book_refs]]
+chapter = "ch03-03-how-functions-work"
+anchor = "functions-with-return-values"
+why = "The Book's 'Functions with Return Values' section shows that adding a semicolon to the final expression changes it into a statement and causes this exact mismatched-types error."
