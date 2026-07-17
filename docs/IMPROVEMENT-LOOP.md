@@ -58,6 +58,14 @@ make Tempered Studio the greatest Rust learning platform ever. Charter & rules:
 ## Backlog (status: ✅done · ▶next · ☐todo)
 
 ### Critical pedagogy
+- ✅ **Authored 3 early-lesson exercises to fill map gaps (`e598538`, 2026-07-17).** The curriculum map's gap list
+  (lessons with no paired exercise) drove this: `basics/09_shadow_type_change` (L3, E0308 — `mut` can't change a
+  type, shadowing can), `basics/10_const_needs_type` (L4, "missing type for const"), `basics/11_semicolon_returns_unit`
+  (L6, E0308 — stray `;` → returns `()`). Each is a predict-then-run compile error, wired to its lesson
+  (`CONCEPT_LESSON` +3) + glossary (new "expression" term so no dead chip), slotted into basics in lesson order,
+  `CONTENT_VERSION` 44→45 (ids stable, progress untouched). Verified: rustc + live `/api/run` each hit the expected
+  error, coupling/dead-chip/anchor guards green, rpro-serve 28. Map: **79 exercises, gap list 33→30.** Authoring
+  original gap-filling exercises is un-gated (vs #22's external-set adaptation) — more to come from the 30 remaining.
 - ✅ **Course re-sequenced to lesson order — now OPENS on Lesson 1 (`042f159`+`8746c66`, 2026-07-16..17).**
   Paul: "why isn't it starting on lesson 1" → "align the whole order" + "build a doc mapping lesson↔subject↔exercise
   first, go slowly." Delivered in order: (1) `docs/CURRICULUM-MAP.md` + `docs/curriculum-subjects.json` +
