@@ -1,0 +1,21 @@
+id = "collections/13_slice_holds_borrow"
+title = "A live slice borrows the whole collection — you can't grow it mid-use"
+difficulty = "beginner"
+estimated_minutes = 6
+concept = "slice-holds-borrow"
+expected_error_code = "E0502"
+solution_outline = """
+`window` is `&scores[0..2]` — a slice, which BORROWS `scores` (it does not copy the
+numbers). While that shared borrow is alive, `scores.push(40)` needs a *mutable*
+borrow, and Rust forbids mutating something that is currently borrowed as shared —
+that is E0502. The push could reallocate the vector's buffer and leave `window`
+dangling, so the compiler stops you at compile time rather than letting it happen.
+Fix by finishing with the slice before you mutate: move the `println!("{window:?}")`
+ABOVE `scores.push(40)`. A borrow ends at its last use, so once the print is above
+the push, the shared borrow is over by the time the mutable one begins — both legal.
+"""
+
+[[book_refs]]
+chapter = "ch04-02-references-and-borrowing"
+anchor = "the-rules-of-references"
+why = "E0502 here is the borrow checker enforcing 'The Rules of References': at any moment you may have any number of shared borrows OR exactly one mutable borrow, never both. A slice is a shared borrow of the collection, so `push` (which needs a mutable borrow) is rejected while the slice is still alive."

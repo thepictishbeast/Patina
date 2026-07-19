@@ -458,7 +458,7 @@ source = "The Rust Book, ch.3.2 \"Data Types — The Array Type\""
 
 [[term]]
 name = "slice"
-aliases = ["slices", "slice type"]
+aliases = ["slices", "slice type", "slice holds borrow"]
 definition = "A slice is a reference to a contiguous run of elements WITHIN a collection — part of an array, vector, or string — rather than the whole thing, written with a range like `&v[1..4]`. It borrows the data instead of owning a copy, so it is cheap, and while a slice is alive the collection it points into cannot be changed (that borrow rule is what makes slices safe). A general slice has the type `&[T]`; a slice of a string is the special case `&str`. A slice also remembers its length, so it always knows where it ends."
 book_chapter = "ch04-03-slices"
 source = "The Rust Book, ch.4.3 \"The Slice Type\""
