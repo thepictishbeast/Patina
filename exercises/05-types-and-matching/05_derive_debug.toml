@@ -1,0 +1,19 @@
+id = "types/08_derive_debug"
+title = "Add `#[derive(Debug)]` to print a struct with `{:?}`"
+difficulty = "beginner"
+estimated_minutes = 4
+concept = "derive"
+expected_error_code = "E0277"
+solution_outline = """
+The `{:?}` "debug" format needs the value's type to implement the `Debug` trait,
+and a struct doesn't get it for free — so `println!("{p:?}")` fails with E0277
+("`Point` doesn't implement `Debug`"). You don't have to write it by hand: put
+`#[derive(Debug)]` on the line above `struct Point` and the compiler generates a
+sensible Debug impl from the fields. `derive` is Rust's way to auto-implement
+common traits (Debug, Clone, PartialEq, …). Tip: `{:#?}` pretty-prints across lines.
+"""
+
+[[book_refs]]
+chapter = "ch05-01-defining-structs"
+anchor = "defining-and-instantiating-structs"
+why = "This exercise builds and prints a struct; the Book's struct chapter defines structs and their fields — the data that `#[derive(Debug)]` inspects to generate a printable representation."

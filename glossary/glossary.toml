@@ -42,6 +42,13 @@ book_chapter = "ch03-05-control-flow"
 source = "The Rust Book, ch.3.5 \"Control Flow\""
 
 [[term]]
+name = "derive"
+aliases = ["derive macro", "derived trait", "derived traits", "derive(Debug)", "auto-implement"]
+definition = "`#[derive(...)]` is an attribute placed above a `struct` or `enum` that tells the compiler to auto-generate a standard trait implementation from the type's fields — e.g. `#[derive(Debug)]` for `{:?}` printing, or `#[derive(Clone, PartialEq)]`. It saves writing boilerplate `impl` blocks for the common traits."
+book_chapter = "ch05-01-defining-structs"
+source = "The Rust Book, ch.5 \"Using Structs\""
+
+[[term]]
 name = "duplicate definition"
 aliases = ["duplicate-definition", "defined multiple times", "duplicate name"]
 definition = "Each name can be defined only once within a scope. Declaring two items with the SAME name in one module — two functions, two structs, two constants — is an error, because the compiler cannot tell which one you mean. This is unlike a `let` binding, where re-using a name simply shadows the earlier one. To fix it, give each definition its own distinct name (or move one into a separate module)."
