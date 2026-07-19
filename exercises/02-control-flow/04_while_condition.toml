@@ -1,0 +1,19 @@
+id = "control-flow/07_while_condition"
+title = "A `while` loop's condition must be a `bool`"
+difficulty = "beginner"
+estimated_minutes = 4
+concept = "while-loop"
+expected_error_code = "E0308"
+solution_outline = """
+A `while` loop keeps running its body as long as the condition is `true`, so the
+condition has to be an actual `bool`. `while remaining` hands it an integer, which
+Rust won't treat as "truthy" — E0308 (expected `bool`, found integer). Give it a
+real stopping question: `while remaining > 0`. Now the countdown runs while the
+counter is positive and stops at zero. (`while` repeats on a condition; reach for
+`loop` when you want to `break` out with a value, and `for` to walk each item.)
+"""
+
+[[book_refs]]
+chapter = "ch03-05-control-flow"
+anchor = "streamlining-conditional-loops-with-while"
+why = "The Book's 'Conditional Loops with while' section shows a while loop driven by a real boolean condition — exactly the `bool` this exercise is missing."
