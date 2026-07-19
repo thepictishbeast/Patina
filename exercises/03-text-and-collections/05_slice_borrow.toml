@@ -1,0 +1,19 @@
+id = "collections/12_slice_borrow"
+title = "A slice is a borrowed window — pass `&`, not the owned Vec"
+difficulty = "beginner"
+estimated_minutes = 5
+concept = "slice"
+expected_error_code = "E0308"
+solution_outline = """
+`first_three` takes a slice `&[i32]` — a BORROWED view into a run of `i32`s — but
+`first_three(scores)` hands over the whole owned `Vec` by value, so the types don't
+match (E0308). Borrow it instead: `first_three(&scores)`. Rust deref-coerces
+`&Vec<i32>` to `&[i32]` automatically, so one function written against `&[i32]`
+accepts a `Vec`, an array, or any slice — that generality is the whole point of
+taking a slice. Bonus: after the fix `scores` is still usable — you only lent it.
+"""
+
+[[book_refs]]
+chapter = "ch04-02-references-and-borrowing"
+anchor = "references-and-borrowing"
+why = "A slice `&[T]` is a kind of reference — the fix here is to BORROW with `&scores` instead of moving the owned `Vec`. The Book's references-and-borrowing chapter explains passing `&` references, which is exactly what a slice parameter expects."
