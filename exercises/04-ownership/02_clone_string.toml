@@ -1,0 +1,20 @@
+id = "ownership/09_clone_string"
+title = "A `String` moves on assignment — `.clone()` to keep both"
+difficulty = "beginner"
+estimated_minutes = 5
+concept = "clone"
+expected_error_code = "E0382"
+solution_outline = """
+Simple values like `i32` are `Copy`: assigning one duplicates it. But a `String`
+owns heap data and is NOT `Copy`, so `let echo = greeting;` MOVES ownership into
+`echo`, and `greeting` is no longer valid — using it in `println!` is E0382 ("borrow
+of moved value"). If you truly want two independent strings, ask for the copy
+explicitly: `let echo = greeting.clone();`. `.clone()` is deliberately visible
+because duplicating heap data can be costly — Rust makes that cost obvious rather
+than hiding it, unlike the free implicit copy of a `Copy` type.
+"""
+
+[[book_refs]]
+chapter = "ch04-01-what-is-ownership"
+anchor = "variables-and-data-interacting-with-clone"
+why = "The Book's ownership chapter contrasts Move (assignment invalidates the old binding for heap types) with Clone (explicitly duplicate) and Copy (implicit for stack types) — exactly the distinction this exercise teaches."
