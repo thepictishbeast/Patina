@@ -1,0 +1,19 @@
+id = "control-flow/06_bool_condition"
+title = "An `if` condition must be a real `bool` — no truthy numbers"
+difficulty = "beginner"
+estimated_minutes = 4
+concept = "boolean"
+expected_error_code = "E0308"
+solution_outline = """
+Many languages treat any non-zero number as "true", but Rust does not: an `if`
+condition must be exactly a `bool`, so `if temperature` fails with E0308 (expected
+`bool`, found integer). Ask a real yes/no question that produces a `bool`, e.g.
+`if temperature > 20`. This is why comparison operators (`>`, `==`, `!=`) and the
+logical operators `&&` / `||` matter — they produce the `bool` that `if` (and
+`while`) require.
+"""
+
+[[book_refs]]
+chapter = "ch03-05-control-flow"
+anchor = "if-expressions"
+why = "The Book's control-flow chapter shows Rust's `if` requires a `bool` and does not auto-convert other types — the exact error this exercise triggers and fixes."

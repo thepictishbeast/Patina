@@ -35,11 +35,11 @@ book_chapter = "ch03-01-variables-and-mutability"
 source = "The Rust Book, ch.3.1 \"Variables and Mutability\""
 
 [[term]]
-name = "expression"
-aliases = ["expressions", "statement", "statements", "semicolon", "expression statement", "expression vs statement"]
-definition = "An *expression* evaluates to a value (`5`, `x + 1`, an `if`/`match` block); a *statement* performs an action and produces nothing — the unit value `()`. A trailing `;` turns an expression into a statement by discarding its value, which is why a stray semicolon on a function's last line makes it return `()` instead of the value you intended."
-book_chapter = "ch03-03-how-functions-work"
-source = "The Rust Book, ch.3.3 \"How Functions Work\""
+name = "boolean"
+aliases = ["bool", "booleans", "boolean condition", "condition", "true", "false"]
+definition = "A `bool` is the yes/no type — it holds exactly `true` or `false`. Rust has no \"truthy\" values: an `if` or `while` condition must be a real `bool`, which is what comparison operators (`>`, `==`, `!=`) and the logical operators `&&` / `||` produce."
+book_chapter = "ch03-05-control-flow"
+source = "The Rust Book, ch.3.5 \"Control Flow\""
 
 [[term]]
 name = "duplicate definition"
@@ -472,7 +472,7 @@ source = "The Rust Book, ch.3.1 \"Variables and Mutability\""
 
 [[term]]
 name = "expression"
-aliases = ["expressions", "evaluates to a value"]
+aliases = ["expressions", "evaluates to a value", "statement", "statements", "semicolon", "expression statement", "expression vs statement"]
 definition = "An expression is a piece of code that evaluates to a value. Most of Rust is built from expressions — `5 + 6`, a function call, a `match`, even a block written `{ ... }` can produce a value. Because a block is itself an expression, the last line of a function body, written with no trailing semicolon, becomes the value that block hands back."
 book_chapter = "ch03-03-how-functions-work"
 source = "The Rust Book, ch.3.3 \"Functions\""
