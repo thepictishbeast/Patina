@@ -42,6 +42,13 @@ book_chapter = "ch03-05-control-flow"
 source = "The Rust Book, ch.3.5 \"Control Flow\""
 
 [[term]]
+name = "Display"
+aliases = ["display", "display trait", "user-facing print", "std::fmt::Display"]
+definition = "The `std::fmt::Display` trait defines how a value looks in `{}` — a clean, user-facing representation. Unlike `Debug` (the `{:?}` format, which you can `#[derive]`), `Display` is never derived: you implement it by hand when you want polished output. For quick developer printing, reach for `Debug` instead."
+book_chapter = "ch05-01-defining-structs"
+source = "The Rust Book"
+
+[[term]]
 name = "while"
 aliases = ["while loop", "while-loop", "conditional loop", "conditional loops"]
 definition = "A `while` loop repeats its body as long as a `bool` condition stays `true`, re-checking the condition before each pass and stopping once it's `false`. Use it to repeat on a condition; use `loop` when you need to `break` out with a value, and `for` to walk each item of a collection."

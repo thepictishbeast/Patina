@@ -1,0 +1,20 @@
+id = "basics/13_display_vs_debug"
+title = "`{}` needs Display (which you can't derive) — use `{:?}` for a quick print"
+difficulty = "beginner"
+estimated_minutes = 5
+concept = "display"
+expected_error_code = "E0277"
+solution_outline = """
+`{}` asks for the *Display* format — a clean, user-facing representation — and a
+struct doesn't implement `Display` automatically, so `println!("{p}")` fails with
+E0277. Crucially, unlike `Debug`, `Display` CANNOT be derived — Rust won't guess how
+you'd want a type shown to end users. For a quick developer print, switch to the
+*Debug* format: add `#[derive(Debug)]` above the struct and use `{p:?}` (or `{p:#?}`
+to pretty-print). Save a hand-written `impl std::fmt::Display` for when you truly
+need polished output.
+"""
+
+[[book_refs]]
+chapter = "ch05-01-defining-structs"
+anchor = "defining-and-instantiating-structs"
+why = "This exercise prints a struct; the Book's struct chapter defines the struct whose fields Debug shows and Display would format — the distinction the exercise turns on."
