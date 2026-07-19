@@ -1,0 +1,20 @@
+id = "generics/02_generic_struct_same_type"
+title = "One type parameter, one type: a `Point<T>` can't mix an int and a float"
+difficulty = "intermediate"
+estimated_minutes = 6
+concept = "generic-type-parameter"
+expected_error_code = "E0308"
+solution_outline = """
+`struct Point<T>` declares a SINGLE type parameter `T`, and both `x` and `y` have
+type `T` — so within one `Point` they must be the exact same concrete type. Writing
+`x: 5` makes the compiler infer `T = i32`; then `y: 4.2` is an `f64`, contradicting
+`T = i32` → E0308 "mismatched types". Two fixes, each teaching something: (1) make
+them the same type — `x: 5.0, y: 4.2` (both `f64`); or (2) if you WANT mixed types,
+give the struct two parameters — `struct Point<T, U> { x: T, y: U }` — and now
+`Point { x: 5, y: 4.2 }` compiles with `T = i32`, `U = f64`. One `T` means one type.
+"""
+
+[[book_refs]]
+chapter = "ch10-01-syntax"
+anchor = "in-struct-definitions"
+why = "The Book's 'In Struct Definitions' shows this exact `struct Point<T> { x: T, y: T }` and explains that because both fields share the single generic `T`, giving them different types (an integer and a float) fails to compile — the E0308 in this exercise — then introduces the two-parameter `Point<T, U>` fix."
