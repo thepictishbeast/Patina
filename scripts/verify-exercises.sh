@@ -38,9 +38,11 @@ for toml in exercises/*/*.toml; do
   if [ ! -f "$rs" ]; then
     echo "  FAIL — $toml has no sibling .rs"; fails=$((fails + 1)); continue
   fi
-  # Each exercise teaches EITHER a compile error code OR a runtime panic.
+  # Each exercise teaches a compile error code, a runtime panic, OR a codeless
+  # compile error matched by message (an error rustc emits with no E#### code).
   exp="$(grep -E '^[[:space:]]*expected_error_code' "$toml" | head -1 | sed -E 's/.*"([^"]+)".*/\1/')"
   panic="$(grep -E '^[[:space:]]*expected_runtime_panic' "$toml" | head -1 | sed -E 's/.*"(.*)".*/\1/')"
+  errmsg="$(grep -E '^[[:space:]]*expected_error_message' "$toml" | head -1 | sed -E 's/.*"(.*)".*/\1/')"
 
   if [ -n "$exp" ]; then
     # Compile-error exercise: assert the taught code appears in the diagnostics.
@@ -68,7 +70,24 @@ for toml in exercises/*/*.toml; do
       fails=$((fails + 1))
     fi
   else
-    echo "  skip — $name (no expected_error_code or expected_runtime_panic)"; continue
+    # Codeless compile-error exercise: rustc rejects it with a message carrying no
+    # E#### code (e.g. "missing type for `const` item"). It is still a broken-on-
+    # purpose exercise, so assert it FAILS to compile; and when it declares an
+    # `expected_error_message`, assert that message appears — the codeless analogue
+    # of the runtime-panic substring check.
+    checked=$((checked + 1))
+    cout="$("$RUSTC" --edition 2024 --crate-type bin -o "$WORK/out" "$rs" 2>&1)"; rc=$?
+    if [ "$rc" -eq 0 ]; then
+      echo "  FAIL — $name: declares no expected_error_code/panic yet COMPILES CLEAN — a teaching exercise must fail (add an expected_* field)"; fails=$((fails + 1))
+    elif [ -n "$errmsg" ]; then
+      if printf '%s' "$cout" | grep -qF "$errmsg"; then
+        echo "  ok   — $name fails (codeless): \"$errmsg\""
+      else
+        echo "  FAIL — $name: expected error message \"$errmsg\", got: $(printf '%s' "$cout" | tr '\n' ' ' | head -c 160)"; fails=$((fails + 1))
+      fi
+    else
+      echo "  warn — $name fails to compile but declares no expected_error_message (add one for a precise check)"
+    fi
   fi
 done
 

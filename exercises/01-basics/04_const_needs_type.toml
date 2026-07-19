@@ -3,6 +3,11 @@ title = "A `const` must declare its type"
 difficulty = "beginner"
 estimated_minutes = 4
 concept = "constant"
+# This exercise teaches a codeless compile error: rustc emits "missing type for
+# `const` item" with NO E#### code, so it declares a message substring instead of
+# an expected_error_code. scripts/verify-exercises.sh matches on this (the Rust
+# side ignores the field — no deny_unknown_fields).
+expected_error_message = "missing type for `const` item"
 solution_outline = """
 Unlike a `let` binding, a `const` can't lean on type inference — it must state its
 type explicitly, so `const MAX_SCORE = 100;` fails with "missing type for `const`
