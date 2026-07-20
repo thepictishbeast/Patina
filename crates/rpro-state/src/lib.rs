@@ -13,6 +13,7 @@
 
 #![doc(html_no_source)]
 
+pub mod achievements;
 pub mod annotations;
 pub mod bookmarks;
 pub mod config;
