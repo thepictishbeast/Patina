@@ -98,7 +98,7 @@ Full run notes, env knobs, and the smoke test: [RUN.md](RUN.md).
 
 ## Content
 
-**71 exercises** across 15 topics (basics → control-flow → collections →
+**89 exercises** across 15 topics (basics → control-flow → collections →
 ownership → types/matching → error handling → modules → generics → traits →
 lifetimes → closures → iterators → smart pointers → concurrency → advanced),
 each a single-file program with a real, rustc-verified outcome (a compile error
@@ -145,7 +145,7 @@ A 12-gate CI mirror (`scripts/check.sh`), all green at the current baseline:
 rustfmt, clippy `-D warnings`, the workspace test suite, rustdoc, an API/serving
 smoke, a **50-test Playwright browser suite run against an isolated throwaway
 store** (deterministic — it can never touch a real learner's progress), exercise
-integrity (71/71 outcomes re-verified against the real toolchain), CLI smoke,
+integrity (89/89 outcomes re-verified against the real toolchain), CLI smoke,
 GUI transform tests (XSS-safety by construction, cross-link guards), book-anchor
 resolution, the language-seam grep gate, and the wasm32 pure-core build. Both
 themes are axe-audited (WCAG 2 A/AA) on every view. A cited security review with

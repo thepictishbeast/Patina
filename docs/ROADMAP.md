@@ -37,10 +37,12 @@ so the learner (and Paul) can see what's done and what's next. Status:
 
 ## Phase 3 — Learning content
 - [x] Merged corpus: concept matrix Phases 1–9 (compile-verified; rows 1–62, every row mapped to a lesson)
-- [x] 63 verified exercises across 11 phases (basics → advanced), each with book refs + an expected compiler error OR runtime panic + solution outline (concept→glossary resolution CI-guarded)
+- [x] 89 verified exercises across 11 phases (basics → advanced), each with book refs + an expected compiler error OR runtime panic + solution outline (concept→glossary resolution CI-guarded)
 - [x] 33 embedded Book chapters (bundled + seeded into the store; code listings link out to the live Book — see the vendor-vs-link decision below)
 - [x] Education engine — spec (docs/EDUCATION.md) AND implementation: shared hint ladder, spaced-repetition, tutor guide-not-solve scaffolding
 - [x] All 37 lessons (L1–L37, Phase 1 foundations → multithreaded-web-server capstone) + 11 phase reviews (quiz + cheatsheet each) + STUDY-GUIDE + in-lesson prev/next nav (rust-textbook); every snippet compile-verified on rustc 1.95.0/ed2024, real compiler errors verbatim, no analogies, no answer-leak
+- [x] Gamification core (board #36): pure XP/leveling (`rpro-state::xp`) + threshold badges (`rpro-state::achievements`), unit-tested, no I/O (324f648, bfbaf9c)
+- [ ] Gamification persistence + GUI surfacing (progress-store GamState, XP bar, badge wall) — pending a Paul UX go
 - [ ] Book code-listings: vendor ~200 files vs keep link-out (needs Paul)
 
 ## Phase 4 — Distribution & sync
