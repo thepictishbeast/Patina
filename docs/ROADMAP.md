@@ -11,7 +11,7 @@ so the learner (and Paul) can see what's done and what's next. Status:
 - [x] Local toolchain + filesystem storage impls
 - [x] CI gates: wasm32 pure-core build + language-seam grep guard
 - [x] rpro run / check / test / explain — real cargo/rustc, by hand
-- [x] Audit baseline: 122 tests + 18-assertion end-to-end smoke + curriculum-integrity, book-anchor & GUI-transform gates (all CI jobs) + cited security review (docs/AUDIT.md, docs/SECURITY.md)
+- [x] Audit baseline: 122 tests + 18-assertion end-to-end smoke + curriculum-integrity, book-anchor & GUI-transform gates (all CI jobs) + cited security review (docs/SECURITY.md)
 
 ## Phase 1 — Terminal UI (TUI)
 - [x] Theme + status vocabulary (color, glyphs, throbber, NO_COLOR)

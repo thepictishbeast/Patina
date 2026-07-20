@@ -121,4 +121,4 @@ server-resolved targets, validated + clamped input (now bounded at the transport
 layer too), a held predict-first no-leak contract, secure-by-default headers, and
 zero `unsafe`. The two residual items (F1 run timeout, F2 nonce-CSP) are
 low-severity hardening/robustness improvements, are documented here, and are
-tracked in `docs/BACKLOG.md` rather than left implicit.
+tracked in the internal backlog rather than left implicit.

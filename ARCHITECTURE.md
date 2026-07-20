@@ -83,8 +83,7 @@ Book tab (web + TUI) renders those chapters offline, cleaned for display (mdBook
 annotations normalized). The chapters' example code lives in upstream
 `../listings/` files that are **not** vendored, so each listing links out to the
 live chapter on doc.rust-lang.org — the bundled book is prose + links-to-code, not
-a self-contained code textbook (the vendor-vs-link decision is queued for Paul; see
-Content in `docs/BACKLOG.md`).
+a self-contained code textbook (the vendor-vs-link decision is queued for Paul).
 
 ## Workspace crates — a language-agnostic seam
 
@@ -136,8 +135,7 @@ not ship — a deferred problem, and likely a separate mobile repo (see
 
 ## Test strategy
 
-94 unit/integration tests + an end-to-end smoke, all green; the full tally lives in
-[docs/AUDIT.md](docs/AUDIT.md). In brief:
+94 unit/integration tests + an end-to-end smoke, all green. In brief:
 
 - `rpro-state` — round-trips + the pure logic (review/`fold_run`, hint ladder, tutor scaffolding, progress skip/reset).
 - `rpro-runner` — discovery + `record_run` against a tempfile `Store`.
