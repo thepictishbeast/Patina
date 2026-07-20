@@ -1,0 +1,22 @@
+id = "control-flow/08_or_pattern_binding"
+title = "An or-pattern arm must bind the same variables in every alternative"
+difficulty = "beginner"
+estimated_minutes = 6
+concept = "or-pattern"
+expected_error_code = "E0408"
+solution_outline = """
+`Msg::Move { x } | Msg::Quit => ...` is one arm covering two shapes with `|`. The
+arm's body runs no matter which alternative matched, so every alternative must bind
+the same variables — but `Msg::Move { x }` binds `x` while `Msg::Quit` binds nothing.
+That's E0408 ("variable `x` is not bound in all patterns"): if `Quit` matched, `x`
+would have no value for the body to use. Since `Quit` genuinely has no `x`, you can't
+make the or-pattern work — split it into separate arms, e.g.
+`Msg::Move { x } => println!("moved to {x}"),` and `Msg::Quit => println!("quit"),`.
+Or-patterns are for cases that share the SAME bindings (e.g. `Msg::Move { x } |
+Msg::Jump { x }`), letting one arm serve several variants without repetition.
+"""
+
+[[book_refs]]
+chapter = "ch06-02-match"
+anchor = "patterns-that-bind-to-values"
+why = "The Book's 'Patterns That Bind to Values' shows how a match arm binds parts of the matched value to variables. E0408 here is the rule that keeps those bindings sound across an or-pattern: since one body serves every `|` alternative, each alternative must supply the same bound variables — so a name bound in one alternative but missing from another is rejected."

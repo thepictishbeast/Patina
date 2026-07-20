@@ -165,6 +165,13 @@ book_chapter = "ch06-02-match"
 source = "The Rust Book, ch.6.2 \"The match Control Flow Construct\""
 
 [[term]]
+name = "or-pattern"
+aliases = ["or pattern", "alternation pattern", "variable not bound in all patterns"]
+definition = "An or-pattern matches several shapes in one `match` arm by joining them with `|`, e.g. `A | B => ...`. If the arm binds a variable, EVERY alternative must bind that same variable with the same type — because a single arm body has to work no matter which alternative matched. Binding a name in one alternative but not another is rejected (E0408, 'variable not bound in all patterns'): split those cases into separate arms instead."
+book_chapter = "ch06-02-match"
+source = "The Rust Book, ch.6.2 \"The match Control Flow Construct\""
+
+[[term]]
 name = "vector element type"
 aliases = ["vec-element-type", "same type vector", "vec holds one type", "vector type"]
 definition = "A vector is a list that stores many values next to each other, but every value in it must be of the same kind. You decide what kind of value a particular vector holds, and from then on it can only hold values of that one kind."
