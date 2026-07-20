@@ -20,6 +20,7 @@ pub mod exercise;
 pub mod progress;
 pub mod review;
 pub mod tutor;
+pub mod xp;
 
 pub use annotations::{Annotation, Annotations};
 pub use bookmarks::{Bookmark, Bookmarks};
