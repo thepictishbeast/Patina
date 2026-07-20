@@ -149,7 +149,7 @@ integrity (71/71 outcomes re-verified against the real toolchain), CLI smoke,
 GUI transform tests (XSS-safety by construction, cross-link guards), book-anchor
 resolution, the language-seam grep gate, and the wasm32 pure-core build. Both
 themes are axe-audited (WCAG 2 A/AA) on every view. A cited security review with
-one fix landed. The current state is tabulated in [docs/AUDIT.md](docs/AUDIT.md).
+one fix landed.
 Per the AVP-2 disclaimer at the top, none of this is a certification of safety —
 it is what is implemented and checked so far.
 

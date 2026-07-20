@@ -3,3 +3,11 @@
 **/*.rs.bk
 Cargo.lock.bak
 .DS_Store
+
+# session/loop/audit cruft — off GitHub, canonical copies in /tank/claude-workspace/Tempered-Studio/docs/
+docs/AUDIT.md
+docs/BACKLOG.md
+docs/CURRICULUM-PACING-AUDIT.md
+docs/IMPROVEMENT-LOOP.md
+docs/REVIEW-GUIDE.md
+docs/audits/EDU-FIDELITY-2026-06-23.md
