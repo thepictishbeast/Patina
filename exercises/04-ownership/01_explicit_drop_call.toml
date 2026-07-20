@@ -1,0 +1,20 @@
+id = "ownership/10_explicit_drop_call"
+title = "You can't call `.drop()` yourself — Rust already drops at end of scope"
+difficulty = "beginner"
+estimated_minutes = 5
+concept = "explicit-drop"
+expected_error_code = "E0040"
+solution_outline = """
+A value's destructor (`Drop::drop`) runs AUTOMATICALLY when the value goes out of
+scope — that is how Rust cleans up without a garbage collector. So calling `w.drop()`
+by hand is rejected with E0040 ("explicit use of destructor method"): if it were
+allowed, the value would be dropped now AND again at the end of `main` — a double
+free, exactly what Rust exists to prevent. To drop a value EARLY, hand it to the free
+function `std::mem::drop`: change `w.drop();` to `drop(w);`. That moves `w` into
+`drop`, which owns it and lets it fall out of scope once — cleaned up exactly once.
+"""
+
+[[book_refs]]
+chapter = "ch04-01-what-is-ownership"
+anchor = "variable-scope"
+why = "The Book's 'Variable Scope' section explains that a value is dropped automatically when it goes out of scope — the exact rule that makes calling `.drop()` yourself (E0040) both unnecessary and unsafe (it would drop twice). Understanding automatic scope-based cleanup is what motivates using `std::mem::drop` to drop early instead."

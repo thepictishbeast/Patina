@@ -91,6 +91,13 @@ book_chapter = "ch04-01-what-is-ownership"
 source = "The Rust Book, ch.4.1 \"What Is Ownership?\""
 
 [[term]]
+name = "Drop"
+aliases = ["destructor", "drop trait", "explicit drop", "drop at scope end"]
+definition = "The `Drop` trait defines what happens when a value is cleaned up: its method `drop(&mut self)` runs automatically the instant the value goes out of scope — that is how Rust frees resources without a garbage collector. Because that cleanup is automatic, Rust FORBIDS calling `.drop()` yourself (it would run twice — a double free); to drop a value early, hand it to the free function `std::mem::drop(value)` instead."
+book_chapter = "ch04-01-what-is-ownership"
+source = "The Rust Book, ch.15.3 \"Running Code on Cleanup with the Drop Trait\""
+
+[[term]]
 name = "scope"
 aliases = ["in scope", "out of scope", "loop-variable-scope"]
 definition = "The region of a program where a name is valid. A binding is valid from the point it is declared until the end of its enclosing block (the `{ ... }` it lives in); after that it is out of scope and its value is dropped."
