@@ -1,0 +1,23 @@
+id = "basics/05c_subtract_overflow"
+title = "An unsigned type can't go below zero — subtracting underflows"
+difficulty = "beginner"
+estimated_minutes = 6
+concept = "integer-overflow"
+expected_runtime_panic = "attempt to subtract with overflow"
+solution_outline = """
+`u32` is UNSIGNED — its smallest value is 0, with no room for negatives. `coins` is
+0, so `coins - 1` would be -1, which a `u32` cannot hold: in a debug build Rust
+checks the subtraction and PANICS ("attempt to subtract with overflow") instead of
+silently wrapping to a huge number (4_294_967_295) the way a release build would.
+This surprises people because the arithmetic looks harmless — the classic version is
+`things.len() - 1` on an EMPTY collection. The compiler can't catch it here because
+the value comes from a function call, not a literal. Fixes: guard first
+(`if coins > 0 { coins - 1 } else { 0 }`), use `coins.checked_sub(1)` (returns
+`None` on underflow) or `coins.saturating_sub(1)` (clamps at 0), or switch to a
+signed type like `i32` if a negative result is actually meaningful.
+"""
+
+[[book_refs]]
+chapter = "ch03-02-data-types"
+anchor = "integer-types"
+why = "The Book's integer-types section shows that unsigned types like u32 start at 0 with no negative range — the reason subtracting past zero overflows instead of going negative."
